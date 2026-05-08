@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, ArrowLeft, Pencil, Trash2, BookOpen, Image as ImageIcon, Settings2 } from 'lucide-react';
+import { Plus, ArrowLeft, Pencil, Trash2, BookOpen, Image as ImageIcon, Settings2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -60,7 +60,10 @@ export default function DeckBuilder() {
   });
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
+    <div className="flex min-h-[calc(100vh-3.5rem)]">
+    {/* Main content */}
+    <div className={`flex-1 px-4 py-8 transition-all duration-300 ${showEditor ? 'lg:mr-[420px]' : ''}`}>
+    <div className="max-w-5xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="w-5 h-5" />
@@ -143,18 +146,46 @@ export default function DeckBuilder() {
         </div>
       )}
 
-      <Dialog open={showEditor} onOpenChange={setShowEditor}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editingCard ? 'Edit Card' : 'Add Card'}</DialogTitle>
-          </DialogHeader>
-          <CardEditor
-            card={editingCard}
-            onSave={(data) => saveMutation.mutate(data)}
-            onCancel={() => setShowEditor(false)}
-          />
-        </DialogContent>
-      </Dialog>
+    </div>
+    </div>
+
+    {/* Side panel on large screens, modal on small */}
+    {showEditor && (
+      <>
+        {/* Mobile: modal overlay */}
+        <div className="lg:hidden">
+          <Dialog open={showEditor} onOpenChange={setShowEditor}>
+            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>{editingCard ? 'Edit Card' : 'Add Card'}</DialogTitle>
+              </DialogHeader>
+              <CardEditor
+                card={editingCard}
+                onSave={(data) => saveMutation.mutate(data)}
+                onCancel={() => setShowEditor(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        {/* Desktop: fixed side panel */}
+        <div className="hidden lg:flex fixed top-14 right-0 bottom-0 w-[420px] bg-card border-l border-border flex-col z-30 shadow-xl">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+            <h2 className="font-semibold text-base">{editingCard ? 'Edit Card' : 'Add Card'}</h2>
+            <button onClick={() => setShowEditor(false)} className="text-muted-foreground hover:text-foreground transition-colors">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-5">
+            <CardEditor
+              card={editingCard}
+              onSave={(data) => saveMutation.mutate(data)}
+              onCancel={() => setShowEditor(false)}
+            />
+          </div>
+        </div>
+      </>
+    )}
     </div>
   );
 }

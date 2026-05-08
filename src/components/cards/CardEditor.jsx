@@ -169,7 +169,12 @@ export default function CardEditor({ card, onSave, onCancel }) {
 
       {/* Short Clue */}
       <div className="space-y-2">
-        <Label>Short Clue <span className="text-muted-foreground text-xs">(optional — one sentence, revealed before answering)</span></Label>
+        <div className="flex items-center justify-between">
+          <Label>Short Clue <span className="text-muted-foreground text-xs">(optional — one sentence, revealed before answering)</span></Label>
+          <span className={`text-xs tabular-nums ${clue.length >= 180 ? 'text-destructive' : 'text-muted-foreground'}`}>
+            {clue.length}/200
+          </span>
+        </div>
         <Input
           value={clue}
           onChange={e => setClue(e.target.value)}
