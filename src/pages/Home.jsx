@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Link } from 'react-router-dom';
 import DeckCard from '@/components/deck/DeckCard';
 import ShareModal from '@/components/deck/ShareModal';
+import CoverImagePicker from '@/components/deck/CoverImagePicker';
 import { toast } from 'sonner';
 function makeToken() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -31,6 +32,7 @@ export default function Home() {
   const [showForm, setShowForm] = useState(false);
   const [editingDeck, setEditingDeck] = useState(null);
   const [shareDeck, setShareDeck] = useState(null);
+  const [coverDeck, setCoverDeck] = useState(null);
   const [formTitle, setFormTitle] = useState('');
   const [formDesc, setFormDesc] = useState('');
 
@@ -69,6 +71,18 @@ export default function Home() {
 
   const cardCount = (deckId) => cards.filter(c => c.deck_id === deckId).length;
 
+  // Default cover = first card image in deck
+  const getCoverUrl = (deck) => {
+    if (deck.cover_image_url) return deck.cover_image_url;
+    const firstCard = cards.find(c => c.deck_id === deck.id && c.image_url);
+    return firstCard?.image_url || null;
+  };
+
+  const saveCoverMutation = useMutation({
+    mutationFn: ({ deck, url }) => base44.entities.Deck.update(deck.id, { cover_image_url: url }),
+    onSuccess: () => { qc.invalidateQueries(['decks']); toast.success('Cover updated'); },
+  });
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">
       <div className="flex items-center justify-between mb-8">
@@ -101,10 +115,12 @@ export default function Home() {
               key={deck.id}
               deck={deck}
               cardCount={cardCount(deck.id)}
+              coverUrl={getCoverUrl(deck)}
               onEdit={openEdit}
               onDelete={(d) => deleteMutation.mutate(d)}
               onDuplicate={(d) => duplicateMutation.mutate(d)}
               onShare={(d) => setShareDeck(d)}
+              onSetCover={(d) => setCoverDeck(d)}
             />
           ))}
         </div>
@@ -136,6 +152,16 @@ export default function Home() {
       </Dialog>
 
       <ShareModal deck={shareDeck} open={!!shareDeck} onClose={() => setShareDeck(null)} />
+
+      {coverDeck && (
+        <CoverImagePicker
+          open={!!coverDeck}
+          onClose={() => setCoverDeck(null)}
+          cards={cards.filter(c => c.deck_id === coverDeck.id)}
+          currentUrl={coverDeck.cover_image_url || null}
+          onSave={(url) => saveCoverMutation.mutate({ deck: coverDeck, url })}
+        />
+      )}
     </div>
   );
 }

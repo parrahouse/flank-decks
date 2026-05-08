@@ -27,6 +27,10 @@
       ],
       "default": "allowed",
       "description": "Whether test takers can use the eliminate-one clue"
+    },
+    "cover_image_url": {
+      "type": "string",
+      "description": "URL of the deck cover image (custom upload or picked from a card)"
     }
   },
   "required": [
