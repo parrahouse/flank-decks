@@ -1,0 +1,26 @@
+{
+  "name": "Deck",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Name of the deck"
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional description"
+    },
+    "is_public": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the deck can be viewed via share link"
+    },
+    "share_token": {
+      "type": "string",
+      "description": "Unique token for share link"
+    }
+  },
+  "required": [
+    "title"
+  ]
+}

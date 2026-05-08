@@ -1,0 +1,38 @@
+{
+  "name": "Card",
+  "type": "object",
+  "properties": {
+    "deck_id": {
+      "type": "string",
+      "description": "Parent deck ID"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "Uploaded image URL"
+    },
+    "correct_answer": {
+      "type": "string",
+      "description": "The correct word/phrase"
+    },
+    "choices": {
+      "type": "array",
+      "description": "All answer choices (including correct)",
+      "items": {
+        "type": "string"
+      }
+    },
+    "explanation": {
+      "type": "string",
+      "description": "Text revealed on card flip"
+    },
+    "order": {
+      "type": "number",
+      "description": "Card position in deck"
+    }
+  },
+  "required": [
+    "deck_id",
+    "correct_answer",
+    "choices"
+  ]
+}
