@@ -10,7 +10,7 @@ export default function DeckCard({ deck, cardCount, coverUrl, onEdit, onDelete, 
   return (
     <div className="group bg-card border border-border rounded-xl overflow-hidden flex flex-col hover:shadow-md transition-all duration-200">
       {/* Cover image */}
-      <div className="relative h-32 bg-muted flex items-center justify-center overflow-hidden">
+      <div className="relative h-48 bg-muted flex items-center justify-center overflow-hidden">
         {coverUrl ? (
           <img src={coverUrl} alt="" className="w-full h-full object-cover" />
         ) : (
