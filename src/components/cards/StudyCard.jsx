@@ -207,8 +207,8 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
                   )}
                 </div>
                 {answered && !hasBonus && (
-                  <Button size="sm" onClick={onNext} disabled={isLast} className="h-8 text-xs">
-                    {isLast ? 'Finished' : 'Next →'}
+                  <Button size="sm" onClick={onNext} className="h-8 text-xs">
+                    {isLast ? 'Finish →' : 'Next →'}
                   </Button>
                 )}
                 {answered && hasBonus && (
