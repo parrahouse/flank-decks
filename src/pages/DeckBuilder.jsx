@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { Plus, ArrowLeft, Pencil, Trash2, BookOpen, Image as ImageIcon, Settings2, X, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import CardEditor from '@/components/cards/CardEditor';
@@ -31,9 +32,22 @@ export default function DeckBuilder() {
   const [showEditor, setShowEditor] = useState(false);
   const [editingCard, setEditingCard] = useState(null);
   const [showCsvUpload, setShowCsvUpload] = useState(false);
+  const [editorDirty, setEditorDirty] = useState(false);
+  const [showDiscardDialog, setShowDiscardDialog] = useState(false);
 
-  const openAdd = () => { setEditingCard(null); setShowEditor(true); };
-  const openEdit = (card) => { setEditingCard(card); setShowEditor(true); };
+  const openAdd = () => { setEditingCard(null); setEditorDirty(false); setShowEditor(true); };
+  const openEdit = (card) => { setEditingCard(card); setEditorDirty(false); setShowEditor(true); };
+
+  const requestCloseEditor = () => {
+    if (editorDirty) setShowDiscardDialog(true);
+    else closeEditor();
+  };
+
+  const closeEditor = () => {
+    setShowEditor(false);
+    setEditorDirty(false);
+    setShowDiscardDialog(false);
+  };
 
   const saveMutation = useMutation({
     mutationFn: async (data) => {
@@ -160,7 +174,7 @@ export default function DeckBuilder() {
       <>
         {/* Mobile: modal overlay */}
         <div className="lg:hidden">
-          <Dialog open={showEditor} onOpenChange={setShowEditor}>
+          <Dialog open={showEditor} onOpenChange={(open) => { if (!open) requestCloseEditor(); }}>
             <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editingCard ? 'Edit Card' : 'Add Card'}</DialogTitle>
@@ -168,7 +182,8 @@ export default function DeckBuilder() {
               <CardEditor
                 card={editingCard}
                 onSave={(data) => saveMutation.mutate(data)}
-                onCancel={() => setShowEditor(false)}
+                onCancel={requestCloseEditor}
+                onDirtyChange={setEditorDirty}
               />
             </DialogContent>
           </Dialog>
@@ -178,7 +193,7 @@ export default function DeckBuilder() {
         <div className="hidden lg:flex fixed top-14 right-0 bottom-0 w-[420px] bg-card border-l border-border flex-col z-30 shadow-xl">
           <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
             <h2 className="font-semibold text-base">{editingCard ? 'Edit Card' : 'Add Card'}</h2>
-            <button onClick={() => setShowEditor(false)} className="text-muted-foreground hover:text-foreground transition-colors">
+            <button onClick={requestCloseEditor} className="text-muted-foreground hover:text-foreground transition-colors">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -186,12 +201,30 @@ export default function DeckBuilder() {
             <CardEditor
               card={editingCard}
               onSave={(data) => saveMutation.mutate(data)}
-              onCancel={() => setShowEditor(false)}
+              onCancel={requestCloseEditor}
+              onDirtyChange={setEditorDirty}
             />
           </div>
         </div>
       </>
     )}
+    <AlertDialog open={showDiscardDialog} onOpenChange={setShowDiscardDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+          <AlertDialogDescription>
+            You have unsaved changes. If you close now they will be lost.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => setShowDiscardDialog(false)}>Keep editing</AlertDialogCancel>
+          <AlertDialogAction onClick={closeEditor} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            Discard
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
     <CsvUploadModal
       open={showCsvUpload}
       onClose={() => setShowCsvUpload(false)}

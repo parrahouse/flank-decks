@@ -9,7 +9,7 @@ import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import ReactQuill from 'react-quill';
 
-export default function CardEditor({ card, onSave, onCancel }) {
+export default function CardEditor({ card, onSave, onCancel, onDirtyChange }) {
   const [imageUrl, setImageUrl] = useState(card?.image_url || '');
   const [correctAnswer, setCorrectAnswer] = useState(card?.correct_answer || '');
   const [choices, setChoices] = useState(() => {
@@ -20,7 +20,7 @@ export default function CardEditor({ card, onSave, onCancel }) {
   const [explanation, setExplanation] = useState(card?.explanation || '');
   const [uploading, setUploading] = useState(false);
   const [generatingDecoys, setGeneratingDecoys] = useState(false);
-  const [showDiscardDialog, setShowDiscardDialog] = useState(false);
+
   const fileRef = useRef();
 
   // Bonus question state
@@ -46,9 +46,16 @@ export default function CardEditor({ card, onSave, onCancel }) {
     return false;
   };
 
+  // Notify parent whenever dirty state changes
+  const isDirty = hasChanges();
+  const prevDirtyRef = useRef(false);
+  if (isDirty !== prevDirtyRef.current) {
+    prevDirtyRef.current = isDirty;
+    onDirtyChange?.(isDirty);
+  }
+
   const handleCancel = () => {
-    if (hasChanges()) setShowDiscardDialog(true);
-    else onCancel();
+    onCancel();
   };
 
   const handleImageUpload = async (e) => {
@@ -368,22 +375,7 @@ export default function CardEditor({ card, onSave, onCancel }) {
         <Button onClick={handleSave}>Save Card</Button>
       </div>
 
-      <AlertDialog open={showDiscardDialog} onOpenChange={setShowDiscardDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Discard changes?</AlertDialogTitle>
-            <AlertDialogDescription>
-              You have unsaved changes. If you close now they will be lost.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Keep editing</AlertDialogCancel>
-            <AlertDialogAction onClick={onCancel} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Discard
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+
     </div>
   );
 }
