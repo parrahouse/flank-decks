@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Plus, X, Wand2, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Plus, X, Wand2, Image as ImageIcon, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -22,6 +22,19 @@ export default function CardEditor({ card, onSave, onCancel }) {
   const [generatingDecoys, setGeneratingDecoys] = useState(false);
   const [showDiscardDialog, setShowDiscardDialog] = useState(false);
   const fileRef = useRef();
+
+  // Bonus question state
+  const [showBonus, setShowBonus] = useState(!!(card?.bonus_question));
+  const [bonusQuestion, setBonusQuestion] = useState(card?.bonus_question || '');
+  const [bonusImageUrl, setBonusImageUrl] = useState(card?.bonus_image_url || '');
+  const [bonusCorrectAnswer, setBonusCorrectAnswer] = useState(card?.bonus_correct_answer || '');
+  const [bonusChoices, setBonusChoices] = useState(() => {
+    if (card?.bonus_choices?.length) return card.bonus_choices.filter(c => c !== card.bonus_correct_answer);
+    return ['', '', ''];
+  });
+  const [uploadingBonus, setUploadingBonus] = useState(false);
+  const [generatingBonusDecoys, setGeneratingBonusDecoys] = useState(false);
+  const bonusFileRef = useRef();
 
   const hasChanges = () => {
     if (imageUrl !== (card?.image_url || '')) return true;
@@ -86,11 +99,65 @@ export default function CardEditor({ card, onSave, onCancel }) {
     toast.success('Decoys generated');
   };
 
+  const handleBonusImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploadingBonus(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setBonusImageUrl(file_url);
+    setUploadingBonus(false);
+  };
+
+  const updateBonusChoice = (i, val) => {
+    const next = [...bonusChoices];
+    next[i] = val;
+    setBonusChoices(next);
+  };
+
+  const generateBonusDecoys = async () => {
+    if (!bonusCorrectAnswer.trim()) { toast.error('Enter the bonus correct answer first'); return; }
+    setGeneratingBonusDecoys(true);
+    const needed = Math.max(1, 5 - bonusChoices.filter(c => c.trim()).length);
+    const result = await base44.integrations.Core.InvokeLLM({
+      prompt: `Generate ${needed} plausible but incorrect answer choices (decoys) for a flashcard where the correct answer is "${bonusCorrectAnswer}". Return only the decoy words/phrases as a JSON array of strings. No explanations.`,
+      response_json_schema: {
+        type: 'object',
+        properties: { decoys: { type: 'array', items: { type: 'string' } } }
+      }
+    });
+    const decoys = result?.decoys || [];
+    const filled = [...bonusChoices];
+    let di = 0;
+    for (let i = 0; i < filled.length && di < decoys.length; i++) {
+      if (!filled[i].trim()) filled[i] = decoys[di++];
+    }
+    while (filled.length < 5 && di < decoys.length) filled.push(decoys[di++]);
+    setBonusChoices(filled.slice(0, 5));
+    setGeneratingBonusDecoys(false);
+    toast.success('Bonus decoys generated');
+  };
+
   const handleSave = () => {
     if (!correctAnswer.trim()) { toast.error('Correct answer is required'); return; }
     const allChoices = [correctAnswer, ...choices.filter(c => c.trim())];
     if (allChoices.length < 2) { toast.error('Add at least one other choice'); return; }
-    onSave({ image_url: imageUrl, correct_answer: correctAnswer, choices: allChoices, clue, explanation });
+
+    let bonusData = {};
+    if (showBonus && bonusQuestion.trim() && bonusCorrectAnswer.trim()) {
+      const allBonusChoices = [bonusCorrectAnswer, ...bonusChoices.filter(c => c.trim())];
+      if (allBonusChoices.length >= 2) {
+        bonusData = {
+          bonus_question: bonusQuestion,
+          bonus_image_url: bonusImageUrl,
+          bonus_correct_answer: bonusCorrectAnswer,
+          bonus_choices: allBonusChoices,
+        };
+      }
+    } else if (!showBonus) {
+      bonusData = { bonus_question: '', bonus_image_url: '', bonus_correct_answer: '', bonus_choices: [] };
+    }
+
+    onSave({ image_url: imageUrl, correct_answer: correctAnswer, choices: allChoices, clue, explanation, ...bonusData });
   };
 
   return (
@@ -196,6 +263,103 @@ export default function CardEditor({ card, onSave, onCancel }) {
             style={{ minHeight: 120 }}
           />
         </div>
+      </div>
+
+      {/* Bonus Question Section */}
+      <div className="border border-border rounded-xl overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setShowBonus(v => !v)}
+          className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium hover:bg-muted/50 transition-colors"
+        >
+          <span>⭐ Bonus Question <span className="text-muted-foreground font-normal">(optional — shown after correct answer)</span></span>
+          {showBonus ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+        </button>
+
+        {showBonus && (
+          <div className="px-4 pb-4 space-y-4 border-t border-border pt-4">
+            {/* Bonus Question Text */}
+            <div className="space-y-1.5">
+              <Label>Question</Label>
+              <Input
+                value={bonusQuestion}
+                onChange={e => setBonusQuestion(e.target.value)}
+                placeholder="e.g. What is its scientific name?"
+              />
+            </div>
+
+            {/* Bonus Image (optional alternate) */}
+            <div className="space-y-1.5">
+              <Label>Alternate Image <span className="text-muted-foreground text-xs">(optional — uses main image if blank)</span></Label>
+              <div
+                onClick={() => bonusFileRef.current?.click()}
+                className="relative border-2 border-dashed border-border rounded-xl overflow-hidden cursor-pointer hover:border-primary/50 transition-colors"
+              >
+                {bonusImageUrl ? (
+                  <>
+                    <img src={bonusImageUrl} alt="bonus" className="w-full h-32 object-cover" />
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setBonusImageUrl(''); }}
+                      className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-24 gap-1.5 text-muted-foreground">
+                    {uploadingBonus ? <Loader2 className="w-5 h-5 animate-spin" /> : <ImageIcon className="w-6 h-6" />}
+                    <span className="text-xs">{uploadingBonus ? 'Uploading…' : 'Click to upload alternate image'}</span>
+                  </div>
+                )}
+              </div>
+              <input ref={bonusFileRef} type="file" accept="image/*" className="hidden" onChange={handleBonusImageUpload} />
+            </div>
+
+            {/* Bonus Correct Answer */}
+            <div className="space-y-1.5">
+              <Label>Correct Answer <span className="text-destructive">*</span></Label>
+              <Input
+                value={bonusCorrectAnswer}
+                onChange={e => setBonusCorrectAnswer(e.target.value)}
+                placeholder="The correct word or phrase"
+              />
+            </div>
+
+            {/* Bonus Decoys */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Other Choices (decoys)</Label>
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" size="sm" onClick={generateBonusDecoys} disabled={generatingBonusDecoys} className="h-7 text-xs gap-1">
+                    {generatingBonusDecoys ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+                    Auto-generate
+                  </Button>
+                  {bonusChoices.length < 5 && (
+                    <Button type="button" variant="outline" size="sm" onClick={() => setBonusChoices(c => [...c, ''])} className="h-7 text-xs gap-1">
+                      <Plus className="w-3 h-3" /> Add
+                    </Button>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-2">
+                {bonusChoices.map((c, i) => (
+                  <div key={i} className="flex gap-2">
+                    <Input
+                      value={c}
+                      onChange={e => updateBonusChoice(i, e.target.value)}
+                      placeholder={`Choice ${i + 2}`}
+                    />
+                    {bonusChoices.length > 1 && (
+                      <Button type="button" variant="ghost" size="icon" onClick={() => setBonusChoices(bonusChoices.filter((_, idx) => idx !== i))} className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive">
+                        <X className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Actions */}

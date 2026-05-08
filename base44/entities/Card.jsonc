@@ -32,6 +32,25 @@
     "order": {
       "type": "number",
       "description": "Card position in deck"
+    },
+    "bonus_question": {
+      "type": "string",
+      "description": "Optional bonus question shown after the correct answer is given"
+    },
+    "bonus_image_url": {
+      "type": "string",
+      "description": "Optional alternate image for the bonus question (falls back to main image)"
+    },
+    "bonus_correct_answer": {
+      "type": "string",
+      "description": "Correct answer for the bonus question"
+    },
+    "bonus_choices": {
+      "type": "array",
+      "description": "All answer choices for the bonus question (including correct)",
+      "items": {
+        "type": "string"
+      }
     }
   },
   "required": [

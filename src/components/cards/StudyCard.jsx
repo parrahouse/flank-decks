@@ -3,6 +3,7 @@ import { RotateCcw, Lightbulb, Check, X, Eye } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import BonusQuestion from './BonusQuestion';
 
 function shuffle(arr) {
   const a = [...arr];
@@ -24,12 +25,13 @@ const SCORE = {
 
 export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast, onScore }) {
   const [shuffledChoices, setShuffledChoices] = useState([]);
-  const [firstWrong, setFirstWrong] = useState(null);   // first wrong pick (before lock)
-  const [finalAnswer, setFinalAnswer] = useState(null); // locked answer
+  const [firstWrong, setFirstWrong] = useState(null);
+  const [finalAnswer, setFinalAnswer] = useState(null);
   const [eliminated, setEliminated] = useState([]);
   const [clueRevealed, setClueRevealed] = useState(false);
-  const [flipped, setFlipped] = useState(false);        // show explanation back
+  const [flipped, setFlipped] = useState(false);
   const [shake, setShake] = useState(false);
+  const [showBonus, setShowBonus] = useState(false);
 
   const clueAllowed = deck?.clue_mode !== 'disabled';
   const hasClue = !!card.clue;
@@ -44,6 +46,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
     setClueRevealed(false);
     setFlipped(false);
     setShake(false);
+    setShowBonus(false);
   }, [card.id]);
 
   const handleSelect = (choice) => {
@@ -84,6 +87,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
 
   const answered = !!finalAnswer;
   const isCorrect = finalAnswer === card.correct_answer;
+  const hasBonus = isCorrect && card.bonus_question && card.bonus_choices?.length >= 2;
 
   // A choice is "wrong-first" (orange) but not locked
   const getChoiceState = (choice) => {
@@ -104,6 +108,10 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
     if (correct) return 'reveal-correct';
     return 'dim';
   };
+
+  if (showBonus) {
+    return <BonusQuestion card={card} onNext={onNext} isLast={isLast} />;
+  }
 
   return (
     <div className="w-full max-w-lg mx-auto">
@@ -198,9 +206,14 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
                     </Button>
                   )}
                 </div>
-                {answered && (
+                {answered && !hasBonus && (
                   <Button size="sm" onClick={onNext} disabled={isLast} className="h-8 text-xs">
                     {isLast ? 'Finished' : 'Next →'}
+                  </Button>
+                )}
+                {answered && hasBonus && (
+                  <Button size="sm" onClick={() => setShowBonus(true)} className="h-8 text-xs gap-1">
+                    ⭐ Bonus Question
                   </Button>
                 )}
               </div>
