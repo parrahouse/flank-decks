@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Plus, X, Wand2, Image as ImageIcon, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, X, Wand2, Image as ImageIcon, Loader2, ChevronDown, ChevronUp, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -272,7 +272,7 @@ export default function CardEditor({ card, onSave, onCancel }) {
           onClick={() => setShowBonus(v => !v)}
           className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium hover:bg-muted/50 transition-colors"
         >
-          <span>⭐ Bonus Question <span className="text-muted-foreground font-normal">(optional — shown after correct answer)</span></span>
+          <span className="flex items-center gap-1.5"><Star className="w-4 h-4 text-amber-400 fill-amber-400" /> Bonus Question <span className="text-muted-foreground font-normal">(optional — shown after correct answer)</span></span>
           {showBonus ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
         </button>
 
