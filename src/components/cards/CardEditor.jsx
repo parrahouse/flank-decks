@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
@@ -17,7 +18,22 @@ export default function CardEditor({ card, onSave, onCancel }) {
   const [explanation, setExplanation] = useState(card?.explanation || '');
   const [uploading, setUploading] = useState(false);
   const [generatingDecoys, setGeneratingDecoys] = useState(false);
+  const [showDiscardDialog, setShowDiscardDialog] = useState(false);
   const fileRef = useRef();
+
+  const hasChanges = () => {
+    if (imageUrl !== (card?.image_url || '')) return true;
+    if (correctAnswer !== (card?.correct_answer || '')) return true;
+    if (explanation !== (card?.explanation || '')) return true;
+    const origChoices = card?.choices?.filter(c => c !== card.correct_answer) || ['', '', ''];
+    if (choices.join('|') !== origChoices.join('|')) return true;
+    return false;
+  };
+
+  const handleCancel = () => {
+    if (hasChanges()) setShowDiscardDialog(true);
+    else onCancel();
+  };
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -161,9 +177,26 @@ export default function CardEditor({ card, onSave, onCancel }) {
 
       {/* Actions */}
       <div className="flex justify-end gap-2 pt-2 border-t border-border">
-        <Button variant="ghost" onClick={onCancel}>Cancel</Button>
+        <Button variant="ghost" onClick={handleCancel}>Cancel</Button>
         <Button onClick={handleSave}>Save Card</Button>
       </div>
+
+      <AlertDialog open={showDiscardDialog} onOpenChange={setShowDiscardDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes. If you close now they will be lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep editing</AlertDialogCancel>
+            <AlertDialogAction onClick={onCancel} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Discard
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
