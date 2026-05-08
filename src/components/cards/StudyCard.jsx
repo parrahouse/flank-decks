@@ -152,7 +152,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
 
             {/* Choices */}
             <div className="p-5 flex flex-col gap-3 flex-1">
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {shuffledChoices.map((choice) => {
                   const state = getChoiceState(choice);
                   const isShaking = shake && (state === 'first-wrong' || state === 'wrong-final');
@@ -186,7 +186,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
               <div className="flex items-center justify-between pt-2 mt-auto">
                 <div className="flex gap-2 flex-wrap">
                   {/* Eliminate — only before any wrong guess, and if clue mode allowed */}
-                  {clueAllowed && !answered && !firstWrong && eliminated.length < shuffledChoices.length - 2 && (
+                  {clueAllowed && !answered && !firstWrong && eliminated.length < shuffledChoices.length - 2 && shuffledChoices.length > 2 && (
                     <Button variant="outline" size="sm" onClick={handleEliminate} className="h-8 text-xs gap-1">
                       <Lightbulb className="w-3.5 h-3.5" /> Eliminate one
                     </Button>

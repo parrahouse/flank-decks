@@ -54,7 +54,7 @@ export default function CardEditor({ card, onSave, onCancel }) {
   };
 
   const addChoice = () => {
-    if (choices.length < 4) setChoices([...choices, '']);
+    if (choices.length < 5) setChoices([...choices, '']);
   };
 
   const removeChoice = (i) => {
@@ -78,10 +78,10 @@ export default function CardEditor({ card, onSave, onCancel }) {
     for (let i = 0; i < filledChoices.length && di < decoys.length; i++) {
       if (!filledChoices[i].trim()) { filledChoices[i] = decoys[di++]; }
     }
-    while (filledChoices.length < 4 && di < decoys.length) {
+    while (filledChoices.length < 5 && di < decoys.length) {
       filledChoices.push(decoys[di++]);
     }
-    setChoices(filledChoices.slice(0, 4));
+    setChoices(filledChoices.slice(0, 5));
     setGeneratingDecoys(false);
     toast.success('Decoys generated');
   };
@@ -142,7 +142,7 @@ export default function CardEditor({ card, onSave, onCancel }) {
               {generatingDecoys ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
               Auto-generate
             </Button>
-            {choices.length < 4 && (
+            {choices.length < 5 && (
               <Button type="button" variant="outline" size="sm" onClick={addChoice} className="h-7 text-xs gap-1">
                 <Plus className="w-3 h-3" /> Add
               </Button>
