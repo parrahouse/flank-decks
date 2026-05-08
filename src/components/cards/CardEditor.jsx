@@ -181,13 +181,13 @@ export default function CardEditor({ card, onSave, onCancel }) {
       {/* Long Explanation */}
       <div className="space-y-2">
         <Label>Explanation <span className="text-muted-foreground text-xs">(optional — shown on the back of the card)</span></Label>
-        <div className="rounded-md border border-input overflow-hidden">
+        <div className="quill-wrapper border border-input overflow-hidden" style={{ borderRadius: 0 }}>
           <ReactQuill
             theme="snow"
             value={explanation}
             onChange={setExplanation}
             placeholder="Write a longer explanation, context, or notes…"
-            modules={{ toolbar: [['bold', 'italic', 'underline'], [{ list: 'ordered' }, { list: 'bullet' }], ['clean']] }}
+            modules={{ toolbar: [['bold', 'italic', 'underline'], [{ list: 'ordered' }, { list: 'bullet' }], ['link'], ['clean']] }}
             style={{ minHeight: 120 }}
           />
         </div>

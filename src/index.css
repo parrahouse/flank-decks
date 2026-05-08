@@ -91,6 +91,27 @@
   }
 }
 
+/* ReactQuill overrides */
+.quill-wrapper .ql-toolbar {
+  border: none;
+  border-bottom: 1px solid hsl(var(--border));
+  border-radius: 0 !important;
+  padding: 6px 12px;
+}
+.quill-wrapper .ql-container {
+  border: none !important;
+  border-radius: 0 !important;
+  font-size: 0.875rem;
+}
+.quill-wrapper .ql-editor {
+  padding: 10px 16px;
+  min-height: 120px;
+}
+.quill-wrapper .ql-editor.ql-blank::before {
+  left: 16px;
+  right: 16px;
+}
+
 .card-flip {
   perspective: 1200px;
 }
