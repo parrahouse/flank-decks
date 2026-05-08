@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
-import { Plus, X, Wand2, Image as ImageIcon, Loader2, ChevronDown, ChevronUp, Star } from 'lucide-react';
+import { Plus, X, Wand2, Image as ImageIcon, Loader2, ChevronDown, ChevronUp, Star, Pencil } from 'lucide-react';
+import ImageEditor from './ImageEditor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,6 +21,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange }) {
   const [explanation, setExplanation] = useState(card?.explanation || '');
   const [uploading, setUploading] = useState(false);
   const [generatingDecoys, setGeneratingDecoys] = useState(false);
+  const [showImageEditor, setShowImageEditor] = useState(false);
 
   const fileRef = useRef();
 
@@ -186,12 +188,20 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange }) {
             </div>
           )}
           {imageUrl && (
-            <button
-              onClick={(e) => { e.stopPropagation(); setImageUrl(''); }}
-              className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); setImageUrl(''); }}
+                className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowImageEditor(true); }}
+                className="absolute top-2 left-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+            </>
           )}
         </div>
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
@@ -375,6 +385,22 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange }) {
         <Button onClick={handleSave}>Save Card</Button>
       </div>
 
+      {showImageEditor && imageUrl && (
+        <ImageEditor
+          open={showImageEditor}
+          imageUrl={imageUrl}
+          onClose={() => setShowImageEditor(false)}
+          onSave={async (dataUrl) => {
+            setShowImageEditor(false);
+            setUploading(true);
+            const blob = await (await fetch(dataUrl)).blob();
+            const file = new File([blob], 'edited-image.jpg', { type: 'image/jpeg' });
+            const { file_url } = await base44.integrations.Core.UploadFile({ file });
+            setImageUrl(file_url);
+            setUploading(false);
+          }}
+        />
+      )}
 
     </div>
   );
