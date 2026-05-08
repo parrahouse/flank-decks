@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, ArrowLeft, Pencil, Trash2, BookOpen, Image as ImageIcon } from 'lucide-react';
+import { Plus, ArrowLeft, Pencil, Trash2, BookOpen, Image as ImageIcon, Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import CardEditor from '@/components/cards/CardEditor';
 import { toast } from 'sonner';
 
@@ -52,6 +54,11 @@ export default function DeckBuilder() {
     onSuccess: () => { qc.invalidateQueries(['cards', deckId]); qc.invalidateQueries(['cards-all']); toast.success('Card deleted'); },
   });
 
+  const updateDeckMutation = useMutation({
+    mutationFn: (data) => base44.entities.Deck.update(deckId, data),
+    onSuccess: () => { qc.invalidateQueries(['deck', deckId]); toast.success('Deck settings saved'); },
+  });
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       <div className="flex items-center gap-3 mb-6">
@@ -71,6 +78,30 @@ export default function DeckBuilder() {
           <Button onClick={openAdd} size="sm" className="gap-1.5"><Plus className="w-4 h-4" /> Add Card</Button>
         </div>
       </div>
+
+      {/* Deck settings */}
+      {deck && (
+        <div className="mb-6 bg-card border border-border rounded-xl px-4 py-3 flex flex-wrap items-center gap-x-6 gap-y-3">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <Settings2 className="w-3.5 h-3.5" /> Deck Settings
+          </div>
+          <div className="flex items-center gap-2">
+            <Label className="text-xs text-muted-foreground whitespace-nowrap">Clue / Eliminate feature</Label>
+            <Select
+              value={deck.clue_mode || 'allowed'}
+              onValueChange={(val) => updateDeckMutation.mutate({ clue_mode: val })}
+            >
+              <SelectTrigger className="h-7 text-xs w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="allowed">Allowed</SelectItem>
+                <SelectItem value="disabled">Disabled</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">

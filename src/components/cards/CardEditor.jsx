@@ -166,11 +166,11 @@ export default function CardEditor({ card, onSave, onCancel }) {
 
       {/* Explanation */}
       <div className="space-y-2">
-        <Label>Explanation <span className="text-muted-foreground text-xs">(optional — shown on card flip)</span></Label>
+        <Label>Clue / Question <span className="text-muted-foreground text-xs">(optional — can be revealed before answering; also shown on flip)</span></Label>
         <Textarea
           value={explanation}
           onChange={e => setExplanation(e.target.value)}
-          placeholder="Add an explanation that appears when the card is flipped…"
+          placeholder={'e.g. "This animal is the largest land mammal, weighing an average of 10 tons."'}
           rows={3}
         />
       </div>

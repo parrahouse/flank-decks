@@ -18,6 +18,15 @@
     "share_token": {
       "type": "string",
       "description": "Unique token for share link"
+    },
+    "clue_mode": {
+      "type": "string",
+      "enum": [
+        "allowed",
+        "disabled"
+      ],
+      "default": "allowed",
+      "description": "Whether test takers can use the eliminate-one clue"
     }
   },
   "required": [

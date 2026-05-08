@@ -15,11 +15,20 @@ function shuffle(arr) {
   return a;
 }
 
+const SCORE_LABELS = {
+  correct: { label: 'Correct', color: 'text-success' },
+  second_guess: { label: '2nd try', color: 'text-orange-500' },
+  correct_after_clue: { label: 'Correct (with clue)', color: 'text-amber-500' },
+  second_guess_after_clue: { label: '2nd try + clue', color: 'text-orange-400' },
+  wrong: { label: 'Incorrect', color: 'text-destructive' },
+};
+
 export default function StudySession() {
   const { deckId } = useParams();
   const [cardIndex, setCardIndex] = useState(0);
   const [shuffledCards, setShuffledCards] = useState([]);
   const [done, setDone] = useState(false);
+  const [scores, setScores] = useState([]); // [{points, key}] per card
 
   const { data: deck } = useQuery({
     queryKey: ['deck', deckId],
@@ -37,13 +46,21 @@ export default function StudySession() {
     if (cards.length) setShuffledCards(shuffle(cards));
   }, [cards.length]);
 
-  const restart = () => { setShuffledCards(shuffle(cards)); setCardIndex(0); setDone(false); };
+  const restart = () => { setShuffledCards(shuffle(cards)); setCardIndex(0); setDone(false); setScores([]); };
 
   const handleNext = () => {
     if (cardIndex < shuffledCards.length - 1) setCardIndex(i => i + 1);
     else setDone(true);
   };
   const handlePrev = () => { if (cardIndex > 0) setCardIndex(i => i - 1); };
+
+  const handleScore = (points, key) => {
+    setScores(prev => {
+      const next = [...prev];
+      next[cardIndex] = { points, key };
+      return next;
+    });
+  };
 
   if (isLoading || !shuffledCards.length) {
     return (
@@ -52,6 +69,10 @@ export default function StudySession() {
       </div>
     );
   }
+
+  const totalPoints = scores.reduce((s, r) => s + (r?.points || 0), 0);
+  const maxPoints = shuffledCards.length;
+  const pct = maxPoints > 0 ? Math.round((totalPoints / maxPoints) * 100) : 0;
 
   const current = shuffledCards[cardIndex];
 
@@ -82,21 +103,49 @@ export default function StudySession() {
       </div>
 
       {done ? (
-        <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
+        <div className="flex flex-col items-center py-10 gap-6">
           <div className="text-5xl">🎉</div>
-          <h2 className="text-xl font-bold">Deck complete!</h2>
-          <p className="text-muted-foreground text-sm">You've gone through all {shuffledCards.length} cards.</p>
-          <Button onClick={restart} className="mt-2 gap-1.5"><RotateCcw className="w-4 h-4" /> Study Again</Button>
+          <div className="text-center">
+            <h2 className="text-xl font-bold">Deck complete!</h2>
+            <p className="text-muted-foreground text-sm mt-1">
+              Score: <span className="font-semibold text-foreground">{totalPoints.toFixed(2)} / {maxPoints}</span>
+              <span className="ml-2 text-xs">({pct}%)</span>
+            </p>
+          </div>
+
+          {/* Per-card breakdown */}
+          <div className="w-full bg-card border border-border rounded-xl overflow-hidden">
+            {shuffledCards.map((card, i) => {
+              const result = scores[i];
+              const info = result ? SCORE_LABELS[result.key] : { label: 'Skipped', color: 'text-muted-foreground' };
+              return (
+                <div key={card.id} className={cn('flex items-center justify-between px-4 py-2.5 text-sm', i > 0 && 'border-t border-border')}>
+                  <div className="flex items-center gap-3 min-w-0">
+                    {card.image_url && <img src={card.image_url} alt="" className="w-8 h-8 rounded object-cover shrink-0" />}
+                    <span className="truncate font-medium">{card.correct_answer}</span>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0 ml-3">
+                    <span className={cn('text-xs font-medium', info.color)}>{info.label}</span>
+                    <span className="text-xs text-muted-foreground w-8 text-right">{result ? result.points.toFixed(2) : '—'}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <Button onClick={restart} className="gap-1.5"><RotateCcw className="w-4 h-4" /> Study Again</Button>
         </div>
       ) : (
         <>
           <StudyCard
             key={`${current.id}-${cardIndex}`}
             card={current}
+            deck={deck}
             onNext={handleNext}
             onPrev={handlePrev}
             isFirst={cardIndex === 0}
             isLast={cardIndex === shuffledCards.length - 1}
+            onScore={handleScore}
           />
           {/* Nav arrows */}
           <div className="flex justify-center gap-3 mt-5">
@@ -112,3 +161,6 @@ export default function StudySession() {
     </div>
   );
 }
+
+// cn helper inline to avoid missing import
+function cn(...classes) { return classes.filter(Boolean).join(' '); }
