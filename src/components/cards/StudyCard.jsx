@@ -114,9 +114,9 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
           <div className="card-face bg-card border border-border rounded-2xl overflow-hidden shadow-sm flex flex-col w-full">
 
             {/* Image */}
-            <div className="bg-muted flex items-center justify-center relative" style={{ height: 200 }}>
+            <div className="bg-muted flex items-center justify-center relative" style={{ minHeight: 200 }}>
               {card.image_url ? (
-                <img src={card.image_url} alt="card" className="w-full h-full object-cover" />
+                <img src={card.image_url} alt="card" className="w-full h-auto object-contain" />
               ) : (
                 <div className="text-muted-foreground text-sm">No image</div>
               )}
