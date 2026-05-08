@@ -60,9 +60,24 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange }) {
     onCancel();
   };
 
+  const validateImageFile = (file) => {
+    const MIN_SIZE = 10 * 1024; // 10 KB
+    const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
+    if (file.size < MIN_SIZE) {
+      toast.error('Image is too small. Please upload at least 10 KB.');
+      return false;
+    }
+    if (file.size > MAX_SIZE) {
+      toast.error('Image is too large. Maximum size is 10 MB.');
+      return false;
+    }
+    return true;
+  };
+
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    if (!validateImageFile(file)) { e.target.value = ''; return; }
     setUploading(true);
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
     setImageUrl(file_url);
@@ -111,6 +126,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange }) {
   const handleBonusImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    if (!validateImageFile(file)) { e.target.value = ''; return; }
     setUploadingBonus(true);
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
     setBonusImageUrl(file_url);
@@ -205,6 +221,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange }) {
           )}
         </div>
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+        <p className="text-xs text-muted-foreground">Accepted: JPG, PNG, GIF, WebP · Min 10 KB · Max 10 MB</p>
       </div>
 
       {/* Correct Answer */}
