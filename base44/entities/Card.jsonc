@@ -21,9 +21,13 @@
         "type": "string"
       }
     },
+    "clue": {
+      "type": "string",
+      "description": "Short single-sentence clue revealed before answering"
+    },
     "explanation": {
       "type": "string",
-      "description": "Text revealed on card flip"
+      "description": "Long-form explanation shown on the back of the card (supports markdown)"
     },
     "order": {
       "type": "number",

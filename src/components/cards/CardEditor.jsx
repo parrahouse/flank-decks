@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
+import ReactQuill from 'react-quill';
 
 export default function CardEditor({ card, onSave, onCancel }) {
   const [imageUrl, setImageUrl] = useState(card?.image_url || '');
@@ -15,6 +16,7 @@ export default function CardEditor({ card, onSave, onCancel }) {
     if (card?.choices?.length) return card.choices.filter(c => c !== card.correct_answer);
     return ['', '', ''];
   });
+  const [clue, setClue] = useState(card?.clue || '');
   const [explanation, setExplanation] = useState(card?.explanation || '');
   const [uploading, setUploading] = useState(false);
   const [generatingDecoys, setGeneratingDecoys] = useState(false);
@@ -24,6 +26,7 @@ export default function CardEditor({ card, onSave, onCancel }) {
   const hasChanges = () => {
     if (imageUrl !== (card?.image_url || '')) return true;
     if (correctAnswer !== (card?.correct_answer || '')) return true;
+    if (clue !== (card?.clue || '')) return true;
     if (explanation !== (card?.explanation || '')) return true;
     const origChoices = card?.choices?.filter(c => c !== card.correct_answer) || ['', '', ''];
     if (choices.join('|') !== origChoices.join('|')) return true;
@@ -87,7 +90,7 @@ export default function CardEditor({ card, onSave, onCancel }) {
     if (!correctAnswer.trim()) { toast.error('Correct answer is required'); return; }
     const allChoices = [correctAnswer, ...choices.filter(c => c.trim())];
     if (allChoices.length < 2) { toast.error('Add at least one other choice'); return; }
-    onSave({ image_url: imageUrl, correct_answer: correctAnswer, choices: allChoices, explanation });
+    onSave({ image_url: imageUrl, correct_answer: correctAnswer, choices: allChoices, clue, explanation });
   };
 
   return (
@@ -164,15 +167,30 @@ export default function CardEditor({ card, onSave, onCancel }) {
         </div>
       </div>
 
-      {/* Explanation */}
+      {/* Short Clue */}
       <div className="space-y-2">
-        <Label>Clue / Question <span className="text-muted-foreground text-xs">(optional — can be revealed before answering; also shown on flip)</span></Label>
-        <Textarea
-          value={explanation}
-          onChange={e => setExplanation(e.target.value)}
-          placeholder={'e.g. "This animal is the largest land mammal, weighing an average of 10 tons."'}
-          rows={3}
+        <Label>Short Clue <span className="text-muted-foreground text-xs">(optional — one sentence, revealed before answering)</span></Label>
+        <Input
+          value={clue}
+          onChange={e => setClue(e.target.value)}
+          placeholder={'e.g. "This animal is the largest land mammal."'}
+          maxLength={200}
         />
+      </div>
+
+      {/* Long Explanation */}
+      <div className="space-y-2">
+        <Label>Explanation <span className="text-muted-foreground text-xs">(optional — shown on the back of the card)</span></Label>
+        <div className="rounded-md border border-input overflow-hidden">
+          <ReactQuill
+            theme="snow"
+            value={explanation}
+            onChange={setExplanation}
+            placeholder="Write a longer explanation, context, or notes…"
+            modules={{ toolbar: [['bold', 'italic', 'underline'], [{ list: 'ordered' }, { list: 'bullet' }], ['clean']] }}
+            style={{ minHeight: 120 }}
+          />
+        </div>
       </div>
 
       {/* Actions */}

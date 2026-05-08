@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { RotateCcw, Lightbulb, Check, X, Eye } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -31,6 +32,8 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
   const [shake, setShake] = useState(false);
 
   const clueAllowed = deck?.clue_mode !== 'disabled';
+  const hasClue = !!card.clue;
+  const hasExplanation = !!card.explanation;
   const eliminateUsed = eliminated.length > 0;
 
   useEffect(() => {
@@ -119,14 +122,14 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
               )}
             </div>
 
-            {/* Clue panel — revealed before answering */}
-            {card.explanation && clueAllowed && (
+            {/* Short clue panel — revealed before answering */}
+            {hasClue && clueAllowed && (
               <div className={cn(
                 'border-t border-border transition-all duration-300 overflow-hidden',
                 clueRevealed ? 'bg-accent/60 px-5 py-3' : 'px-5 py-2'
               )}>
                 {clueRevealed ? (
-                  <p className="text-sm text-accent-foreground leading-snug">{card.explanation}</p>
+                  <p className="text-sm text-accent-foreground leading-snug">{card.clue}</p>
                 ) : (
                   !answered && (
                     <button
@@ -189,7 +192,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
                     </Button>
                   )}
                   {/* See full explanation after answering */}
-                  {answered && card.explanation && (
+                  {answered && hasExplanation && (
                     <Button variant="outline" size="sm" onClick={() => setFlipped(true)} className="h-8 text-xs gap-1">
                       <RotateCcw className="w-3.5 h-3.5" /> See explanation
                     </Button>
@@ -205,13 +208,18 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
           </div>
 
           {/* BACK — full explanation */}
-          <div className="card-face card-face-back bg-card border border-border rounded-2xl flex flex-col items-center justify-center p-8 gap-4 text-center shadow-sm w-full">
-            <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center">
-              <RotateCcw className="w-5 h-5 text-accent-foreground" />
+          <div className="card-face card-face-back bg-card border border-border rounded-2xl flex flex-col p-6 gap-4 shadow-sm w-full overflow-y-auto" style={{ minHeight: 480 }}>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center shrink-0">
+                <RotateCcw className="w-4 h-4 text-accent-foreground" />
+              </div>
+              <h3 className="font-semibold text-lg text-foreground">{card.correct_answer}</h3>
             </div>
-            <h3 className="font-semibold text-lg text-foreground">{card.correct_answer}</h3>
-            <p className="text-muted-foreground leading-relaxed">{card.explanation}</p>
-            <Button variant="outline" size="sm" onClick={() => setFlipped(false)} className="mt-2">
+            <div
+              className="prose prose-sm max-w-none text-muted-foreground flex-1"
+              dangerouslySetInnerHTML={{ __html: card.explanation }}
+            />
+            <Button variant="outline" size="sm" onClick={() => setFlipped(false)} className="self-start mt-auto">
               ← Back to card
             </Button>
           </div>
