@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, ArrowLeft, Pencil, Trash2, BookOpen, Image as ImageIcon, Settings2, X } from 'lucide-react';
+import { Plus, ArrowLeft, Pencil, Trash2, BookOpen, Image as ImageIcon, Settings2, X, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import CardEditor from '@/components/cards/CardEditor';
+import CsvUploadModal from '@/components/cards/CsvUploadModal';
 import { toast } from 'sonner';
 
 export default function DeckBuilder() {
@@ -29,6 +30,7 @@ export default function DeckBuilder() {
 
   const [showEditor, setShowEditor] = useState(false);
   const [editingCard, setEditingCard] = useState(null);
+  const [showCsvUpload, setShowCsvUpload] = useState(false);
 
   const openAdd = () => { setEditingCard(null); setShowEditor(true); };
   const openEdit = (card) => { setEditingCard(card); setShowEditor(true); };
@@ -78,6 +80,7 @@ export default function DeckBuilder() {
               <Button variant="outline" size="sm" className="gap-1.5"><BookOpen className="w-4 h-4" /> Study</Button>
             </Link>
           )}
+          <Button variant="outline" size="sm" onClick={() => setShowCsvUpload(true)} className="gap-1.5"><Upload className="w-4 h-4" /> Import CSV</Button>
           <Button onClick={openAdd} size="sm" className="gap-1.5"><Plus className="w-4 h-4" /> Add Card</Button>
         </div>
       </div>
@@ -117,7 +120,10 @@ export default function DeckBuilder() {
           </div>
           <h2 className="font-semibold">No cards yet</h2>
           <p className="text-muted-foreground text-sm max-w-xs">Add your first card with an image and word bank choices.</p>
-          <Button onClick={openAdd} className="mt-1 gap-1.5"><Plus className="w-4 h-4" /> Add Card</Button>
+          <div className="flex gap-2 mt-1">
+            <Button onClick={openAdd} className="gap-1.5"><Plus className="w-4 h-4" /> Add Card</Button>
+            <Button variant="outline" onClick={() => setShowCsvUpload(true)} className="gap-1.5"><Upload className="w-4 h-4" /> Import CSV</Button>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
@@ -186,6 +192,13 @@ export default function DeckBuilder() {
         </div>
       </>
     )}
+    <CsvUploadModal
+      open={showCsvUpload}
+      onClose={() => setShowCsvUpload(false)}
+      deckId={deckId}
+      existingCount={cards.length}
+      onImported={() => { qc.invalidateQueries(['cards', deckId]); qc.invalidateQueries(['cards-all']); }}
+    />
     </div>
   );
 }
