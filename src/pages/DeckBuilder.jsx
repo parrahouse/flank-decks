@@ -62,7 +62,7 @@ export default function DeckBuilder() {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('order');
   const [masteryFilter, setMasteryFilter] = useState('all');
-  const [tagFilter, setTagFilter] = useState('all');
+  const [tagFilters, setTagFilters] = useState([]);
 
   const allTags = useMemo(() => {
     const set = new Set();
@@ -77,8 +77,8 @@ export default function DeckBuilder() {
     if (masteryFilter === 'mastered') cards = cards.filter(c => masteredCardIds.has(c.id));
     else if (masteryFilter === 'unmastered') cards = cards.filter(c => !masteredCardIds.has(c.id));
 
-    // Tag filter
-    if (tagFilter !== 'all') cards = cards.filter(c => (c.tags || []).includes(tagFilter));
+    // Tag filter (multi)
+    if (tagFilters.length > 0) cards = cards.filter(c => tagFilters.every(t => (c.tags || []).includes(t)));
 
     // Search
     if (search.trim()) {
@@ -94,7 +94,7 @@ export default function DeckBuilder() {
     else if (sortBy === 'updated_date') cards.sort((a, b) => new Date(b.updated_date) - new Date(a.updated_date));
 
     return cards;
-  }, [activeCards, search, sortBy, masteryFilter, tagFilter, masteredCardIds]);
+  }, [activeCards, search, sortBy, masteryFilter, tagFilters, masteredCardIds]);
 
   const openAdd = () => { setEditingCard(null); setEditorDirty(false); setShowEditor(true); };
   const openEdit = (card) => { setEditingCard(card); setEditorDirty(false); setShowEditor(true); };
@@ -265,8 +265,8 @@ export default function DeckBuilder() {
           masteryFilter={masteryFilter}
           onMasteryFilter={setMasteryFilter}
           allTags={allTags}
-          tagFilter={tagFilter}
-          onTagFilter={setTagFilter}
+          tagFilters={tagFilters}
+          onTagFilters={setTagFilters}
         />
       )}
 
@@ -290,7 +290,7 @@ export default function DeckBuilder() {
       ) : displayedCards.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 gap-2 text-center text-muted-foreground">
           <p className="text-sm font-medium">No cards match your filters</p>
-          <button onClick={() => { setSearch(''); setSortBy('order'); setMasteryFilter('all'); setTagFilter('all'); }} className="text-xs text-primary hover:underline">
+          <button onClick={() => { setSearch(''); setSortBy('order'); setMasteryFilter('all'); setTagFilters([]); }} className="text-xs text-primary hover:underline">
             Clear filters
           </button>
         </div>
