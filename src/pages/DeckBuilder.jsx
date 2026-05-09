@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import CardEditor from '@/components/cards/CardEditor';
 import CsvUploadModal from '@/components/cards/CsvUploadModal';
+import CardFilterBar from '@/components/cards/CardFilterBar';
+import BinPanel from '@/components/cards/BinPanel';
 import { toast } from 'sonner';
 
 export default function DeckBuilder() {
@@ -34,13 +36,53 @@ export default function DeckBuilder() {
     enabled: !!deckId,
   });
 
+  const { data: currentUser } = useQuery({
+    queryKey: ['me'],
+    queryFn: () => base44.auth.me(),
+  });
+
+  const { data: cardStats = [] } = useQuery({
+    queryKey: ['card-stats', deckId, currentUser?.id],
+    queryFn: () => base44.entities.UserCardStats.filter({ deck_id: deckId, user_id: currentUser.id }),
+    enabled: !!deckId && !!currentUser?.id,
+  });
+
+  const masteredCardIds = useMemo(() => new Set(cardStats.filter(s => s.mastered).map(s => s.card_id)), [cardStats]);
+
+  // UI state
   const [showEditor, setShowEditor] = useState(false);
   const [editingCard, setEditingCard] = useState(null);
   const [showCsvUpload, setShowCsvUpload] = useState(false);
   const [editorDirty, setEditorDirty] = useState(false);
   const [showDiscardDialog, setShowDiscardDialog] = useState(false);
-  const [showTrash, setShowTrash] = useState(false);
+  const [showBin, setShowBin] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+
+  // Filter / sort state
+  const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState('order');
+  const [masteryFilter, setMasteryFilter] = useState('all');
+
+  const displayedCards = useMemo(() => {
+    let cards = [...activeCards];
+
+    // Mastery filter
+    if (masteryFilter === 'mastered') cards = cards.filter(c => masteredCardIds.has(c.id));
+    else if (masteryFilter === 'unmastered') cards = cards.filter(c => !masteredCardIds.has(c.id));
+
+    // Search
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      cards = cards.filter(c => c.correct_answer?.toLowerCase().includes(q));
+    }
+
+    // Sort
+    if (sortBy === 'created_date') cards.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+    else if (sortBy === 'updated_date') cards.sort((a, b) => new Date(b.updated_date) - new Date(a.updated_date));
+    // 'order' is the default from the query
+
+    return cards;
+  }, [activeCards, search, sortBy, masteryFilter, masteredCardIds]);
 
   const openAdd = () => { setEditingCard(null); setEditorDirty(false); setShowEditor(true); };
   const openEdit = (card) => { setEditingCard(card); setEditorDirty(false); setShowEditor(true); };
@@ -82,7 +124,7 @@ export default function DeckBuilder() {
     mutationFn: (card) => base44.entities.Card.update(card.id, { deleted: true }),
     onSuccess: (_, card) => {
       invalidateCards();
-      toast.success('Card moved to trash', {
+      toast.success('Card moved to bin', {
         action: { label: 'Undo', onClick: () => restoreMutation.mutate(card) },
       });
     },
@@ -114,6 +156,8 @@ export default function DeckBuilder() {
     {/* Main content */}
     <div className={`flex-1 px-4 py-8 transition-all duration-300 ${showEditor ? 'lg:mr-[420px]' : ''}`}>
     <div className="max-w-5xl mx-auto">
+
+      {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="w-5 h-5" />
@@ -136,7 +180,7 @@ export default function DeckBuilder() {
           <Button variant="outline" size="sm" onClick={() => setShowSettings(v => !v)} className={`gap-1.5 ${showSettings ? 'bg-accent' : ''}`}>
             <Settings2 className="w-4 h-4" /> Settings
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setShowTrash(v => !v)} className="gap-1.5">
+          <Button variant="outline" size="sm" onClick={() => setShowBin(true)} className="gap-1.5">
             <Trash2 className="w-4 h-4" /> Bin {deletedCards.length > 0 && `(${deletedCards.length})`}
           </Button>
           <Button variant="outline" size="sm" onClick={() => setShowCsvUpload(true)} className="gap-1.5"><Upload className="w-4 h-4" /> Import CSV</Button>
@@ -199,6 +243,19 @@ export default function DeckBuilder() {
         </div>
       )}
 
+      {/* Filter bar */}
+      {activeCards.length > 0 && (
+        <CardFilterBar
+          search={search}
+          onSearch={setSearch}
+          sortBy={sortBy}
+          onSort={setSortBy}
+          masteryFilter={masteryFilter}
+          onMasteryFilter={setMasteryFilter}
+        />
+      )}
+
+      {/* Cards grid */}
       {isLoading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           {[1,2,3,4].map(i => <div key={i} className="h-40 rounded-xl bg-muted animate-pulse" />)}
@@ -215,9 +272,16 @@ export default function DeckBuilder() {
             <Button variant="outline" onClick={() => setShowCsvUpload(true)} className="gap-1.5"><Upload className="w-4 h-4" /> Import CSV</Button>
           </div>
         </div>
+      ) : displayedCards.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 gap-2 text-center text-muted-foreground">
+          <p className="text-sm font-medium">No cards match your filters</p>
+          <button onClick={() => { setSearch(''); setSortBy('order'); setMasteryFilter('all'); }} className="text-xs text-primary hover:underline">
+            Clear filters
+          </button>
+        </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          {activeCards.map((card, idx) => (
+          {displayedCards.map((card, idx) => (
             <div key={card.id} className="group relative bg-card border border-border rounded-xl overflow-hidden hover:shadow-md transition-all">
               <div className="bg-muted h-28 flex items-center justify-center">
                 {card.image_url
@@ -228,6 +292,9 @@ export default function DeckBuilder() {
                 <p className="text-sm font-medium text-foreground truncate">{card.correct_answer}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{card.choices.length} choices</p>
               </div>
+              {masteredCardIds.has(card.id) && (
+                <span className="absolute bottom-9 right-2 text-xs bg-success/15 text-success px-1.5 py-0.5 rounded font-medium">Mastered</span>
+              )}
               <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button onClick={() => openEdit(card)} className="bg-white/90 hover:bg-white rounded-lg p-1.5 shadow-sm">
                   <Pencil className="w-3.5 h-3.5 text-foreground" />
@@ -239,60 +306,6 @@ export default function DeckBuilder() {
               <span className="absolute top-2 left-2 bg-black/50 text-white text-xs rounded px-1.5 py-0.5">{idx + 1}</span>
             </div>
           ))}
-        </div>
-      )}
-
-      {/* Bin Panel */}
-      {showTrash && (
-        <div className="mt-8 border border-border rounded-xl overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 bg-muted/40 border-b border-border">
-            <span className="text-sm font-medium flex items-center gap-1.5">
-              <Trash2 className="w-4 h-4 text-muted-foreground" /> Bin {deletedCards.length > 0 && `(${deletedCards.length})`}
-            </span>
-            <button onClick={() => setShowTrash(false)} className="text-muted-foreground hover:text-foreground">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-          {deletedCards.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 gap-2 text-center text-muted-foreground">
-              <Trash2 className="w-8 h-8 opacity-30" />
-              <p className="text-sm font-medium">The bin is empty</p>
-              <p className="text-xs">Deleted cards will appear here</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 p-4">
-              {deletedCards.map((card) => (
-                <div key={card.id} className="relative bg-card border border-border rounded-xl overflow-hidden opacity-70 hover:opacity-100 transition-opacity">
-                  <div className="bg-muted h-28 flex items-center justify-center">
-                    {card.image_url
-                      ? <img src={card.image_url} alt="" className="w-full h-full object-cover" />
-                      : <ImageIcon className="w-6 h-6 text-muted-foreground" />}
-                  </div>
-                  <div className="p-3">
-                    <p className="text-sm font-medium text-foreground truncate">{card.correct_answer}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{card.choices.length} choices</p>
-                  </div>
-                  <div className="flex gap-1 px-3 pb-3">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1 h-7 text-xs gap-1 text-success border-success/40 hover:bg-success/10"
-                      onClick={() => restoreMutation.mutate(card)}
-                    >
-                      <RotateCcw className="w-3 h-3" /> Restore
-                    </Button>
-                    <button
-                      onClick={() => permanentDeleteMutation.mutate(card)}
-                      className="bg-transparent hover:bg-destructive/10 rounded-lg p-1.5 text-muted-foreground hover:text-destructive transition-colors"
-                      title="Delete permanently"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       )}
 
@@ -338,6 +351,7 @@ export default function DeckBuilder() {
         </div>
       </>
     )}
+
     <AlertDialog open={showDiscardDialog} onOpenChange={setShowDiscardDialog}>
       <AlertDialogContent>
         <AlertDialogHeader>
@@ -354,6 +368,14 @@ export default function DeckBuilder() {
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+
+    <BinPanel
+      open={showBin}
+      onClose={() => setShowBin(false)}
+      deletedCards={deletedCards}
+      onRestore={(card) => restoreMutation.mutate(card)}
+      onPermanentDelete={(card) => permanentDeleteMutation.mutate(card)}
+    />
 
     <CsvUploadModal
       open={showCsvUpload}
