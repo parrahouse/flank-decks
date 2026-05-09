@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import BonusQuestion from './BonusQuestion';
+import { useSound } from '@/hooks/useSound';
 
 function shuffle(arr) {
   const a = [...arr];
@@ -23,7 +24,8 @@ const SCORE = {
   wrong: 0,
 };
 
-export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast, onScore }) {
+export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast, onScore, soundEnabled = true }) {
+  const { playCorrect, playWrong } = useSound(soundEnabled);
   const [shuffledChoices, setShuffledChoices] = useState([]);
   const [firstWrong, setFirstWrong] = useState(null);
   const [finalAnswer, setFinalAnswer] = useState(null);
@@ -81,8 +83,10 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
         ? (penaliseClue ? 'second_guess_after_clue' : 'second_guess')
         : (penaliseClue ? 'correct_after_clue' : 'correct');
       setFinalAnswer(choice);
+      playCorrect();
       onScore && onScore(SCORE[scoreKey], scoreKey);
     } else {
+      playWrong();
       setShake(true);
       setTimeout(() => setShake(false), 400);
       if (!firstWrong && !eliminateUsed) {

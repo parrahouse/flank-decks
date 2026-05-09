@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, ArrowLeft, Pencil, Trash2, BookOpen, Image as ImageIcon, Settings2, X, Upload, RotateCcw, BarChart2, Archive } from 'lucide-react';
+import { Plus, ArrowLeft, Pencil, Trash2, BookOpen, Image as ImageIcon, Settings2, X, Upload, RotateCcw, BarChart2, Archive, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -45,6 +45,9 @@ export default function DeckBuilder() {
   });
 
   const masteredCardIds = useMemo(() => new Set(cardStats.filter(s => s.mastered).map(s => s.card_id)), [cardStats]);
+
+  // Sound preference
+  const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem('flashdeck_sound') !== '0');
 
   // UI state
   const [showEditor, setShowEditor] = useState(false);
@@ -245,6 +248,20 @@ export default function DeckBuilder() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <Label className="text-xs text-muted-foreground whitespace-nowrap">Answer sounds</Label>
+            <button
+              onClick={() => {
+                const next = !soundEnabled;
+                setSoundEnabled(next);
+                localStorage.setItem('flashdeck_sound', next ? '1' : '0');
+              }}
+              className={`flex items-center gap-1 text-xs px-2 py-1 rounded-md border transition-colors ${soundEnabled ? 'border-primary text-primary bg-accent' : 'border-border text-muted-foreground'}`}
+            >
+              {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+              {soundEnabled ? 'On' : 'Off'}
+            </button>
           </div>
         </div>
       )}

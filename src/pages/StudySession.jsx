@@ -315,6 +315,7 @@ export default function StudySession() {
             isFirst={cardIndex === 0}
             isLast={cardIndex === shuffledCards.length - 1}
             onScore={handleScore}
+            soundEnabled={localStorage.getItem('flashdeck_sound') !== '0'}
           />
           {/* Nav arrows */}
           <div className="flex justify-center gap-3 mt-5">
