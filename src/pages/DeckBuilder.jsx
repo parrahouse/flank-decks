@@ -22,14 +22,17 @@ export default function DeckBuilder() {
     enabled: !!deckId,
   });
 
-  const { data: allCards = [], isLoading } = useQuery({
+  const { data: activeCards = [], isLoading } = useQuery({
     queryKey: ['cards', deckId],
-    queryFn: () => base44.entities.Card.filter({ deck_id: deckId }, 'order'),
+    queryFn: () => base44.entities.Card.filter({ deck_id: deckId, deleted: false }, 'order'),
     enabled: !!deckId,
   });
 
-  const activeCards = allCards.filter(c => !c.deleted);
-  const deletedCards = allCards.filter(c => c.deleted);
+  const { data: deletedCards = [] } = useQuery({
+    queryKey: ['cards-deleted', deckId],
+    queryFn: () => base44.entities.Card.filter({ deck_id: deckId, deleted: true }, 'order'),
+    enabled: !!deckId,
+  });
 
   const [showEditor, setShowEditor] = useState(false);
   const [editingCard, setEditingCard] = useState(null);
@@ -68,11 +71,16 @@ export default function DeckBuilder() {
     },
   });
 
+  const invalidateCards = () => {
+    qc.invalidateQueries(['cards', deckId]);
+    qc.invalidateQueries(['cards-deleted', deckId]);
+    qc.invalidateQueries(['cards-all']);
+  };
+
   const deleteMutation = useMutation({
     mutationFn: (card) => base44.entities.Card.update(card.id, { deleted: true }),
     onSuccess: (_, card) => {
-      qc.invalidateQueries(['cards', deckId]);
-      qc.invalidateQueries(['cards-all']);
+      invalidateCards();
       toast.success('Card moved to trash', {
         action: { label: 'Undo', onClick: () => restoreMutation.mutate(card) },
       });
@@ -82,8 +90,7 @@ export default function DeckBuilder() {
   const restoreMutation = useMutation({
     mutationFn: (card) => base44.entities.Card.update(card.id, { deleted: false }),
     onSuccess: () => {
-      qc.invalidateQueries(['cards', deckId]);
-      qc.invalidateQueries(['cards-all']);
+      invalidateCards();
       toast.success('Card restored');
     },
   });
@@ -91,8 +98,7 @@ export default function DeckBuilder() {
   const permanentDeleteMutation = useMutation({
     mutationFn: (card) => base44.entities.Card.delete(card.id),
     onSuccess: () => {
-      qc.invalidateQueries(['cards', deckId]);
-      qc.invalidateQueries(['cards-all']);
+      invalidateCards();
       toast.success('Card permanently deleted');
     },
   });
