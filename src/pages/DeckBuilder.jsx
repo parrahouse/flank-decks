@@ -78,7 +78,7 @@ export default function DeckBuilder() {
     else if (masteryFilter === 'unmastered') cards = cards.filter(c => !masteredCardIds.has(c.id));
 
     // Tag filter (multi)
-    if (tagFilters.length > 0) cards = cards.filter(c => tagFilters.every(t => (c.tags || []).includes(t)));
+    if (tagFilters.length > 0) cards = cards.filter(c => tagFilters.some(t => (c.tags || []).includes(t)));
 
     // Search
     if (search.trim()) {
