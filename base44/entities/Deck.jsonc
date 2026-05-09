@@ -37,10 +37,15 @@
       "type": "string",
       "description": "URL of the deck cover image (custom upload or picked from a card)"
     },
-    "mastery_threshold": {
+    "mastery_min_sessions": {
       "type": "number",
-      "default": 10,
-      "description": "Number of correct attempts for a card to be considered mastered in this deck"
+      "default": 3,
+      "description": "Minimum number of deck completions before mastery is evaluated"
+    },
+    "mastery_pct": {
+      "type": "number",
+      "default": 90,
+      "description": "Percentage of correct responses required to consider a card mastered (0-100)"
     }
   },
   "required": [

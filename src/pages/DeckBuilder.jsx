@@ -234,17 +234,33 @@ export default function DeckBuilder() {
             </Select>
           </div>
           <div className="flex items-center gap-2">
-            <Label className="text-xs text-muted-foreground whitespace-nowrap">Mastery threshold</Label>
+            <Label className="text-xs text-muted-foreground whitespace-nowrap">Min sessions for mastery</Label>
             <Select
-              value={String(deck.mastery_threshold ?? 10)}
-              onValueChange={(val) => updateDeckMutation.mutate({ mastery_threshold: Number(val) })}
+              value={String(deck.mastery_min_sessions ?? 3)}
+              onValueChange={(val) => updateDeckMutation.mutate({ mastery_min_sessions: Number(val) })}
             >
               <SelectTrigger className="h-7 text-xs w-24">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {[1, 2, 3, 5, 7, 10, 15, 20].map(n => (
-                  <SelectItem key={n} value={String(n)}>{n} correct</SelectItem>
+                {[1, 2, 3, 5, 7, 10].map(n => (
+                  <SelectItem key={n} value={String(n)}>{n} session{n !== 1 ? 's' : ''}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <Label className="text-xs text-muted-foreground whitespace-nowrap">Mastery % required</Label>
+            <Select
+              value={String(deck.mastery_pct ?? 90)}
+              onValueChange={(val) => updateDeckMutation.mutate({ mastery_pct: Number(val) })}
+            >
+              <SelectTrigger className="h-7 text-xs w-24">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[70, 75, 80, 85, 90, 95, 100].map(n => (
+                  <SelectItem key={n} value={String(n)}>{n}%</SelectItem>
                 ))}
               </SelectContent>
             </Select>

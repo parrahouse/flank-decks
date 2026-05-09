@@ -84,7 +84,8 @@ export default function StudySession() {
     if (!done || sessionSaved.current || !shuffledCards.length || !currentUser?.id) return;
     sessionSaved.current = true;
 
-    const threshold = deck?.mastery_threshold ?? 10;
+    const minSessions = deck?.mastery_min_sessions ?? 3;
+    const masteryPct = deck?.mastery_pct ?? 90;
 
     const saveStats = async () => {
       const cardResults = shuffledCards.map((card, i) => ({
@@ -107,17 +108,23 @@ export default function StudySession() {
         card_results: cardResults,
       });
 
-      // Update UserCardStats for each card answered correctly
+      // Update UserCardStats for every card in this session
       for (const result of cardResults) {
-        if (!CORRECT_KEYS.has(result.key)) continue;
-
+        const wasCorrect = CORRECT_KEYS.has(result.key);
         const existing = cardStats.find(s => s.card_id === result.card_id);
-        const newCount = (existing?.correct_attempts ?? 0) + 1;
-        const nowMastered = newCount >= threshold;
+
+        const newCorrect = (existing?.correct_attempts ?? 0) + (wasCorrect ? 1 : 0);
+        const newTotal = (existing?.total_attempts ?? 0) + 1;
+        const newSessions = (existing?.sessions_completed ?? 0) + 1;
+
+        // Mastery only evaluated once min sessions reached; requires >= masteryPct% correct
+        const nowMastered = newSessions >= minSessions && (newCorrect / newSessions) * 100 >= masteryPct;
 
         if (existing) {
           await base44.entities.UserCardStats.update(existing.id, {
-            correct_attempts: newCount,
+            correct_attempts: newCorrect,
+            total_attempts: newTotal,
+            sessions_completed: newSessions,
             mastered: nowMastered,
             last_studied_date: new Date().toISOString(),
           });
@@ -126,7 +133,9 @@ export default function StudySession() {
             user_id: currentUser.id,
             deck_id: deckId,
             card_id: result.card_id,
-            correct_attempts: newCount,
+            correct_attempts: newCorrect,
+            total_attempts: newTotal,
+            sessions_completed: newSessions,
             mastered: nowMastered,
             last_studied_date: new Date().toISOString(),
           });
@@ -228,8 +237,8 @@ export default function StudySession() {
               </div>
               <div className="text-sm text-muted-foreground mt-0.5">
                 {allMastered
-                  ? '🎉 All cards mastered!'
-                  : `${unmasteredCards.length} card${unmasteredCards.length !== 1 ? 's' : ''} not yet mastered (threshold: ${deck?.mastery_threshold ?? 10} correct)`}
+                 ? '🎉 All cards mastered!'
+                 : `${unmasteredCards.length} card${unmasteredCards.length !== 1 ? 's' : ''} not yet mastered (requires ${deck?.mastery_min_sessions ?? 3}+ sessions at ≥${deck?.mastery_pct ?? 90}%)`}
               </div>
             </button>
           </div>

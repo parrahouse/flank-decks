@@ -51,6 +51,17 @@ export default function DeckStats() {
     enabled: !!deckId,
   });
 
+  const { data: currentUser } = useQuery({
+    queryKey: ['me'],
+    queryFn: () => base44.auth.me(),
+  });
+
+  const { data: cardStats = [] } = useQuery({
+    queryKey: ['card-stats', deckId, currentUser?.id],
+    queryFn: () => base44.entities.UserCardStats.filter({ deck_id: deckId, user_id: currentUser.id }),
+    enabled: !!deckId && !!currentUser?.id,
+  });
+
   const stats = useMemo(() => {
     if (!sessions.length) return null;
 
@@ -152,6 +163,30 @@ export default function DeckStats() {
               </div>
             ))}
           </div>
+
+          {/* Mastery overview */}
+          {cardStats.length > 0 && (() => {
+            const minSessions = deck?.mastery_min_sessions ?? 3;
+            const masteryPct = deck?.mastery_pct ?? 90;
+            const masteredCount = cardStats.filter(s => s.mastered).length;
+            const totalCards = cards.length;
+            const eligible = cardStats.filter(s => (s.sessions_completed ?? 0) >= minSessions);
+            return (
+              <div className="bg-card border border-border rounded-xl p-5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium flex items-center gap-1.5"><Trophy className="w-4 h-4 text-amber-500" /> Mastery</span>
+                  <span className="text-xs text-muted-foreground">Requires {minSessions} session{minSessions !== 1 ? 's' : ''} · ≥{masteryPct}% correct</span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                  <div className="bg-success h-2 rounded-full transition-all duration-700" style={{ width: `${totalCards > 0 ? (masteredCount / totalCards) * 100 : 0}%` }} />
+                </div>
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>{masteredCount} of {totalCards} cards mastered</span>
+                  <span>{eligible.length} card{eligible.length !== 1 ? 's' : ''} eligible for mastery</span>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Weakest & Strongest cards */}
           {stats.weakest.length > 0 && (

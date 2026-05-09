@@ -17,7 +17,17 @@
     "correct_attempts": {
       "type": "number",
       "default": 0,
-      "description": "Number of times the user has correctly answered this card"
+      "description": "Total number of times the user has correctly answered this card across all sessions"
+    },
+    "total_attempts": {
+      "type": "number",
+      "default": 0,
+      "description": "Total number of times the user has been shown this card across all sessions"
+    },
+    "sessions_completed": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of deck sessions in which this card appeared"
     },
     "mastered": {
       "type": "boolean",
