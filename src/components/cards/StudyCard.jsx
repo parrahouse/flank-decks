@@ -74,10 +74,9 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
         setFirstWrong(choice);
         setWrongModal(choice);
       } else {
-        // Second wrong OR eliminate was used — lock as wrong, show modal
+        // Second wrong OR eliminate was used — lock as wrong, no modal
         setFinalAnswer(choice);
         onScore && onScore(SCORE.wrong, 'wrong');
-        setWrongModal(choice);
       }
     }
   };
