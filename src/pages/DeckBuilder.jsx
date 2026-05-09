@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, ArrowLeft, Pencil, Trash2, BookOpen, Image as ImageIcon, Settings2, X, Upload } from 'lucide-react';
+import { Plus, ArrowLeft, Pencil, Trash2, BookOpen, Image as ImageIcon, Settings2, X, Upload, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -14,7 +14,6 @@ import { toast } from 'sonner';
 
 export default function DeckBuilder() {
   const { deckId } = useParams();
-  const navigate = useNavigate();
   const qc = useQueryClient();
 
   const { data: deck } = useQuery({
@@ -23,17 +22,21 @@ export default function DeckBuilder() {
     enabled: !!deckId,
   });
 
-  const { data: cards = [], isLoading } = useQuery({
+  const { data: allCards = [], isLoading } = useQuery({
     queryKey: ['cards', deckId],
     queryFn: () => base44.entities.Card.filter({ deck_id: deckId }, 'order'),
     enabled: !!deckId,
   });
+
+  const activeCards = allCards.filter(c => !c.deleted);
+  const deletedCards = allCards.filter(c => c.deleted);
 
   const [showEditor, setShowEditor] = useState(false);
   const [editingCard, setEditingCard] = useState(null);
   const [showCsvUpload, setShowCsvUpload] = useState(false);
   const [editorDirty, setEditorDirty] = useState(false);
   const [showDiscardDialog, setShowDiscardDialog] = useState(false);
+  const [showTrash, setShowTrash] = useState(false);
 
   const openAdd = () => { setEditingCard(null); setEditorDirty(false); setShowEditor(true); };
   const openEdit = (card) => { setEditingCard(card); setEditorDirty(false); setShowEditor(true); };
@@ -54,7 +57,7 @@ export default function DeckBuilder() {
       if (editingCard) {
         return base44.entities.Card.update(editingCard.id, data);
       } else {
-        return base44.entities.Card.create({ ...data, deck_id: deckId, order: cards.length });
+        return base44.entities.Card.create({ ...data, deck_id: deckId, order: activeCards.length });
       }
     },
     onSuccess: () => {
@@ -66,8 +69,32 @@ export default function DeckBuilder() {
   });
 
   const deleteMutation = useMutation({
+    mutationFn: (card) => base44.entities.Card.update(card.id, { deleted: true }),
+    onSuccess: (_, card) => {
+      qc.invalidateQueries(['cards', deckId]);
+      qc.invalidateQueries(['cards-all']);
+      toast.success('Card moved to trash', {
+        action: { label: 'Undo', onClick: () => restoreMutation.mutate(card) },
+      });
+    },
+  });
+
+  const restoreMutation = useMutation({
+    mutationFn: (card) => base44.entities.Card.update(card.id, { deleted: false }),
+    onSuccess: () => {
+      qc.invalidateQueries(['cards', deckId]);
+      qc.invalidateQueries(['cards-all']);
+      toast.success('Card restored');
+    },
+  });
+
+  const permanentDeleteMutation = useMutation({
     mutationFn: (card) => base44.entities.Card.delete(card.id),
-    onSuccess: () => { qc.invalidateQueries(['cards', deckId]); qc.invalidateQueries(['cards-all']); toast.success('Card deleted'); },
+    onSuccess: () => {
+      qc.invalidateQueries(['cards', deckId]);
+      qc.invalidateQueries(['cards-all']);
+      toast.success('Card permanently deleted');
+    },
   });
 
   const updateDeckMutation = useMutation({
@@ -86,13 +113,18 @@ export default function DeckBuilder() {
         </Link>
         <div className="flex-1">
           <h1 className="text-xl font-bold">{deck?.title || 'Loading…'}</h1>
-          <p className="text-muted-foreground text-sm">{cards.length} {cards.length === 1 ? 'card' : 'cards'}</p>
+          <p className="text-muted-foreground text-sm">{activeCards.length} {activeCards.length === 1 ? 'card' : 'cards'}</p>
         </div>
-        <div className="flex gap-2">
-          {cards.length > 0 && (
+        <div className="flex gap-2 flex-wrap justify-end">
+          {activeCards.length > 0 && (
             <Link to={`/study/${deckId}`}>
               <Button variant="outline" size="sm" className="gap-1.5"><BookOpen className="w-4 h-4" /> Study</Button>
             </Link>
+          )}
+          {deletedCards.length > 0 && (
+            <Button variant="outline" size="sm" onClick={() => setShowTrash(v => !v)} className="gap-1.5">
+              <Trash2 className="w-4 h-4" /> Trash ({deletedCards.length})
+            </Button>
           )}
           <Button variant="outline" size="sm" onClick={() => setShowCsvUpload(true)} className="gap-1.5"><Upload className="w-4 h-4" /> Import CSV</Button>
           <Button onClick={openAdd} size="sm" className="gap-1.5"><Plus className="w-4 h-4" /> Add Card</Button>
@@ -142,7 +174,7 @@ export default function DeckBuilder() {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           {[1,2,3,4].map(i => <div key={i} className="h-40 rounded-xl bg-muted animate-pulse" />)}
         </div>
-      ) : cards.length === 0 ? (
+      ) : activeCards.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
           <div className="w-14 h-14 rounded-2xl bg-accent flex items-center justify-center">
             <ImageIcon className="w-7 h-7 text-accent-foreground" />
@@ -156,7 +188,7 @@ export default function DeckBuilder() {
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          {cards.map((card, idx) => (
+          {activeCards.map((card, idx) => (
             <div key={card.id} className="group relative bg-card border border-border rounded-xl overflow-hidden hover:shadow-md transition-all">
               <div className="bg-muted h-28 flex items-center justify-center">
                 {card.image_url
@@ -178,6 +210,53 @@ export default function DeckBuilder() {
               <span className="absolute top-2 left-2 bg-black/50 text-white text-xs rounded px-1.5 py-0.5">{idx + 1}</span>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Trash Panel */}
+      {showTrash && deletedCards.length > 0 && (
+        <div className="mt-8 border border-border rounded-xl overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 bg-muted/40 border-b border-border">
+            <span className="text-sm font-medium flex items-center gap-1.5">
+              <Trash2 className="w-4 h-4 text-muted-foreground" /> Trash ({deletedCards.length})
+            </span>
+            <button onClick={() => setShowTrash(false)} className="text-muted-foreground hover:text-foreground">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 p-4">
+            {deletedCards.map((card) => (
+              <div key={card.id} className="relative bg-card border border-border rounded-xl overflow-hidden opacity-70 hover:opacity-100 transition-opacity">
+                <div className="bg-muted h-28 flex items-center justify-center">
+                  {card.image_url
+                    ? <img src={card.image_url} alt="" className="w-full h-full object-cover" />
+                    : <ImageIcon className="w-6 h-6 text-muted-foreground" />}
+                </div>
+                <div className="p-3">
+                  <p className="text-sm font-medium text-foreground truncate">{card.correct_answer}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{card.choices.length} choices</p>
+                </div>
+                {/* Restore & permanent delete buttons — always visible */}
+                <div className="flex gap-1 px-3 pb-3">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 h-7 text-xs gap-1 text-success border-success/40 hover:bg-success/10"
+                    onClick={() => restoreMutation.mutate(card)}
+                  >
+                    <RotateCcw className="w-3 h-3" /> Restore
+                  </Button>
+                  <button
+                    onClick={() => permanentDeleteMutation.mutate(card)}
+                    className="bg-transparent hover:bg-destructive/10 rounded-lg p-1.5 text-muted-foreground hover:text-destructive transition-colors"
+                    title="Delete permanently"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -244,7 +323,7 @@ export default function DeckBuilder() {
       open={showCsvUpload}
       onClose={() => setShowCsvUpload(false)}
       deckId={deckId}
-      existingCount={cards.length}
+      existingCount={activeCards.length}
       onImported={() => { qc.invalidateQueries(['cards', deckId]); qc.invalidateQueries(['cards-all']); }}
     />
     </div>
