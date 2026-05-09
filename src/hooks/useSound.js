@@ -21,9 +21,10 @@ function playTone(frequency, type, gainVal, duration) {
 export function useSound(enabled = true) {
   const playCorrect = useCallback(() => {
     if (!enabled) return;
-    // Pleasant two-note chime
-    playTone(880, 'sine', 0.15, 0.12);
-    setTimeout(() => playTone(1320, 'sine', 0.1, 0.18), 80);
+    // Cheerful three-note ascending chime
+    playTone(660, 'sine', 0.15, 0.1);
+    setTimeout(() => playTone(880, 'sine', 0.14, 0.1), 90);
+    setTimeout(() => playTone(1320, 'sine', 0.12, 0.22), 180);
   }, [enabled]);
 
   const playWrong = useCallback(() => {
