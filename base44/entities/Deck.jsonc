@@ -28,6 +28,11 @@
       "default": "allowed",
       "description": "Whether test takers can use the eliminate-one clue"
     },
+    "clue_default_revealed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the short clue is shown by default before answering"
+    },
     "cover_image_url": {
       "type": "string",
       "description": "URL of the deck cover image (custom upload or picked from a card)"

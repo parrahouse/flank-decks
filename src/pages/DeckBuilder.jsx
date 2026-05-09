@@ -120,6 +120,21 @@ export default function DeckBuilder() {
               </SelectContent>
             </Select>
           </div>
+          <div className="flex items-center gap-2">
+            <Label className="text-xs text-muted-foreground whitespace-nowrap">Show clue by default</Label>
+            <Select
+              value={deck.clue_default_revealed ? 'yes' : 'no'}
+              onValueChange={(val) => updateDeckMutation.mutate({ clue_default_revealed: val === 'yes' })}
+            >
+              <SelectTrigger className="h-7 text-xs w-24">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="no">Hidden</SelectItem>
+                <SelectItem value="yes">Shown</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       )}
 

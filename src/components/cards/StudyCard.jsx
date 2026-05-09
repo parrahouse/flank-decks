@@ -28,7 +28,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
   const [firstWrong, setFirstWrong] = useState(null);
   const [finalAnswer, setFinalAnswer] = useState(null);
   const [eliminated, setEliminated] = useState([]);
-  const [clueRevealed, setClueRevealed] = useState(false);
+  const [clueRevealed, setClueRevealed] = useState(!!deck?.clue_default_revealed);
   const [flipped, setFlipped] = useState(false);
   const [shake, setShake] = useState(false);
   const [showBonus, setShowBonus] = useState(false);
@@ -43,7 +43,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
     setFirstWrong(null);
     setFinalAnswer(null);
     setEliminated([]);
-    setClueRevealed(false);
+    setClueRevealed(!!deck?.clue_default_revealed);
     setFlipped(false);
     setShake(false);
     setShowBonus(false);
