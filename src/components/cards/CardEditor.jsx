@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
-import { Plus, X, Wand2, Image as ImageIcon, Loader2, ChevronDown, ChevronUp, Star, Pencil } from 'lucide-react';
+import { Plus, X, Wand2, Image as ImageIcon, Loader2, ChevronDown, ChevronUp, Star, Pencil, Search } from 'lucide-react';
 import ImageEditor from './ImageEditor';
+import ImageSearchPanel from './ImageSearchPanel';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -22,6 +23,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange }) {
   const [uploading, setUploading] = useState(false);
   const [generatingDecoys, setGeneratingDecoys] = useState(false);
   const [showImageEditor, setShowImageEditor] = useState(false);
+  const [showImageSearch, setShowImageSearch] = useState(false);
 
   const fileRef = useRef();
 
@@ -221,7 +223,23 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange }) {
           )}
         </div>
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-        <p className="text-xs text-muted-foreground">Accepted: JPG, PNG, GIF, WebP · Min 10 KB · Max 10 MB</p>
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">Accepted: JPG, PNG, GIF, WebP · Min 10 KB · Max 10 MB</p>
+          <button
+            type="button"
+            onClick={() => setShowImageSearch(v => !v)}
+            className="flex items-center gap-1 text-xs text-primary hover:underline"
+          >
+            <Search className="w-3 h-3" /> Search Wikimedia
+          </button>
+        </div>
+        {showImageSearch && (
+          <ImageSearchPanel
+            defaultQuery={correctAnswer || ''}
+            onSelect={(url) => { setImageUrl(url); setShowImageSearch(false); }}
+            onClose={() => setShowImageSearch(false)}
+          />
+        )}
       </div>
 
       {/* Correct Answer */}
