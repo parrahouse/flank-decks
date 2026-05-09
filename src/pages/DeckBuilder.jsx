@@ -40,6 +40,7 @@ export default function DeckBuilder() {
   const [editorDirty, setEditorDirty] = useState(false);
   const [showDiscardDialog, setShowDiscardDialog] = useState(false);
   const [showTrash, setShowTrash] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const openAdd = () => { setEditingCard(null); setEditorDirty(false); setShowEditor(true); };
   const openEdit = (card) => { setEditingCard(card); setEditorDirty(false); setShowEditor(true); };
@@ -132,6 +133,9 @@ export default function DeckBuilder() {
               </Link>
             </>
           )}
+          <Button variant="outline" size="sm" onClick={() => setShowSettings(v => !v)} className={`gap-1.5 ${showSettings ? 'bg-accent' : ''}`}>
+            <Settings2 className="w-4 h-4" /> Settings
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setShowTrash(v => !v)} className="gap-1.5">
             <Trash2 className="w-4 h-4" /> Bin {deletedCards.length > 0 && `(${deletedCards.length})`}
           </Button>
@@ -141,7 +145,7 @@ export default function DeckBuilder() {
       </div>
 
       {/* Deck settings */}
-      {deck && (
+      {deck && showSettings && (
         <div className="mb-6 bg-card border border-border rounded-xl px-4 py-3 flex flex-wrap items-center gap-x-6 gap-y-3">
           <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
             <Settings2 className="w-3.5 h-3.5" /> Deck Settings
