@@ -184,7 +184,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
                       disabled={state === 'eliminated' || answered}
                       onClick={() => handleSelect(choice)}
                       className={cn(
-                        'relative rounded-xl border-2 px-3 py-2.5 text-sm font-medium text-center transition-all duration-150',
+                        'relative rounded-xl border-2 px-3 py-2.5 text-sm font-medium text-center transition-all duration-150 min-h-[2.75rem]',
                         state === 'eliminated' && 'opacity-25 line-through cursor-not-allowed border-border text-muted-foreground',
                         state === 'idle' && 'border-border hover:border-primary hover:bg-accent cursor-pointer',
                         state === 'idle-retry' && 'border-border hover:border-primary hover:bg-accent cursor-pointer',
@@ -195,9 +195,13 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
                         state === 'dim' && 'border-border text-muted-foreground opacity-50',
                       )}
                     >
-                      {state === 'correct' && <Check className="inline w-3.5 h-3.5 mr-1" />}
-                      {(state === 'wrong-final') && <X className="inline w-3.5 h-3.5 mr-1" />}
-                      {choice}
+                      <span className="inline-flex items-center justify-center gap-1">
+                        <span className="w-3.5 h-3.5 shrink-0 inline-flex items-center justify-center">
+                          {state === 'correct' && <Check className="w-3.5 h-3.5" />}
+                          {state === 'wrong-final' && <X className="w-3.5 h-3.5" />}
+                        </span>
+                        {choice}
+                      </span>
                     </button>
                   );
                 })}
