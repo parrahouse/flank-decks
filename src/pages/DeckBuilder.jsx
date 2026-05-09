@@ -170,6 +170,22 @@ export default function DeckBuilder() {
               </SelectContent>
             </Select>
           </div>
+          <div className="flex items-center gap-2">
+            <Label className="text-xs text-muted-foreground whitespace-nowrap">Mastery threshold</Label>
+            <Select
+              value={String(deck.mastery_threshold ?? 10)}
+              onValueChange={(val) => updateDeckMutation.mutate({ mastery_threshold: Number(val) })}
+            >
+              <SelectTrigger className="h-7 text-xs w-24">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[1, 2, 3, 5, 7, 10, 15, 20].map(n => (
+                  <SelectItem key={n} value={String(n)}>{n} correct</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       )}
 

@@ -36,6 +36,11 @@
     "cover_image_url": {
       "type": "string",
       "description": "URL of the deck cover image (custom upload or picked from a card)"
+    },
+    "mastery_threshold": {
+      "type": "number",
+      "default": 10,
+      "description": "Number of correct attempts for a card to be considered mastered in this deck"
     }
   },
   "required": [

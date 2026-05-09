@@ -1,0 +1,38 @@
+{
+  "name": "UserCardStats",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID of the user this stat belongs to"
+    },
+    "deck_id": {
+      "type": "string",
+      "description": "ID of the deck the card belongs to"
+    },
+    "card_id": {
+      "type": "string",
+      "description": "ID of the card this stat is for"
+    },
+    "correct_attempts": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of times the user has correctly answered this card"
+    },
+    "mastered": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the card is considered mastered by the user in this deck"
+    },
+    "last_studied_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of the last study attempt for this card by the user"
+    }
+  },
+  "required": [
+    "user_id",
+    "deck_id",
+    "card_id"
+  ]
+}
