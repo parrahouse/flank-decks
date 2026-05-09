@@ -62,6 +62,13 @@ export default function DeckBuilder() {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('order');
   const [masteryFilter, setMasteryFilter] = useState('all');
+  const [tagFilter, setTagFilter] = useState('all');
+
+  const allTags = useMemo(() => {
+    const set = new Set();
+    activeCards.forEach(c => (c.tags || []).forEach(t => set.add(t)));
+    return Array.from(set).sort();
+  }, [activeCards]);
 
   const displayedCards = useMemo(() => {
     let cards = [...activeCards];
@@ -70,19 +77,24 @@ export default function DeckBuilder() {
     if (masteryFilter === 'mastered') cards = cards.filter(c => masteredCardIds.has(c.id));
     else if (masteryFilter === 'unmastered') cards = cards.filter(c => !masteredCardIds.has(c.id));
 
+    // Tag filter
+    if (tagFilter !== 'all') cards = cards.filter(c => (c.tags || []).includes(tagFilter));
+
     // Search
     if (search.trim()) {
       const q = search.toLowerCase();
-      cards = cards.filter(c => c.correct_answer?.toLowerCase().includes(q));
+      cards = cards.filter(c =>
+        c.correct_answer?.toLowerCase().includes(q) ||
+        (c.tags || []).some(t => t.toLowerCase().includes(q))
+      );
     }
 
     // Sort
     if (sortBy === 'created_date') cards.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     else if (sortBy === 'updated_date') cards.sort((a, b) => new Date(b.updated_date) - new Date(a.updated_date));
-    // 'order' is the default from the query
 
     return cards;
-  }, [activeCards, search, sortBy, masteryFilter, masteredCardIds]);
+  }, [activeCards, search, sortBy, masteryFilter, tagFilter, masteredCardIds]);
 
   const openAdd = () => { setEditingCard(null); setEditorDirty(false); setShowEditor(true); };
   const openEdit = (card) => { setEditingCard(card); setEditorDirty(false); setShowEditor(true); };
@@ -252,6 +264,9 @@ export default function DeckBuilder() {
           onSort={setSortBy}
           masteryFilter={masteryFilter}
           onMasteryFilter={setMasteryFilter}
+          allTags={allTags}
+          tagFilter={tagFilter}
+          onTagFilter={setTagFilter}
         />
       )}
 
@@ -275,7 +290,7 @@ export default function DeckBuilder() {
       ) : displayedCards.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 gap-2 text-center text-muted-foreground">
           <p className="text-sm font-medium">No cards match your filters</p>
-          <button onClick={() => { setSearch(''); setSortBy('order'); setMasteryFilter('all'); }} className="text-xs text-primary hover:underline">
+          <button onClick={() => { setSearch(''); setSortBy('order'); setMasteryFilter('all'); setTagFilter('all'); }} className="text-xs text-primary hover:underline">
             Clear filters
           </button>
         </div>
@@ -291,9 +306,16 @@ export default function DeckBuilder() {
               <div className="p-3">
                 <p className="text-sm font-medium text-foreground truncate">{card.correct_answer}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{card.choices.length} choices</p>
+                {card.tags?.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {card.tags.map(tag => (
+                      <span key={tag} className="text-xs bg-accent text-accent-foreground px-1.5 py-0.5 rounded-full">{tag}</span>
+                    ))}
+                  </div>
+                )}
               </div>
               {masteredCardIds.has(card.id) && (
-                <span className="absolute bottom-9 right-2 text-xs bg-success/15 text-success px-1.5 py-0.5 rounded font-medium">Mastered</span>
+                <span className="absolute top-2 right-2 text-xs bg-success/15 text-success px-1.5 py-0.5 rounded font-medium opacity-0 group-hover:opacity-0">Mastered</span>
               )}
               <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button onClick={() => openEdit(card)} className="bg-white/90 hover:bg-white rounded-lg p-1.5 shadow-sm">

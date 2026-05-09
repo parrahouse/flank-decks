@@ -1,11 +1,11 @@
-import { Search, X, SlidersHorizontal } from 'lucide-react';
+import { Search, X, SlidersHorizontal, Tag } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
-export default function CardFilterBar({ search, onSearch, sortBy, onSort, masteryFilter, onMasteryFilter }) {
-  const hasActiveFilter = masteryFilter !== 'all' || sortBy !== 'order' || search.trim();
+export default function CardFilterBar({ search, onSearch, sortBy, onSort, masteryFilter, onMasteryFilter, allTags, tagFilter, onTagFilter }) {
+  const hasActiveFilter = masteryFilter !== 'all' || sortBy !== 'order' || search.trim() || tagFilter !== 'all';
 
   return (
     <div className="flex flex-wrap items-center gap-2 mb-5">
@@ -24,6 +24,22 @@ export default function CardFilterBar({ search, onSearch, sortBy, onSort, master
           </button>
         )}
       </div>
+
+      {/* Tag filter */}
+      {allTags.length > 0 && (
+        <Select value={tagFilter} onValueChange={onTagFilter}>
+          <SelectTrigger className={cn('h-8 text-xs w-36 gap-1', tagFilter !== 'all' && 'border-primary text-primary')}>
+            <Tag className="w-3 h-3 shrink-0" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All tags</SelectItem>
+            {allTags.map(tag => (
+              <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
 
       {/* Mastery filter */}
       <Select value={masteryFilter} onValueChange={onMasteryFilter}>
@@ -58,7 +74,7 @@ export default function CardFilterBar({ search, onSearch, sortBy, onSort, master
           variant="ghost"
           size="sm"
           className="h-8 text-xs text-muted-foreground"
-          onClick={() => { onSearch(''); onSort('order'); onMasteryFilter('all'); }}
+          onClick={() => { onSearch(''); onSort('order'); onMasteryFilter('all'); onTagFilter('all'); }}
         >
           <X className="w-3 h-3 mr-1" /> Clear
         </Button>

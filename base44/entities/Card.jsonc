@@ -33,6 +33,14 @@
       "type": "number",
       "description": "Card position in deck"
     },
+    "tags": {
+      "type": "array",
+      "description": "User-defined tags for filtering",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
     "bonus_question": {
       "type": "string",
       "description": "Optional bonus question shown after the correct answer is given"
@@ -51,6 +59,11 @@
       "items": {
         "type": "string"
       }
+    },
+    "deleted": {
+      "type": "boolean",
+      "default": false,
+      "description": "Soft-delete flag"
     }
   },
   "required": [

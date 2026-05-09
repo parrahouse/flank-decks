@@ -10,6 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import ReactQuill from 'react-quill';
+import TagInput from './TagInput';
 
 export default function CardEditor({ card, onSave, onCancel, onDirtyChange }) {
   const [imageUrl, setImageUrl] = useState(card?.image_url || '');
@@ -20,6 +21,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange }) {
   });
   const [clue, setClue] = useState(card?.clue || '');
   const [explanation, setExplanation] = useState(card?.explanation || '');
+  const [tags, setTags] = useState(card?.tags || []);
   const [uploading, setUploading] = useState(false);
   const [generatingDecoys, setGeneratingDecoys] = useState(false);
   const [showImageEditor, setShowImageEditor] = useState(false);
@@ -184,7 +186,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange }) {
       bonusData = { bonus_question: '', bonus_image_url: '', bonus_correct_answer: '', bonus_choices: [] };
     }
 
-    onSave({ image_url: imageUrl, correct_answer: correctAnswer, choices: allChoices, clue, explanation, ...bonusData });
+    onSave({ image_url: imageUrl, correct_answer: correctAnswer, choices: allChoices, clue, explanation, tags, ...bonusData });
   };
 
   return (
@@ -300,6 +302,12 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange }) {
           placeholder={'e.g. "This animal is the largest land mammal."'}
           maxLength={200}
         />
+      </div>
+
+      {/* Tags */}
+      <div className="space-y-2">
+        <Label>Tags <span className="text-muted-foreground text-xs">(optional — for filtering)</span></Label>
+        <TagInput tags={tags} onChange={setTags} />
       </div>
 
       {/* Long Explanation */}
