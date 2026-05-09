@@ -121,11 +121,9 @@ export default function DeckBuilder() {
               <Button variant="outline" size="sm" className="gap-1.5"><BookOpen className="w-4 h-4" /> Study</Button>
             </Link>
           )}
-          {deletedCards.length > 0 && (
-            <Button variant="outline" size="sm" onClick={() => setShowTrash(v => !v)} className="gap-1.5">
-              <Trash2 className="w-4 h-4" /> Trash ({deletedCards.length})
-            </Button>
-          )}
+          <Button variant="outline" size="sm" onClick={() => setShowTrash(v => !v)} className="gap-1.5">
+            <Trash2 className="w-4 h-4" /> Bin {deletedCards.length > 0 && `(${deletedCards.length})`}
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setShowCsvUpload(true)} className="gap-1.5"><Upload className="w-4 h-4" /> Import CSV</Button>
           <Button onClick={openAdd} size="sm" className="gap-1.5"><Plus className="w-4 h-4" /> Add Card</Button>
         </div>
@@ -213,50 +211,57 @@ export default function DeckBuilder() {
         </div>
       )}
 
-      {/* Trash Panel */}
-      {showTrash && deletedCards.length > 0 && (
+      {/* Bin Panel */}
+      {showTrash && (
         <div className="mt-8 border border-border rounded-xl overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 bg-muted/40 border-b border-border">
             <span className="text-sm font-medium flex items-center gap-1.5">
-              <Trash2 className="w-4 h-4 text-muted-foreground" /> Trash ({deletedCards.length})
+              <Trash2 className="w-4 h-4 text-muted-foreground" /> Bin {deletedCards.length > 0 && `(${deletedCards.length})`}
             </span>
             <button onClick={() => setShowTrash(false)} className="text-muted-foreground hover:text-foreground">
               <X className="w-4 h-4" />
             </button>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 p-4">
-            {deletedCards.map((card) => (
-              <div key={card.id} className="relative bg-card border border-border rounded-xl overflow-hidden opacity-70 hover:opacity-100 transition-opacity">
-                <div className="bg-muted h-28 flex items-center justify-center">
-                  {card.image_url
-                    ? <img src={card.image_url} alt="" className="w-full h-full object-cover" />
-                    : <ImageIcon className="w-6 h-6 text-muted-foreground" />}
+          {deletedCards.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 gap-2 text-center text-muted-foreground">
+              <Trash2 className="w-8 h-8 opacity-30" />
+              <p className="text-sm font-medium">The bin is empty</p>
+              <p className="text-xs">Deleted cards will appear here</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 p-4">
+              {deletedCards.map((card) => (
+                <div key={card.id} className="relative bg-card border border-border rounded-xl overflow-hidden opacity-70 hover:opacity-100 transition-opacity">
+                  <div className="bg-muted h-28 flex items-center justify-center">
+                    {card.image_url
+                      ? <img src={card.image_url} alt="" className="w-full h-full object-cover" />
+                      : <ImageIcon className="w-6 h-6 text-muted-foreground" />}
+                  </div>
+                  <div className="p-3">
+                    <p className="text-sm font-medium text-foreground truncate">{card.correct_answer}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{card.choices.length} choices</p>
+                  </div>
+                  <div className="flex gap-1 px-3 pb-3">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 h-7 text-xs gap-1 text-success border-success/40 hover:bg-success/10"
+                      onClick={() => restoreMutation.mutate(card)}
+                    >
+                      <RotateCcw className="w-3 h-3" /> Restore
+                    </Button>
+                    <button
+                      onClick={() => permanentDeleteMutation.mutate(card)}
+                      className="bg-transparent hover:bg-destructive/10 rounded-lg p-1.5 text-muted-foreground hover:text-destructive transition-colors"
+                      title="Delete permanently"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
-                <div className="p-3">
-                  <p className="text-sm font-medium text-foreground truncate">{card.correct_answer}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{card.choices.length} choices</p>
-                </div>
-                {/* Restore & permanent delete buttons — always visible */}
-                <div className="flex gap-1 px-3 pb-3">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="flex-1 h-7 text-xs gap-1 text-success border-success/40 hover:bg-success/10"
-                    onClick={() => restoreMutation.mutate(card)}
-                  >
-                    <RotateCcw className="w-3 h-3" /> Restore
-                  </Button>
-                  <button
-                    onClick={() => permanentDeleteMutation.mutate(card)}
-                    className="bg-transparent hover:bg-destructive/10 rounded-lg p-1.5 text-muted-foreground hover:text-destructive transition-colors"
-                    title="Delete permanently"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
