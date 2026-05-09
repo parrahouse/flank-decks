@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { RotateCcw, Lightbulb, Check, X, Eye } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
+import { RotateCcw, Lightbulb, Check, X, Eye, AlertCircle, SkipForward } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import BonusQuestion from './BonusQuestion';
 
@@ -34,6 +34,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
   const [flipped, setFlipped] = useState(false);
   const [shake, setShake] = useState(false);
   const [showBonus, setShowBonus] = useState(false);
+  const [wrongModal, setWrongModal] = useState(null); // the wrong choice that triggered it
 
   const clueAllowed = deck?.clue_mode !== 'disabled';
   const hasClue = !!card.clue;
@@ -50,6 +51,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
     setFlipped(false);
     setShake(false);
     setShowBonus(false);
+    setWrongModal(null);
   }, [card.id]);
 
   const handleSelect = (choice) => {
@@ -65,18 +67,17 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
       setFinalAnswer(choice);
       onScore && onScore(SCORE[scoreKey], scoreKey);
     } else {
-      // First wrong guess — only allow if eliminate hasn't been used
+      setShake(true);
+      setTimeout(() => setShake(false), 400);
       if (!firstWrong && !eliminateUsed) {
+        // First wrong guess — show modal with try-again / skip
         setFirstWrong(choice);
-        setShake(true);
-        setTimeout(() => setShake(false), 400);
-        // Not locked yet — they get one more try
+        setWrongModal(choice);
       } else {
-        // Second wrong OR clue was used — lock it as wrong
+        // Second wrong OR eliminate was used — lock as wrong, show modal
         setFinalAnswer(choice);
-        setShake(true);
-        setTimeout(() => setShake(false), 400);
         onScore && onScore(SCORE.wrong, 'wrong');
+        setWrongModal(choice);
       }
     }
   };
@@ -111,6 +112,20 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
     if (!choice === finalAnswer && correct) return 'reveal-correct';
     if (correct) return 'reveal-correct';
     return 'dim';
+  };
+
+  const handleSkip = () => {
+    setWrongModal(null);
+    // Mark as wrong if not already locked
+    if (!finalAnswer) {
+      setFinalAnswer(firstWrong);
+      onScore && onScore(SCORE.wrong, 'wrong');
+    }
+    onNext();
+  };
+
+  const handleTryAgain = () => {
+    setWrongModal(null);
   };
 
   if (showBonus) {
@@ -155,12 +170,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
               </div>
             )}
 
-            {/* Second-guess nudge */}
-            {firstWrong && !finalAnswer && (
-              <div className="mx-5 mt-3 rounded-lg bg-orange-50 border border-orange-200 px-3 py-2 text-xs text-orange-700">
-                Not quite — try again! (one attempt remaining)
-              </div>
-            )}
+
 
             {/* Choices */}
             <div className="p-5 flex flex-col gap-3 flex-1">
@@ -242,6 +252,41 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
           </div>
         </div>
       </div>
+      {/* Wrong answer modal */}
+      <Dialog open={!!wrongModal} onOpenChange={(open) => { if (!open) handleTryAgain(); }}>
+        <DialogContent className="max-w-sm text-center">
+          <div className="flex flex-col items-center gap-4 py-2">
+            <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
+              <X className="w-6 h-6 text-destructive" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg">Not quite!</h3>
+              {!finalAnswer ? (
+                <p className="text-muted-foreground text-sm mt-1">You have one attempt remaining.</p>
+              ) : (
+                <p className="text-muted-foreground text-sm mt-1">
+                  The correct answer was <span className="font-semibold text-foreground">{card.correct_answer}</span>.
+                </p>
+              )}
+            </div>
+            <div className="flex gap-2 w-full">
+              {!finalAnswer && (
+                <Button className="flex-1" onClick={handleTryAgain}>
+                  Try Again
+                </Button>
+              )}
+              <Button
+                variant={finalAnswer ? 'default' : 'outline'}
+                className="flex-1 gap-1.5"
+                onClick={handleSkip}
+              >
+                <SkipForward className="w-4 h-4" />
+                {isLast ? 'Finish' : 'Skip'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
