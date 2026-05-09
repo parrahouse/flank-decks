@@ -192,9 +192,7 @@ export default function DeckBuilder() {
           <Button variant="outline" size="sm" onClick={() => setShowSettings(v => !v)} className={`gap-1.5 ${showSettings ? 'bg-accent' : ''}`}>
             <Settings2 className="w-4 h-4" /> Settings
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setShowBin(true)} className="gap-1.5">
-            <Trash2 className="w-4 h-4" /> Bin {deletedCards.length > 0 && `(${deletedCards.length})`}
-          </Button>
+
           <Button variant="outline" size="sm" onClick={() => setShowCsvUpload(true)} className="gap-1.5"><Upload className="w-4 h-4" /> Import CSV</Button>
           <Button onClick={openAdd} size="sm" className="gap-1.5"><Plus className="w-4 h-4" /> Add Card</Button>
         </div>
@@ -328,6 +326,20 @@ export default function DeckBuilder() {
               <span className="absolute top-2 left-2 bg-black/50 text-white text-xs rounded px-1.5 py-0.5">{idx + 1}</span>
             </div>
           ))}
+
+          {/* Bin card */}
+          <button
+            onClick={() => setShowBin(true)}
+            className="group relative bg-card border-2 border-dashed border-border rounded-xl overflow-hidden hover:border-destructive/50 hover:bg-destructive/5 transition-all flex flex-col items-center justify-center gap-2 min-h-[10rem] text-muted-foreground hover:text-destructive"
+          >
+            <Trash2 className="w-6 h-6" />
+            <span className="text-xs font-medium">Bin</span>
+            {deletedCards.length > 0 && (
+              <span className="absolute top-2 right-2 bg-destructive text-destructive-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+                {deletedCards.length}
+              </span>
+            )}
+          </button>
         </div>
       )}
 
