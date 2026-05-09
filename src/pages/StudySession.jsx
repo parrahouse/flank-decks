@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Filter } from 'lucide-react';
+import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Filter, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StudyCard from '@/components/cards/StudyCard';
 import { cn } from '@/lib/utils';
@@ -28,6 +28,7 @@ const CORRECT_KEYS = new Set(['correct', 'second_guess', 'correct_after_clue', '
 
 export default function StudySession() {
   const { deckId } = useParams();
+  const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem('flashdeck_sound') !== '0');
   const [cardIndex, setCardIndex] = useState(0);
   const [shuffledCards, setShuffledCards] = useState([]);
   const [done, setDone] = useState(false);
@@ -251,6 +252,17 @@ export default function StudySession() {
             {filterMode === 'unmastered' && <span className="ml-1 text-amber-600">· Unmastered only</span>}
           </p>
         </div>
+        <button
+          onClick={() => {
+            const next = !soundEnabled;
+            setSoundEnabled(next);
+            localStorage.setItem('flashdeck_sound', next ? '1' : '0');
+          }}
+          title={soundEnabled ? 'Sound on' : 'Sound off'}
+          className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        >
+          {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+        </button>
         <Button variant="ghost" size="sm" onClick={restart} className="gap-1.5 text-muted-foreground">
           <RotateCcw className="w-4 h-4" /> Restart
         </Button>
@@ -315,7 +327,7 @@ export default function StudySession() {
             isFirst={cardIndex === 0}
             isLast={cardIndex === shuffledCards.length - 1}
             onScore={handleScore}
-            soundEnabled={localStorage.getItem('flashdeck_sound') !== '0'}
+            soundEnabled={soundEnabled}
           />
           {/* Nav arrows */}
           <div className="flex justify-center gap-3 mt-5">
