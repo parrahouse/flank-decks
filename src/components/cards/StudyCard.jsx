@@ -29,6 +29,8 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
   const [finalAnswer, setFinalAnswer] = useState(null);
   const [eliminated, setEliminated] = useState([]);
   const [clueRevealed, setClueRevealed] = useState(!!deck?.clue_default_revealed);
+  // Only penalise if the user manually revealed the clue (not when it's shown by default)
+  const [clueManuallyRevealed, setClueManuallyRevealed] = useState(false);
   const [flipped, setFlipped] = useState(false);
   const [shake, setShake] = useState(false);
   const [showBonus, setShowBonus] = useState(false);
@@ -44,6 +46,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
     setFinalAnswer(null);
     setEliminated([]);
     setClueRevealed(!!deck?.clue_default_revealed);
+    setClueManuallyRevealed(false);
     setFlipped(false);
     setShake(false);
     setShowBonus(false);
@@ -55,9 +58,10 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
 
     if (correct) {
       // Determine score
+      const penaliseClue = clueManuallyRevealed;
       const scoreKey = firstWrong
-        ? (clueRevealed ? 'second_guess_after_clue' : 'second_guess')
-        : (clueRevealed ? 'correct_after_clue' : 'correct');
+        ? (penaliseClue ? 'second_guess_after_clue' : 'second_guess')
+        : (penaliseClue ? 'correct_after_clue' : 'correct');
       setFinalAnswer(choice);
       onScore && onScore(SCORE[scoreKey], scoreKey);
     } else {
@@ -141,7 +145,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
                 ) : (
                   !answered && (
                     <button
-                      onClick={() => setClueRevealed(true)}
+                      onClick={() => { setClueRevealed(true); setClueManuallyRevealed(true); }}
                       className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <Eye className="w-3.5 h-3.5" /> Reveal clue
