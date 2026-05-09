@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import ReactQuill from 'react-quill';
 import TagInput from './TagInput';
 
-export default function CardEditor({ card, onSave, onCancel, onDirtyChange }) {
+export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allTags = [] }) {
   const [imageUrl, setImageUrl] = useState(card?.image_url || '');
   const [correctAnswer, setCorrectAnswer] = useState(card?.correct_answer || '');
   const [choices, setChoices] = useState(() => {
@@ -307,7 +307,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange }) {
       {/* Tags */}
       <div className="space-y-2">
         <Label>Tags <span className="text-muted-foreground text-xs">(optional — for filtering)</span></Label>
-        <TagInput tags={tags} onChange={setTags} />
+        <TagInput tags={tags} onChange={setTags} suggestions={allTags} />
       </div>
 
       {/* Long Explanation */}

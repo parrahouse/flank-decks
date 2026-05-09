@@ -357,6 +357,7 @@ export default function DeckBuilder() {
                 onSave={(data) => saveMutation.mutate(data)}
                 onCancel={requestCloseEditor}
                 onDirtyChange={setEditorDirty}
+                allTags={allTags}
               />
             </DialogContent>
           </Dialog>
@@ -376,6 +377,7 @@ export default function DeckBuilder() {
               onSave={(data) => saveMutation.mutate(data)}
               onCancel={requestCloseEditor}
               onDirtyChange={setEditorDirty}
+              allTags={allTags}
             />
           </div>
         </div>
