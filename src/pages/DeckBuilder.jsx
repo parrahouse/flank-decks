@@ -24,17 +24,14 @@ export default function DeckBuilder() {
     enabled: !!deckId,
   });
 
-  const { data: activeCards = [], isLoading } = useQuery({
+  const { data: allDeckCards = [], isLoading } = useQuery({
     queryKey: ['cards', deckId],
-    queryFn: () => base44.entities.Card.filter({ deck_id: deckId, deleted: false }, 'order'),
+    queryFn: () => base44.entities.Card.filter({ deck_id: deckId }, 'order'),
     enabled: !!deckId,
   });
 
-  const { data: deletedCards = [] } = useQuery({
-    queryKey: ['cards-deleted', deckId],
-    queryFn: () => base44.entities.Card.filter({ deck_id: deckId, deleted: true }, 'order'),
-    enabled: !!deckId,
-  });
+  const activeCards = allDeckCards.filter(c => !c.deleted);
+  const deletedCards = allDeckCards.filter(c => c.deleted === true);
 
   const { data: currentUser } = useQuery({
     queryKey: ['me'],
@@ -128,7 +125,6 @@ export default function DeckBuilder() {
 
   const invalidateCards = () => {
     qc.invalidateQueries(['cards', deckId]);
-    qc.invalidateQueries(['cards-deleted', deckId]);
     qc.invalidateQueries(['cards-all']);
   };
 
