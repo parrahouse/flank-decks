@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { RotateCcw, Lightbulb, Check, X, Eye, AlertCircle, SkipForward } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { RotateCcw, Lightbulb, X, Eye, SkipForward } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
@@ -36,6 +36,8 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
   const [showBonus, setShowBonus] = useState(false);
   const [wrongModal, setWrongModal] = useState(null); // the wrong choice that triggered it
 
+  const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
+
   const clueAllowed = deck?.clue_mode !== 'disabled';
   const hasClue = !!card.clue;
   const hasExplanation = !!card.explanation;
@@ -53,6 +55,20 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
     setShowBonus(false);
     setWrongModal(null);
   }, [card.id]);
+
+  // Keyboard letter shortcuts
+  useEffect(() => {
+    const onKey = (e) => {
+      if (wrongModal) return;
+      const idx = e.key.toUpperCase().charCodeAt(0) - 65; // A=0, B=1, ...
+      if (idx < 0 || idx >= shuffledChoices.length) return;
+      const choice = shuffledChoices[idx];
+      if (eliminated.includes(choice) || finalAnswer) return;
+      handleSelect(choice);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [shuffledChoices, eliminated, finalAnswer, wrongModal, firstWrong, clueManuallyRevealed]);
 
   const handleSelect = (choice) => {
     if (finalAnswer) return; // already locked
@@ -173,10 +189,11 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
 
             {/* Choices */}
             <div className="p-5 flex flex-col gap-3 flex-1">
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {shuffledChoices.map((choice) => {
+              <div className="flex flex-col gap-2">
+                {shuffledChoices.map((choice, idx) => {
                   const state = getChoiceState(choice);
                   const isShaking = shake && (state === 'first-wrong' || state === 'wrong-final');
+                  const letter = LETTERS[idx];
 
                   return (
                     <button
@@ -184,7 +201,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
                       disabled={state === 'eliminated' || answered}
                       onClick={() => handleSelect(choice)}
                       className={cn(
-                        'relative rounded-xl border-2 px-3 py-2.5 text-sm font-medium text-center transition-all duration-150 min-h-[2.75rem]',
+                        'w-full rounded-xl border-2 px-3 py-2.5 text-sm font-medium text-left transition-all duration-150 min-h-[2.75rem] flex items-center gap-3',
                         state === 'eliminated' && 'opacity-25 line-through cursor-not-allowed border-border text-muted-foreground',
                         state === 'idle' && 'border-border hover:border-primary hover:bg-accent cursor-pointer',
                         state === 'idle-retry' && 'border-border hover:border-primary hover:bg-accent cursor-pointer',
@@ -195,13 +212,13 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
                         state === 'dim' && 'border-border text-muted-foreground opacity-50',
                       )}
                     >
-                      <span className="inline-flex items-center justify-center gap-1">
-                        <span className="w-3.5 h-3.5 shrink-0 inline-flex items-center justify-center">
-                          {state === 'correct' && <Check className="w-3.5 h-3.5" />}
-                          {state === 'wrong-final' && <X className="w-3.5 h-3.5" />}
-                        </span>
-                        {choice}
+                      <span className={cn(
+                        'shrink-0 w-5 h-5 rounded flex items-center justify-center text-xs font-bold',
+                        state === 'idle' || state === 'idle-retry' ? 'bg-muted text-muted-foreground' : 'bg-current/10',
+                      )}>
+                        {letter}
                       </span>
+                      <span>{choice}</span>
                     </button>
                   );
                 })}
