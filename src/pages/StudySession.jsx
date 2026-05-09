@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StudyCard from '@/components/cards/StudyCard';
 
@@ -46,7 +46,31 @@ export default function StudySession() {
     if (cards.length) setShuffledCards(shuffle(cards));
   }, [cards.length]);
 
-  const restart = () => { setShuffledCards(shuffle(cards)); setCardIndex(0); setDone(false); setScores([]); };
+  const sessionSaved = useRef(false);
+
+  // Save session when done
+  useEffect(() => {
+    if (!done || sessionSaved.current || !shuffledCards.length) return;
+    sessionSaved.current = true;
+    const cardResults = shuffledCards.map((card, i) => ({
+      card_id: card.id,
+      correct_answer: card.correct_answer,
+      image_url: card.image_url || '',
+      points: scores[i]?.points ?? 0,
+      key: scores[i]?.key ?? 'skipped',
+    }));
+    const total = cardResults.reduce((s, r) => s + r.points, 0);
+    const max = shuffledCards.length;
+    base44.entities.StudySession.create({
+      deck_id: deckId,
+      score_pct: max > 0 ? (total / max) * 100 : 0,
+      total_points: total,
+      max_points: max,
+      card_results: cardResults,
+    });
+  }, [done]);
+
+  const restart = () => { setShuffledCards(shuffle(cards)); setCardIndex(0); setDone(false); setScores([]); sessionSaved.current = false; };
 
   const handleNext = () => {
     if (cardIndex < shuffledCards.length - 1) setCardIndex(i => i + 1);
@@ -133,7 +157,12 @@ export default function StudySession() {
             })}
           </div>
 
-          <Button onClick={restart} className="gap-1.5"><RotateCcw className="w-4 h-4" /> Study Again</Button>
+          <div className="flex gap-2">
+            <Link to={`/stats/${deckId}`}>
+              <Button variant="outline" className="gap-1.5"><BarChart2 className="w-4 h-4" /> View Stats</Button>
+            </Link>
+            <Button onClick={restart} className="gap-1.5"><RotateCcw className="w-4 h-4" /> Study Again</Button>
+          </div>
         </div>
       ) : (
         <>

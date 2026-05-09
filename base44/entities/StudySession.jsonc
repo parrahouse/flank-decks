@@ -1,0 +1,33 @@
+{
+  "name": "StudySession",
+  "type": "object",
+  "properties": {
+    "deck_id": {
+      "type": "string",
+      "description": "ID of the deck studied"
+    },
+    "score_pct": {
+      "type": "number",
+      "description": "Final score as a percentage (0-100)"
+    },
+    "total_points": {
+      "type": "number",
+      "description": "Raw points earned"
+    },
+    "max_points": {
+      "type": "number",
+      "description": "Maximum possible points"
+    },
+    "card_results": {
+      "type": "array",
+      "description": "Per-card results: [{card_id, correct_answer, points, key}]",
+      "items": {
+        "type": "object"
+      }
+    }
+  },
+  "required": [
+    "deck_id",
+    "score_pct"
+  ]
+}

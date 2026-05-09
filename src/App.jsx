@@ -12,6 +12,7 @@ import DeckBuilder from '@/pages/DeckBuilder';
 import StudySession from '@/pages/StudySession';
 import SharedDeck from '@/pages/SharedDeck';
 import QuizMaster from '@/pages/QuizMaster';
+import DeckStats from '@/pages/DeckStats';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -36,6 +37,7 @@ const AuthenticatedApp = () => {
         <Route path="/deck/:deckId" element={<DeckBuilder />} />
         <Route path="/study/:deckId" element={<StudySession />} />
         <Route path="/quiz" element={<QuizMaster />} />
+        <Route path="/stats/:deckId" element={<DeckStats />} />
       </Route>
       <Route path="/shared/:token" element={<SharedDeck />} />
       <Route path="*" element={<PageNotFound />} />

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, ArrowLeft, Pencil, Trash2, BookOpen, Image as ImageIcon, Settings2, X, Upload, RotateCcw } from 'lucide-react';
+import { Plus, ArrowLeft, Pencil, Trash2, BookOpen, Image as ImageIcon, Settings2, X, Upload, RotateCcw, BarChart2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -117,9 +117,14 @@ export default function DeckBuilder() {
         </div>
         <div className="flex gap-2 flex-wrap justify-end">
           {activeCards.length > 0 && (
-            <Link to={`/study/${deckId}`}>
-              <Button variant="outline" size="sm" className="gap-1.5"><BookOpen className="w-4 h-4" /> Study</Button>
-            </Link>
+            <>
+              <Link to={`/study/${deckId}`}>
+                <Button variant="outline" size="sm" className="gap-1.5"><BookOpen className="w-4 h-4" /> Study</Button>
+              </Link>
+              <Link to={`/stats/${deckId}`}>
+                <Button variant="outline" size="sm" className="gap-1.5"><BarChart2 className="w-4 h-4" /> Stats</Button>
+              </Link>
+            </>
           )}
           <Button variant="outline" size="sm" onClick={() => setShowTrash(v => !v)} className="gap-1.5">
             <Trash2 className="w-4 h-4" /> Bin {deletedCards.length > 0 && `(${deletedCards.length})`}
