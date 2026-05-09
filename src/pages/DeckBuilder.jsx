@@ -165,7 +165,7 @@ export default function DeckBuilder() {
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)]">
     {/* Main content */}
-    <div className={`flex-1 px-4 py-8 transition-all duration-300 ${showEditor ? 'lg:mr-[420px]' : ''}`}>
+    <div className={`flex-1 px-4 py-8 transition-all duration-300 ${showEditor ? 'md:mr-[420px]' : ''}`}>
     <div className="max-w-5xl mx-auto">
 
       {/* Header */}
@@ -379,7 +379,7 @@ export default function DeckBuilder() {
     {showEditor && (
       <>
         {/* Mobile: modal overlay */}
-        <div className="lg:hidden">
+        <div className="md:hidden">
           <Dialog open={showEditor} onOpenChange={(open) => { if (!open) requestCloseEditor(); }}>
             <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
@@ -397,7 +397,7 @@ export default function DeckBuilder() {
         </div>
 
         {/* Desktop: fixed side panel */}
-        <div className="hidden lg:flex fixed top-14 right-0 bottom-0 w-[420px] bg-card border-l border-border flex-col z-30 shadow-xl">
+        <div className="hidden md:flex fixed top-14 right-0 bottom-0 w-[420px] bg-card border-l border-border flex-col z-30 shadow-xl">
           <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
             <h2 className="font-semibold text-base">{editingCard ? 'Edit Card' : 'Add Card'}</h2>
             <button onClick={requestCloseEditor} className="text-muted-foreground hover:text-foreground transition-colors">
