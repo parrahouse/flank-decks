@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { RotateCcw, Lightbulb, X, Eye, SkipForward } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -37,6 +37,9 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
   const [shake, setShake] = useState(false);
   const [showBonus, setShowBonus] = useState(false);
   const [wrongModal, setWrongModal] = useState(null); // the wrong choice that triggered it
+  const [autoAdvance, setAutoAdvance] = useState(() => localStorage.getItem('flashdeck_autoadvance') === '1');
+  const [countdown, setCountdown] = useState(null);
+  const countdownRef = useRef(null);
 
   const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
@@ -44,6 +47,27 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
   const hasClue = !!card.clue;
   const hasExplanation = !!card.explanation;
   const eliminateUsed = eliminated.length > 0;
+
+  const cancelCountdown = () => {
+    clearInterval(countdownRef.current);
+    countdownRef.current = null;
+    setCountdown(null);
+  };
+
+  const startCountdown = () => {
+    setCountdown(10);
+    countdownRef.current = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(countdownRef.current);
+          countdownRef.current = null;
+          onNext();
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
 
   useEffect(() => {
     setShuffledChoices(shuffle(card.choices));
@@ -56,7 +80,10 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
     setShake(false);
     setShowBonus(false);
     setWrongModal(null);
+    cancelCountdown();
   }, [card.id]);
+
+  useEffect(() => () => cancelCountdown(), []);
 
   // Keyboard letter shortcuts
   useEffect(() => {
@@ -85,6 +112,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
       setFinalAnswer(choice);
       playCorrect();
       onScore && onScore(SCORE[scoreKey], scoreKey);
+      if (autoAdvance && !isLast) startCountdown();
     } else {
       playWrong();
       setShake(true);
@@ -223,6 +251,28 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
                 })}
               </div>
 
+              {/* Auto-advance toggle */}
+              <div className="flex items-center justify-end gap-2 pt-1">
+                <span className="text-xs text-muted-foreground">Auto-advance</span>
+                <button
+                  onClick={() => {
+                    const next = !autoAdvance;
+                    setAutoAdvance(next);
+                    localStorage.setItem('flashdeck_autoadvance', next ? '1' : '0');
+                    if (!next) cancelCountdown();
+                  }}
+                  className={cn(
+                    'relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer',
+                    autoAdvance ? 'bg-primary' : 'bg-muted'
+                  )}
+                >
+                  <span className={cn(
+                    'pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform',
+                    autoAdvance ? 'translate-x-4' : 'translate-x-0'
+                  )} />
+                </button>
+              </div>
+
               {/* Actions row */}
               <div className="flex items-center justify-between pt-2 mt-auto">
                 <div className="flex gap-2 flex-wrap">
@@ -232,15 +282,22 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
                     </Button>
                   )}
                   {answered && hasExplanation && (
-                    <Button variant="outline" size="sm" onClick={() => setFlipped(true)} className="h-8 text-xs gap-1">
+                    <Button variant="outline" size="sm" onClick={() => { setFlipped(true); cancelCountdown(); }} className="h-8 text-xs gap-1">
                       <RotateCcw className="w-3.5 h-3.5" /> See explanation
                     </Button>
                   )}
                 </div>
                 {answered && !hasBonus && (
-                  <Button size="sm" onClick={onNext} className="h-8 text-xs">
-                    {isLast ? 'Finish →' : 'Next →'}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    {countdown !== null && (
+                      <button onClick={cancelCountdown} className="text-xs text-muted-foreground hover:text-foreground tabular-nums">
+                        {countdown}s ✕
+                      </button>
+                    )}
+                    <Button size="sm" onClick={() => { cancelCountdown(); onNext(); }} className="h-8 text-xs">
+                      {isLast ? 'Finish →' : 'Next →'}
+                    </Button>
+                  </div>
                 )}
                 {answered && hasBonus && (
                   <Button size="sm" onClick={() => setShowBonus(true)} className="h-8 text-xs gap-1">
