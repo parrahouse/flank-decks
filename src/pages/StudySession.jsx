@@ -34,6 +34,7 @@ export default function StudySession() {
   const [shuffledCards, setShuffledCards] = useState([]);
   const [done, setDone] = useState(false);
   const [scores, setScores] = useState([]);
+  const [correctStreak, setCorrectStreak] = useState(0);
   // 'all' | 'unmastered'
   const [filterMode, setFilterMode] = useState('all');
   const [filterChosen, setFilterChosen] = useState(false);
@@ -82,6 +83,7 @@ export default function StudySession() {
     setScores([]);
     setFilterMode(mode);
     setFilterChosen(true);
+    setCorrectStreak(0);
     sessionSaved.current = false;
   };
 
@@ -220,6 +222,8 @@ export default function StudySession() {
       next[cardIndex] = { points, key };
       return next;
     });
+    const wasCorrect = CORRECT_KEYS.has(key);
+    setCorrectStreak(prev => wasCorrect ? prev + 1 : 0);
   };
 
   if (isLoading || !activeCards.length) {
@@ -333,8 +337,7 @@ export default function StudySession() {
         cardIndex={cardIndex}
         total={shuffledCards.length}
         done={done}
-        streak={streak?.current_streak || 0}
-        longestStreak={streak?.longest_streak || 0}
+        streak={correctStreak}
       />
 
       {done ? (
