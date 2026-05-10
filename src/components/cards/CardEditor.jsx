@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
-import { Plus, X, Wand2, Image as ImageIcon, Loader2, ChevronDown, ChevronUp, Star, Pencil, Search, Info } from 'lucide-react';
+import { Plus, X, Wand2, Image as ImageIcon, Loader2, ChevronDown, ChevronUp, Star, Pencil, Search } from 'lucide-react';
+import InfoTooltip from './InfoTooltip';
 import ImageEditor from './ImageEditor';
 import ImageSearchPanel from './ImageSearchPanel';
 import { Button } from '@/components/ui/button';
@@ -228,14 +229,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
         </div>
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
         <div className="flex items-center justify-between">
-          <div className="relative inline-block group">
-            <button type="button" className="text-muted-foreground hover:text-foreground transition-colors">
-              <Info className="w-3.5 h-3.5" />
-            </button>
-            <div className="absolute bottom-full left-0 mb-1.5 w-max max-w-xs bg-popover text-popover-foreground border border-border rounded-lg px-3 py-1.5 text-xs shadow-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10">
-              Accepted: JPG, PNG, GIF, WebP · Min 10 KB · Max 10 MB
-            </div>
-          </div>
+          <InfoTooltip text="Accepted: JPG, PNG, GIF, WebP · Min 10 KB · Max 10 MB" />
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -315,7 +309,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
       {/* Short Clue */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label>Short Clue <span className="text-muted-foreground text-xs">(optional — one sentence, revealed before answering)</span></Label>
+          <Label className="flex items-center gap-1.5">Short Clue <InfoTooltip text="Optional — one sentence, revealed before answering" /></Label>
           <span className={`text-xs tabular-nums ${clue.length >= 180 ? 'text-destructive' : 'text-muted-foreground'}`}>
             {clue.length}/200
           </span>
@@ -330,13 +324,13 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
 
       {/* Tags */}
       <div className="space-y-2">
-        <Label>Tags <span className="text-muted-foreground text-xs">(optional — for filtering)</span></Label>
+        <Label className="flex items-center gap-1.5">Tags <InfoTooltip text="Optional — add tags to filter and group cards" /></Label>
         <TagInput tags={tags} onChange={setTags} suggestions={allTags} />
       </div>
 
       {/* Long Explanation */}
       <div className="space-y-2">
-        <Label>Explanation <span className="text-muted-foreground text-xs">(optional — shown on the back of the card)</span></Label>
+        <Label className="flex items-center gap-1.5">Explanation <InfoTooltip text="Optional — shown on the back of the card after answering" /></Label>
         <div className="quill-wrapper border border-input overflow-hidden" style={{ borderRadius: 0 }}>
           <ReactQuill
             theme="snow"
@@ -356,7 +350,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
           onClick={() => setShowBonus(v => !v)}
           className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium hover:bg-muted/50 transition-colors"
         >
-          <span className="flex items-center gap-1.5"><Star className="w-4 h-4 text-amber-400 fill-amber-400" /> Bonus Question <span className="text-muted-foreground font-normal">(optional — shown after correct answer)</span></span>
+          <span className="flex items-center gap-1.5"><Star className="w-4 h-4 text-amber-400 fill-amber-400" /> Bonus Question <InfoTooltip text="Optional — an extra question shown after the user answers correctly" /></span>
           {showBonus ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
         </button>
 
@@ -374,7 +368,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
 
             {/* Bonus Image (optional alternate) */}
             <div className="space-y-1.5">
-              <Label>Alternate Image <span className="text-muted-foreground text-xs">(optional — uses main image if blank)</span></Label>
+              <Label className="flex items-center gap-1.5">Alternate Image <InfoTooltip text="Optional — uses the main card image if left blank" /></Label>
               <div
                 onClick={() => bonusFileRef.current?.click()}
                 className="relative border-2 border-dashed border-border rounded-xl overflow-hidden cursor-pointer hover:border-primary/50 transition-colors"
