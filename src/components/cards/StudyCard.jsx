@@ -82,6 +82,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
     setShowBonus(false);
     setWrongModal(null);
     cancelCountdown();
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
   }, [card.id]);
 
   useEffect(() => () => cancelCountdown(), []);
