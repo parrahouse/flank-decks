@@ -184,7 +184,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
   return (
     <div className="w-full">
       <div className="card-flip w-full">
-        <div className={cn('card-flip-inner w-full', flipped && card.explanation && 'flipped')}>
+        <div className={cn('card-flip-inner w-full', flipped && card.explanation && 'flipped')} style={{ minHeight: 0 }}>
 
           {/* FRONT */}
           <div className="card-face bg-card border border-border rounded-2xl overflow-hidden shadow-sm flex flex-col w-full">
