@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Filter, Volume2, VolumeX } from 'lucide-react';
+import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Filter, Volume2, VolumeX, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StudyCard from '@/components/cards/StudyCard';
 import StreakBar from '@/components/cards/StreakBar';
@@ -27,6 +27,28 @@ const SCORE_LABELS = {
 };
 
 const CORRECT_KEYS = new Set(['correct', 'second_guess', 'correct_after_clue', 'second_guess_after_clue']);
+
+function MasteryTooltip({ minSessions, masteryPct }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <span className="relative inline-flex items-center">
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); setOpen(v => !v); }}
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        className="p-0.5 rounded focus:outline-none"
+      >
+        <Info className="w-3.5 h-3.5 text-muted-foreground/60" />
+      </button>
+      {open && (
+        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 w-52 rounded-lg bg-foreground text-background text-xs px-2.5 py-1.5 z-10 text-center shadow-lg pointer-events-none">
+          Requires {minSessions}+ sessions at ≥{masteryPct}% correct
+        </span>
+      )}
+    </span>
+  );
+}
 
 export default function StudySession() {
   const { deckId } = useParams();
@@ -317,10 +339,15 @@ export default function StudySession() {
                   </span>
                 )}
               </div>
-              <div className="text-sm text-muted-foreground mt-0.5">
+              <div className="text-sm text-muted-foreground mt-0.5 flex items-center gap-1.5">
                 {allMastered
                  ? '🎉 All cards mastered!'
-                 : `${unmasteredCards.length} card${unmasteredCards.length !== 1 ? 's' : ''} not yet mastered (requires ${deck?.mastery_min_sessions ?? 3}+ sessions at ≥${deck?.mastery_pct ?? 90}%)`}
+                 : (
+                   <>
+                     {unmasteredCards.length} card{unmasteredCards.length !== 1 ? 's' : ''} not yet mastered
+                     <MasteryTooltip minSessions={deck?.mastery_min_sessions ?? 3} masteryPct={deck?.mastery_pct ?? 90} />
+                   </>
+                 )}
               </div>
             </button>
 
