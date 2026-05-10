@@ -157,41 +157,38 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
         <div className={cn('card-flip-inner w-full', flipped && card.explanation && 'flipped')}>
 
           {/* FRONT */}
-          <div className="card-face bg-card border border-border rounded-2xl overflow-hidden shadow-sm flex flex-col sm:flex-row w-full">
+          <div className="card-face bg-card border border-border rounded-2xl overflow-hidden shadow-sm flex flex-col w-full">
 
-            {/* Left column: Image only */}
-            <div className="sm:w-1/2 flex flex-col shrink-0 border-b sm:border-b-0 sm:border-r border-border">
-              {/* Image — 4:3 aspect ratio */}
-              <div className="relative w-full bg-muted flex items-center justify-center" style={{ aspectRatio: '4/3' }}>
-                {card.image_url ? (
-                  <img src={card.image_url} alt="card" className="absolute inset-0 w-full h-full object-cover" />
-                ) : (
-                  <div className="text-muted-foreground text-sm">No image</div>
-                )}
-              </div>
+            {/* Image — 4:3 aspect ratio */}
+            <div className="relative w-full bg-muted flex items-center justify-center" style={{ aspectRatio: '4/3' }}>
+              {card.image_url ? (
+                <img src={card.image_url} alt="card" className="absolute inset-0 w-full h-full object-cover" />
+              ) : (
+                <div className="text-muted-foreground text-sm">No image</div>
+              )}
             </div>
 
-            {/* Right column: Clue + Choices + Actions */}
-            <div className="flex-1 p-5 flex flex-col gap-3">
-              {/* Short clue panel */}
-              {hasClue && clueAllowed && (
-                <div className="min-h-[2rem] flex items-center">
-                  {clueRevealed ? (
-                    <p className="text-base text-accent-foreground leading-snug">{card.clue}</p>
-                  ) : (
-                    !answered && (
-                      <button
-                        onClick={() => { setClueRevealed(true); setClueManuallyRevealed(true); }}
-                        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        <Eye className="w-3.5 h-3.5" /> Reveal clue
-                      </button>
-                    )
-                  )}
-                </div>
-              )}
+            {/* Clue */}
+            {hasClue && clueAllowed && (
+              <div className="border-t border-border min-h-[2.5rem] flex items-center px-4 py-2">
+                {clueRevealed ? (
+                  <p className="text-base text-accent-foreground leading-snug">{card.clue}</p>
+                ) : (
+                  !answered && (
+                    <button
+                      onClick={() => { setClueRevealed(true); setClueManuallyRevealed(true); }}
+                      className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <Eye className="w-3.5 h-3.5" /> Reveal clue
+                    </button>
+                  )
+                )}
+              </div>
+            )}
 
-              <div className="flex flex-col gap-2 flex-1">
+            {/* Choices + Actions */}
+            <div className="p-5 flex flex-col gap-3 border-t border-border">
+              <div className="flex flex-col gap-2">
                 {shuffledChoices.map((choice, idx) => {
                   const state = getChoiceState(choice);
                   const isShaking = shake && (state === 'first-wrong' || state === 'wrong-final');
