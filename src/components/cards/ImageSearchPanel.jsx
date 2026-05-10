@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Loader2, X } from 'lucide-react';
+import { Search, Loader2, PanelTopClose, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
@@ -41,7 +41,7 @@ export default function ImageSearchPanel({ defaultQuery, onSelect, onClose }) {
         )}
         {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground shrink-0" />}
         <button onClick={onClose} className="text-muted-foreground hover:text-foreground shrink-0">
-          <X className="w-4 h-4" />
+          <PanelTopClose className="w-4 h-4" />
         </button>
       </div>
 
