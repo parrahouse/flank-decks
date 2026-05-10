@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Filter, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StudyCard from '@/components/cards/StudyCard';
+import StreakBar from '@/components/cards/StreakBar';
 import { cn } from '@/lib/utils';
 
 function shuffle(arr) {
@@ -55,6 +56,13 @@ export default function StudySession() {
     queryKey: ['me'],
     queryFn: () => base44.auth.me(),
   });
+
+  const { data: streakData = [], refetch: refetchStreak } = useQuery({
+    queryKey: ['streak', currentUser?.id],
+    queryFn: () => base44.entities.Streak.filter({ user_id: currentUser.id }),
+    enabled: !!currentUser?.id,
+  });
+  const streak = streakData[0] || null;
 
   const { data: cardStats = [], refetch: refetchStats } = useQuery({
     queryKey: ['card-stats', deckId, currentUser?.id],
@@ -107,6 +115,50 @@ export default function StudySession() {
         max_points: max,
         card_results: cardResults,
       });
+
+      // Update streak
+      const today = new Date().toISOString().slice(0, 10);
+      const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+      let newStreak = 1;
+      if (streak) {
+        const last = streak.last_study_date;
+        newStreak = streak.current_streak;
+        if (last === today) {
+          // already studied today, no change
+        } else if (last === yesterday) {
+          newStreak = streak.current_streak + 1;
+        } else {
+          newStreak = 1;
+        }
+        const newLongest = Math.max(streak.longest_streak || 0, newStreak);
+        const newMilestone = [3, 7, 14, 30, 60, 100].filter(m => newStreak >= m).pop() || 0;
+        await base44.entities.Streak.update(streak.id, {
+          current_streak: newStreak,
+          longest_streak: newLongest,
+          last_study_date: today,
+          milestone_reached: Math.max(streak.milestone_reached || 0, newMilestone),
+        });
+      } else if (currentUser?.id) {
+        await base44.entities.Streak.create({
+          user_id: currentUser.id,
+          current_streak: 1,
+          longest_streak: 1,
+          last_study_date: today,
+          milestone_reached: 0,
+        });
+      }
+      refetchStreak();
+
+      // Milestone toast
+      const newMilestoneVal = [3, 7, 14, 30, 60, 100].filter(m => newStreak >= m).pop() || 0;
+      const prevMilestone = streak?.milestone_reached || 0;
+      if (newMilestoneVal > prevMilestone) {
+        const { toast: sonnerToast } = await import('sonner');
+        sonnerToast(`🏆 ${newMilestoneVal}-day milestone reached!`, {
+          description: `You've studied ${newMilestoneVal} days in a row. Keep it up!`,
+          duration: 5000,
+        });
+      }
 
       // Update UserCardStats for every card in this session
       for (const result of cardResults) {
@@ -257,8 +309,7 @@ export default function StudySession() {
         <div className="flex-1">
           <h1 className="font-semibold">{deck?.title}</h1>
           <p className="text-xs text-muted-foreground">
-            {done ? 'Complete!' : `Card ${cardIndex + 1} of ${shuffledCards.length}`}
-            {filterMode === 'unmastered' && <span className="ml-1 text-amber-600">· Unmastered only</span>}
+            {filterMode === 'unmastered' && <span className="text-amber-600">Unmastered only</span>}
           </p>
         </div>
         <button
@@ -277,23 +328,36 @@ export default function StudySession() {
         </Button>
       </div>
 
-      {/* Progress bar */}
-      <div className="w-full bg-muted rounded-full h-1.5 mb-6">
-        <div
-          className="bg-primary h-1.5 rounded-full transition-all duration-300"
-          style={{ width: `${((cardIndex + (done ? 1 : 0)) / shuffledCards.length) * 100}%` }}
-        />
-      </div>
+      {/* Streak-enhanced progress bar */}
+      <StreakBar
+        cardIndex={cardIndex}
+        total={shuffledCards.length}
+        done={done}
+        streak={streak?.current_streak || 0}
+        longestStreak={streak?.longest_streak || 0}
+      />
 
       {done ? (
         <div className="flex flex-col items-center py-10 gap-6">
           <div className="text-5xl">🎉</div>
-          <div className="text-center">
+          <div className="text-center space-y-1">
             <h2 className="text-xl font-bold">Deck complete!</h2>
-            <p className="text-muted-foreground text-sm mt-1">
+            <p className="text-muted-foreground text-sm">
               Score: <span className="font-semibold text-foreground">{totalPoints.toFixed(2)} / {maxPoints}</span>
               <span className="ml-2 text-xs">({pct}%)</span>
             </p>
+            {(streak?.current_streak || 0) > 0 && (
+              <p className={cn(
+                'text-sm font-semibold mt-1',
+                (streak.current_streak || 0) >= 30 ? 'text-purple-500' :
+                (streak.current_streak || 0) >= 14 ? 'text-red-500' :
+                (streak.current_streak || 0) >= 7 ? 'text-orange-500' :
+                'text-amber-500'
+              )}>
+                🔥 {streak.current_streak}-day streak!
+                {streak.current_streak === streak.longest_streak && streak.current_streak >= 3 && ' (personal best)'}
+              </p>
+            )}
           </div>
 
           {/* Per-card breakdown */}

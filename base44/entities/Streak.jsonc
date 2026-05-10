@@ -1,0 +1,33 @@
+{
+  "name": "Streak",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID of the user this streak belongs to"
+    },
+    "current_streak": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of consecutive days studied"
+    },
+    "longest_streak": {
+      "type": "number",
+      "default": 0,
+      "description": "All-time longest streak"
+    },
+    "last_study_date": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO date string (YYYY-MM-DD) of the last day a session was completed"
+    },
+    "milestone_reached": {
+      "type": "number",
+      "default": 0,
+      "description": "Highest milestone day count ever reached (3, 7, 14, 30, 60, 100\u2026)"
+    }
+  },
+  "required": [
+    "user_id"
+  ]
+}
