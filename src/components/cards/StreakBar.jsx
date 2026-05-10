@@ -1,4 +1,4 @@
-import { Flag } from 'lucide-react';
+import { Milestone } from 'lucide-react';
 
 export default function StreakBar({ cardIndex, total, done }) {
   const pct = total > 0 ? ((cardIndex + (done ? 1 : 0)) / total) * 100 : 0;
@@ -17,7 +17,7 @@ export default function StreakBar({ cardIndex, total, done }) {
             className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2"
             style={{ left: `${mark}%` }}
           >
-            <Flag className="w-3.5 h-3.5 text-accent-foreground" fill="currentColor" />
+            <Milestone className="w-3.5 h-3.5 text-primary" fill="currentColor" />
           </div>
         ))}
       </div>
