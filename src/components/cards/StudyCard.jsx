@@ -152,30 +152,27 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
   }
 
   return (
-    <div className="w-full max-w-lg mx-auto">
+    <div className="w-full">
       <div className="card-flip w-full">
         <div className={cn('card-flip-inner w-full', flipped && card.explanation && 'flipped')} style={{ minHeight: 480 }}>
 
           {/* FRONT */}
           <div className="card-face bg-card border border-border rounded-2xl overflow-hidden shadow-sm flex flex-col w-full">
 
-            {/* Image */}
-            <div className="bg-muted flex items-center justify-center relative" style={{ minHeight: 200 }}>
+            {/* Image — fixed height to prevent card resizing */}
+            <div className="bg-muted flex items-center justify-center relative h-52 shrink-0">
               {card.image_url ? (
-                <img src={card.image_url} alt="card" className="w-full h-auto object-contain" />
+                <img src={card.image_url} alt="card" className="w-full h-full object-contain" />
               ) : (
                 <div className="text-muted-foreground text-sm">No image</div>
               )}
             </div>
 
-            {/* Short clue panel — revealed before answering */}
+            {/* Short clue panel — fixed height to prevent layout shift */}
             {hasClue && clueAllowed && (
-              <div className={cn(
-                'border-t border-border transition-all duration-300 overflow-hidden',
-                clueRevealed ? 'bg-accent/60 px-5 py-3' : 'px-5 py-2'
-              )}>
+              <div className="border-t border-border h-10 shrink-0 flex items-center px-5 overflow-hidden">
                 {clueRevealed ? (
-                  <p className="text-sm text-accent-foreground leading-snug">{card.clue}</p>
+                  <p className="text-sm text-accent-foreground leading-snug truncate">{card.clue}</p>
                 ) : (
                   !answered && (
                     <button
