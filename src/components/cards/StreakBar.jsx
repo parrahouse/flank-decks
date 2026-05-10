@@ -14,10 +14,10 @@ export default function StreakBar({ cardIndex, total, done }) {
         {showWaypoints && [25, 50, 75].map(mark => (
           <div
             key={mark}
-            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2"
+            className="absolute -top-4 -translate-x-1/2"
             style={{ left: `${mark}%` }}
           >
-            <Milestone className="w-3.5 h-3.5 text-primary" fill="currentColor" />
+            <Milestone className="w-3.5 h-3.5 text-muted-foreground" fill="currentColor" />
           </div>
         ))}
       </div>
