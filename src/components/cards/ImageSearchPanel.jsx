@@ -39,9 +39,7 @@ export default function ImageSearchPanel({ defaultQuery, onSelect, onClose }) {
             <X className="w-3.5 h-3.5" />
           </button>
         )}
-        <Button size="sm" variant="ghost" onClick={() => search(query)} disabled={loading} className="h-7 px-2 shrink-0">
-          {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
-        </Button>
+        {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground shrink-0" />}
         <button onClick={onClose} className="text-muted-foreground hover:text-foreground shrink-0">
           <X className="w-4 h-4" />
         </button>
