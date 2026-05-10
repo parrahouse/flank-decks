@@ -329,7 +329,7 @@ export default function StudySession() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <Link to={`/deck/${deckId}`} className="text-muted-foreground hover:text-foreground transition-colors">
@@ -442,7 +442,7 @@ export default function StudySession() {
           </div>
 
           {/* Streak panel */}
-          <div className="hidden sm:block shrink-0 w-44">
+          <div className="hidden sm:block shrink-0 w-44 sticky top-8 self-start">
             <StreakPanel
               currentStreak={correctStreak}
               bestStreak={bestStreak}

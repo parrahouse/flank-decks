@@ -154,43 +154,44 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
   return (
     <div className="w-full">
       <div className="card-flip w-full">
-        <div className={cn('card-flip-inner w-full', flipped && card.explanation && 'flipped')} style={{ minHeight: 480 }}>
+        <div className={cn('card-flip-inner w-full', flipped && card.explanation && 'flipped')}>
 
           {/* FRONT */}
-          <div className="card-face bg-card border border-border rounded-2xl overflow-hidden shadow-sm flex flex-col w-full">
+          <div className="card-face bg-card border border-border rounded-2xl overflow-hidden shadow-sm flex flex-col sm:flex-row w-full">
 
-            {/* Image — fixed height to prevent card resizing */}
-            <div className="bg-muted flex items-center justify-center relative h-52 shrink-0">
-              {card.image_url ? (
-                <img src={card.image_url} alt="card" className="w-full h-full object-contain" />
-              ) : (
-                <div className="text-muted-foreground text-sm">No image</div>
+            {/* Left column: Image + Clue */}
+            <div className="sm:w-2/5 flex flex-col shrink-0 border-b sm:border-b-0 sm:border-r border-border">
+              {/* Image — 3:4 aspect ratio */}
+              <div className="relative w-full bg-muted flex items-center justify-center" style={{ aspectRatio: '3/4' }}>
+                {card.image_url ? (
+                  <img src={card.image_url} alt="card" className="absolute inset-0 w-full h-full object-contain" />
+                ) : (
+                  <div className="text-muted-foreground text-sm">No image</div>
+                )}
+              </div>
+
+              {/* Short clue panel */}
+              {hasClue && clueAllowed && (
+                <div className="border-t border-border min-h-[2.5rem] flex items-center px-4 py-2">
+                  {clueRevealed ? (
+                    <p className="text-sm text-accent-foreground leading-snug">{card.clue}</p>
+                  ) : (
+                    !answered && (
+                      <button
+                        onClick={() => { setClueRevealed(true); setClueManuallyRevealed(true); }}
+                        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <Eye className="w-3.5 h-3.5" /> Reveal clue
+                      </button>
+                    )
+                  )}
+                </div>
               )}
             </div>
 
-            {/* Short clue panel — fixed height to prevent layout shift */}
-            {hasClue && clueAllowed && (
-              <div className="border-t border-border h-10 shrink-0 flex items-center px-5 overflow-hidden">
-                {clueRevealed ? (
-                  <p className="text-sm text-accent-foreground leading-snug truncate">{card.clue}</p>
-                ) : (
-                  !answered && (
-                    <button
-                      onClick={() => { setClueRevealed(true); setClueManuallyRevealed(true); }}
-                      className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      <Eye className="w-3.5 h-3.5" /> Reveal clue
-                    </button>
-                  )
-                )}
-              </div>
-            )}
-
-
-
-            {/* Choices */}
-            <div className="p-5 flex flex-col gap-3 flex-1">
-              <div className="flex flex-col gap-2">
+            {/* Right column: Choices + Actions */}
+            <div className="flex-1 p-5 flex flex-col gap-3">
+              <div className="flex flex-col gap-2 flex-1">
                 {shuffledChoices.map((choice, idx) => {
                   const state = getChoiceState(choice);
                   const isShaking = shake && (state === 'first-wrong' || state === 'wrong-final');
@@ -228,13 +229,11 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
               {/* Actions row */}
               <div className="flex items-center justify-between pt-2 mt-auto">
                 <div className="flex gap-2 flex-wrap">
-                  {/* Eliminate — only before any wrong guess, and if clue mode allowed */}
                   {clueAllowed && !answered && !firstWrong && eliminated.length < shuffledChoices.length - 2 && shuffledChoices.length > 2 && (
                     <Button variant="outline" size="sm" onClick={handleEliminate} className="h-8 text-xs gap-1">
                       <Lightbulb className="w-3.5 h-3.5" /> Eliminate one
                     </Button>
                   )}
-                  {/* See full explanation after answering */}
                   {answered && hasExplanation && (
                     <Button variant="outline" size="sm" onClick={() => setFlipped(true)} className="h-8 text-xs gap-1">
                       <RotateCcw className="w-3.5 h-3.5" /> See explanation
@@ -256,7 +255,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
           </div>
 
           {/* BACK — full explanation */}
-          <div className="card-face card-face-back bg-card border border-border rounded-2xl flex flex-col p-6 gap-4 shadow-sm w-full overflow-y-auto" style={{ minHeight: 480 }}>
+          <div className="card-face card-face-back bg-card border border-border rounded-2xl flex flex-col p-6 gap-4 shadow-sm w-full overflow-y-auto">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center shrink-0">
                 <RotateCcw className="w-4 h-4 text-accent-foreground" />
