@@ -159,22 +159,25 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
           {/* FRONT */}
           <div className="card-face bg-card border border-border rounded-2xl overflow-hidden shadow-sm flex flex-col sm:flex-row w-full">
 
-            {/* Left column: Image + Clue */}
-            <div className="sm:w-2/5 flex flex-col shrink-0 border-b sm:border-b-0 sm:border-r border-border">
-              {/* Image — 3:4 aspect ratio */}
-              <div className="relative w-full bg-muted flex items-center justify-center" style={{ aspectRatio: '3/4' }}>
+            {/* Left column: Image only */}
+            <div className="sm:w-1/2 flex flex-col shrink-0 border-b sm:border-b-0 sm:border-r border-border">
+              {/* Image — 4:3 aspect ratio */}
+              <div className="relative w-full bg-muted flex items-center justify-center" style={{ aspectRatio: '4/3' }}>
                 {card.image_url ? (
-                  <img src={card.image_url} alt="card" className="absolute inset-0 w-full h-full object-contain" />
+                  <img src={card.image_url} alt="card" className="absolute inset-0 w-full h-full object-cover" />
                 ) : (
                   <div className="text-muted-foreground text-sm">No image</div>
                 )}
               </div>
+            </div>
 
+            {/* Right column: Clue + Choices + Actions */}
+            <div className="flex-1 p-5 flex flex-col gap-3">
               {/* Short clue panel */}
               {hasClue && clueAllowed && (
-                <div className="border-t border-border min-h-[2.5rem] flex items-center px-4 py-2">
+                <div className="min-h-[2rem] flex items-center">
                   {clueRevealed ? (
-                    <p className="text-sm text-accent-foreground leading-snug">{card.clue}</p>
+                    <p className="text-base text-accent-foreground leading-snug">{card.clue}</p>
                   ) : (
                     !answered && (
                       <button
@@ -187,10 +190,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
                   )}
                 </div>
               )}
-            </div>
 
-            {/* Right column: Choices + Actions */}
-            <div className="flex-1 p-5 flex flex-col gap-3">
               <div className="flex flex-col gap-2 flex-1">
                 {shuffledChoices.map((choice, idx) => {
                   const state = getChoiceState(choice);
@@ -203,7 +203,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
                       disabled={state === 'eliminated' || answered}
                       onClick={() => handleSelect(choice)}
                       className={cn(
-                        'w-full rounded-xl border-2 px-3 py-2.5 text-sm font-medium text-left transition-all duration-150 min-h-[2.75rem] flex items-center gap-3',
+                        'w-full rounded-xl border-2 px-3 py-2.5 text-sm font-medium text-left transition-all duration-150 min-h-[2.75rem] flex items-start gap-3',
                         state === 'eliminated' && 'opacity-25 line-through cursor-not-allowed border-border text-muted-foreground',
                         state === 'idle' && 'border-border hover:border-primary hover:bg-accent cursor-pointer',
                         state === 'idle-retry' && 'border-border hover:border-primary hover:bg-accent cursor-pointer',
@@ -215,12 +215,12 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
                       )}
                     >
                       <span className={cn(
-                        'shrink-0 w-5 h-5 rounded flex items-center justify-center text-xs font-bold',
+                        'shrink-0 w-5 h-5 mt-0.5 rounded flex items-center justify-center text-xs font-bold',
                         state === 'idle' || state === 'idle-retry' ? 'bg-muted text-muted-foreground' : 'bg-current/10',
                       )}>
                         {letter}
                       </span>
-                      <span>{choice}</span>
+                      <span className="whitespace-normal break-words">{choice}</span>
                     </button>
                   );
                 })}
