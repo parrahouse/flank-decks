@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Filter, Volume2, VolumeX, Info } from 'lucide-react';
+import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Brain, Volume2, VolumeX, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StudyCard from '@/components/cards/StudyCard';
 import StreakBar from '@/components/cards/StreakBar';
@@ -303,7 +303,7 @@ export default function StudySession() {
 
         <div className="flex flex-col items-center gap-6 py-8">
           <div className="w-14 h-14 rounded-2xl bg-accent flex items-center justify-center">
-            <Filter className="w-7 h-7 text-accent-foreground" />
+            <Brain className="w-7 h-7 text-accent-foreground" />
           </div>
           <div className="text-center">
             <h2 className="text-xl font-bold">What would you like to study?</h2>
