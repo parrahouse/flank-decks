@@ -6,6 +6,8 @@ import { cn } from '@/lib/utils';
 import BonusQuestion from './BonusQuestion';
 import { useSound } from '@/hooks/useSound';
 
+const COUNTDOWN_SECS = 6;
+
 function shuffle(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -54,7 +56,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
   };
 
   const startCountdown = () => {
-    setCountdown(10);
+    setCountdown(COUNTDOWN_SECS);
     countdownRef.current = setInterval(() => {
       setCountdown(prev => {
         if (prev <= 1) {
@@ -266,14 +268,23 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
                 </div>
                 {answered && !hasBonus && (
                   <div className="flex items-center gap-2">
-                    {countdown !== null && (
-                      <button onClick={cancelCountdown} className="text-xs text-muted-foreground hover:text-foreground tabular-nums">
-                        {countdown}s ✕
-                      </button>
-                    )}
-                    <Button size="sm" onClick={() => { cancelCountdown(); onNext(); }} className="h-8 text-xs">
-                      {isLast ? 'Finish →' : 'Next →'}
-                    </Button>
+                    <button
+                      onClick={() => { cancelCountdown(); onNext(); }}
+                      className="relative h-8 px-3 rounded-md text-xs font-medium overflow-hidden border border-primary text-primary-foreground"
+                      style={{ minWidth: '4.5rem' }}
+                    >
+                      {/* Fill layer */}
+                      <span
+                        className="absolute inset-0 bg-primary origin-left transition-none"
+                        style={{
+                          transform: countdown !== null
+                            ? `scaleX(${(COUNTDOWN_SECS - countdown + 1) / COUNTDOWN_SECS})`
+                            : 'scaleX(1)',
+                          transition: countdown !== null ? 'transform 1s linear' : 'none',
+                        }}
+                      />
+                      <span className="relative z-10">{isLast ? 'Finish →' : 'Next →'}</span>
+                    </button>
                   </div>
                 )}
                 {answered && hasBonus && (
