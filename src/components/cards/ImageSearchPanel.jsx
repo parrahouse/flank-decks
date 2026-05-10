@@ -34,6 +34,11 @@ export default function ImageSearchPanel({ defaultQuery, onSelect, onClose }) {
           placeholder="Search Wikimedia Commons…"
           className="h-7 border-0 bg-transparent focus-visible:ring-0 px-0 text-sm"
         />
+        {query && (
+          <button onClick={() => setQuery('')} className="text-muted-foreground hover:text-foreground shrink-0">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        )}
         <Button size="sm" variant="ghost" onClick={() => search(query)} disabled={loading} className="h-7 px-2 shrink-0">
           {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
         </Button>
