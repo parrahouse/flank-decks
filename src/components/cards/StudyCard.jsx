@@ -24,7 +24,7 @@ const SCORE = {
   wrong: 0,
 };
 
-export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast, onScore, soundEnabled = true }) {
+export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast, onScore, soundEnabled = true, autoAdvance = false }) {
   const { playCorrect, playWrong } = useSound(soundEnabled);
   const [shuffledChoices, setShuffledChoices] = useState([]);
   const [firstWrong, setFirstWrong] = useState(null);
@@ -37,7 +37,6 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
   const [shake, setShake] = useState(false);
   const [showBonus, setShowBonus] = useState(false);
   const [wrongModal, setWrongModal] = useState(null); // the wrong choice that triggered it
-  const [autoAdvance, setAutoAdvance] = useState(() => localStorage.getItem('flashdeck_autoadvance') === '1');
   const [countdown, setCountdown] = useState(null);
   const countdownRef = useRef(null);
 
@@ -249,28 +248,6 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
                     </button>
                   );
                 })}
-              </div>
-
-              {/* Auto-advance toggle */}
-              <div className="flex items-center justify-end gap-2 pt-1">
-                <span className="text-xs text-muted-foreground">Auto-advance</span>
-                <button
-                  onClick={() => {
-                    const next = !autoAdvance;
-                    setAutoAdvance(next);
-                    localStorage.setItem('flashdeck_autoadvance', next ? '1' : '0');
-                    if (!next) cancelCountdown();
-                  }}
-                  className={cn(
-                    'relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer',
-                    autoAdvance ? 'bg-primary' : 'bg-muted'
-                  )}
-                >
-                  <span className={cn(
-                    'pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform',
-                    autoAdvance ? 'translate-x-4' : 'translate-x-0'
-                  )} />
-                </button>
               </div>
 
               {/* Actions row */}

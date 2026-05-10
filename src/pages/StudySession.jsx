@@ -31,6 +31,7 @@ const CORRECT_KEYS = new Set(['correct', 'second_guess', 'correct_after_clue', '
 export default function StudySession() {
   const { deckId } = useParams();
   const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem('flashdeck_sound') !== '0');
+  const [autoAdvance, setAutoAdvance] = useState(() => localStorage.getItem('flashdeck_autoadvance') === '1');
   const [cardIndex, setCardIndex] = useState(0);
   const [shuffledCards, setShuffledCards] = useState([]);
   const [done, setDone] = useState(false);
@@ -322,6 +323,30 @@ export default function StudySession() {
                  : `${unmasteredCards.length} card${unmasteredCards.length !== 1 ? 's' : ''} not yet mastered (requires ${deck?.mastery_min_sessions ?? 3}+ sessions at ≥${deck?.mastery_pct ?? 90}%)`}
               </div>
             </button>
+
+            {/* Auto-advance toggle */}
+            <div className="flex items-center justify-between px-1 pt-1">
+              <div>
+                <p className="text-sm font-medium">Auto-advance</p>
+                <p className="text-xs text-muted-foreground">Move to next card automatically after a correct answer</p>
+              </div>
+              <button
+                onClick={() => {
+                  const next = !autoAdvance;
+                  setAutoAdvance(next);
+                  localStorage.setItem('flashdeck_autoadvance', next ? '1' : '0');
+                }}
+                className={cn(
+                  'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer ml-4',
+                  autoAdvance ? 'bg-primary' : 'bg-muted'
+                )}
+              >
+                <span className={cn(
+                  'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform',
+                  autoAdvance ? 'translate-x-5' : 'translate-x-0'
+                )} />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -429,6 +454,7 @@ export default function StudySession() {
               isLast={cardIndex === shuffledCards.length - 1}
               onScore={handleScore}
               soundEnabled={soundEnabled}
+              autoAdvance={autoAdvance}
             />
             {/* Nav arrows */}
             <div className="flex justify-center gap-3 mt-5">
