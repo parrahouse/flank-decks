@@ -314,11 +314,13 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
             {clue.length}/200
           </span>
         </div>
-        <Input
+        <Textarea
           value={clue}
           onChange={e => setClue(e.target.value)}
           placeholder={'e.g. "This animal is the largest land mammal."'}
           maxLength={200}
+          className="rounded-none resize-none min-h-[2.5rem]"
+          rows={2}
         />
       </div>
 
