@@ -17,7 +17,7 @@ export default function StreakBar({ cardIndex, total, done }) {
           className="absolute -top-4 -translate-x-1/2"
           style={{ left: `${mark}%` }}>
           
-            <Milestone className="w-4.5 h-4.5 text-gray-200" fill="currentColor" />
+            <Milestone className={`w-4.5 h-4.5 ${pct >= mark ? 'text-primary' : 'text-gray-200'}`} fill="currentColor" />
           </div>
         )}
       </div>
