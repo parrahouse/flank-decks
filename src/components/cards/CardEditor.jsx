@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Plus, X, Wand2, Image as ImageIcon, Loader2, ChevronDown, ChevronUp, Star, Pencil, Search } from 'lucide-react';
+import { Plus, X, Wand2, Image as ImageIcon, Loader2, ChevronDown, ChevronUp, Star, Pencil, Search, Info } from 'lucide-react';
 import ImageEditor from './ImageEditor';
 import ImageSearchPanel from './ImageSearchPanel';
 import { Button } from '@/components/ui/button';
@@ -228,7 +228,14 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
         </div>
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
         <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">Accepted: JPG, PNG, GIF, WebP · Min 10 KB · Max 10 MB</p>
+          <div className="relative inline-block group">
+            <button type="button" className="text-muted-foreground hover:text-foreground transition-colors">
+              <Info className="w-3.5 h-3.5" />
+            </button>
+            <div className="absolute bottom-full left-0 mb-1.5 w-max max-w-xs bg-popover text-popover-foreground border border-border rounded-lg px-3 py-1.5 text-xs shadow-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10">
+              Accepted: JPG, PNG, GIF, WebP · Min 10 KB · Max 10 MB
+            </div>
+          </div>
           <div className="flex items-center gap-3">
             <button
               type="button"
