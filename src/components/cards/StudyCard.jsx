@@ -270,18 +270,18 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => { cancelCountdown(); onNext(); }}
-                      className="relative h-8 px-3 rounded-md text-xs font-medium overflow-hidden border border-primary"
-                      style={{ minWidth: '4.5rem', backgroundColor: 'hsl(var(--primary) / 0.12)', color: 'hsl(var(--primary))' }}
+                      className="relative h-8 px-3 rounded-md text-xs font-medium overflow-hidden"
+                      style={{ minWidth: '4.5rem', backgroundColor: 'hsl(var(--primary) / 0.15)', color: 'hsl(var(--primary))' }}
                     >
-                      {/* Progressive fill — darkens from transparent to full primary */}
+                      {/* Progressive fill */}
                       <span
-                        className="absolute inset-0 origin-left bg-primary"
+                        className="absolute inset-0 origin-left"
                         style={{
-                          opacity: countdown !== null ? (COUNTDOWN_SECS - countdown + 1) / COUNTDOWN_SECS : 1,
+                          backgroundColor: 'hsl(var(--primary) / 0.35)',
                           transform: countdown !== null
                             ? `scaleX(${(COUNTDOWN_SECS - countdown + 1) / COUNTDOWN_SECS})`
                             : 'scaleX(1)',
-                          transition: countdown !== null ? 'transform 1s linear, opacity 1s linear' : 'none',
+                          transition: countdown !== null ? 'transform 1s linear' : 'none',
                         }}
                       />
                       <span className="relative z-10">{isLast ? 'Finish →' : 'Next →'}</span>
