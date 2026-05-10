@@ -443,7 +443,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
       </div>
 
       {/* Actions */}
-      <div className="flex justify-end gap-2 pt-2 border-t border-border">
+      <div className="sticky bottom-0 bg-card flex justify-end gap-2 pt-2 pb-1 border-t border-border mt-2">
         <Button variant="ghost" onClick={handleCancel}>Cancel</Button>
         <Button onClick={handleSave}>Save Card</Button>
       </div>
