@@ -202,7 +202,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
             {hasClue && clueAllowed &&
             <div className="border-t border-border min-h-[2.5rem] flex items-center bg-accent/60 px-4 py-2">
                 {clueRevealed ?
-              <p className="text-lg text-accent-foreground leading-snug my-2">{card.clue}</p> :
+              <p className="font-fraunces text-lg text-accent-foreground leading-snug my-2">{card.clue}</p> :
 
               !answered &&
               <button
