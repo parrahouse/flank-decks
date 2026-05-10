@@ -11,6 +11,7 @@ import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import ReactQuill from 'react-quill';
 import TagInput from './TagInput';
+import ImagePickerFromDeck from './ImagePickerFromDeck';
 
 export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allTags = [] }) {
   const [imageUrl, setImageUrl] = useState(card?.image_url || '');
@@ -26,6 +27,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
   const [generatingDecoys, setGeneratingDecoys] = useState(false);
   const [showImageEditor, setShowImageEditor] = useState(false);
   const [showImageSearch, setShowImageSearch] = useState(false);
+  const [showImagePicker, setShowImagePicker] = useState(false);
 
   const fileRef = useRef();
 
@@ -227,14 +229,29 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
         <div className="flex items-center justify-between">
           <p className="text-xs text-muted-foreground">Accepted: JPG, PNG, GIF, WebP · Min 10 KB · Max 10 MB</p>
-          <button
-            type="button"
-            onClick={() => setShowImageSearch(v => !v)}
-            className="flex items-center gap-1 text-xs text-primary hover:underline"
-          >
-            <Search className="w-3 h-3" /> Search Wikimedia
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => { setShowImagePicker(v => !v); setShowImageSearch(false); }}
+              className="flex items-center gap-1 text-xs text-primary hover:underline"
+            >
+              <ImageIcon className="w-3 h-3" /> Pick from decks
+            </button>
+            <button
+              type="button"
+              onClick={() => { setShowImageSearch(v => !v); setShowImagePicker(false); }}
+              className="flex items-center gap-1 text-xs text-primary hover:underline"
+            >
+              <Search className="w-3 h-3" /> Search Wikimedia
+            </button>
+          </div>
         </div>
+        {showImagePicker && (
+          <ImagePickerFromDeck
+            onSelect={(url) => { setImageUrl(url); setShowImagePicker(false); }}
+            onClose={() => setShowImagePicker(false)}
+          />
+        )}
         {showImageSearch && (
           <ImageSearchPanel
             defaultQuery={correctAnswer || ''}
