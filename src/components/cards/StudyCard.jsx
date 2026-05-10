@@ -23,7 +23,7 @@ const SCORE = {
   second_guess: 0.75,
   correct_after_clue: 0.5,
   second_guess_after_clue: 0.35,
-  wrong: 0,
+  wrong: 0
 };
 
 export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast, onScore, soundEnabled = true, autoAdvance = false }) {
@@ -58,7 +58,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
   const startCountdown = () => {
     setCountdown(COUNTDOWN_SECS);
     countdownRef.current = setInterval(() => {
-      setCountdown(prev => {
+      setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(countdownRef.current);
           countdownRef.current = null;
@@ -107,9 +107,9 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
     if (correct) {
       // Determine score
       const penaliseClue = clueManuallyRevealed;
-      const scoreKey = firstWrong
-        ? (penaliseClue ? 'second_guess_after_clue' : 'second_guess')
-        : (penaliseClue ? 'correct_after_clue' : 'correct');
+      const scoreKey = firstWrong ?
+      penaliseClue ? 'second_guess_after_clue' : 'second_guess' :
+      penaliseClue ? 'correct_after_clue' : 'correct';
       setFinalAnswer(choice);
       playCorrect();
       onScore && onScore(SCORE[scoreKey], scoreKey);
@@ -132,10 +132,10 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
 
   const handleEliminate = () => {
     if (finalAnswer || firstWrong) return; // can't use after any wrong guess
-    const wrong = shuffledChoices.filter(c => c !== card.correct_answer && !eliminated.includes(c));
+    const wrong = shuffledChoices.filter((c) => c !== card.correct_answer && !eliminated.includes(c));
     if (wrong.length === 0) return;
     const toElim = wrong[Math.floor(Math.random() * wrong.length)];
-    setEliminated(prev => [...prev, toElim]);
+    setEliminated((prev) => [...prev, toElim]);
   };
 
   const answered = !!finalAnswer;
@@ -190,30 +190,30 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
 
             {/* Image — 4:3 aspect ratio */}
             <div className="relative w-full bg-muted flex items-center justify-center" style={{ aspectRatio: '4/3' }}>
-              {card.image_url ? (
-                <img src={card.image_url} alt="card" className="absolute inset-0 w-full h-full object-cover" />
-              ) : (
-                <div className="text-muted-foreground text-sm">No image</div>
-              )}
+              {card.image_url ?
+              <img src={card.image_url} alt="card" className="absolute inset-0 w-full h-full object-cover" /> :
+
+              <div className="text-muted-foreground text-sm">No image</div>
+              }
             </div>
 
             {/* Clue */}
-            {hasClue && clueAllowed && (
-              <div className="border-t border-border min-h-[2.5rem] flex items-center bg-accent/60 px-4 py-2">
-                {clueRevealed ? (
-                  <p className="text-lg text-accent-foreground leading-snug">{card.clue}</p>
-                ) : (
-                  !answered && (
-                    <button
-                      onClick={() => { setClueRevealed(true); setClueManuallyRevealed(true); }}
-                      className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                    >
+            {hasClue && clueAllowed &&
+            <div className="border-t border-border min-h-[2.5rem] flex items-center bg-accent/60 px-4 py-2">
+                {clueRevealed ?
+              <p className="text-lg text-accent-foreground leading-snug my-2">{card.clue}</p> :
+
+              !answered &&
+              <button
+                onClick={() => {setClueRevealed(true);setClueManuallyRevealed(true);}}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                
                       <Eye className="w-3.5 h-3.5" /> Reveal clue
                     </button>
-                  )
-                )}
+
+              }
               </div>
-            )}
+            }
 
             {/* Choices + Actions */}
             <div className="p-5 flex flex-col gap-3 border-t border-border">
@@ -237,62 +237,62 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
                         state === 'correct' && 'border-success bg-success/10 text-success animate-pop-in',
                         state === 'wrong-final' && cn('border-destructive bg-destructive/10 text-destructive', isShaking && 'animate-shake'),
                         state === 'reveal-correct' && 'border-success bg-success/10 text-success',
-                        state === 'dim' && 'border-border text-muted-foreground opacity-50',
-                      )}
-                    >
+                        state === 'dim' && 'border-border text-muted-foreground opacity-50'
+                      )}>
+                      
                       <span className={cn(
                         'shrink-0 w-5 h-5 mt-0.5 rounded flex items-center justify-center text-xs font-bold',
-                        state === 'idle' || state === 'idle-retry' ? 'bg-muted text-muted-foreground' : 'bg-current/10',
+                        state === 'idle' || state === 'idle-retry' ? 'bg-muted text-muted-foreground' : 'bg-current/10'
                       )}>
                         {letter}
                       </span>
                       <span className="whitespace-normal break-words">{choice}</span>
-                    </button>
-                  );
+                    </button>);
+
                 })}
               </div>
 
               {/* Actions row */}
               <div className="flex items-center justify-between pt-2 mt-auto">
                 <div className="flex gap-2 flex-wrap">
-                  {clueAllowed && !answered && !firstWrong && eliminated.length < shuffledChoices.length - 2 && shuffledChoices.length > 2 && (
-                    <Button variant="outline" size="sm" onClick={handleEliminate} className="h-8 text-xs gap-1">
+                  {clueAllowed && !answered && !firstWrong && eliminated.length < shuffledChoices.length - 2 && shuffledChoices.length > 2 &&
+                  <Button variant="outline" size="sm" onClick={handleEliminate} className="h-8 text-xs gap-1">
                       <Lightbulb className="w-3.5 h-3.5" /> Eliminate one
                     </Button>
-                  )}
-                  {answered && hasExplanation && (
-                    <Button variant="outline" size="sm" onClick={() => { setFlipped(true); cancelCountdown(); }} className="h-8 text-xs gap-1">
+                  }
+                  {answered && hasExplanation &&
+                  <Button variant="outline" size="sm" onClick={() => {setFlipped(true);cancelCountdown();}} className="h-8 text-xs gap-1">
                       <RotateCcw className="w-3.5 h-3.5" /> See explanation
                     </Button>
-                  )}
+                  }
                 </div>
-                {answered && !hasBonus && (
-                  <div className="flex items-center gap-2">
+                {answered && !hasBonus &&
+                <div className="flex items-center gap-2">
                     <button
-                      onClick={() => { cancelCountdown(); onNext(); }}
-                      className="relative h-8 px-3 rounded-md text-xs font-medium overflow-hidden"
-                      style={{ minWidth: '4.5rem', backgroundColor: 'hsl(var(--primary) / 0.15)', color: 'hsl(var(--primary))' }}
-                    >
+                    onClick={() => {cancelCountdown();onNext();}}
+                    className="relative h-8 px-3 rounded-md text-xs font-medium overflow-hidden"
+                    style={{ minWidth: '4.5rem', backgroundColor: 'hsl(var(--primary) / 0.15)', color: 'hsl(var(--primary))' }}>
+                    
                       {/* Progressive fill */}
                       <span
-                        className="absolute inset-0 origin-left"
-                        style={{
-                          backgroundColor: 'hsl(var(--primary) / 0.35)',
-                          transform: countdown !== null
-                            ? `scaleX(${(COUNTDOWN_SECS - countdown + 1) / COUNTDOWN_SECS})`
-                            : 'scaleX(1)',
-                          transition: countdown !== null ? 'transform 1s linear' : 'none',
-                        }}
-                      />
+                      className="absolute inset-0 origin-left"
+                      style={{
+                        backgroundColor: 'hsl(var(--primary) / 0.35)',
+                        transform: countdown !== null ?
+                        `scaleX(${(COUNTDOWN_SECS - countdown + 1) / COUNTDOWN_SECS})` :
+                        'scaleX(1)',
+                        transition: countdown !== null ? 'transform 1s linear' : 'none'
+                      }} />
+                    
                       <span className="relative z-10">{isLast ? 'Finish →' : 'Next →'}</span>
                     </button>
                   </div>
-                )}
-                {answered && hasBonus && (
-                  <Button size="sm" onClick={() => setShowBonus(true)} className="h-8 text-xs gap-1">
+                }
+                {answered && hasBonus &&
+                <Button size="sm" onClick={() => setShowBonus(true)} className="h-8 text-xs gap-1">
                     ⭐ Bonus Question
                   </Button>
-                )}
+                }
               </div>
             </div>
           </div>
@@ -307,8 +307,8 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
             </div>
             <div
               className="prose prose-sm max-w-none text-muted-foreground flex-1"
-              dangerouslySetInnerHTML={{ __html: card.explanation }}
-            />
+              dangerouslySetInnerHTML={{ __html: card.explanation }} />
+            
             <Button variant="outline" size="sm" onClick={() => setFlipped(false)} className="self-start mt-auto">
               ← Back to card
             </Button>
@@ -316,7 +316,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
         </div>
       </div>
       {/* Wrong answer modal */}
-      <Dialog open={!!wrongModal} onOpenChange={(open) => { if (!open) handleTryAgain(); }}>
+      <Dialog open={!!wrongModal} onOpenChange={(open) => {if (!open) handleTryAgain();}}>
         <DialogContent className="max-w-sm text-center">
           <div className="flex flex-col items-center gap-4 py-2">
             <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
@@ -324,25 +324,25 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
             </div>
             <div>
               <h3 className="font-semibold text-lg">Not quite!</h3>
-              {!finalAnswer ? (
-                <p className="text-muted-foreground text-sm mt-1">You have one attempt remaining.</p>
-              ) : (
-                <p className="text-muted-foreground text-sm mt-1">
+              {!finalAnswer ?
+              <p className="text-muted-foreground text-sm mt-1">You have one attempt remaining.</p> :
+
+              <p className="text-muted-foreground text-sm mt-1">
                   The correct answer was <span className="font-semibold text-foreground">{card.correct_answer}</span>.
                 </p>
-              )}
+              }
             </div>
             <div className="flex gap-2 w-full">
-              {!finalAnswer && (
-                <Button className="flex-1" onClick={handleTryAgain}>
+              {!finalAnswer &&
+              <Button className="flex-1" onClick={handleTryAgain}>
                   Try Again
                 </Button>
-              )}
+              }
               <Button
                 variant={finalAnswer ? 'default' : 'outline'}
                 className="flex-1 gap-1.5"
-                onClick={handleSkip}
-              >
+                onClick={handleSkip}>
+                
                 <SkipForward className="w-4 h-4" />
                 {isLast ? 'Finish' : 'Skip'}
               </Button>
@@ -350,6 +350,6 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
           </div>
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </div>);
+
 }
