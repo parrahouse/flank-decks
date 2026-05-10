@@ -6,6 +6,7 @@ import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Filter, Vol
 import { Button } from '@/components/ui/button';
 import StudyCard from '@/components/cards/StudyCard';
 import StreakBar from '@/components/cards/StreakBar';
+import StreakPanel from '@/components/cards/StreakPanel';
 import { cn } from '@/lib/utils';
 
 function shuffle(arr) {
@@ -35,6 +36,7 @@ export default function StudySession() {
   const [done, setDone] = useState(false);
   const [scores, setScores] = useState([]);
   const [correctStreak, setCorrectStreak] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
   // 'all' | 'unmastered'
   const [filterMode, setFilterMode] = useState('all');
   const [filterChosen, setFilterChosen] = useState(false);
@@ -71,6 +73,24 @@ export default function StudySession() {
     enabled: !!deckId && !!currentUser?.id,
   });
 
+  const { data: pastSessions = [] } = useQuery({
+    queryKey: ['study-sessions', deckId],
+    queryFn: () => base44.entities.StudySession.filter({ deck_id: deckId }),
+    enabled: !!deckId,
+  });
+
+  // Compute all-time best consecutive correct streak across all past sessions
+  const allTimeBest = pastSessions.reduce((best, session) => {
+    const results = session.card_results || [];
+    let cur = 0;
+    let sessionBest = 0;
+    for (const r of results) {
+      if (CORRECT_KEYS.has(r.key)) { cur++; sessionBest = Math.max(sessionBest, cur); }
+      else cur = 0;
+    }
+    return Math.max(best, sessionBest);
+  }, 0);
+
   const masteredCardIds = new Set(cardStats.filter(s => s.mastered).map(s => s.card_id));
   const unmasteredCards = activeCards.filter(c => !masteredCardIds.has(c.id));
   const allMastered = unmasteredCards.length === 0 && activeCards.length > 0;
@@ -84,6 +104,7 @@ export default function StudySession() {
     setFilterMode(mode);
     setFilterChosen(true);
     setCorrectStreak(0);
+    setBestStreak(0);
     sessionSaved.current = false;
   };
 
@@ -223,7 +244,11 @@ export default function StudySession() {
       return next;
     });
     const wasCorrect = CORRECT_KEYS.has(key);
-    setCorrectStreak(prev => wasCorrect ? prev + 1 : 0);
+    setCorrectStreak(prev => {
+      const next = wasCorrect ? prev + 1 : 0;
+      if (wasCorrect) setBestStreak(b => Math.max(b, next));
+      return next;
+    });
   };
 
   if (isLoading || !activeCards.length) {
@@ -332,12 +357,11 @@ export default function StudySession() {
         </Button>
       </div>
 
-      {/* Streak-enhanced progress bar */}
+      {/* Progress bar */}
       <StreakBar
         cardIndex={cardIndex}
         total={shuffledCards.length}
         done={done}
-        streak={correctStreak}
       />
 
       {done ? (
@@ -393,28 +417,39 @@ export default function StudySession() {
           </div>
         </div>
       ) : (
-        <>
-          <StudyCard
-            key={`${current.id}-${cardIndex}`}
-            card={current}
-            deck={deck}
-            onNext={handleNext}
-            onPrev={handlePrev}
-            isFirst={cardIndex === 0}
-            isLast={cardIndex === shuffledCards.length - 1}
-            onScore={handleScore}
-            soundEnabled={soundEnabled}
-          />
-          {/* Nav arrows */}
-          <div className="flex justify-center gap-3 mt-5">
-            <Button variant="ghost" size="icon" onClick={handlePrev} disabled={cardIndex === 0}>
-              <ChevronLeft className="w-5 h-5" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={handleNext} disabled={cardIndex === shuffledCards.length - 1}>
-              <ChevronRight className="w-5 h-5" />
-            </Button>
+        <div className="flex gap-4 items-start">
+          <div className="flex-1 min-w-0">
+            <StudyCard
+              key={`${current.id}-${cardIndex}`}
+              card={current}
+              deck={deck}
+              onNext={handleNext}
+              onPrev={handlePrev}
+              isFirst={cardIndex === 0}
+              isLast={cardIndex === shuffledCards.length - 1}
+              onScore={handleScore}
+              soundEnabled={soundEnabled}
+            />
+            {/* Nav arrows */}
+            <div className="flex justify-center gap-3 mt-5">
+              <Button variant="ghost" size="icon" onClick={handlePrev} disabled={cardIndex === 0}>
+                <ChevronLeft className="w-5 h-5" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={handleNext} disabled={cardIndex === shuffledCards.length - 1}>
+                <ChevronRight className="w-5 h-5" />
+              </Button>
+            </div>
           </div>
-        </>
+
+          {/* Streak panel */}
+          <div className="hidden sm:block shrink-0 w-44">
+            <StreakPanel
+              currentStreak={correctStreak}
+              bestStreak={bestStreak}
+              allTimeBest={allTimeBest > 0 ? allTimeBest : null}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
