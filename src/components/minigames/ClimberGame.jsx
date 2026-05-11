@@ -326,7 +326,7 @@ export default function ClimberGame({ currentLevel, consecutiveWrong, gameOver, 
         ref={canvasRef}
         width={W}
         height={H}
-        style={{ display: 'block', width: '100%', imageRendering: 'pixelated' }}
+        style={{ display: 'block', width: '100%', height: 'auto', imageRendering: 'pixelated' }}
       />
     </div>
   );
