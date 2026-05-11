@@ -1,15 +1,15 @@
 import { useEffect, useRef, useCallback } from 'react';
 
-const W = 320;
-const H = 560;
-const LEDGE_COUNT = 7; // visible ledges
+const W = 240;
+const H = 400;
+const LEDGE_COUNT = 7;
 const LEDGE_H = 12;
-const LEDGE_W = 104;
-const LEDGE_SPACING = 72;
+const LEDGE_W = 80;
+const LEDGE_SPACING = 52;
 
 // Ledge x positions: alternate left/right
 function getLedgeX(index) {
-  return index % 2 === 0 ? 12 : W - LEDGE_W - 12;
+  return index % 2 === 0 ? 8 : W - LEDGE_W - 8;
 }
 function getLedgeY(index, cameraOffset) {
   // index 0 = bottom start ledge
@@ -42,14 +42,14 @@ function drawLedge(ctx, x, y) {
   // Shadows/depth
   drawRect(ctx, x, y + LEDGE_H - 2, LEDGE_W, 2, '#666');
   drawRect(ctx, x + LEDGE_W - 2, y + 2, 2, LEDGE_H - 2, '#666');
-  // Rock detail pixels (scaled 2x)
-  drawRect(ctx, x + 8, y + 4, 4, 2, '#777');
-  drawRect(ctx, x + 24, y + 6, 6, 2, '#777');
-  drawRect(ctx, x + 44, y + 4, 4, 2, '#888');
-  drawRect(ctx, x + 68, y + 6, 4, 2, '#777');
-  drawRect(ctx, x + 88, y + 4, 6, 2, '#888');
-  // Green moss patches on top edge (scaled 2x)
-  const mossSpots = [4, 12, 22, 34, 48, 60, 76, 90];
+  // Rock detail pixels
+  drawRect(ctx, x + 6, y + 4, 4, 2, '#777');
+  drawRect(ctx, x + 18, y + 6, 4, 2, '#777');
+  drawRect(ctx, x + 32, y + 4, 4, 2, '#888');
+  drawRect(ctx, x + 50, y + 6, 4, 2, '#777');
+  drawRect(ctx, x + 66, y + 4, 4, 2, '#888');
+  // Green moss patches on top edge
+  const mossSpots = [4, 12, 22, 34, 46, 58, 68];
   mossSpots.forEach(mx => {
     drawRect(ctx, x + mx, y, 2, 2, '#4a7c3f');
     if (mx + 2 < LEDGE_W) drawRect(ctx, x + mx + 2, y, 2, 2, '#5a9c4f');
@@ -218,12 +218,12 @@ export default function ClimberGame({ currentLevel, consecutiveWrong, gameOver, 
       drawSkull(ctx, W / 2, H / 2 - 10);
       // Pixel font "GAME OVER"
       ctx.fillStyle = '#ff2222';
-      ctx.font = 'bold 20px monospace';
+      ctx.font = 'bold 16px monospace';
       ctx.textAlign = 'center';
-      ctx.fillText('GAME OVER', W / 2, H / 2 + 84);
+      ctx.fillText('GAME OVER', W / 2, H / 2 + 60);
       ctx.fillStyle = '#aaa';
-      ctx.font = '13px monospace';
-      ctx.fillText('answer correctly to restart', W / 2, H / 2 + 108);
+      ctx.font = '10px monospace';
+      ctx.fillText('answer correctly to restart', W / 2, H / 2 + 78);
       frameRef.current++;
       animRef.current = requestAnimationFrame(draw);
       return;
@@ -253,18 +253,18 @@ export default function ClimberGame({ currentLevel, consecutiveWrong, gameOver, 
     for (let i = 0; i < 3; i++) {
       const filled = i < consecutiveWrong;
       ctx.fillStyle = filled ? '#ff3333' : '#444';
-      ctx.font = '18px monospace';
+      ctx.font = '13px monospace';
       ctx.textAlign = 'left';
-      ctx.fillText(filled ? '💀' : '○', 6 + i * 26, 24);
+      ctx.fillText(filled ? '💀' : '○', 5 + i * 18, 17);
     }
 
     // Level indicator
     ctx.fillStyle = 'rgba(0,0,0,0.4)';
-    ctx.fillRect(W - 70, 4, 66, 22);
+    ctx.fillRect(W - 52, 3, 48, 16);
     ctx.fillStyle = '#fff';
-    ctx.font = '14px monospace';
+    ctx.font = '10px monospace';
     ctx.textAlign = 'right';
-    ctx.fillText(`LVL ${currentLevel}`, W - 6, 22);
+    ctx.fillText(`LVL ${currentLevel}`, W - 5, 15);
 
     frameRef.current++;
     animRef.current = requestAnimationFrame(draw);
@@ -276,7 +276,7 @@ export default function ClimberGame({ currentLevel, consecutiveWrong, gameOver, 
   }, [draw]);
 
   return (
-    <div className="border border-border rounded-xl overflow-hidden bg-card shadow-sm" style={{ width: 320 }}>
+    <div className="border border-border rounded-xl overflow-hidden bg-card shadow-sm" style={{ width: 240 }}>
       <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground text-center py-1 border-b border-border">
         Climber
       </p>
