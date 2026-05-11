@@ -5,21 +5,25 @@ const H = 400;
 const LEDGE_COUNT = 7;
 const LEDGE_SPACING = 52;
 
-// Ledge size variations: [width, baseHeight] cycling through levels
+// Floating island variants: [width, rockHeight, xOffset (0..1 of remaining space)]
 const LEDGE_VARIANTS = [
-  [W, 14],      // full width, normal
-  [W, 10],      // full width, thin
-  [W, 16],      // full width, tall
-  [W, 12],      // full width, normal
-  [W, 18],      // full width, chunky
+  [90,  22, 0.05],
+  [110, 26, 0.50],
+  [80,  20, 0.15],
+  [100, 24, 0.60],
+  [95,  22, 0.02],
+  [115, 28, 0.40],
+  [85,  20, 0.55],
 ];
 
 function getLedgeVariant(index) {
   return LEDGE_VARIANTS[index % LEDGE_VARIANTS.length];
 }
 
-// All ledges span the full width, anchored to left edge
-function getLedgeX() { return 0; }
+function getLedgeX(index) {
+  const [lw, , xFrac] = getLedgeVariant(index);
+  return Math.round(xFrac * (W - lw));
+}
 
 function getLedgeY(index, cameraOffset) {
   return H - 40 - index * LEDGE_SPACING - cameraOffset;
@@ -31,108 +35,207 @@ function drawRect(ctx, x, y, w, h, color) {
   ctx.fillRect(Math.round(x), Math.round(y), w, h);
 }
 
-function drawCloud(ctx, x, y) {
+// Draw a fluffy pixel cloud at (x, y)
+function drawCloud(ctx, x, y, scale = 1) {
+  const S = scale;
   const pts = [
-    [8,4],[9,4],[10,4],[11,4],[12,4],
-    [6,3],[7,3],[8,3],[9,3],[10,3],[11,3],[12,3],[13,3],[14,3],
-    [5,2],[6,2],[7,2],[8,2],[9,2],[10,2],[11,2],[12,2],[13,2],[14,2],[15,2],
-    [4,1],[5,1],[6,1],[7,1],[8,1],[9,1],[10,1],[11,1],[12,1],[13,1],[14,1],[15,1],[16,1],[17,1],
-    [3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[9,0],[10,0],[11,0],[12,0],[13,0],[14,0],[15,0],[16,0],[17,0],[18,0],[19,0],[20,0],
+    // bottom row
+    [2,6],[3,6],[4,6],[5,6],[6,6],[7,6],[8,6],[9,6],[10,6],[11,6],[12,6],[13,6],
+    // mid row
+    [1,5],[2,5],[3,5],[4,5],[5,5],[6,5],[7,5],[8,5],[9,5],[10,5],[11,5],[12,5],[13,5],[14,5],
+    // mid row 2
+    [0,4],[1,4],[2,4],[3,4],[4,4],[5,4],[6,4],[7,4],[8,4],[9,4],[10,4],[11,4],[12,4],[13,4],[14,4],[15,4],
+    // bumps
+    [2,3],[3,3],[4,3],[5,3],[6,3],[7,3],[8,3],[9,3],[10,3],[11,3],[12,3],[13,3],
+    [4,2],[5,2],[6,2],[7,2],[8,2],[9,2],[10,2],[11,2],
+    [6,1],[7,1],[8,1],[9,1],
+    // second bump
+    [10,3],[11,3],[12,3],[13,3],[14,3],
+    [11,2],[12,2],[13,2],[14,2],[15,2],
+    [12,1],[13,1],[14,1],
   ];
-  pts.forEach(([px, py]) => drawRect(ctx, x + px * 2, y + py * 2, 2, 2, 'rgba(255,255,255,0.92)'));
-}
-
-function drawLedge(ctx, x, y, ledgeW, ledgeH) {
-  // Wedge shape: full height on left, tapers to thin on right
-  for (let i = 0; i < ledgeW; i++) {
-    const t = i / (ledgeW - 1); // 0 = left, 1 = right
-    const colH = Math.max(3, Math.round(ledgeH * (1 - t * 0.55)));
-    const topY = y + (ledgeH - colH);
-    // Main body
-    drawRect(ctx, x + i, topY + 1, 1, colH - 1, '#8a8a8a');
-    // Top highlight
-    drawRect(ctx, x + i, topY, 1, 1, '#b0b0b0');
-    // Bottom shadow
-    drawRect(ctx, x + i, topY + colH - 1, 1, 1, '#555');
-  }
-  // Moss on top-left (thicker side)
-  const mossSpots = [4, 14, 26, 40, 56, 74, 96, 118, 142, 168, 196, 218];
-  mossSpots.forEach(mx => {
-    if (mx >= ledgeW) return;
-    drawRect(ctx, x + mx, y, 3, 2, '#4a7c3f');
-    if (mx + 3 < ledgeW) drawRect(ctx, x + mx + 3, y, 2, 2, '#5a9c4f');
+  const px = Math.round(x);
+  const py = Math.round(y);
+  // Shadow
+  pts.forEach(([cx, cy]) => {
+    ctx.fillStyle = 'rgba(180,210,255,0.35)';
+    ctx.fillRect(px + cx * S + S, py + cy * S + S, S, S);
+  });
+  // White body
+  pts.forEach(([cx, cy]) => {
+    ctx.fillStyle = 'rgba(255,255,255,0.92)';
+    ctx.fillRect(px + cx * S, py + cy * S, S, S);
   });
 }
 
-// Climber pixel art - 9x14 px sprite, drawn at 2x scale (18x28)
+// Draw a floating island platform
+function drawIsland(ctx, x, y, islandW, rockH) {
+  const grassH = 5;
+  const totalH = grassH + rockH;
+
+  // --- Rock body (dark gray, rounded bottom) ---
+  for (let row = 0; row < rockH; row++) {
+    // Taper the sides as we go down
+    const taper = Math.floor((row / rockH) * (islandW * 0.18));
+    const rx = x + taper;
+    const rw = islandW - taper * 2;
+    if (rw <= 0) continue;
+
+    // Color gradient: lighter top, darker bottom
+    const brightness = Math.round(130 - (row / rockH) * 50);
+    const shade = `rgb(${brightness},${brightness},${brightness})`;
+    drawRect(ctx, rx, y + grassH + row, rw, 1, shade);
+
+    // Side highlight (left edge)
+    drawRect(ctx, rx, y + grassH + row, 2, 1, `rgb(${Math.min(255, brightness + 30)},${Math.min(255, brightness + 30)},${Math.min(255, brightness + 30)})`);
+    // Side shadow (right edge)
+    drawRect(ctx, rx + rw - 2, y + grassH + row, 2, 1, `rgb(${Math.max(0, brightness - 30)},${Math.max(0, brightness - 30)},${Math.max(0, brightness - 30)})`);
+  }
+
+  // Rock boulders embedded in the side face
+  const boulderPositions = [
+    { ox: 0.12, oy: 0.2, r: 0.10 },
+    { ox: 0.35, oy: 0.45, r: 0.09 },
+    { ox: 0.60, oy: 0.25, r: 0.11 },
+    { ox: 0.80, oy: 0.55, r: 0.08 },
+    { ox: 0.22, oy: 0.70, r: 0.09 },
+    { ox: 0.50, oy: 0.65, r: 0.10 },
+    { ox: 0.70, oy: 0.80, r: 0.08 },
+  ];
+  boulderPositions.forEach(({ ox, oy, r }) => {
+    const taper = Math.floor((oy * rockH / rockH) * (islandW * 0.18));
+    const availW = islandW - taper * 2;
+    if (availW <= 0) return;
+    const bx = Math.round(x + taper + ox * availW);
+    const by = Math.round(y + grassH + oy * rockH);
+    const bw = Math.max(3, Math.round(r * islandW));
+    const bh = Math.max(2, Math.round(r * rockH * 0.7));
+    // Boulder highlight
+    drawRect(ctx, bx, by, bw, bh, 'rgba(200,200,200,0.4)');
+    drawRect(ctx, bx + 1, by + 1, bw - 2, bh - 2, 'rgba(100,100,100,0.25)');
+  });
+
+  // --- Grass top ---
+  // Base green strip
+  drawRect(ctx, x, y + grassH - 3, islandW, 3, '#3a7d1e');
+  drawRect(ctx, x, y + grassH - 5, islandW, 2, '#4a9e2a');
+
+  // Grass blades / spikes
+  for (let gx = x + 2; gx < x + islandW - 1; gx += 3) {
+    const h = 2 + (gx % 5 === 0 ? 2 : 0);
+    drawRect(ctx, gx, y + grassH - 5 - h, 2, h, '#5ec228');
+    if (gx % 7 === 0) {
+      drawRect(ctx, gx + 1, y + grassH - 5 - h - 1, 1, 2, '#7de040');
+    }
+  }
+
+  // Dirt underside hint (thin dark strip at very bottom)
+  const bottomTaper = Math.floor((islandW * 0.18));
+  if (islandW - bottomTaper * 2 > 0) {
+    drawRect(ctx, x + bottomTaper, y + totalH - 2, islandW - bottomTaper * 2, 2, '#555');
+  }
+}
+
+// Climber pixel art sprite
 function drawClimber(ctx, x, y, state, frame) {
   const px = Math.round(x);
   const py = Math.round(y);
-  const S = 2; // pixel scale
+  const S = 2;
 
-  // Colors
-  const skin = '#f4c08a';
-  const shirt = '#3a6fc4';
+  const skin = '#f4b87a';
+  const jacket = '#c0392b';  // red jacket
   const pants = '#4a3a2a';
   const boots = '#2a1a0a';
   const hair = '#3a2a0a';
-  const shadow = '#c08050';
+  const goggle = '#1a3a6a';
+  const goggleGlass = '#5a9adf';
+  const pack = '#c87830';   // backpack
 
   if (state === 'dead') return;
 
   const r = (ox, oy, w, h, c) => drawRect(ctx, px + ox * S, py + oy * S, w * S, h * S, c);
 
-  // HEAD
+  // HEAD with helmet/goggle
   r(3, 0, 3, 1, hair);
+  r(2, 0, 4, 1, '#8b0000'); // red helmet
+  r(1, 0, 1, 1, '#8b0000');
   r(2, 1, 5, 3, skin);
-  r(3, 2, 1, 1, '#333');
-  r(5, 2, 1, 1, '#333');
-  if (state === 'scramble') {
-    r(3, 3, 3, 1, '#c05040');
-  } else {
-    r(3, 3, 3, 1, shadow);
-  }
+  // Goggles
+  r(2, 1, 2, 1, goggle);
+  r(4, 1, 2, 1, goggle);
+  r(2, 2, 2, 1, goggleGlass);
+  r(4, 2, 2, 1, goggleGlass);
+  r(3, 1, 1, 1, goggle); // bridge
+  // Mouth
+  r(3, 3, 3, 1, '#c07050');
+
+  // Backpack (behind body, drawn first)
+  r(7, 4, 2, 5, pack);
+  r(7, 3, 2, 1, pack);
+  r(7, 9, 2, 1, '#a05c20');
 
   if (state === 'idle') {
-    r(2, 4, 5, 4, shirt);
-    r(1, 4, 1, 3, skin);
-    r(7, 4, 1, 3, skin);
-    r(2, 8, 2, 3, pants);
-    r(5, 8, 2, 3, pants);
-    r(2, 11, 2, 2, boots);
-    r(5, 11, 2, 2, boots);
+    r(2, 4, 5, 5, jacket);
+    r(1, 4, 1, 4, skin); // left arm
+    r(0, 5, 1, 2, skin);
+    r(2, 9, 2, 3, pants);
+    r(5, 9, 2, 3, pants);
+    r(2, 12, 2, 2, boots);
+    r(5, 12, 2, 2, boots);
   } else if (state === 'jump') {
-    r(2, 4, 5, 4, shirt);
-    r(1, 2, 1, 3, skin);
-    r(7, 2, 1, 3, skin);
-    r(2, 8, 2, 2, pants);
-    r(5, 8, 2, 2, pants);
-    r(1, 10, 2, 1, pants);
-    r(6, 10, 2, 1, pants);
-    r(1, 11, 2, 2, boots);
-    r(6, 11, 2, 2, boots);
+    r(2, 4, 5, 5, jacket);
+    r(0, 2, 2, 3, skin); // arms up
+    r(7, 2, 2, 3, skin);
+    r(2, 9, 2, 2, pants);
+    r(5, 9, 2, 2, pants);
+    r(1, 11, 2, 1, pants);
+    r(6, 11, 2, 1, pants);
+    r(1, 12, 2, 2, boots);
+    r(6, 12, 2, 2, boots);
   } else if (state === 'scramble') {
-    r(2, 4, 5, 4, shirt);
+    r(2, 4, 5, 5, jacket);
     r(0, 3, 2, 2, skin);
     r(7, 3, 2, 2, skin);
     const legOff = frame % 12 < 6 ? 0 : 1;
-    r(2, 8, 2, 3 + legOff, pants);
-    r(5, 8, 2, 3 - legOff, pants);
-    r(2, 11 + legOff, 2, 2, boots);
-    r(5, 11 - legOff, 2, 2, boots);
+    r(2, 9, 2, 3 + legOff, pants);
+    r(5, 9, 2, 3 - legOff, pants);
+    r(2, 12 + legOff, 2, 2, boots);
+    r(5, 12 - legOff, 2, 2, boots);
   } else if (state === 'fall') {
-    r(2, 4, 5, 4, shirt);
+    r(2, 4, 5, 5, jacket);
     r(0, 4, 2, 2, skin);
     r(7, 4, 2, 2, skin);
-    r(1, 8, 2, 3, pants);
-    r(6, 8, 2, 3, pants);
-    r(1, 11, 2, 2, boots);
-    r(6, 11, 2, 2, boots);
+    r(1, 9, 2, 3, pants);
+    r(6, 9, 2, 3, pants);
+    r(1, 12, 2, 2, boots);
+    r(6, 12, 2, 2, boots);
   }
 }
 
+// Pixel heart
+function drawHeart(ctx, x, y, filled) {
+  const S = 2;
+  const color = filled ? '#e03030' : '#555555';
+  const highlight = filled ? '#ff6060' : '#888888';
+  const pts = [
+    [1,0],[2,0],[4,0],[5,0],
+    [0,1],[1,1],[2,1],[3,1],[4,1],[5,1],[6,1],
+    [0,2],[1,2],[2,2],[3,2],[4,2],[5,2],[6,2],
+    [1,3],[2,3],[3,3],[4,3],[5,3],
+    [2,4],[3,4],[4,4],
+    [3,5],
+  ];
+  pts.forEach(([px, py]) => {
+    ctx.fillStyle = color;
+    ctx.fillRect(x + px * S, y + py * S, S, S);
+  });
+  // Highlight
+  ctx.fillStyle = highlight;
+  ctx.fillRect(x + 1 * S, y + 1 * S, S, S);
+  ctx.fillRect(x + 4 * S, y + 1 * S, S, S);
+}
+
 function drawSkull(ctx, cx, cy) {
-  // Skull and crossbones drawn at 2x pixel scale
   const P = 2;
   const SC = '#e8e8e8';
   const D = '#888';
@@ -143,43 +246,22 @@ function drawSkull(ctx, cx, cy) {
     [5,1],[6,1],[7,1],[8,1],[9,1],[10,1],[11,1],[12,1],[13,1],[14,1],[15,1],[16,1],[17,1],[18,1],[19,1],
     [4,2],[5,2],[6,2],[7,2],[8,2],[9,2],[10,2],[11,2],[12,2],[13,2],[14,2],[15,2],[16,2],[17,2],[18,2],[19,2],[20,2],
     [3,3],[4,3],[5,3],[6,3],[7,3],[8,3],[9,3],[10,3],[11,3],[12,3],[13,3],[14,3],[15,3],[16,3],[17,3],[18,3],[19,3],[20,3],[21,3],
-    [3,4],[4,4],[5,4],[6,4],[7,4],[8,4],[9,4],[10,4],[11,4],[12,4],[13,4],[14,4],[15,4],[16,4],[17,4],[18,4],[19,4],[20,4],[21,4],
-    [3,5],[4,5],[5,5],[6,5],[7,5],[8,5],[9,5],[10,5],[11,5],[12,5],[13,5],[14,5],[15,5],[16,5],[17,5],[18,5],[19,5],[20,5],[21,5],
-    [3,6],[4,6],[5,6],[6,6],[7,6],[8,6],[9,6],[10,6],[11,6],[12,6],[13,6],[14,6],[15,6],[16,6],[17,6],[18,6],[19,6],[20,6],[21,6],
+    [3,4],[21,4],[3,5],[21,5],[3,6],[21,6],
     [4,7],[5,7],[6,7],[7,7],[8,7],[9,7],[10,7],[11,7],[12,7],[13,7],[14,7],[15,7],[16,7],[17,7],[18,7],[19,7],[20,7],
-    [5,8],[6,8],[7,8],[8,8],[9,8],[10,8],[11,8],[12,8],[13,8],[14,8],[15,8],[16,8],[17,8],[18,8],[19,8],
   ];
   dome.forEach(([px, py]) => drawRect(ctx, cx - 24 + px * P, cy - 40 + py * P, P, P, SC));
-
   [[5,3],[6,3],[7,3],[5,4],[6,4],[7,4],[5,5],[6,5],[7,5]].forEach(([px, py]) =>
     drawRect(ctx, cx - 24 + px * P, cy - 40 + py * P, P, P, B));
   [[13,3],[14,3],[15,3],[13,4],[14,4],[15,4],[13,5],[14,5],[15,5]].forEach(([px, py]) =>
     drawRect(ctx, cx - 24 + px * P, cy - 40 + py * P, P, P, B));
-
   [[10,6],[11,6],[10,7],[11,7]].forEach(([px, py]) =>
     drawRect(ctx, cx - 24 + px * P, cy - 40 + py * P, P, P, D));
-
-  const jaw = [
-    [5,9],[6,9],[7,9],[8,9],[9,9],[10,9],[11,9],[12,9],[13,9],[14,9],[15,9],[16,9],[17,9],[18,9],[19,9],
-    [5,10],[6,10],[19,10],[7,10],[11,10],[12,10],[15,10],[16,10],
-    [5,11],[7,11],[9,11],[11,11],[13,11],[15,11],[17,11],[19,11],
-    [5,12],[6,12],[7,12],[8,12],[9,12],[10,12],[11,12],[12,12],[13,12],[14,12],[15,12],[16,12],[17,12],[18,12],[19,12],
-  ];
-  jaw.forEach(([px, py]) => drawRect(ctx, cx - 24 + px * P, cy - 40 + py * P, P, P, SC));
-  [[8,10],[9,10],[10,10],[13,10],[14,10],[17,10],[18,10]].forEach(([px, py]) =>
-    drawRect(ctx, cx - 24 + px * P, cy - 40 + py * P, P, P, B));
-
-  // Crossbones (scaled 2x)
-  for (let i = 0; i < 18; i++) {
-    drawRect(ctx, cx - 28 + i * 2, cy + 8 + i * 2, 4, 4, SC);
-  }
+  for (let i = 0; i < 18; i++) drawRect(ctx, cx - 28 + i * 2, cy + 8 + i * 2, 4, 4, SC);
   drawRect(ctx, cx - 32, cy + 4, 10, 10, SC); drawRect(ctx, cx - 30, cy + 6, 6, 6, B);
   drawRect(ctx, cx + 8, cy + 40, 10, 10, SC); drawRect(ctx, cx + 10, cy + 42, 6, 6, B);
   drawRect(ctx, cx - 32, cy + 40, 10, 10, SC); drawRect(ctx, cx - 30, cy + 42, 6, 6, B);
   drawRect(ctx, cx + 8, cy + 4, 10, 10, SC); drawRect(ctx, cx + 10, cy + 6, 6, 6, B);
-  for (let i = 0; i < 18; i++) {
-    drawRect(ctx, cx + 24 - i * 2, cy + 8 + i * 2, 4, 4, SC);
-  }
+  for (let i = 0; i < 18; i++) drawRect(ctx, cx + 24 - i * 2, cy + 8 + i * 2, 4, 4, SC);
 }
 
 export default function ClimberGame({ currentLevel, consecutiveWrong, gameOver, climberState }) {
@@ -187,26 +269,26 @@ export default function ClimberGame({ currentLevel, consecutiveWrong, gameOver, 
   const frameRef = useRef(0);
   const animRef = useRef(null);
   const cloudsRef = useRef([
-    { x: 10,  y: 18,  speed: 0.08 },
-    { x: 80,  y: 45,  speed: 0.05 },
-    { x: 50,  y: 8,   speed: 0.06 },
-    { x: 150, y: 30,  speed: 0.04 },
-    { x: 190, y: 60,  speed: 0.07 },
-    { x: 30,  y: 75,  speed: 0.03 },
-    { x: 120, y: 90,  speed: 0.055 },
-    { x: 200, y: 110, speed: 0.065 },
-    { x: 70,  y: 130, speed: 0.045 },
-    { x: 160, y: 150, speed: 0.05 },
-    { x: 20,  y: 180, speed: 0.06 },
-    { x: 110, y: 200, speed: 0.035 },
+    { x: -10, y: 15,  speed: 0.10, scale: 2 },
+    { x: 80,  y: 50,  speed: 0.06, scale: 2 },
+    { x: 140, y: 20,  speed: 0.08, scale: 2 },
+    { x: 30,  y: 80,  speed: 0.05, scale: 2 },
+    { x: 170, y: 100, speed: 0.07, scale: 2 },
+    { x: 60,  y: 130, speed: 0.04, scale: 2 },
+    { x: 120, y: 160, speed: 0.09, scale: 2 },
+    { x: 10,  y: 190, speed: 0.06, scale: 2 },
+    { x: 180, y: 210, speed: 0.05, scale: 2 },
+    { x: 50,  y: 250, speed: 0.07, scale: 2 },
+    { x: 150, y: 280, speed: 0.04, scale: 2 },
+    { x: 90,  y: 320, speed: 0.08, scale: 2 },
+    { x: 200, y: 350, speed: 0.05, scale: 2 },
+    { x: 20,  y: 370, speed: 0.06, scale: 2 },
   ]);
 
-  // Animation state: from/to positions + start frame
-  const jumpRef = useRef(null);  // { fromX, fromY, toX, toY, startFrame }
+  const jumpRef = useRef(null);
   const prevLevelRef = useRef(currentLevel);
-  // Current rendered position (updated each frame from jump or settled)
   const posRef = useRef({
-    x: W / 2 - 9,
+    x: getLedgeX(0) + getLedgeVariant(0)[0] / 2 - 9,
     y: H - 40 - 28,
   });
 
@@ -218,23 +300,25 @@ export default function ClimberGame({ currentLevel, consecutiveWrong, gameOver, 
 
     const frame = frameRef.current;
 
-    // Background sky
-    ctx.fillStyle = '#87ceeb';
+    // Sky gradient
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0,   '#2980b9');
+    grad.addColorStop(0.4, '#5dade2');
+    grad.addColorStop(1,   '#85c1e9');
+    ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
 
-    // Animate clouds
+    // Animate and draw clouds
     cloudsRef.current.forEach(cloud => {
       cloud.x += cloud.speed;
-      if (cloud.x > W + 24) cloud.x = -24;
-      drawCloud(ctx, Math.round(cloud.x), Math.round(cloud.y));
+      if (cloud.x > W + 40) cloud.x = -40;
+      drawCloud(ctx, Math.round(cloud.x), Math.round(cloud.y), cloud.scale);
     });
 
     if (gameOver) {
-      // Dark overlay
       ctx.fillStyle = 'rgba(0,0,0,0.72)';
       ctx.fillRect(0, 0, W, H);
       drawSkull(ctx, W / 2, H / 2 - 10);
-      // Pixel font "GAME OVER"
       ctx.fillStyle = '#ff2222';
       ctx.font = 'bold 16px monospace';
       ctx.textAlign = 'center';
@@ -249,10 +333,9 @@ export default function ClimberGame({ currentLevel, consecutiveWrong, gameOver, 
 
     const JUMP_FRAMES = 18;
 
-    // On level change, record a new jump from current pos to target ledge
     if (prevLevelRef.current !== currentLevel) {
-      const [lw] = getLedgeVariant(currentLevel);
-      const toX = getLedgeX() + lw / 2 - 9;
+      const lw = getLedgeVariant(currentLevel)[0];
+      const toX = getLedgeX(currentLevel) + lw / 2 - 9;
       const toY = H - 40 - currentLevel * LEDGE_SPACING - 28;
       jumpRef.current = {
         fromX: posRef.current.x,
@@ -264,13 +347,11 @@ export default function ClimberGame({ currentLevel, consecutiveWrong, gameOver, 
       prevLevelRef.current = currentLevel;
     }
 
-    // Compute current position from jump animation
     if (jumpRef.current) {
       const { fromX, fromY, toX, toY, startFrame } = jumpRef.current;
       const elapsed = frame - startFrame;
       const t = Math.min(elapsed / JUMP_FRAMES, 1);
       const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-      // Arc: higher jump going up, small hop going down
       const arcHeight = toY < fromY ? -22 : 6;
       const cx = fromX + (toX - fromX) * ease;
       const cy = fromY + (toY - fromY) * ease + arcHeight * Math.sin(Math.PI * t);
@@ -281,34 +362,29 @@ export default function ClimberGame({ currentLevel, consecutiveWrong, gameOver, 
       }
     }
 
-    // Camera: only scroll once climber world-Y rises above threshold
     const SCROLL_THRESHOLD = Math.round(H * 0.30);
     const climberWorldY = posRef.current.y;
     const cameraOffset = climberWorldY < SCROLL_THRESHOLD
       ? climberWorldY - SCROLL_THRESHOLD
       : 0;
 
-    // Draw ledges
+    // Draw floating islands
     for (let i = 0; i <= LEDGE_COUNT + currentLevel + 1; i++) {
       const ly = getLedgeY(i, cameraOffset);
       const [lw, lh] = getLedgeVariant(i);
-      if (ly < -lh || ly > H + lh) continue;
-      drawLedge(ctx, getLedgeX(), ly, lw, lh);
+      if (ly < -lh - 10 || ly > H + lh) continue;
+      drawIsland(ctx, getLedgeX(i), ly, lw, lh);
     }
 
-    // Draw climber at animated position
+    // Draw climber
     const climberX = posRef.current.x;
     const climberY = posRef.current.y - cameraOffset;
-
     drawClimber(ctx, climberX, climberY, climberState, frame);
 
-    // Wrong-answer indicator
+    // Hearts (lives) top-left
     for (let i = 0; i < 3; i++) {
-      const filled = i < consecutiveWrong;
-      ctx.fillStyle = filled ? '#ff3333' : '#444';
-      ctx.font = '13px monospace';
-      ctx.textAlign = 'left';
-      ctx.fillText(filled ? '💀' : '○', 5 + i * 18, 17);
+      const filled = i < (3 - consecutiveWrong);
+      drawHeart(ctx, 6 + i * 18, 6, filled);
     }
 
     // Level indicator
