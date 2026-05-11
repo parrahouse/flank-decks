@@ -229,8 +229,10 @@ export default function ClimberGame({ currentLevel, consecutiveWrong, gameOver, 
       return;
     }
 
-    // Camera: keep current ledge in lower third
-    const cameraOffset = currentLevel * LEDGE_SPACING;
+    // Climber is always drawn at a fixed screen position (lower third)
+    const CLIMBER_SCREEN_Y = Math.round(H * 0.72);
+    // Camera scrolls so that the current ledge is always at CLIMBER_SCREEN_Y
+    const cameraOffset = CLIMBER_SCREEN_Y - (H - 40 - currentLevel * LEDGE_SPACING);
 
     // Draw ledges
     for (let i = 0; i <= LEDGE_COUNT + currentLevel + 1; i++) {
@@ -239,14 +241,11 @@ export default function ClimberGame({ currentLevel, consecutiveWrong, gameOver, 
       drawLedge(ctx, getLedgeX(i), ly);
     }
 
-    // Draw climber
-    const ledgeIdx = currentLevel;
-    const lx = getLedgeX(ledgeIdx);
-    const ly = getLedgeY(ledgeIdx, cameraOffset);
+    // Draw climber at fixed screen position above current ledge
+    const lx = getLedgeX(currentLevel);
     const climberX = lx + LEDGE_W / 2 - 9;
-    const climberY = ly - 28;
+    const climberY = CLIMBER_SCREEN_Y - 28;
 
-    // Jump arc: animate climber moving between ledges
     drawClimber(ctx, climberX, climberY, climberState, frame);
 
     // Wrong-answer indicator
