@@ -318,7 +318,7 @@ export default function ClimberGame({ currentLevel, consecutiveWrong, gameOver, 
   }, [draw]);
 
   return (
-    <div className="border border-border rounded-xl overflow-hidden bg-card shadow-sm" style={{ width: 240 }}>
+    <div className="border border-border rounded-xl overflow-hidden bg-card shadow-sm w-full">
       <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground text-center py-1 border-b border-border">
         Climber
       </p>
