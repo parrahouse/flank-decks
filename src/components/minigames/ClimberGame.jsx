@@ -184,10 +184,14 @@ export default function ClimberGame({ currentLevel, consecutiveWrong, gameOver, 
     { x: 50, y: 8, speed: 0.06 },
   ]);
 
-  // Animated climber position (interpolated)
-  const climberPosRef = useRef({ x: getLedgeX(0) + LEDGE_W / 2 - 9, y: H - 40 - 28 });
-  const targetPosRef = useRef(null);
+  // Animation state: from/to positions + start frame
+  const jumpRef = useRef(null);  // { fromX, fromY, toX, toY, startFrame }
   const prevLevelRef = useRef(currentLevel);
+  // Current rendered position (updated each frame from jump or settled)
+  const posRef = useRef({
+    x: getLedgeX(0) + LEDGE_W / 2 - 9,
+    y: H - 40 - 28,
+  });
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -234,40 +238,42 @@ export default function ClimberGame({ currentLevel, consecutiveWrong, gameOver, 
       return;
     }
 
-    // Detect level change → set new target position
+    const JUMP_FRAMES = 18;
+
+    // On level change, record a new jump from current pos to target ledge
     if (prevLevelRef.current !== currentLevel) {
-      const fromLevel = prevLevelRef.current;
-      prevLevelRef.current = currentLevel;
-      const fromX = getLedgeX(fromLevel) + LEDGE_W / 2 - 9;
-      const fromY = H - 40 - fromLevel * LEDGE_SPACING - 28;
       const toX = getLedgeX(currentLevel) + LEDGE_W / 2 - 9;
       const toY = H - 40 - currentLevel * LEDGE_SPACING - 28;
-      climberPosRef.current = { x: fromX, y: fromY };
-      targetPosRef.current = { x: toX, y: toY, startFrame: frame };
-    }
-
-    // Interpolate climber toward target
-    const JUMP_FRAMES = 22; // animation duration in frames
-    if (targetPosRef.current) {
-      const elapsed = frame - targetPosRef.current.startFrame;
-      const t = Math.min(elapsed / JUMP_FRAMES, 1);
-      // Ease in-out
-      const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-      const { x: tx, y: ty } = targetPosRef.current;
-      const { x: sx, y: sy } = climberPosRef.current;
-      // Add a vertical arc for the jump (only when moving up)
-      const arcHeight = ty < sy ? -20 : 8;
-      const arcY = arcHeight * Math.sin(Math.PI * t);
-      climberPosRef.current = {
-        x: sx + (tx - sx) * ease,
-        y: sy + (ty - sy) * ease + arcY,
+      jumpRef.current = {
+        fromX: posRef.current.x,
+        fromY: posRef.current.y,
+        toX,
+        toY,
+        startFrame: frame,
       };
-      if (t >= 1) targetPosRef.current = null;
+      prevLevelRef.current = currentLevel;
     }
 
-    // Camera based on interpolated climber Y (in world space)
+    // Compute current position from jump animation
+    if (jumpRef.current) {
+      const { fromX, fromY, toX, toY, startFrame } = jumpRef.current;
+      const elapsed = frame - startFrame;
+      const t = Math.min(elapsed / JUMP_FRAMES, 1);
+      const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      // Arc: higher jump going up, small hop going down
+      const arcHeight = toY < fromY ? -22 : 6;
+      const cx = fromX + (toX - fromX) * ease;
+      const cy = fromY + (toY - fromY) * ease + arcHeight * Math.sin(Math.PI * t);
+      posRef.current = { x: cx, y: cy };
+      if (t >= 1) {
+        posRef.current = { x: toX, y: toY };
+        jumpRef.current = null;
+      }
+    }
+
+    // Camera: only scroll once climber world-Y rises above threshold
     const SCROLL_THRESHOLD = Math.round(H * 0.30);
-    const climberWorldY = climberPosRef.current.y;
+    const climberWorldY = posRef.current.y;
     const cameraOffset = climberWorldY < SCROLL_THRESHOLD
       ? climberWorldY - SCROLL_THRESHOLD
       : 0;
@@ -280,8 +286,8 @@ export default function ClimberGame({ currentLevel, consecutiveWrong, gameOver, 
     }
 
     // Draw climber at animated position
-    const climberX = climberPosRef.current.x;
-    const climberY = climberPosRef.current.y - cameraOffset;
+    const climberX = posRef.current.x;
+    const climberY = posRef.current.y - cameraOffset;
 
     drawClimber(ctx, climberX, climberY, climberState, frame);
 
