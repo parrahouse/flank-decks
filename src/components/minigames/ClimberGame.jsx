@@ -1,11 +1,11 @@
 import { useEffect, useRef, useCallback } from 'react';
 
-const W = 160;
-const H = 280;
+const W = 320;
+const H = 560;
 const LEDGE_COUNT = 7; // visible ledges
-const LEDGE_H = 6;
-const LEDGE_W = 52;
-const LEDGE_SPACING = 36;
+const LEDGE_H = 12;
+const LEDGE_W = 104;
+const LEDGE_SPACING = 72;
 
 // Ledge x positions: alternate left/right
 function getLedgeX(index) {
@@ -30,36 +30,37 @@ function drawCloud(ctx, x, y) {
     [4,1],[5,1],[6,1],[7,1],[8,1],[9,1],[10,1],[11,1],[12,1],[13,1],[14,1],[15,1],[16,1],[17,1],
     [3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[9,0],[10,0],[11,0],[12,0],[13,0],[14,0],[15,0],[16,0],[17,0],[18,0],[19,0],[20,0],
   ];
-  pts.forEach(([px, py]) => drawRect(ctx, x + px, y + py, 1, 1, 'rgba(255,255,255,0.92)'));
+  pts.forEach(([px, py]) => drawRect(ctx, x + px * 2, y + py * 2, 2, 2, 'rgba(255,255,255,0.92)'));
 }
 
 function drawLedge(ctx, x, y) {
   // Gray rock base
   for (let i = 0; i < LEDGE_W; i++) {
-    drawRect(ctx, x + i, y + 1, 1, LEDGE_H - 1, '#8a8a8a');
-    drawRect(ctx, x + i, y, 1, 1, '#aaaaaa');
+    drawRect(ctx, x + i, y + 2, 1, LEDGE_H - 2, '#8a8a8a');
+    drawRect(ctx, x + i, y, 1, 2, '#aaaaaa');
   }
   // Shadows/depth
-  drawRect(ctx, x, y + LEDGE_H - 1, LEDGE_W, 1, '#666');
-  drawRect(ctx, x + LEDGE_W - 1, y + 1, 1, LEDGE_H - 1, '#666');
-  // Rock detail pixels
-  drawRect(ctx, x + 4, y + 2, 2, 1, '#777');
-  drawRect(ctx, x + 12, y + 3, 3, 1, '#777');
-  drawRect(ctx, x + 22, y + 2, 2, 1, '#888');
-  drawRect(ctx, x + 34, y + 3, 2, 1, '#777');
-  drawRect(ctx, x + 44, y + 2, 3, 1, '#888');
-  // Green moss patches on top edge
-  const mossSpots = [2, 6, 11, 17, 24, 30, 38, 45];
+  drawRect(ctx, x, y + LEDGE_H - 2, LEDGE_W, 2, '#666');
+  drawRect(ctx, x + LEDGE_W - 2, y + 2, 2, LEDGE_H - 2, '#666');
+  // Rock detail pixels (scaled 2x)
+  drawRect(ctx, x + 8, y + 4, 4, 2, '#777');
+  drawRect(ctx, x + 24, y + 6, 6, 2, '#777');
+  drawRect(ctx, x + 44, y + 4, 4, 2, '#888');
+  drawRect(ctx, x + 68, y + 6, 4, 2, '#777');
+  drawRect(ctx, x + 88, y + 4, 6, 2, '#888');
+  // Green moss patches on top edge (scaled 2x)
+  const mossSpots = [4, 12, 22, 34, 48, 60, 76, 90];
   mossSpots.forEach(mx => {
-    drawRect(ctx, x + mx, y, 1, 1, '#4a7c3f');
-    if (mx + 1 < LEDGE_W) drawRect(ctx, x + mx + 1, y, 1, 1, '#5a9c4f');
+    drawRect(ctx, x + mx, y, 2, 2, '#4a7c3f');
+    if (mx + 2 < LEDGE_W) drawRect(ctx, x + mx + 2, y, 2, 2, '#5a9c4f');
   });
 }
 
-// Climber pixel art - 9x14 px sprite
+// Climber pixel art - 9x14 px sprite, drawn at 2x scale (18x28)
 function drawClimber(ctx, x, y, state, frame) {
   const px = Math.round(x);
   const py = Math.round(y);
+  const S = 2; // pixel scale
 
   // Colors
   const skin = '#f4c08a';
@@ -69,83 +70,66 @@ function drawClimber(ctx, x, y, state, frame) {
   const hair = '#3a2a0a';
   const shadow = '#c08050';
 
-  if (state === 'dead') return; // don't draw climber on death screen
+  if (state === 'dead') return;
 
-  // HEAD (3x3)
-  drawRect(ctx, px + 3, py, 3, 1, hair);
-  drawRect(ctx, px + 2, py + 1, 5, 3, skin);
-  // eyes
-  drawRect(ctx, px + 3, py + 2, 1, 1, '#333');
-  drawRect(ctx, px + 5, py + 2, 1, 1, '#333');
-  // mouth
+  const r = (ox, oy, w, h, c) => drawRect(ctx, px + ox * S, py + oy * S, w * S, h * S, c);
+
+  // HEAD
+  r(3, 0, 3, 1, hair);
+  r(2, 1, 5, 3, skin);
+  r(3, 2, 1, 1, '#333');
+  r(5, 2, 1, 1, '#333');
   if (state === 'scramble') {
-    drawRect(ctx, px + 3, py + 3, 3, 1, '#c05040'); // open mouth
+    r(3, 3, 3, 1, '#c05040');
   } else {
-    drawRect(ctx, px + 3, py + 3, 3, 1, shadow);
+    r(3, 3, 3, 1, shadow);
   }
 
   if (state === 'idle') {
-    // Body
-    drawRect(ctx, px + 2, py + 4, 5, 4, shirt);
-    // Arms
-    drawRect(ctx, px + 1, py + 4, 1, 3, skin);
-    drawRect(ctx, px + 7, py + 4, 1, 3, skin);
-    // Legs
-    drawRect(ctx, px + 2, py + 8, 2, 3, pants);
-    drawRect(ctx, px + 5, py + 8, 2, 3, pants);
-    // Boots
-    drawRect(ctx, px + 2, py + 11, 2, 2, boots);
-    drawRect(ctx, px + 5, py + 11, 2, 2, boots);
-    // Idle bob
-    if (frame % 40 < 20) {
-      // slightly adjust nothing (already drawn at base)
-    }
+    r(2, 4, 5, 4, shirt);
+    r(1, 4, 1, 3, skin);
+    r(7, 4, 1, 3, skin);
+    r(2, 8, 2, 3, pants);
+    r(5, 8, 2, 3, pants);
+    r(2, 11, 2, 2, boots);
+    r(5, 11, 2, 2, boots);
   } else if (state === 'jump') {
-    // Body
-    drawRect(ctx, px + 2, py + 4, 5, 4, shirt);
-    // Arms up
-    drawRect(ctx, px + 1, py + 2, 1, 3, skin);
-    drawRect(ctx, px + 7, py + 2, 1, 3, skin);
-    // Legs bent
-    drawRect(ctx, px + 2, py + 8, 2, 2, pants);
-    drawRect(ctx, px + 5, py + 8, 2, 2, pants);
-    drawRect(ctx, px + 1, py + 10, 2, 1, pants);
-    drawRect(ctx, px + 6, py + 10, 2, 1, pants);
-    drawRect(ctx, px + 1, py + 11, 2, 2, boots);
-    drawRect(ctx, px + 6, py + 11, 2, 2, boots);
+    r(2, 4, 5, 4, shirt);
+    r(1, 2, 1, 3, skin);
+    r(7, 2, 1, 3, skin);
+    r(2, 8, 2, 2, pants);
+    r(5, 8, 2, 2, pants);
+    r(1, 10, 2, 1, pants);
+    r(6, 10, 2, 1, pants);
+    r(1, 11, 2, 2, boots);
+    r(6, 11, 2, 2, boots);
   } else if (state === 'scramble') {
-    // Body leaning
-    drawRect(ctx, px + 2, py + 4, 5, 4, shirt);
-    // Arms outstretched reaching
-    drawRect(ctx, px, py + 3, 2, 2, skin);
-    drawRect(ctx, px + 7, py + 3, 2, 2, skin);
-    // Legs scrambling alternating
+    r(2, 4, 5, 4, shirt);
+    r(0, 3, 2, 2, skin);
+    r(7, 3, 2, 2, skin);
     const legOff = frame % 12 < 6 ? 0 : 1;
-    drawRect(ctx, px + 2, py + 8, 2, 3 + legOff, pants);
-    drawRect(ctx, px + 5, py + 8, 2, 3 - legOff, pants);
-    drawRect(ctx, px + 2, py + 11 + legOff, 2, 2, boots);
-    drawRect(ctx, px + 5, py + 11 - legOff, 2, 2, boots);
+    r(2, 8, 2, 3 + legOff, pants);
+    r(5, 8, 2, 3 - legOff, pants);
+    r(2, 11 + legOff, 2, 2, boots);
+    r(5, 11 - legOff, 2, 2, boots);
   } else if (state === 'fall') {
-    // Arms and legs splayed
-    drawRect(ctx, px + 2, py + 4, 5, 4, shirt);
-    // Arms out wide
-    drawRect(ctx, px, py + 4, 2, 2, skin);
-    drawRect(ctx, px + 7, py + 4, 2, 2, skin);
-    // Legs spread
-    drawRect(ctx, px + 1, py + 8, 2, 3, pants);
-    drawRect(ctx, px + 6, py + 8, 2, 3, pants);
-    drawRect(ctx, px + 1, py + 11, 2, 2, boots);
-    drawRect(ctx, px + 6, py + 11, 2, 2, boots);
+    r(2, 4, 5, 4, shirt);
+    r(0, 4, 2, 2, skin);
+    r(7, 4, 2, 2, skin);
+    r(1, 8, 2, 3, pants);
+    r(6, 8, 2, 3, pants);
+    r(1, 11, 2, 2, boots);
+    r(6, 11, 2, 2, boots);
   }
 }
 
 function drawSkull(ctx, cx, cy) {
-  // Large skull and crossbones pixel art ~50x60px
-  const S = '#e8e8e8';
+  // Skull and crossbones drawn at 2x pixel scale
+  const P = 2;
+  const SC = '#e8e8e8';
   const D = '#888';
   const B = '#222';
 
-  // Skull dome
   const dome = [
     [8,0],[9,0],[10,0],[11,0],[12,0],[13,0],[14,0],[15,0],[16,0],
     [5,1],[6,1],[7,1],[8,1],[9,1],[10,1],[11,1],[12,1],[13,1],[14,1],[15,1],[16,1],[17,1],[18,1],[19,1],
@@ -157,43 +141,36 @@ function drawSkull(ctx, cx, cy) {
     [4,7],[5,7],[6,7],[7,7],[8,7],[9,7],[10,7],[11,7],[12,7],[13,7],[14,7],[15,7],[16,7],[17,7],[18,7],[19,7],[20,7],
     [5,8],[6,8],[7,8],[8,8],[9,8],[10,8],[11,8],[12,8],[13,8],[14,8],[15,8],[16,8],[17,8],[18,8],[19,8],
   ];
-  dome.forEach(([px, py]) => drawRect(ctx, cx - 12 + px, cy - 20 + py, 1, 1, S));
+  dome.forEach(([px, py]) => drawRect(ctx, cx - 24 + px * P, cy - 40 + py * P, P, P, SC));
 
-  // Eye sockets (dark)
   [[5,3],[6,3],[7,3],[5,4],[6,4],[7,4],[5,5],[6,5],[7,5]].forEach(([px, py]) =>
-    drawRect(ctx, cx - 12 + px, cy - 20 + py, 1, 1, B));
+    drawRect(ctx, cx - 24 + px * P, cy - 40 + py * P, P, P, B));
   [[13,3],[14,3],[15,3],[13,4],[14,4],[15,4],[13,5],[14,5],[15,5]].forEach(([px, py]) =>
-    drawRect(ctx, cx - 12 + px, cy - 20 + py, 1, 1, B));
+    drawRect(ctx, cx - 24 + px * P, cy - 40 + py * P, P, P, B));
 
-  // Nose
   [[10,6],[11,6],[10,7],[11,7]].forEach(([px, py]) =>
-    drawRect(ctx, cx - 12 + px, cy - 20 + py, 1, 1, D));
+    drawRect(ctx, cx - 24 + px * P, cy - 40 + py * P, P, P, D));
 
-  // Jaw / teeth
   const jaw = [
     [5,9],[6,9],[7,9],[8,9],[9,9],[10,9],[11,9],[12,9],[13,9],[14,9],[15,9],[16,9],[17,9],[18,9],[19,9],
     [5,10],[6,10],[19,10],[7,10],[11,10],[12,10],[15,10],[16,10],
     [5,11],[7,11],[9,11],[11,11],[13,11],[15,11],[17,11],[19,11],
     [5,12],[6,12],[7,12],[8,12],[9,12],[10,12],[11,12],[12,12],[13,12],[14,12],[15,12],[16,12],[17,12],[18,12],[19,12],
   ];
-  jaw.forEach(([px, py]) => drawRect(ctx, cx - 12 + px, cy - 20 + py, 1, 1, S));
-  // Tooth gaps
+  jaw.forEach(([px, py]) => drawRect(ctx, cx - 24 + px * P, cy - 40 + py * P, P, P, SC));
   [[8,10],[9,10],[10,10],[13,10],[14,10],[17,10],[18,10]].forEach(([px, py]) =>
-    drawRect(ctx, cx - 12 + px, cy - 20 + py, 1, 1, B));
+    drawRect(ctx, cx - 24 + px * P, cy - 40 + py * P, P, P, B));
 
-  // Crossbones
-  // Bone 1: top-left to bottom-right
+  // Crossbones (scaled 2x)
   for (let i = 0; i < 18; i++) {
-    drawRect(ctx, cx - 14 + i, cy + 4 + i, 2, 2, S);
+    drawRect(ctx, cx - 28 + i * 2, cy + 8 + i * 2, 4, 4, SC);
   }
-  // Bone end knobs
-  drawRect(ctx, cx - 16, cy + 2, 5, 5, S); drawRect(ctx, cx - 15, cy + 3, 3, 3, B);
-  drawRect(ctx, cx + 4, cy + 20, 5, 5, S); drawRect(ctx, cx + 5, cy + 21, 3, 3, B);
-  drawRect(ctx, cx - 16, cy + 20, 5, 5, S); drawRect(ctx, cx - 15, cy + 21, 3, 3, B);
-  drawRect(ctx, cx + 4, cy + 2, 5, 5, S); drawRect(ctx, cx + 5, cy + 3, 3, 3, B);
-  // Bone 2: top-right to bottom-left
+  drawRect(ctx, cx - 32, cy + 4, 10, 10, SC); drawRect(ctx, cx - 30, cy + 6, 6, 6, B);
+  drawRect(ctx, cx + 8, cy + 40, 10, 10, SC); drawRect(ctx, cx + 10, cy + 42, 6, 6, B);
+  drawRect(ctx, cx - 32, cy + 40, 10, 10, SC); drawRect(ctx, cx - 30, cy + 42, 6, 6, B);
+  drawRect(ctx, cx + 8, cy + 4, 10, 10, SC); drawRect(ctx, cx + 10, cy + 6, 6, 6, B);
   for (let i = 0; i < 18; i++) {
-    drawRect(ctx, cx + 12 - i, cy + 4 + i, 2, 2, S);
+    drawRect(ctx, cx + 24 - i * 2, cy + 8 + i * 2, 4, 4, SC);
   }
 }
 
@@ -241,12 +218,12 @@ export default function ClimberGame({ currentLevel, consecutiveWrong, gameOver, 
       drawSkull(ctx, W / 2, H / 2 - 10);
       // Pixel font "GAME OVER"
       ctx.fillStyle = '#ff2222';
-      ctx.font = 'bold 10px monospace';
+      ctx.font = 'bold 20px monospace';
       ctx.textAlign = 'center';
-      ctx.fillText('GAME OVER', W / 2, H / 2 + 42);
+      ctx.fillText('GAME OVER', W / 2, H / 2 + 84);
       ctx.fillStyle = '#aaa';
-      ctx.font = '7px monospace';
-      ctx.fillText('answer correctly to restart', W / 2, H / 2 + 54);
+      ctx.font = '13px monospace';
+      ctx.fillText('answer correctly to restart', W / 2, H / 2 + 108);
       frameRef.current++;
       animRef.current = requestAnimationFrame(draw);
       return;
@@ -266,28 +243,28 @@ export default function ClimberGame({ currentLevel, consecutiveWrong, gameOver, 
     const ledgeIdx = currentLevel;
     const lx = getLedgeX(ledgeIdx);
     const ly = getLedgeY(ledgeIdx, cameraOffset);
-    const climberX = lx + LEDGE_W / 2 - 4.5;
-    const climberY = ly - 14;
+    const climberX = lx + LEDGE_W / 2 - 9;
+    const climberY = ly - 28;
 
     // Jump arc: animate climber moving between ledges
     drawClimber(ctx, climberX, climberY, climberState, frame);
 
-    // Wrong-answer hearts / skulls indicator
+    // Wrong-answer indicator
     for (let i = 0; i < 3; i++) {
       const filled = i < consecutiveWrong;
       ctx.fillStyle = filled ? '#ff3333' : '#444';
-      ctx.font = '9px monospace';
+      ctx.font = '18px monospace';
       ctx.textAlign = 'left';
-      ctx.fillText(filled ? '💀' : '○', 4 + i * 14, 12);
+      ctx.fillText(filled ? '💀' : '○', 6 + i * 26, 24);
     }
 
     // Level indicator
     ctx.fillStyle = 'rgba(0,0,0,0.4)';
-    ctx.fillRect(W - 36, 2, 34, 12);
+    ctx.fillRect(W - 70, 4, 66, 22);
     ctx.fillStyle = '#fff';
-    ctx.font = '7px monospace';
+    ctx.font = '14px monospace';
     ctx.textAlign = 'right';
-    ctx.fillText(`LVL ${currentLevel}`, W - 4, 12);
+    ctx.fillText(`LVL ${currentLevel}`, W - 6, 22);
 
     frameRef.current++;
     animRef.current = requestAnimationFrame(draw);
@@ -299,7 +276,7 @@ export default function ClimberGame({ currentLevel, consecutiveWrong, gameOver, 
   }, [draw]);
 
   return (
-    <div className="border border-border rounded-xl overflow-hidden bg-card shadow-sm" style={{ width: 160 }}>
+    <div className="border border-border rounded-xl overflow-hidden bg-card shadow-sm" style={{ width: 320 }}>
       <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground text-center py-1 border-b border-border">
         Climber
       </p>
