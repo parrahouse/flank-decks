@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import StudyCard from '@/components/cards/StudyCard';
 import StreakBar from '@/components/cards/StreakBar';
 import StreakPanel from '@/components/cards/StreakPanel';
+import ClimberGame from '@/components/minigames/ClimberGame';
 import { cn } from '@/lib/utils';
 
 function shuffle(arr) {
@@ -60,6 +61,11 @@ export default function StudySession() {
   const [scores, setScores] = useState([]);
   const [correctStreak, setCorrectStreak] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
+  // Climber game state
+  const [climberLevel, setClimberLevel] = useState(0);
+  const [climberConsecWrong, setClimberConsecWrong] = useState(0);
+  const [climberGameOver, setClimberGameOver] = useState(false);
+  const [climberState, setClimberState] = useState('idle'); // idle | jump | scramble | fall
   // 'all' | 'unmastered'
   const [filterMode, setFilterMode] = useState('all');
   const [filterChosen, setFilterChosen] = useState(false);
@@ -272,6 +278,41 @@ export default function StudySession() {
       if (wasCorrect) setBestStreak(b => Math.max(b, next));
       return next;
     });
+
+    // Climber game logic
+    const isScramble = key === 'correct_after_clue' || key === 'second_guess' || key === 'second_guess_after_clue';
+    if (wasCorrect) {
+      if (climberGameOver) {
+        // Restart on correct answer after game over
+        setClimberGameOver(false);
+        setClimberLevel(0);
+        setClimberConsecWrong(0);
+        setClimberState('jump');
+        setTimeout(() => setClimberState('idle'), 600);
+      } else {
+        setClimberConsecWrong(0);
+        setClimberState(isScramble ? 'scramble' : 'jump');
+        setTimeout(() => {
+          setClimberLevel(l => l + 1);
+          setClimberState('idle');
+        }, 500);
+      }
+    } else {
+      setClimberConsecWrong(prev => {
+        const next = prev + 1;
+        if (next >= 3) {
+          setClimberState('fall');
+          setTimeout(() => setClimberGameOver(true), 700);
+        } else {
+          setClimberState('fall');
+          setTimeout(() => {
+            setClimberLevel(l => Math.max(0, l - 1));
+            setClimberState('idle');
+          }, 500);
+        }
+        return next >= 3 ? 0 : next;
+      });
+    }
   };
 
   if (isLoading || !activeCards.length) {
@@ -494,8 +535,14 @@ export default function StudySession() {
             </div>
           </div>
 
-          {/* Streak panel */}
-          <div className="hidden sm:block shrink-0 w-44 sticky top-8 self-start">
+          {/* Side panels */}
+          <div className="hidden sm:flex flex-col gap-3 shrink-0 w-44 sticky top-8 self-start">
+            <ClimberGame
+              currentLevel={climberLevel}
+              consecutiveWrong={climberConsecWrong}
+              gameOver={climberGameOver}
+              climberState={climberState}
+            />
             <StreakPanel
               currentStreak={correctStreak}
               bestStreak={bestStreak}
