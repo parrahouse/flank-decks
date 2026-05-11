@@ -229,12 +229,13 @@ export default function ClimberGame({ currentLevel, consecutiveWrong, gameOver, 
       return;
     }
 
-    // Climber is always drawn at a fixed screen position (lower third)
-    const CLIMBER_SCREEN_Y = Math.round(H * 0.72);
-    // Camera offset: how much to scroll the world upward so the current ledge sits at CLIMBER_SCREEN_Y
-    // getLedgeY(currentLevel, offset) = H - 40 - currentLevel*LEDGE_SPACING - offset = CLIMBER_SCREEN_Y
-    // => offset = H - 40 - currentLevel*LEDGE_SPACING - CLIMBER_SCREEN_Y
-    const cameraOffset = H - 40 - currentLevel * LEDGE_SPACING - CLIMBER_SCREEN_Y;
+    // Natural (no-scroll) Y position of the current ledge
+    const naturalLedgeY = H - 40 - currentLevel * LEDGE_SPACING;
+    // Only start scrolling once the ledge would go above the scroll threshold
+    const SCROLL_THRESHOLD = Math.round(H * 0.30);
+    const cameraOffset = naturalLedgeY < SCROLL_THRESHOLD
+      ? naturalLedgeY - SCROLL_THRESHOLD
+      : 0;
 
     // Draw ledges
     for (let i = 0; i <= LEDGE_COUNT + currentLevel + 1; i++) {
@@ -243,10 +244,11 @@ export default function ClimberGame({ currentLevel, consecutiveWrong, gameOver, 
       drawLedge(ctx, getLedgeX(i), ly);
     }
 
-    // Draw climber at fixed screen position above current ledge
+    // Climber sits on the current ledge (natural position, clamped to threshold)
     const lx = getLedgeX(currentLevel);
+    const climberLedgeY = Math.max(naturalLedgeY - cameraOffset, SCROLL_THRESHOLD);
     const climberX = lx + LEDGE_W / 2 - 9;
-    const climberY = CLIMBER_SCREEN_Y - 28;
+    const climberY = climberLedgeY - 28;
 
     drawClimber(ctx, climberX, climberY, climberState, frame);
 
