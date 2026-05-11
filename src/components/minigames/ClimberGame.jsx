@@ -184,6 +184,11 @@ export default function ClimberGame({ currentLevel, consecutiveWrong, gameOver, 
     { x: 50, y: 8, speed: 0.06 },
   ]);
 
+  // Animated climber position (interpolated)
+  const climberPosRef = useRef({ x: getLedgeX(0) + LEDGE_W / 2 - 9, y: H - 40 - 28 });
+  const targetPosRef = useRef(null);
+  const prevLevelRef = useRef(currentLevel);
+
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -229,12 +234,42 @@ export default function ClimberGame({ currentLevel, consecutiveWrong, gameOver, 
       return;
     }
 
-    // Natural (no-scroll) Y position of the current ledge
-    const naturalLedgeY = H - 40 - currentLevel * LEDGE_SPACING;
-    // Only start scrolling once the ledge would go above the scroll threshold
+    // Detect level change → set new target position
+    if (prevLevelRef.current !== currentLevel) {
+      const fromLevel = prevLevelRef.current;
+      prevLevelRef.current = currentLevel;
+      const fromX = getLedgeX(fromLevel) + LEDGE_W / 2 - 9;
+      const fromY = H - 40 - fromLevel * LEDGE_SPACING - 28;
+      const toX = getLedgeX(currentLevel) + LEDGE_W / 2 - 9;
+      const toY = H - 40 - currentLevel * LEDGE_SPACING - 28;
+      climberPosRef.current = { x: fromX, y: fromY };
+      targetPosRef.current = { x: toX, y: toY, startFrame: frame };
+    }
+
+    // Interpolate climber toward target
+    const JUMP_FRAMES = 22; // animation duration in frames
+    if (targetPosRef.current) {
+      const elapsed = frame - targetPosRef.current.startFrame;
+      const t = Math.min(elapsed / JUMP_FRAMES, 1);
+      // Ease in-out
+      const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      const { x: tx, y: ty } = targetPosRef.current;
+      const { x: sx, y: sy } = climberPosRef.current;
+      // Add a vertical arc for the jump (only when moving up)
+      const arcHeight = ty < sy ? -20 : 8;
+      const arcY = arcHeight * Math.sin(Math.PI * t);
+      climberPosRef.current = {
+        x: sx + (tx - sx) * ease,
+        y: sy + (ty - sy) * ease + arcY,
+      };
+      if (t >= 1) targetPosRef.current = null;
+    }
+
+    // Camera based on interpolated climber Y (in world space)
     const SCROLL_THRESHOLD = Math.round(H * 0.30);
-    const cameraOffset = naturalLedgeY < SCROLL_THRESHOLD
-      ? naturalLedgeY - SCROLL_THRESHOLD
+    const climberWorldY = climberPosRef.current.y;
+    const cameraOffset = climberWorldY < SCROLL_THRESHOLD
+      ? climberWorldY - SCROLL_THRESHOLD
       : 0;
 
     // Draw ledges
@@ -244,11 +279,9 @@ export default function ClimberGame({ currentLevel, consecutiveWrong, gameOver, 
       drawLedge(ctx, getLedgeX(i), ly);
     }
 
-    // Climber sits on the current ledge (natural position, clamped to threshold)
-    const lx = getLedgeX(currentLevel);
-    const climberLedgeY = Math.max(naturalLedgeY - cameraOffset, SCROLL_THRESHOLD);
-    const climberX = lx + LEDGE_W / 2 - 9;
-    const climberY = climberLedgeY - 28;
+    // Draw climber at animated position
+    const climberX = climberPosRef.current.x;
+    const climberY = climberPosRef.current.y - cameraOffset;
 
     drawClimber(ctx, climberX, climberY, climberState, frame);
 
