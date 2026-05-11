@@ -3,16 +3,25 @@ import { useEffect, useRef, useCallback } from 'react';
 const W = 240;
 const H = 400;
 const LEDGE_COUNT = 7;
-const LEDGE_H = 12;
-const LEDGE_W = 80;
 const LEDGE_SPACING = 52;
 
-// Ledge x positions: alternate left/right
-function getLedgeX(index) {
-  return index % 2 === 0 ? 8 : W - LEDGE_W - 8;
+// Ledge size variations: [width, baseHeight] cycling through levels
+const LEDGE_VARIANTS = [
+  [W, 14],      // full width, normal
+  [W, 10],      // full width, thin
+  [W, 16],      // full width, tall
+  [W, 12],      // full width, normal
+  [W, 18],      // full width, chunky
+];
+
+function getLedgeVariant(index) {
+  return LEDGE_VARIANTS[index % LEDGE_VARIANTS.length];
 }
+
+// All ledges span the full width, anchored to left edge
+function getLedgeX() { return 0; }
+
 function getLedgeY(index, cameraOffset) {
-  // index 0 = bottom start ledge; cameraOffset scrolls the world upward
   return H - 40 - index * LEDGE_SPACING - cameraOffset;
 }
 
@@ -33,26 +42,25 @@ function drawCloud(ctx, x, y) {
   pts.forEach(([px, py]) => drawRect(ctx, x + px * 2, y + py * 2, 2, 2, 'rgba(255,255,255,0.92)'));
 }
 
-function drawLedge(ctx, x, y) {
-  // Gray rock base
-  for (let i = 0; i < LEDGE_W; i++) {
-    drawRect(ctx, x + i, y + 2, 1, LEDGE_H - 2, '#8a8a8a');
-    drawRect(ctx, x + i, y, 1, 2, '#aaaaaa');
+function drawLedge(ctx, x, y, ledgeW, ledgeH) {
+  // Wedge shape: full height on left, tapers to thin on right
+  for (let i = 0; i < ledgeW; i++) {
+    const t = i / (ledgeW - 1); // 0 = left, 1 = right
+    const colH = Math.max(3, Math.round(ledgeH * (1 - t * 0.55)));
+    const topY = y + (ledgeH - colH);
+    // Main body
+    drawRect(ctx, x + i, topY + 1, 1, colH - 1, '#8a8a8a');
+    // Top highlight
+    drawRect(ctx, x + i, topY, 1, 1, '#b0b0b0');
+    // Bottom shadow
+    drawRect(ctx, x + i, topY + colH - 1, 1, 1, '#555');
   }
-  // Shadows/depth
-  drawRect(ctx, x, y + LEDGE_H - 2, LEDGE_W, 2, '#666');
-  drawRect(ctx, x + LEDGE_W - 2, y + 2, 2, LEDGE_H - 2, '#666');
-  // Rock detail pixels
-  drawRect(ctx, x + 6, y + 4, 4, 2, '#777');
-  drawRect(ctx, x + 18, y + 6, 4, 2, '#777');
-  drawRect(ctx, x + 32, y + 4, 4, 2, '#888');
-  drawRect(ctx, x + 50, y + 6, 4, 2, '#777');
-  drawRect(ctx, x + 66, y + 4, 4, 2, '#888');
-  // Green moss patches on top edge
-  const mossSpots = [4, 12, 22, 34, 46, 58, 68];
+  // Moss on top-left (thicker side)
+  const mossSpots = [4, 14, 26, 40, 56, 74, 96, 118, 142, 168, 196, 218];
   mossSpots.forEach(mx => {
-    drawRect(ctx, x + mx, y, 2, 2, '#4a7c3f');
-    if (mx + 2 < LEDGE_W) drawRect(ctx, x + mx + 2, y, 2, 2, '#5a9c4f');
+    if (mx >= ledgeW) return;
+    drawRect(ctx, x + mx, y, 3, 2, '#4a7c3f');
+    if (mx + 3 < ledgeW) drawRect(ctx, x + mx + 3, y, 2, 2, '#5a9c4f');
   });
 }
 
@@ -179,9 +187,18 @@ export default function ClimberGame({ currentLevel, consecutiveWrong, gameOver, 
   const frameRef = useRef(0);
   const animRef = useRef(null);
   const cloudsRef = useRef([
-    { x: 10, y: 18, speed: 0.08 },
-    { x: 80, y: 45, speed: 0.05 },
-    { x: 50, y: 8, speed: 0.06 },
+    { x: 10,  y: 18,  speed: 0.08 },
+    { x: 80,  y: 45,  speed: 0.05 },
+    { x: 50,  y: 8,   speed: 0.06 },
+    { x: 150, y: 30,  speed: 0.04 },
+    { x: 190, y: 60,  speed: 0.07 },
+    { x: 30,  y: 75,  speed: 0.03 },
+    { x: 120, y: 90,  speed: 0.055 },
+    { x: 200, y: 110, speed: 0.065 },
+    { x: 70,  y: 130, speed: 0.045 },
+    { x: 160, y: 150, speed: 0.05 },
+    { x: 20,  y: 180, speed: 0.06 },
+    { x: 110, y: 200, speed: 0.035 },
   ]);
 
   // Animation state: from/to positions + start frame
@@ -189,7 +206,7 @@ export default function ClimberGame({ currentLevel, consecutiveWrong, gameOver, 
   const prevLevelRef = useRef(currentLevel);
   // Current rendered position (updated each frame from jump or settled)
   const posRef = useRef({
-    x: getLedgeX(0) + LEDGE_W / 2 - 9,
+    x: W / 2 - 9,
     y: H - 40 - 28,
   });
 
@@ -201,17 +218,9 @@ export default function ClimberGame({ currentLevel, consecutiveWrong, gameOver, 
 
     const frame = frameRef.current;
 
-    // Background sky gradient (pixel style)
+    // Background sky
     ctx.fillStyle = '#87ceeb';
     ctx.fillRect(0, 0, W, H);
-    // Horizon lighter band
-    ctx.fillStyle = '#b0e0f8';
-    ctx.fillRect(0, H - 50, W, 50);
-    // Ground
-    ctx.fillStyle = '#5a3e1b';
-    ctx.fillRect(0, H - 8, W, 8);
-    ctx.fillStyle = '#4a7c3f';
-    ctx.fillRect(0, H - 10, W, 3);
 
     // Animate clouds
     cloudsRef.current.forEach(cloud => {
@@ -242,7 +251,8 @@ export default function ClimberGame({ currentLevel, consecutiveWrong, gameOver, 
 
     // On level change, record a new jump from current pos to target ledge
     if (prevLevelRef.current !== currentLevel) {
-      const toX = getLedgeX(currentLevel) + LEDGE_W / 2 - 9;
+      const [lw] = getLedgeVariant(currentLevel);
+      const toX = getLedgeX() + lw / 2 - 9;
       const toY = H - 40 - currentLevel * LEDGE_SPACING - 28;
       jumpRef.current = {
         fromX: posRef.current.x,
@@ -281,8 +291,9 @@ export default function ClimberGame({ currentLevel, consecutiveWrong, gameOver, 
     // Draw ledges
     for (let i = 0; i <= LEDGE_COUNT + currentLevel + 1; i++) {
       const ly = getLedgeY(i, cameraOffset);
-      if (ly < -LEDGE_H || ly > H + LEDGE_H) continue;
-      drawLedge(ctx, getLedgeX(i), ly);
+      const [lw, lh] = getLedgeVariant(i);
+      if (ly < -lh || ly > H + lh) continue;
+      drawLedge(ctx, getLedgeX(), ly, lw, lh);
     }
 
     // Draw climber at animated position
