@@ -12,8 +12,8 @@ function getLedgeX(index) {
   return index % 2 === 0 ? 8 : W - LEDGE_W - 8;
 }
 function getLedgeY(index, cameraOffset) {
-  // index 0 = bottom start ledge
-  return H - 40 - index * LEDGE_SPACING + cameraOffset;
+  // index 0 = bottom start ledge; cameraOffset scrolls the world upward
+  return H - 40 - index * LEDGE_SPACING - cameraOffset;
 }
 
 // --- Pixel art drawing helpers ---
@@ -231,8 +231,10 @@ export default function ClimberGame({ currentLevel, consecutiveWrong, gameOver, 
 
     // Climber is always drawn at a fixed screen position (lower third)
     const CLIMBER_SCREEN_Y = Math.round(H * 0.72);
-    // Camera scrolls so that the current ledge is always at CLIMBER_SCREEN_Y
-    const cameraOffset = CLIMBER_SCREEN_Y - (H - 40 - currentLevel * LEDGE_SPACING);
+    // Camera offset: how much to scroll the world upward so the current ledge sits at CLIMBER_SCREEN_Y
+    // getLedgeY(currentLevel, offset) = H - 40 - currentLevel*LEDGE_SPACING - offset = CLIMBER_SCREEN_Y
+    // => offset = H - 40 - currentLevel*LEDGE_SPACING - CLIMBER_SCREEN_Y
+    const cameraOffset = H - 40 - currentLevel * LEDGE_SPACING - CLIMBER_SCREEN_Y;
 
     // Draw ledges
     for (let i = 0; i <= LEDGE_COUNT + currentLevel + 1; i++) {
