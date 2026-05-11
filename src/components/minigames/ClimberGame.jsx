@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 
 const W = 240;
-const H = 400;
+const H = 480;
 const LEDGE_COUNT = 7;
 const LEDGE_SPACING = 52;
 
