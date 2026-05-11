@@ -536,7 +536,7 @@ export default function StudySession() {
           </div>
 
           {/* Side panels */}
-          <div className="hidden lg:flex flex-col gap-3 shrink-0 w-60 sticky top-8 self-start">
+          <div className="hidden md:flex flex-col gap-3 shrink-0 w-44 sticky top-8 self-start">
             <ClimberGame
               currentLevel={climberLevel}
               consecutiveWrong={climberConsecWrong}
