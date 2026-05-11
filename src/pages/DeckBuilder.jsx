@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, ArrowLeft, Pencil, Trash2, BookOpen, Image as ImageIcon, Settings2, X, Upload, RotateCcw, BarChart2, Archive, Volume2, VolumeX } from 'lucide-react';
+import { Plus, ArrowLeft, Pencil, Trash2, BookOpen, Image as ImageIcon, Settings2, X, Upload, RotateCcw, BarChart2, Archive, Volume2, VolumeX, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -103,6 +103,31 @@ export default function DeckBuilder() {
     return cards;
   }, [activeCards, search, sortBy, masteryFilter, tagFilters, masteredCardIds]);
 
+  const exportCsv = () => {
+    const rows = [
+      ['correct_answer', 'choices', 'clue', 'explanation', 'tags', 'image_url', 'bonus_question', 'bonus_correct_answer', 'bonus_choices'],
+      ...activeCards.map(c => [
+        c.correct_answer,
+        (c.choices || []).join('|'),
+        c.clue || '',
+        c.explanation || '',
+        (c.tags || []).join('|'),
+        c.image_url || '',
+        c.bonus_question || '',
+        c.bonus_correct_answer || '',
+        (c.bonus_choices || []).join('|'),
+      ]),
+    ];
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${deck?.title || 'deck'}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const openAdd = () => { setEditingCard(null); setEditorDirty(false); setShowEditor(true); };
   const openEdit = (card) => { setEditingCard(card); setEditorDirty(false); setShowEditor(true); };
 
@@ -200,6 +225,9 @@ export default function DeckBuilder() {
           </Button>
 
           <Button variant="outline" size="sm" onClick={() => setShowCsvUpload(true)} className="gap-1.5"><Upload className="w-4 h-4" /> Import CSV</Button>
+          {activeCards.length > 0 && (
+            <Button variant="outline" size="sm" onClick={exportCsv} className="gap-1.5"><Download className="w-4 h-4" /> Export CSV</Button>
+          )}
           <Button onClick={openAdd} size="sm" className="gap-1.5"><Plus className="w-4 h-4" /> Add Card</Button>
         </div>
       </div>
