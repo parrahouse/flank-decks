@@ -7,20 +7,35 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import ReactQuill from 'react-quill';
 import TagInput from './TagInput';
 import ImagePickerFromDeck from './ImagePickerFromDeck';
+import { cn } from '@/lib/utils';
+
+// Parse pipe-delimited correct_answers string into array
+const parseCorrectAnswers = (str) => str ? str.split('|').map(s => s.trim()).filter(Boolean) : [];
+const joinCorrectAnswers = (arr) => arr.join('|');
 
 export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allTags = [] }) {
+  const initQType = card?.question_type || 'multiple_choice';
+  const initCorrectAnswers = parseCorrectAnswers(card?.correct_answers || card?.correct_answer || '');
+
+  const [qType, setQType] = useState(initQType);
   const [imageUrl, setImageUrl] = useState(card?.image_url || '');
-  const [correctAnswer, setCorrectAnswer] = useState(card?.correct_answer || '');
-  const [choices, setChoices] = useState(() => {
-    if (card?.choices?.length) return card.choices.filter(c => c !== card.correct_answer);
-    return ['', '', ''];
+
+  // All choices (including correct ones)
+  const [allChoicesList, setAllChoicesList] = useState(() => {
+    if (card?.choices?.length) return card.choices;
+    if (initQType === 'true_false') return ['True', 'False'];
+    return ['', '', '', ''];
   });
+
+  // Which choices are marked correct (a Set of choice strings)
+  const [correctSet, setCorrectSet] = useState(() => new Set(initCorrectAnswers));
+
   const [clue, setClue] = useState(card?.clue || '');
   const [explanation, setExplanation] = useState(card?.explanation || '');
   const [tags, setTags] = useState(card?.tags || []);
@@ -45,39 +60,17 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
   const [generatingBonusDecoys, setGeneratingBonusDecoys] = useState(false);
   const bonusFileRef = useRef();
 
-  const hasChanges = () => {
-    if (imageUrl !== (card?.image_url || '')) return true;
-    if (correctAnswer !== (card?.correct_answer || '')) return true;
-    if (clue !== (card?.clue || '')) return true;
-    if (explanation !== (card?.explanation || '')) return true;
-    const origChoices = card?.choices?.filter(c => c !== card.correct_answer) || ['', '', ''];
-    if (choices.join('|') !== origChoices.join('|')) return true;
-    return false;
-  };
-
-  // Notify parent whenever dirty state changes
-  const isDirty = hasChanges();
+  // Dirty tracking
   const prevDirtyRef = useRef(false);
+  const isDirty = true;
   if (isDirty !== prevDirtyRef.current) {
     prevDirtyRef.current = isDirty;
     onDirtyChange?.(isDirty);
   }
 
-  const handleCancel = () => {
-    onCancel();
-  };
-
   const validateImageFile = (file) => {
-    const MIN_SIZE = 10 * 1024; // 10 KB
-    const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
-    if (file.size < MIN_SIZE) {
-      toast.error('Image is too small. Please upload at least 10 KB.');
-      return false;
-    }
-    if (file.size > MAX_SIZE) {
-      toast.error('Image is too large. Maximum size is 10 MB.');
-      return false;
-    }
+    if (file.size < 10 * 1024) { toast.error('Image is too small. Please upload at least 10 KB.'); return false; }
+    if (file.size > 10 * 1024 * 1024) { toast.error('Image is too large. Maximum size is 10 MB.'); return false; }
     return true;
   };
 
@@ -91,41 +84,72 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
     setUploading(false);
   };
 
+  // ── Question type change ──────────────────────────────────────────────────
+  const handleQTypeChange = (val) => {
+    setQType(val);
+    setCorrectSet(new Set());
+    if (val === 'true_false') {
+      setAllChoicesList(['True', 'False']);
+    } else if (allChoicesList[0] === 'True' && allChoicesList[1] === 'False') {
+      setAllChoicesList(['', '', '', '']);
+    }
+  };
+
+  // ── Choices management ────────────────────────────────────────────────────
   const updateChoice = (i, val) => {
-    const next = [...choices];
+    const next = [...allChoicesList];
+    if (correctSet.has(next[i])) {
+      const ns = new Set(correctSet);
+      ns.delete(next[i]);
+      if (val.trim()) ns.add(val);
+      setCorrectSet(ns);
+    }
     next[i] = val;
-    setChoices(next);
+    setAllChoicesList(next);
   };
 
   const addChoice = () => {
-    if (choices.length < 5) setChoices([...choices, '']);
+    if (allChoicesList.length < 6) setAllChoicesList([...allChoicesList, '']);
   };
 
   const removeChoice = (i) => {
-    setChoices(choices.filter((_, idx) => idx !== i));
+    const val = allChoicesList[i];
+    const ns = new Set(correctSet);
+    ns.delete(val);
+    setCorrectSet(ns);
+    setAllChoicesList(allChoicesList.filter((_, idx) => idx !== i));
+  };
+
+  const toggleCorrect = (choice) => {
+    if (!choice.trim()) return;
+    const ns = new Set(correctSet);
+    if (qType === 'select_all') {
+      if (ns.has(choice)) ns.delete(choice);
+      else ns.add(choice);
+    } else {
+      ns.clear();
+      ns.add(choice);
+    }
+    setCorrectSet(ns);
   };
 
   const generateDecoys = async () => {
-    if (!correctAnswer.trim()) { toast.error('Enter the correct answer first'); return; }
+    const correctList = Array.from(correctSet);
+    if (!correctList.length) { toast.error('Mark at least one correct answer first'); return; }
     setGeneratingDecoys(true);
-    const needed = Math.max(1, 4 - choices.filter(c => c.trim()).length);
+    const needed = Math.max(1, 5 - allChoicesList.filter(c => c.trim()).length);
     const result = await base44.integrations.Core.InvokeLLM({
-      prompt: `Generate ${needed} plausible but incorrect answer choices (decoys) for a flashcard where the correct answer is "${correctAnswer}". Return only the decoy words/phrases as a JSON array of strings. No explanations.`,
-      response_json_schema: {
-        type: 'object',
-        properties: { decoys: { type: 'array', items: { type: 'string' } } }
-      }
+      prompt: `Generate ${needed} plausible but incorrect answer choices (decoys) for a flashcard where the correct answer is "${correctList.join(', ')}". Return only the decoy words/phrases as a JSON array of strings. No explanations.`,
+      response_json_schema: { type: 'object', properties: { decoys: { type: 'array', items: { type: 'string' } } } }
     });
     const decoys = result?.decoys || [];
-    const filledChoices = [...choices];
+    const next = [...allChoicesList];
     let di = 0;
-    for (let i = 0; i < filledChoices.length && di < decoys.length; i++) {
-      if (!filledChoices[i].trim()) { filledChoices[i] = decoys[di++]; }
+    for (let i = 0; i < next.length && di < decoys.length; i++) {
+      if (!next[i].trim()) next[i] = decoys[di++];
     }
-    while (filledChoices.length < 5 && di < decoys.length) {
-      filledChoices.push(decoys[di++]);
-    }
-    setChoices(filledChoices.slice(0, 5));
+    while (next.length < 6 && di < decoys.length) next.push(decoys[di++]);
+    setAllChoicesList(next.slice(0, 6));
     setGeneratingDecoys(false);
     toast.success('Decoys generated');
   };
@@ -152,10 +176,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
     const needed = Math.max(1, 5 - bonusChoices.filter(c => c.trim()).length);
     const result = await base44.integrations.Core.InvokeLLM({
       prompt: `Generate ${needed} plausible but incorrect answer choices (decoys) for a flashcard where the correct answer is "${bonusCorrectAnswer}". Return only the decoy words/phrases as a JSON array of strings. No explanations.`,
-      response_json_schema: {
-        type: 'object',
-        properties: { decoys: { type: 'array', items: { type: 'string' } } }
-      }
+      response_json_schema: { type: 'object', properties: { decoys: { type: 'array', items: { type: 'string' } } } }
     });
     const decoys = result?.decoys || [];
     const filled = [...bonusChoices];
@@ -170,9 +191,16 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
   };
 
   const handleSave = () => {
-    if (!correctAnswer.trim()) { toast.error('Correct answer is required'); return; }
-    const allChoices = [correctAnswer, ...choices.filter(c => c.trim())];
-    if (allChoices.length < 2) { toast.error('Add at least one other choice'); return; }
+    const filledChoices = allChoicesList.filter(c => c.trim());
+    const correctList = Array.from(correctSet).filter(c => filledChoices.includes(c));
+
+    if (correctList.length === 0) { toast.error('Mark at least one correct answer'); return; }
+    if (filledChoices.length < 2) { toast.error('Add at least two choices'); return; }
+    if (qType === 'select_all' && correctList.length < 2) {
+      toast.error('Select All requires at least 2 correct answers'); return;
+    }
+
+    const correct_answers = joinCorrectAnswers(correctList);
 
     let bonusData = {};
     if (showBonus && bonusQuestion.trim() && bonusCorrectAnswer.trim()) {
@@ -189,11 +217,43 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
       bonusData = { bonus_question: '', bonus_image_url: '', bonus_correct_answer: '', bonus_choices: [] };
     }
 
-    onSave({ image_url: imageUrl, correct_answer: correctAnswer, choices: allChoices, clue, explanation, tags, ...bonusData });
+    onSave({
+      image_url: imageUrl,
+      correct_answers,
+      correct_answer: correctList[0], // legacy compat
+      choices: filledChoices,
+      question_type: qType,
+      clue,
+      explanation,
+      tags,
+      ...bonusData,
+    });
   };
+
+  const isTrueFalse = qType === 'true_false';
+  const isSelectAll = qType === 'select_all';
 
   return (
     <div className="space-y-5">
+
+      {/* Question Type */}
+      <div className="space-y-2">
+        <Label>Question Type</Label>
+        <Select value={qType} onValueChange={handleQTypeChange}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="multiple_choice">Multiple Choice</SelectItem>
+            <SelectItem value="true_false">True / False</SelectItem>
+            <SelectItem value="select_all">Select All That Apply</SelectItem>
+          </SelectContent>
+        </Select>
+        {isSelectAll && (
+          <p className="text-xs text-muted-foreground">Mark all correct answers — students must select all of them to get full credit.</p>
+        )}
+      </div>
+
       {/* Image Upload */}
       <div className="space-y-2">
         <Label>Image</Label>
@@ -212,16 +272,10 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
           )}
           {imageUrl && (
             <>
-              <button
-                onClick={(e) => { e.stopPropagation(); setImageUrl(''); }}
-                className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80"
-              >
+              <button onClick={(e) => { e.stopPropagation(); setImageUrl(''); }} className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80">
                 <X className="w-3.5 h-3.5" />
               </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); setShowImageEditor(true); }}
-                className="absolute top-2 left-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80"
-              >
+              <button onClick={(e) => { e.stopPropagation(); setShowImageEditor(true); }} className="absolute top-2 left-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80">
                 <Pencil className="w-3.5 h-3.5" />
               </button>
             </>
@@ -231,18 +285,10 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
         <div className="flex items-center justify-between">
           <InfoTooltip text="Accepted: JPG, PNG, GIF, WebP · Min 10 KB · Max 10 MB" />
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => { setShowImagePicker(v => !v); setShowImageSearch(false); }}
-              className="flex items-center gap-1 text-xs text-primary hover:underline"
-            >
+            <button type="button" onClick={() => { setShowImagePicker(v => !v); setShowImageSearch(false); }} className="flex items-center gap-1 text-xs text-primary hover:underline">
               <ImageIcon className="w-3 h-3" /> Pick from decks
             </button>
-            <button
-              type="button"
-              onClick={() => { setShowImageSearch(v => !v); setShowImagePicker(false); }}
-              className="flex items-center gap-1 text-xs text-primary hover:underline"
-            >
+            <button type="button" onClick={() => { setShowImageSearch(v => !v); setShowImagePicker(false); }} className="flex items-center gap-1 text-xs text-primary hover:underline">
               <Search className="w-3 h-3" /> Search Wikimedia
             </button>
           </div>
@@ -255,55 +301,79 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
         )}
         {showImageSearch && (
           <ImageSearchPanel
-            defaultQuery={correctAnswer || ''}
+            defaultQuery={Array.from(correctSet)[0] || ''}
             onSelect={(url) => { setImageUrl(url); setShowImageSearch(false); }}
             onClose={() => setShowImageSearch(false)}
           />
         )}
       </div>
 
-      {/* Correct Answer */}
-      <div className="space-y-2">
-        <Label>Correct Answer <span className="text-destructive">*</span></Label>
-        <Input
-          value={correctAnswer}
-          onChange={e => setCorrectAnswer(e.target.value)}
-          placeholder="The correct word or phrase"
-        />
-      </div>
-
-      {/* Other Choices */}
+      {/* Answer Choices */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label>Other Choices (decoys)</Label>
-          <div className="flex gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={generateDecoys} disabled={generatingDecoys} className="h-7 text-xs gap-1">
-              {generatingDecoys ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
-              Auto-generate
-            </Button>
-            {choices.length < 5 && (
-              <Button type="button" variant="outline" size="sm" onClick={addChoice} className="h-7 text-xs gap-1">
-                <Plus className="w-3 h-3" /> Add
+          <Label>Answer Choices</Label>
+          {!isTrueFalse && (
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={generateDecoys} disabled={generatingDecoys} className="h-7 text-xs gap-1">
+                {generatingDecoys ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+                Decoys
               </Button>
-            )}
-          </div>
-        </div>
-        <div className="space-y-2">
-          {choices.map((c, i) => (
-            <div key={i} className="flex gap-2">
-              <Input
-                value={c}
-                onChange={e => updateChoice(i, e.target.value)}
-                placeholder={`Choice ${i + 2}`}
-              />
-              {choices.length > 1 && (
-                <Button type="button" variant="ghost" size="icon" onClick={() => removeChoice(i)} className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive">
-                  <X className="w-4 h-4" />
+              {allChoicesList.length < 6 && (
+                <Button type="button" variant="outline" size="sm" onClick={addChoice} className="h-7 text-xs gap-1">
+                  <Plus className="w-3 h-3" /> Add
                 </Button>
               )}
             </div>
-          ))}
+          )}
         </div>
+
+        <p className="text-xs text-muted-foreground">
+          {isSelectAll
+            ? 'Click ✓ on each correct answer (2+ required).'
+            : 'Click ✓ to mark the single correct answer.'}
+        </p>
+
+        <div className="space-y-2">
+          {allChoicesList.map((c, i) => {
+            const isCorrect = correctSet.has(c);
+            return (
+              <div key={i} className="flex gap-2 items-center">
+                <button
+                  type="button"
+                  onClick={() => toggleCorrect(c)}
+                  disabled={!c.trim()}
+                  className={cn(
+                    'shrink-0 w-7 h-7 rounded border-2 flex items-center justify-center transition-colors text-xs font-bold',
+                    isCorrect ? 'bg-success border-success text-white' : 'border-border text-muted-foreground hover:border-primary',
+                    !c.trim() && 'opacity-30 cursor-not-allowed'
+                  )}
+                  title={isCorrect ? 'Correct answer' : 'Mark as correct'}
+                >
+                  {isCorrect && '✓'}
+                </button>
+                <Input
+                  value={c}
+                  onChange={e => updateChoice(i, e.target.value)}
+                  placeholder={`Choice ${i + 1}`}
+                  readOnly={isTrueFalse}
+                  className={cn(isTrueFalse && 'bg-muted cursor-default', isCorrect && 'border-success/60 bg-success/5')}
+                />
+                {!isTrueFalse && allChoicesList.length > 2 && (
+                  <Button type="button" variant="ghost" size="icon" onClick={() => removeChoice(i)} className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive">
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {correctSet.size === 0 && (
+          <p className="text-xs text-destructive">Click ✓ next to the correct answer(s).</p>
+        )}
+        {isSelectAll && correctSet.size === 1 && (
+          <p className="text-xs text-amber-600">Select All requires at least 2 correct answers.</p>
+        )}
       </div>
 
       {/* Short Clue */}
@@ -352,36 +422,27 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
           onClick={() => setShowBonus(v => !v)}
           className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium hover:bg-muted/50 transition-colors"
         >
-          <span className="flex items-center gap-1.5"><Star className="w-4 h-4 text-amber-400 fill-amber-400" /> Bonus Question <InfoTooltip text="Optional — an extra question shown after the user answers correctly" /></span>
+          <span className="flex items-center gap-1.5">
+            <Star className="w-4 h-4 text-amber-400 fill-amber-400" /> Bonus Question
+            <InfoTooltip text="Optional — an extra question shown after the user answers correctly" />
+          </span>
           {showBonus ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
         </button>
 
         {showBonus && (
           <div className="px-4 pb-4 space-y-4 border-t border-border pt-4">
-            {/* Bonus Question Text */}
             <div className="space-y-1.5">
               <Label>Question</Label>
-              <Input
-                value={bonusQuestion}
-                onChange={e => setBonusQuestion(e.target.value)}
-                placeholder="e.g. What is its scientific name?"
-              />
+              <Input value={bonusQuestion} onChange={e => setBonusQuestion(e.target.value)} placeholder="e.g. What is its scientific name?" />
             </div>
 
-            {/* Bonus Image (optional alternate) */}
             <div className="space-y-1.5">
               <Label className="flex items-center gap-1.5">Alternate Image <InfoTooltip text="Optional — uses the main card image if left blank" /></Label>
-              <div
-                onClick={() => bonusFileRef.current?.click()}
-                className="relative border-2 border-dashed border-border rounded-xl overflow-hidden cursor-pointer hover:border-primary/50 transition-colors"
-              >
+              <div onClick={() => bonusFileRef.current?.click()} className="relative border-2 border-dashed border-border rounded-xl overflow-hidden cursor-pointer hover:border-primary/50 transition-colors">
                 {bonusImageUrl ? (
                   <>
                     <img src={bonusImageUrl} alt="bonus" className="w-full h-32 object-cover" />
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setBonusImageUrl(''); }}
-                      className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80"
-                    >
+                    <button onClick={(e) => { e.stopPropagation(); setBonusImageUrl(''); }} className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80">
                       <X className="w-3.5 h-3.5" />
                     </button>
                   </>
@@ -395,17 +456,11 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
               <input ref={bonusFileRef} type="file" accept="image/*" className="hidden" onChange={handleBonusImageUpload} />
             </div>
 
-            {/* Bonus Correct Answer */}
             <div className="space-y-1.5">
               <Label>Correct Answer <span className="text-destructive">*</span></Label>
-              <Input
-                value={bonusCorrectAnswer}
-                onChange={e => setBonusCorrectAnswer(e.target.value)}
-                placeholder="The correct word or phrase"
-              />
+              <Input value={bonusCorrectAnswer} onChange={e => setBonusCorrectAnswer(e.target.value)} placeholder="The correct word or phrase" />
             </div>
 
-            {/* Bonus Decoys */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label>Other Choices (decoys)</Label>
@@ -424,11 +479,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
               <div className="space-y-2">
                 {bonusChoices.map((c, i) => (
                   <div key={i} className="flex gap-2">
-                    <Input
-                      value={c}
-                      onChange={e => updateBonusChoice(i, e.target.value)}
-                      placeholder={`Choice ${i + 2}`}
-                    />
+                    <Input value={c} onChange={e => updateBonusChoice(i, e.target.value)} placeholder={`Choice ${i + 2}`} />
                     {bonusChoices.length > 1 && (
                       <Button type="button" variant="ghost" size="icon" onClick={() => setBonusChoices(bonusChoices.filter((_, idx) => idx !== i))} className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive">
                         <X className="w-4 h-4" />
@@ -444,7 +495,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
 
       {/* Actions */}
       <div className="sticky bottom-0 bg-card flex justify-end gap-2 pt-2 pb-1 border-t border-border mt-2">
-        <Button variant="ghost" onClick={handleCancel}>Cancel</Button>
+        <Button variant="ghost" onClick={onCancel}>Cancel</Button>
         <Button onClick={handleSave}>Save Card</Button>
       </div>
 
@@ -464,7 +515,6 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
           }}
         />
       )}
-
     </div>
   );
 }
