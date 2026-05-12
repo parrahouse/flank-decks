@@ -130,12 +130,15 @@ export default function ConceptGraph() {
     const ctx = canvas.getContext('2d');
     const { nodes, edges } = graphRef.current;
     const { pan, zoom, hoveredNode } = stateRef.current;
+    const dpr = window.devicePixelRatio || 1;
     const W = canvas.width, H = canvas.height;
-    const cx = W / 2 + pan.x * zoom;
-    const cy = H / 2 + pan.y * zoom;
+    const CW = canvas.clientWidth, CH = canvas.clientHeight;
+    const cx = CW / 2 + pan.x * zoom;
+    const cy = CH / 2 + pan.y * zoom;
 
     ctx.clearRect(0, 0, W, H);
     ctx.save();
+    ctx.scale(dpr, dpr);
     ctx.translate(cx, cy);
     ctx.scale(zoom, zoom);
 
@@ -230,9 +233,15 @@ export default function ConceptGraph() {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const resize = () => {
-      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
-      canvas.style.width = canvas.offsetWidth + 'px';
+      const parent = canvas.parentElement;
+      if (!parent) return;
+      const dpr = window.devicePixelRatio || 1;
+      const w = parent.clientWidth;
+      const h = parent.clientHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
     };
     resize();
     const ro = new ResizeObserver(resize);
@@ -249,8 +258,8 @@ export default function ConceptGraph() {
       if (!graphRef.current) return null;
       const { nodes } = graphRef.current;
       const { pan, zoom } = stateRef.current;
-      const W = canvas.width / window.devicePixelRatio;
-      const H = canvas.height / window.devicePixelRatio;
+      const W = canvas.clientWidth;
+      const H = canvas.clientHeight;
       const cx = W / 2 + pan.x * zoom;
       const cy = H / 2 + pan.y * zoom;
       const wx = (mx - cx) / zoom;
@@ -279,10 +288,8 @@ export default function ConceptGraph() {
 
       if (stateRef.current.dragging && graphRef.current) {
         const { pan, zoom } = stateRef.current;
-        const W = canvas.width / window.devicePixelRatio;
-        const H = canvas.height / window.devicePixelRatio;
-        const cx = W / 2 + pan.x * zoom;
-        const cy = H / 2 + pan.y * zoom;
+        const cx = canvas.clientWidth / 2 + pan.x * zoom;
+        const cy = canvas.clientHeight / 2 + pan.y * zoom;
         graphRef.current.nodes[stateRef.current.dragging].x = (mx - cx) / zoom;
         graphRef.current.nodes[stateRef.current.dragging].y = (my - cy) / zoom;
         return;
