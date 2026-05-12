@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, ArrowLeft, Pencil, Trash2, BookOpen, Image as ImageIcon, Settings2, X, Upload, RotateCcw, BarChart2, Archive, Volume2, VolumeX, Download, Square, LayoutGrid, ToggleLeft } from 'lucide-react';
+import { Plus, ArrowLeft, Pencil, Trash2, BookOpen, Image as ImageIcon, Settings2, X, Upload, RotateCcw, BarChart2, Archive, Volume2, VolumeX, Download, CircleDot, CheckSquare, ToggleRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -369,10 +369,10 @@ export default function DeckBuilder() {
                 <p className="text-sm font-medium text-foreground truncate">{card.correct_answers || card.correct_answer}</p>
                 <div className="flex items-center gap-1.5 mt-0.5 text-muted-foreground">
                   {card.question_type === 'select_all'
-                    ? <LayoutGrid className="w-3 h-3 shrink-0" />
+                    ? <CheckSquare className="w-3 h-3 shrink-0" />
                     : card.question_type === 'true_false'
-                    ? <ToggleLeft className="w-3 h-3 shrink-0" />
-                    : <Square className="w-3 h-3 shrink-0" />}
+                    ? <ToggleRight className="w-3 h-3 shrink-0" />
+                    : <CircleDot className="w-3 h-3 shrink-0" />}
                   <p className="text-xs">{card.choices?.length ?? 0} choices</p>
                 </div>
                 {card.tags?.length > 0 && (
