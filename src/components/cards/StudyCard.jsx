@@ -3,7 +3,6 @@ import { RotateCcw, Lightbulb, X, Eye, SkipForward } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import BonusQuestion from './BonusQuestion';
 import { useSound } from '@/hooks/useSound';
 
 const COUNTDOWN_SECS = 6;
@@ -37,7 +36,6 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
   const [clueManuallyRevealed, setClueManuallyRevealed] = useState(false);
   const [flipped, setFlipped] = useState(false);
   const [shake, setShake] = useState(false);
-  const [showBonus, setShowBonus] = useState(false);
   const [wrongModal, setWrongModal] = useState(null); // the wrong choice that triggered it
   const [countdown, setCountdown] = useState(null);
   const countdownRef = useRef(null);
@@ -79,7 +77,6 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
     setClueManuallyRevealed(false);
     setFlipped(false);
     setShake(false);
-    setShowBonus(false);
     setWrongModal(null);
     cancelCountdown();
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
@@ -141,7 +138,6 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
 
   const answered = !!finalAnswer;
   const isCorrect = finalAnswer === card.correct_answer;
-  const hasBonus = isCorrect && card.bonus_question && card.bonus_choices?.length >= 2;
 
   // A choice is "wrong-first" (orange) but not locked
   const getChoiceState = (choice) => {
@@ -176,10 +172,6 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
   const handleTryAgain = () => {
     setWrongModal(null);
   };
-
-  if (showBonus) {
-    return <BonusQuestion card={card} onNext={onNext} isLast={isLast} />;
-  }
 
   return (
     <div className="w-full">
@@ -267,7 +259,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
                     </Button>
                   }
                 </div>
-                {answered && !hasBonus && !flipped &&
+                {answered && !flipped &&
                 <div className="flex items-center gap-2">
                     <button
                     onClick={() => {cancelCountdown();onNext();}}
@@ -289,11 +281,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
                     </button>
                   </div>
                 }
-                {answered && hasBonus &&
-                <Button size="sm" onClick={() => setShowBonus(true)} className="h-8 text-xs gap-1">
-                    ⭐ Bonus Question
-                  </Button>
-                }
+
               </div>
             </div>
           </div>
