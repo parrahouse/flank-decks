@@ -33,9 +33,9 @@ function parseCSV(text) {
 
   const headers = parseLine(lines[0]).map(h => h.toLowerCase().replace(/\s+/g, '_'));
 
-  // Must have at least correct_answer and one choice column
-  if (!headers.includes('correct_answer')) {
-    return { rows: [], error: 'Missing required column: correct_answer' };
+  // Must have at least correct_answers and one choice column
+  if (!headers.includes('correct_answers')) {
+    return { rows: [], error: 'Missing required column: correct_answers' };
   }
 
   const rows = [];
@@ -51,21 +51,26 @@ function parseCSV(text) {
 }
 
 function rowToCard(row, deckId, order) {
-  const correct = row.correct_answer?.trim();
-  if (!correct) return null;
+  const correctAnswers = row.correct_answers?.trim();
+  if (!correctAnswers) return null;
 
   // Collect choice columns: choice_2, choice_3, choice_4, choice_5, choice_6
+  // The first correct answer is always included as choice_1
+  const firstCorrect = correctAnswers.split('|')[0].trim();
   const decoys = [2, 3, 4, 5, 6]
     .map(n => row[`choice_${n}`]?.trim())
     .filter(Boolean);
 
   if (decoys.length === 0) return null; // need at least one decoy
 
+  const questionType = row.question_type?.trim() || 'multiple_choice';
+
   return {
     deck_id: deckId,
     order,
-    correct_answer: correct,
-    choices: [correct, ...decoys],
+    correct_answers: correctAnswers,
+    question_type: questionType,
+    choices: [firstCorrect, ...decoys],
     clue: row.clue?.trim() || '',
     explanation: row.explanation?.trim() || '',
     image_url: row.image_url?.trim() || '',
@@ -73,9 +78,10 @@ function rowToCard(row, deckId, order) {
   };
 }
 
-const SAMPLE_CSV = `correct_answer,choice_2,choice_3,choice_4,clue,explanation,image_url,tags
-Elephant,Lion,Giraffe,Zebra,The largest land animal,Elephants are the largest land mammals on Earth,,animals;geography
-Sahara,Gobi,Kalahari,Atacama,Hottest desert,The Sahara is the world's largest hot desert,,geography`;
+const SAMPLE_CSV = `correct_answers,question_type,choice_2,choice_3,choice_4,clue,explanation,image_url,tags
+Elephant,multiple_choice,Lion,Giraffe,Zebra,The largest land animal,Elephants are the largest land mammals on Earth,,animals;geography
+Sahara,multiple_choice,Gobi,Kalahari,Atacama,Hottest desert,The Sahara is the world's largest hot desert,,geography
+True,true_false,False,,,,The Earth orbits the Sun,,science`;
 
 export default function CsvUploadModal({ open, onClose, deckId, existingCount, onImported }) {
   const fileRef = useRef();
@@ -94,7 +100,7 @@ export default function CsvUploadModal({ open, onClose, deckId, existingCount, o
       const cards = [];
       rows.forEach((row, i) => {
         const card = rowToCard(row, deckId, existingCount + i);
-        if (!card) errors.push(`Row ${i + 2}: missing correct_answer or at least one decoy choice.`);
+        if (!card) errors.push(`Row ${i + 2}: missing correct_answers or at least one decoy choice.`);
         else cards.push(card);
       });
       setPreview({ cards, errors });
@@ -145,9 +151,10 @@ export default function CsvUploadModal({ open, onClose, deckId, existingCount, o
             {/* Format guide */}
             <div className="bg-muted/60 rounded-xl px-4 py-3 text-xs text-muted-foreground space-y-1">
               <p className="font-medium text-foreground">Required columns:</p>
-              <p><code className="bg-background px-1 rounded">correct_answer</code>, <code className="bg-background px-1 rounded">choice_2</code></p>
+              <p><code className="bg-background px-1 rounded">correct_answers</code>, <code className="bg-background px-1 rounded">choice_2</code></p>
               <p className="font-medium text-foreground mt-1">Optional columns:</p>
-              <p><code className="bg-background px-1 rounded">choice_3</code> … <code className="bg-background px-1 rounded">choice_6</code>, <code className="bg-background px-1 rounded">clue</code>, <code className="bg-background px-1 rounded">explanation</code>, <code className="bg-background px-1 rounded">image_url</code>, <code className="bg-background px-1 rounded">tags</code> <span className="text-muted-foreground">(semicolon-separated)</span></p>
+              <p><code className="bg-background px-1 rounded">question_type</code> <span className="text-muted-foreground">(multiple_choice / true_false / select_all)</span>, <code className="bg-background px-1 rounded">choice_3</code> … <code className="bg-background px-1 rounded">choice_6</code>, <code className="bg-background px-1 rounded">clue</code>, <code className="bg-background px-1 rounded">explanation</code>, <code className="bg-background px-1 rounded">image_url</code>, <code className="bg-background px-1 rounded">tags</code> <span className="text-muted-foreground">(semicolon-separated)</span></p>
+              <p className="mt-1 text-muted-foreground">For <strong>select_all</strong> questions, pipe-separate multiple correct answers: <code className="bg-background px-1 rounded">Answer1|Answer2</code></p>
             </div>
 
             {/* Drop zone */}
