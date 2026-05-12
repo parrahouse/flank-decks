@@ -40,6 +40,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
   const [explanation, setExplanation] = useState(card?.explanation || '');
   const [tags, setTags] = useState(card?.tags || []);
   const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [generatingDecoys, setGeneratingDecoys] = useState(false);
   const [showImageEditor, setShowImageEditor] = useState(false);
   const [showImageSearch, setShowImageSearch] = useState(false);
@@ -159,12 +160,12 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
     // If imageUrl is a base64 data URL (from cropping), upload it first
     let finalImageUrl = imageUrl;
     if (imageUrl && imageUrl.startsWith('data:')) {
-      setUploading(true);
+      setSaving(true);
       const blob = await (await fetch(imageUrl)).blob();
       const file = new File([blob], 'edited-image.jpg', { type: 'image/jpeg' });
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       finalImageUrl = file_url;
-      setUploading(false);
+      setSaving(false);
     }
 
     onSave({
@@ -366,9 +367,9 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
 
       {/* Actions */}
       <div className="sticky bottom-0 bg-card flex justify-end gap-2 pt-2 pb-1 border-t border-border mt-2">
-        <Button variant="ghost" onClick={onCancel} disabled={uploading}>Cancel</Button>
-        <Button onClick={handleSave} disabled={uploading}>
-          {uploading ? <><Loader2 className="w-4 h-4 animate-spin" /> Uploading…</> : 'Save Card'}
+        <Button variant="ghost" onClick={onCancel} disabled={saving}>Cancel</Button>
+        <Button onClick={handleSave} disabled={saving}>
+          {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Uploading…</> : 'Save Card'}
         </Button>
       </div>
 
