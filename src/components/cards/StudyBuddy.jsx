@@ -4,8 +4,8 @@ const SPRITE_URL = 'https://media.base44.com/images/public/69fd6153088222f7245f3
 
 // Sprite sheet: 4 columns × 3 rows of frames
 // Each frame: 48px wide × 64px tall (sheet is 192×192)
-const FRAME_W = 48;
-const FRAME_H = 64;
+const FRAME_W = 32;
+const FRAME_H = 32;
 const DISPLAY_SCALE = 1.5; // render at 1.5x
 
 // Row definitions (0-indexed)
