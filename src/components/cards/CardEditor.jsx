@@ -364,14 +364,9 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
           open={showImageEditor}
           imageUrl={imageUrl}
           onClose={() => setShowImageEditor(false)}
-          onSave={async (dataUrl) => {
+          onSave={(dataUrl) => {
             setShowImageEditor(false);
-            setUploading(true);
-            const blob = await (await fetch(dataUrl)).blob();
-            const file = new File([blob], 'edited-image.jpg', { type: 'image/jpeg' });
-            const { file_url } = await base44.integrations.Core.UploadFile({ file });
-            setImageUrl(file_url);
-            setUploading(false);
+            setImageUrl(dataUrl);
           }}
         />
       )}
