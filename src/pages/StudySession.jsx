@@ -588,6 +588,7 @@ export default function StudySession() {
               currentStreak={correctStreak}
               bestStreak={bestStreak}
               allTimeBest={allTimeBest > 0 ? allTimeBest : null}
+              hasPastSession={pastSessions.length > 0}
             />
           </div>
         </div>
