@@ -1,0 +1,17 @@
+{
+  "name": "Concept",
+  "type": "object",
+  "properties": {
+    "concept_name": {
+      "type": "string",
+      "description": "Name of the concept (e.g. 'Taxation without Representation')"
+    },
+    "topic": {
+      "type": "string",
+      "description": "Broader topic this concept belongs to (e.g. 'American Revolution')"
+    }
+  },
+  "required": [
+    "concept_name"
+  ]
+}

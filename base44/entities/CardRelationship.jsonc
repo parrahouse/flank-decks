@@ -1,0 +1,29 @@
+{
+  "name": "CardRelationship",
+  "type": "object",
+  "properties": {
+    "from_concept_id": {
+      "type": "string",
+      "description": "ID of the source concept"
+    },
+    "to_concept_id": {
+      "type": "string",
+      "description": "ID of the target concept"
+    },
+    "relationship_type": {
+      "type": "string",
+      "enum": [
+        "prerequisite_of",
+        "causes",
+        "interprets",
+        "exemplifies"
+      ],
+      "description": "The type of directed relationship from source to target"
+    }
+  },
+  "required": [
+    "from_concept_id",
+    "to_concept_id",
+    "relationship_type"
+  ]
+}

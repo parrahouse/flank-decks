@@ -6,6 +6,10 @@
       "type": "string",
       "description": "Parent deck ID"
     },
+    "concept_id": {
+      "type": "string",
+      "description": "Reference to the Concept this card tests"
+    },
     "image_url": {
       "type": "string",
       "description": "Uploaded image URL"
