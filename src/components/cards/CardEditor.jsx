@@ -144,7 +144,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
     toast.success('Decoys generated');
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const filledChoices = allChoicesList.filter(c => c.trim());
     const correctList = Array.from(correctSet).filter(c => filledChoices.includes(c));
 
@@ -156,8 +156,19 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
 
     const correct_answers = joinCorrectAnswers(correctList);
 
+    // If imageUrl is a base64 data URL (from cropping), upload it first
+    let finalImageUrl = imageUrl;
+    if (imageUrl && imageUrl.startsWith('data:')) {
+      setUploading(true);
+      const blob = await (await fetch(imageUrl)).blob();
+      const file = new File([blob], 'edited-image.jpg', { type: 'image/jpeg' });
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      finalImageUrl = file_url;
+      setUploading(false);
+    }
+
     onSave({
-      image_url: imageUrl,
+      image_url: finalImageUrl,
       correct_answers,
       correct_answer: correctList[0], // legacy compat
       choices: filledChoices,
