@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { LayoutGrid, BookOpen, Trophy } from 'lucide-react';
+import { LayoutGrid, Trophy, Network } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function Layout() {
@@ -8,6 +8,7 @@ export default function Layout() {
   const nav = [
     { label: 'My Decks', path: '/', icon: LayoutGrid },
     { label: 'QuizMaster', path: '/quiz', icon: Trophy },
+    { label: 'Concept Graph', path: '/concept-graph', icon: Network },
   ];
 
   return (
