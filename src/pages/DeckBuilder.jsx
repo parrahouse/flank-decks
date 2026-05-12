@@ -105,18 +105,21 @@ export default function DeckBuilder() {
 
   const exportCsv = () => {
     const rows = [
-      ['correct_answer', 'choices', 'clue', 'explanation', 'tags', 'image_url', 'bonus_question', 'bonus_correct_answer', 'bonus_choices'],
-      ...activeCards.map(c => [
-        c.correct_answer,
-        (c.choices || []).join('|'),
-        c.clue || '',
-        c.explanation || '',
-        (c.tags || []).join('|'),
-        c.image_url || '',
-        c.bonus_question || '',
-        c.bonus_correct_answer || '',
-        (c.bonus_choices || []).join('|'),
-      ]),
+      ['correct_answers', 'question_type', 'choice_2', 'choice_3', 'choice_4', 'choice_5', 'choice_6', 'clue', 'explanation', 'image_url', 'tags'],
+      ...activeCards.map(c => {
+        const correct = (c.correct_answers || c.correct_answer || '').split('|')[0].trim();
+        const decoys = (c.choices || []).filter(ch => ch !== correct);
+        const choiceCols = [decoys[0] || '', decoys[1] || '', decoys[2] || '', decoys[3] || '', decoys[4] || ''];
+        return [
+          c.correct_answers || c.correct_answer || '',
+          c.question_type || 'multiple_choice',
+          ...choiceCols,
+          c.clue || '',
+          c.explanation || '',
+          c.image_url || '',
+          (c.tags || []).join(';'),
+        ];
+      }),
     ];
     const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
