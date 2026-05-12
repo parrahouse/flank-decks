@@ -10,9 +10,19 @@
       "type": "string",
       "description": "Uploaded image URL"
     },
-    "correct_answer": {
+    "question_type": {
       "type": "string",
-      "description": "The correct word/phrase"
+      "enum": [
+        "multiple_choice",
+        "true_false",
+        "select_all"
+      ],
+      "default": "multiple_choice",
+      "description": "How the question should be interpreted and validated"
+    },
+    "correct_answers": {
+      "type": "string",
+      "description": "Pipe-delimited correct answer(s), e.g. Answer1|Answer2. Single answers have no pipe."
     },
     "choices": {
       "type": "array",
@@ -68,7 +78,7 @@
   },
   "required": [
     "deck_id",
-    "correct_answer",
+    "correct_answers",
     "choices"
   ]
 }
