@@ -253,7 +253,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
               </div>
 
               {/* Personal Note */}
-              <div className="rounded-lg border border-amber-200 bg-amber-50">
+              <div className="border border-amber-200 bg-amber-50">
                 {noteEditing ? (
                   <div className="p-2">
                     <CardNoteEditor cardId={card.id} />
