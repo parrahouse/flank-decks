@@ -14,12 +14,14 @@ import ReactQuill from 'react-quill';
 import TagInput from './TagInput';
 import ImagePickerFromDeck from './ImagePickerFromDeck';
 import { cn } from '@/lib/utils';
+import ConceptsTab from './ConceptsTab';
 
 // Parse pipe-delimited correct_answers string into array
 const parseCorrectAnswers = (str) => str ? str.split('|').map(s => s.trim()).filter(Boolean) : [];
 const joinCorrectAnswers = (arr) => arr.join('|');
 
 export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allTags = [] }) {
+  const [activeTab, setActiveTab] = useState('edit');
   const initQType = card?.question_type || 'multiple_choice';
   const initCorrectAnswers = parseCorrectAnswers(card?.correct_answers || card?.correct_answer || '');
 
@@ -185,6 +187,32 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
 
   return (
     <div className="space-y-5">
+
+      {/* Tabs */}
+      <div className="flex border-b border-border -mx-0 mb-1">
+        {['edit', 'concepts'].map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={cn(
+              'px-4 py-2 text-sm font-medium border-b-2 transition-colors capitalize',
+              activeTab === tab
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            )}
+          >
+            {tab === 'edit' ? 'Edit' : 'Concepts'}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'concepts' && <ConceptsTab card={card} />}
+      {activeTab === 'concepts' && (
+        <div className="sticky bottom-0 bg-card flex justify-end gap-2 pt-2 pb-1 border-t border-border mt-2">
+          <Button variant="ghost" onClick={onCancel}>Close</Button>
+        </div>
+      )}
+      {activeTab === 'edit' && <>
 
       {/* Question Type */}
       <div className="space-y-2">
@@ -384,6 +412,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
           }}
         />
       )}
+      </>}
     </div>
   );
 }
