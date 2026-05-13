@@ -293,6 +293,24 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
         )}
       </div>
 
+      {/* Short Clue */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label className="flex items-center gap-1.5">Short Clue <InfoTooltip text="Optional — one sentence, revealed before answering" /></Label>
+          <span className={`text-xs tabular-nums ${clue.length >= 180 ? 'text-destructive' : 'text-muted-foreground'}`}>
+            {clue.length}/200
+          </span>
+        </div>
+        <Textarea
+          value={clue}
+          onChange={e => setClue(e.target.value)}
+          placeholder={'e.g. "This animal is the largest land mammal."'}
+          maxLength={200}
+          className="rounded-none resize-none min-h-[2.5rem]"
+          rows={2}
+        />
+      </div>
+
       {/* Answer Choices */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
@@ -361,24 +379,6 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
         )}
       </div>
 
-      {/* Short Clue */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label className="flex items-center gap-1.5">Short Clue <InfoTooltip text="Optional — one sentence, revealed before answering" /></Label>
-          <span className={`text-xs tabular-nums ${clue.length >= 180 ? 'text-destructive' : 'text-muted-foreground'}`}>
-            {clue.length}/200
-          </span>
-        </div>
-        <Textarea
-          value={clue}
-          onChange={e => setClue(e.target.value)}
-          placeholder={'e.g. "This animal is the largest land mammal."'}
-          maxLength={200}
-          className="rounded-none resize-none min-h-[2.5rem]"
-          rows={2}
-        />
-      </div>
-
       {/* Tags */}
       <div className="space-y-2">
         <Label className="flex items-center gap-1.5">Tags <InfoTooltip text="Optional — add tags to filter and group cards" /></Label>
@@ -395,7 +395,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
             onChange={setExplanation}
             placeholder="Write a longer explanation, context, or notes…"
             modules={{ toolbar: [['bold', 'italic', 'underline'], [{ list: 'ordered' }, { list: 'bullet' }], ['link'], ['clean']] }}
-            style={{ minHeight: 120 }}
+            style={{ minHeight: 220 }}
           />
         </div>
       </div>
