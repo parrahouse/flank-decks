@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Pointer, RotateCcw, Lightbulb, X, Eye, SkipForward } from 'lucide-react';
+import { Pointer, RotateCcw, GraduationCap, Lightbulb, X, Eye, SkipForward } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
@@ -257,7 +257,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
                   }
                   {answered && hasExplanation &&
                   <Button variant="outline" size="sm" onClick={() => {setFlipped(true);cancelCountdown();}} className="h-8 text-xs gap-1">
-                      <RotateCcw className="w-3.5 h-3.5" /> See explanation
+                      <GraduationCap className="w-3.5 h-3.5" /> Learn More
                     </Button>
                   }
                 </div>
