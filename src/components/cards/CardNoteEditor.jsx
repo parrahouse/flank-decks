@@ -33,6 +33,7 @@ export default function CardNoteEditor({ cardId }) {
         setSaving(true);
         await base44.entities.CardNote.delete(existing.id);
         qc.invalidateQueries(['card-note', cardId]);
+        qc.invalidateQueries({ predicate: q => q.queryKey[0] === 'card-notes-session' });
         setSaving(false);
         toast.success('Note removed');
       }
@@ -45,6 +46,7 @@ export default function CardNoteEditor({ cardId }) {
       await base44.entities.CardNote.create({ card_id: cardId, note: noteText, include_in_share: includeInShare });
     }
     qc.invalidateQueries(['card-note', cardId]);
+    qc.invalidateQueries({ predicate: q => q.queryKey[0] === 'card-notes-session' });
     setSaving(false);
     toast.success('Note saved');
   };

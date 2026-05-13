@@ -113,9 +113,9 @@ export default function StudySession() {
   });
 
   const { data: cardNotes = [] } = useQuery({
-    queryKey: ['card-notes-session', deckId, currentUser?.id],
+    queryKey: ['card-notes-session', deckId, currentUser?.email],
     queryFn: () => base44.entities.CardNote.filter({ created_by: currentUser.email }),
-    enabled: !!deckId && !!currentUser?.id,
+    enabled: !!deckId && !!currentUser?.email,
   });
 
   const notesByCardId = Object.fromEntries(cardNotes.map(n => [n.card_id, n.note]));
