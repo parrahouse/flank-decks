@@ -401,7 +401,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
       </div>
 
       {/* Actions */}
-      <div className="sticky bottom-0 -mx-5 bg-card flex justify-end gap-2 px-5 pt-2 pb-4 border-t border-border mt-2">
+      <div className="-mx-5 bg-card flex justify-end gap-2 px-5 pt-2 pb-4 border-t border-border mt-2">
         <Button variant="ghost" onClick={onCancel} disabled={saving}>Cancel</Button>
         <Button onClick={handleSave} disabled={saving}>
           {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Uploading…</> : 'Save Card'}
