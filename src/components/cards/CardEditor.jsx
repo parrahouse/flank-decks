@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Plus, X, Wand2, Image as ImageIcon, Loader2, Pencil, Search } from 'lucide-react';
 import InfoTooltip from './InfoTooltip';
 import ImageEditor from './ImageEditor';
@@ -21,7 +21,7 @@ import CardNoteEditor from './CardNoteEditor';
 const parseCorrectAnswers = (str) => str ? str.split('|').map(s => s.trim()).filter(Boolean) : [];
 const joinCorrectAnswers = (arr) => arr.join('|');
 
-export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allTags = [] }) {
+export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allTags = [], saveRef }) {
   const [activeTab, setActiveTab] = useState('edit');
   const initQType = card?.question_type || 'multiple_choice';
   const initCorrectAnswers = parseCorrectAnswers(card?.correct_answers || card?.correct_answer || '');
@@ -193,6 +193,11 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
       tags,
     });
   };
+
+  // Expose save to parent via ref
+  useEffect(() => {
+    if (saveRef) saveRef.current = handleSave;
+  });
 
   const isTrueFalse = qType === 'true_false';
   const isSelectAll = qType === 'select_all';

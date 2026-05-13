@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -66,6 +66,7 @@ export default function DeckBuilder() {
   const [showBin, setShowBin] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [previewCard, setPreviewCard] = useState(null);
+  const editorSaveRef = useRef(null);
 
   // Filter / sort state
   const [search, setSearch] = useState('');
@@ -441,6 +442,7 @@ export default function DeckBuilder() {
                 onCancel={requestCloseEditor}
                 onDirtyChange={setEditorDirty}
                 allTags={allTags}
+                saveRef={editorSaveRef}
               />
             </DialogContent>
           </Dialog>
@@ -462,6 +464,7 @@ export default function DeckBuilder() {
                 onCancel={requestCloseEditor}
                 onDirtyChange={setEditorDirty}
                 allTags={allTags}
+                saveRef={editorSaveRef}
               />
             </div>
           </div>
@@ -481,6 +484,9 @@ export default function DeckBuilder() {
           <AlertDialogCancel onClick={() => setShowDiscardDialog(false)}>Keep editing</AlertDialogCancel>
           <AlertDialogAction onClick={closeEditor} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
             Discard
+          </AlertDialogAction>
+          <AlertDialogAction onClick={() => { setShowDiscardDialog(false); editorSaveRef.current?.(); }}>
+            Save Card
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
