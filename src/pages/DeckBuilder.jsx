@@ -450,7 +450,7 @@ export default function DeckBuilder() {
         {!isMobile && (
           <div className="flex fixed top-14 right-0 bottom-0 w-[525px] bg-card border-l border-border flex-col z-30 shadow-xl">
             <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-              <h2 className="font-semibold text-base">{editingCard ? 'Edit Card' : 'Add Card'}</h2>
+              <h2 className="font-semibold text-base">Card Details</h2>
               <button onClick={requestCloseEditor} className="text-muted-foreground hover:text-foreground transition-colors">
                 <X className="w-4 h-4" />
               </button>
