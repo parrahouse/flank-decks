@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Pointer, GraduationCap, Lightbulb, X, Eye, SkipForward, StickyNote } from 'lucide-react';
+import { Pointer, GraduationCap, Lightbulb, X, Eye, SkipForward, StickyNote, Pencil } from 'lucide-react';
+import CardNoteEditor from './CardNoteEditor';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
@@ -39,6 +40,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
   const [wrongModal, setWrongModal] = useState(null); // the wrong choice that triggered it
   const [countdown, setCountdown] = useState(null);
   const [noteRevealed, setNoteRevealed] = useState(false);
+  const [noteEditing, setNoteEditing] = useState(false);
   const countdownRef = useRef(null);
 
   const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
@@ -80,6 +82,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
     setShake(false);
     setWrongModal(null);
     setNoteRevealed(false);
+    setNoteEditing(false);
     cancelCountdown();
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
   }, [card.id]);
@@ -250,27 +253,53 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
               </div>
 
               {/* Personal Note */}
-              {note && (
-                <div className="rounded-lg border border-amber-200 bg-amber-50">
-                  {noteRevealed ? (
-                    <div className="px-3 py-2.5">
-                      <div className="flex items-center gap-1.5 mb-1">
+              <div className="rounded-lg border border-amber-200 bg-amber-50">
+                {noteEditing ? (
+                  <div className="p-2">
+                    <CardNoteEditor cardId={card.id} />
+                    <button
+                      onClick={() => setNoteEditing(false)}
+                      className="mt-2 w-full text-xs text-amber-600 hover:text-amber-800 transition-colors text-center"
+                    >
+                      Done
+                    </button>
+                  </div>
+                ) : note && noteRevealed ? (
+                  <div className="px-3 py-2.5">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-1.5">
                         <StickyNote className="w-3.5 h-3.5 text-amber-600" />
                         <span className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Note</span>
                       </div>
-                      <p className="text-sm text-amber-900 leading-snug whitespace-pre-wrap">{note}</p>
+                      <button onClick={() => setNoteEditing(true)} className="text-amber-500 hover:text-amber-700 transition-colors">
+                        <Pencil className="w-3 h-3" />
+                      </button>
                     </div>
-                  ) : (
+                    <p className="text-sm text-amber-900 leading-snug whitespace-pre-wrap">{note}</p>
+                  </div>
+                ) : note ? (
+                  <div className="flex items-center justify-between px-3 py-2">
                     <button
                       onClick={() => setNoteRevealed(true)}
-                      className="w-full flex items-center gap-1.5 px-3 py-2 text-xs text-amber-600 hover:text-amber-800 transition-colors"
+                      className="flex items-center gap-1.5 text-xs text-amber-600 hover:text-amber-800 transition-colors"
                     >
                       <StickyNote className="w-3.5 h-3.5" />
                       Reveal note
                     </button>
-                  )}
-                </div>
-              )}
+                    <button onClick={() => setNoteEditing(true)} className="text-amber-400 hover:text-amber-700 transition-colors">
+                      <Pencil className="w-3 h-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setNoteEditing(true)}
+                    className="w-full flex items-center gap-1.5 px-3 py-2 text-xs text-amber-500 hover:text-amber-700 transition-colors"
+                  >
+                    <StickyNote className="w-3.5 h-3.5" />
+                    Add a note
+                  </button>
+                )}
+              </div>
 
               {/* Actions row */}
               <div className="flex items-center justify-between pt-2 mt-auto">
