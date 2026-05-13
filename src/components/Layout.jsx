@@ -1,13 +1,16 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { LayoutGrid, Trophy } from 'lucide-react';
+import { LayoutGrid, Trophy, Puzzle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/lib/AuthContext';
 
 export default function Layout() {
   const location = useLocation();
+  const { user } = useAuth();
 
   const nav = [
     { label: 'My Decks', path: '/', icon: LayoutGrid },
     { label: 'QuizMaster', path: '/quiz', icon: Trophy },
+    ...(user?.role === 'admin' ? [{ label: 'Extras', path: '/admin/extras', icon: Puzzle }] : []),
   ];
 
   return (
