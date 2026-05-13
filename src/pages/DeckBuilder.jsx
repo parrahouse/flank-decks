@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, ArrowLeft, Pencil, Trash2, BookOpen, Image as ImageIcon, Settings2, X, Upload, RotateCcw, BarChart2, Archive, Volume2, VolumeX, Download, CircleDot, CheckSquare, ToggleRight } from 'lucide-react';
+import { Plus, ArrowLeft, Pencil, Trash2, BookOpen, Image as ImageIcon, Settings2, X, Upload, RotateCcw, BarChart2, Archive, Volume2, VolumeX, Download, CircleDot, CheckSquare, ToggleRight, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -12,6 +12,7 @@ import CardEditor from '@/components/cards/CardEditor';
 import CsvUploadModal from '@/components/cards/CsvUploadModal';
 import CardFilterBar from '@/components/cards/CardFilterBar';
 import BinPanel from '@/components/cards/BinPanel';
+import CardPreviewModal from '@/components/cards/CardPreviewModal';
 import { toast } from 'sonner';
 
 export default function DeckBuilder() {
@@ -64,6 +65,7 @@ export default function DeckBuilder() {
   const [showDiscardDialog, setShowDiscardDialog] = useState(false);
   const [showBin, setShowBin] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [previewCard, setPreviewCard] = useState(null);
 
   // Filter / sort state
   const [search, setSearch] = useState('');
@@ -390,6 +392,9 @@ export default function DeckBuilder() {
                 <span className="absolute top-2 right-2 text-xs bg-success/15 text-success px-1.5 py-0.5 rounded font-medium opacity-0 group-hover:opacity-0">Mastered</span>
               )}
               <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={() => setPreviewCard(card)} className="bg-white/90 hover:bg-white rounded-lg p-1.5 shadow-sm" title="Preview">
+                  <Play className="w-3.5 h-3.5 text-primary" />
+                </button>
                 <button onClick={() => openEdit(card)} className="bg-white/90 hover:bg-white rounded-lg p-1.5 shadow-sm">
                   <Pencil className="w-3.5 h-3.5 text-foreground" />
                 </button>
@@ -480,6 +485,13 @@ export default function DeckBuilder() {
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+
+    <CardPreviewModal
+      card={previewCard}
+      deck={deck}
+      open={!!previewCard}
+      onClose={() => setPreviewCard(null)}
+    />
 
     <BinPanel
       open={showBin}
