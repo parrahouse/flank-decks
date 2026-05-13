@@ -455,7 +455,7 @@ export default function DeckBuilder() {
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-5">
+            <div className="flex-1 overflow-y-auto px-5 pt-5 pb-0">
               <CardEditor
                 card={editingCard}
                 onSave={(data) => saveMutation.mutate(data)}
