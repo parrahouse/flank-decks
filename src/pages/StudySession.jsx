@@ -112,6 +112,19 @@ export default function StudySession() {
     enabled: !!deckId,
   });
 
+  const { data: cardNotes = [] } = useQuery({
+    queryKey: ['card-notes-session', deckId],
+    queryFn: async () => {
+      const cards = await base44.entities.Card.filter({ deck_id: deckId }, 'order');
+      const cardIds = cards.filter(c => !c.deleted).map(c => c.id);
+      if (!cardIds.length) return [];
+      return base44.entities.CardNote.list();
+    },
+    enabled: !!deckId && !!currentUser?.id,
+  });
+
+  const notesByCardId = Object.fromEntries(cardNotes.map(n => [n.card_id, n.note]));
+
   // Compute all-time best consecutive correct streak across all past sessions
   const allTimeBest = pastSessions.reduce((best, session) => {
     const results = session.card_results || [];
@@ -562,6 +575,7 @@ export default function StudySession() {
               onScore={handleScore}
               soundEnabled={soundEnabled}
               autoAdvance={autoAdvance}
+              note={notesByCardId[current.id] || null}
             />
             {/* Nav arrows */}
             <div className="flex justify-center gap-3 mt-5">

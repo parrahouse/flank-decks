@@ -1,0 +1,23 @@
+{
+  "name": "CardNote",
+  "type": "object",
+  "properties": {
+    "card_id": {
+      "type": "string",
+      "description": "ID of the card this note belongs to"
+    },
+    "note": {
+      "type": "string",
+      "description": "Personal note text for this card"
+    },
+    "include_in_share": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to show this note when the deck is shared"
+    }
+  },
+  "required": [
+    "card_id",
+    "note"
+  ]
+}

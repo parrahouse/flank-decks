@@ -37,6 +37,14 @@ export default function SharedDeck() {
     enabled: !!deck?.id,
   });
 
+  const { data: sharedNotes = [] } = useQuery({
+    queryKey: ['shared-notes', deck?.id],
+    queryFn: () => base44.entities.CardNote.filter({ include_in_share: true }),
+    enabled: !!deck?.id,
+  });
+
+  const sharedNotesByCardId = Object.fromEntries(sharedNotes.map(n => [n.card_id, n.note]));
+
   useEffect(() => {
     if (cards.length) setShuffledCards(shuffle(cards));
   }, [cards.length]);
@@ -105,6 +113,7 @@ export default function SharedDeck() {
           onPrev={handlePrev}
           isFirst={cardIndex === 0}
           isLast={cardIndex === shuffledCards.length - 1}
+          note={sharedNotesByCardId[shuffledCards[cardIndex].id] || null}
         />
       ) : (
         <div className="text-center py-16 text-muted-foreground">This deck has no cards.</div>

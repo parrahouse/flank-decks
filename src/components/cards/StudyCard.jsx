@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Pointer, GraduationCap, Lightbulb, X, Eye, SkipForward } from 'lucide-react';
+import { Pointer, GraduationCap, Lightbulb, X, Eye, SkipForward, StickyNote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
@@ -25,7 +25,7 @@ const SCORE = {
   wrong: 0
 };
 
-export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast, onScore, soundEnabled = true, autoAdvance = false }) {
+export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast, onScore, soundEnabled = true, autoAdvance = false, note = null }) {
   const { playCorrect, playWrong } = useSound(soundEnabled);
   const [shuffledChoices, setShuffledChoices] = useState([]);
   const [firstWrong, setFirstWrong] = useState(null);
@@ -38,6 +38,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
   const [shake, setShake] = useState(false);
   const [wrongModal, setWrongModal] = useState(null); // the wrong choice that triggered it
   const [countdown, setCountdown] = useState(null);
+  const [noteRevealed, setNoteRevealed] = useState(false);
   const countdownRef = useRef(null);
 
   const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
@@ -78,6 +79,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
     setFlipped(false);
     setShake(false);
     setWrongModal(null);
+    setNoteRevealed(false);
     cancelCountdown();
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
   }, [card.id]);
@@ -246,6 +248,29 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
 
                 })}
               </div>
+
+              {/* Personal Note */}
+              {note && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50">
+                  {noteRevealed ? (
+                    <div className="px-3 py-2.5">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <StickyNote className="w-3.5 h-3.5 text-amber-600" />
+                        <span className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Note</span>
+                      </div>
+                      <p className="text-sm text-amber-900 leading-snug whitespace-pre-wrap">{note}</p>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setNoteRevealed(true)}
+                      className="w-full flex items-center gap-1.5 px-3 py-2 text-xs text-amber-600 hover:text-amber-800 transition-colors"
+                    >
+                      <StickyNote className="w-3.5 h-3.5" />
+                      Reveal note
+                    </button>
+                  )}
+                </div>
+              )}
 
               {/* Actions row */}
               <div className="flex items-center justify-between pt-2 mt-auto">

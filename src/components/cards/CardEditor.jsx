@@ -15,6 +15,7 @@ import TagInput from './TagInput';
 import ImagePickerFromDeck from './ImagePickerFromDeck';
 import { cn } from '@/lib/utils';
 import ConceptsTab from './ConceptsTab';
+import CardNoteEditor from './CardNoteEditor';
 
 // Parse pipe-delimited correct_answers string into array
 const parseCorrectAnswers = (str) => str ? str.split('|').map(s => s.trim()).filter(Boolean) : [];
@@ -377,6 +378,9 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
         <Label className="flex items-center gap-1.5">Tags <InfoTooltip text="Optional — add tags to filter and group cards" /></Label>
         <TagInput tags={tags} onChange={setTags} suggestions={allTags} />
       </div>
+
+      {/* Personal Note */}
+      <CardNoteEditor cardId={card?.id} />
 
       {/* Long Explanation */}
       <div className="space-y-2">
