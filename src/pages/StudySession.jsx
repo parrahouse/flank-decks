@@ -113,13 +113,8 @@ export default function StudySession() {
   });
 
   const { data: cardNotes = [] } = useQuery({
-    queryKey: ['card-notes-session', deckId],
-    queryFn: async () => {
-      const cards = await base44.entities.Card.filter({ deck_id: deckId }, 'order');
-      const cardIds = cards.filter(c => !c.deleted).map(c => c.id);
-      if (!cardIds.length) return [];
-      return base44.entities.CardNote.list();
-    },
+    queryKey: ['card-notes-session', deckId, currentUser?.id],
+    queryFn: () => base44.entities.CardNote.filter({ created_by: currentUser.email }),
     enabled: !!deckId && !!currentUser?.id,
   });
 
