@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { RotateCcw, Lightbulb, X, Eye, SkipForward } from 'lucide-react';
+import { Pointer, RotateCcw, Lightbulb, X, Eye, SkipForward } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
