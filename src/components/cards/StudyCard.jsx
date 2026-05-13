@@ -292,7 +292,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
           <div className="card-face card-face-back bg-card border border-border rounded-2xl flex flex-col p-6 gap-4 shadow-sm w-full overflow-y-auto">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center shrink-0">
-                <Pointer className="w-4 h-4 text-accent-foreground" />
+                <RotateCcw className="w-4 h-4 text-accent-foreground" />
               </div>
               <h3 className="font-semibold text-lg text-foreground">{correctAnswers.join(', ')}</h3>
             </div>
