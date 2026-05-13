@@ -191,7 +191,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
 
       {/* Tabs */}
       <div className="flex border-b border-border -mx-0 mb-1">
-        {['edit', 'concepts'].map(tab => (
+        {['edit', 'concepts', 'note'].map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -202,13 +202,19 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
                 : 'border-transparent text-muted-foreground hover:text-foreground'
             )}
           >
-            {tab === 'edit' ? 'Edit' : 'Concepts'}
+            {tab === 'edit' ? 'Edit' : tab === 'concepts' ? 'Concepts' : 'Note'}
           </button>
         ))}
       </div>
 
       {activeTab === 'concepts' && <ConceptsTab card={card} />}
       {activeTab === 'concepts' && (
+        <div className="sticky bottom-0 -mx-5 bg-card flex justify-end gap-2 px-5 pt-2 pb-4 border-t border-border mt-2">
+          <Button variant="ghost" onClick={onCancel}>Close</Button>
+        </div>
+      )}
+      {activeTab === 'note' && <CardNoteEditor cardId={card?.id} />}
+      {activeTab === 'note' && (
         <div className="sticky bottom-0 -mx-5 bg-card flex justify-end gap-2 px-5 pt-2 pb-4 border-t border-border mt-2">
           <Button variant="ghost" onClick={onCancel}>Close</Button>
         </div>
@@ -378,9 +384,6 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
         <Label className="flex items-center gap-1.5">Tags <InfoTooltip text="Optional — add tags to filter and group cards" /></Label>
         <TagInput tags={tags} onChange={setTags} suggestions={allTags} />
       </div>
-
-      {/* Personal Note */}
-      <CardNoteEditor cardId={card?.id} />
 
       {/* Long Explanation */}
       <div className="space-y-2">
