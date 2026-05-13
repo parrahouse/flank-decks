@@ -54,9 +54,20 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
   // Bonus question state
 
 
-  // Dirty tracking
+  // Dirty tracking — compare current state to original card values
   const prevDirtyRef = useRef(false);
-  const isDirty = true;
+  const isDirty = (() => {
+    const origChoices = card?.choices || (initQType === 'true_false' ? ['True', 'False'] : ['', '', '', '']);
+    const origCorrect = new Set(parseCorrectAnswers(card?.correct_answers || card?.correct_answer || ''));
+    if (imageUrl !== (card?.image_url || '')) return true;
+    if (qType !== initQType) return true;
+    if (clue !== (card?.clue || '')) return true;
+    if (explanation !== (card?.explanation || '')) return true;
+    if (JSON.stringify(tags) !== JSON.stringify(card?.tags || [])) return true;
+    if (JSON.stringify(allChoicesList) !== JSON.stringify(origChoices)) return true;
+    if ([...correctSet].sort().join('|') !== [...origCorrect].sort().join('|')) return true;
+    return false;
+  })();
   if (isDirty !== prevDirtyRef.current) {
     prevDirtyRef.current = isDirty;
     onDirtyChange?.(isDirty);
