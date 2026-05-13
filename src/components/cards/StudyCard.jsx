@@ -98,9 +98,11 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
     return () => window.removeEventListener('keydown', onKey);
   }, [shuffledChoices, eliminated, finalAnswer, wrongModal, firstWrong, clueManuallyRevealed]);
 
+  const correctAnswers = (card.correct_answers || card.correct_answer || '').split('|').map(s => s.trim()).filter(Boolean);
+
   const handleSelect = (choice) => {
     if (finalAnswer) return; // already locked
-    const correct = choice === card.correct_answer;
+    const correct = correctAnswers.includes(choice);
 
     if (correct) {
       // Determine score
@@ -130,19 +132,19 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
 
   const handleEliminate = () => {
     if (finalAnswer || firstWrong) return; // can't use after any wrong guess
-    const wrong = shuffledChoices.filter((c) => c !== card.correct_answer && !eliminated.includes(c));
+    const wrong = shuffledChoices.filter((c) => !correctAnswers.includes(c) && !eliminated.includes(c));
     if (wrong.length === 0) return;
     const toElim = wrong[Math.floor(Math.random() * wrong.length)];
     setEliminated((prev) => [...prev, toElim]);
   };
 
   const answered = !!finalAnswer;
-  const isCorrect = finalAnswer === card.correct_answer;
+  const isCorrect = correctAnswers.includes(finalAnswer);
 
   // A choice is "wrong-first" (orange) but not locked
   const getChoiceState = (choice) => {
     const isElim = eliminated.includes(choice);
-    const correct = choice === card.correct_answer;
+    const correct = correctAnswers.includes(choice);
     if (isElim) return 'eliminated';
     if (!answered && !firstWrong) return 'idle';
     if (!answered && firstWrong) {
@@ -292,7 +294,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
               <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center shrink-0">
                 <RotateCcw className="w-4 h-4 text-accent-foreground" />
               </div>
-              <h3 className="font-semibold text-lg text-foreground">{card.correct_answer}</h3>
+              <h3 className="font-semibold text-lg text-foreground">{correctAnswers.join(', ')}</h3>
             </div>
             <div
               className="prose prose-sm max-w-none text-muted-foreground flex-1"
@@ -317,7 +319,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
               <p className="text-muted-foreground text-sm mt-1">You have one attempt remaining.</p> :
 
               <p className="text-muted-foreground text-sm mt-1">
-                  The correct answer was <span className="font-semibold text-foreground">{card.correct_answer}</span>.
+                  The correct answer was <span className="font-semibold text-foreground">{correctAnswers.join(', ')}</span>.
                 </p>
               }
             </div>
