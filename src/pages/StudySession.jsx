@@ -2,12 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Brain, Volume2, VolumeX, Info, Gamepad2, Check } from 'lucide-react';
+import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Brain, Volume2, VolumeX, Info, Gamepad2, Check, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StudyCard from '@/components/cards/StudyCard';
 import StreakBar from '@/components/cards/StreakBar';
 import StreakPanel from '@/components/cards/StreakPanel';
 import ClimberGame from '@/components/minigames/ClimberGame';
+import ContactSheet from '@/components/cards/ContactSheet';
 import { cn } from '@/lib/utils';
 
 function shuffle(arr) {
@@ -73,6 +74,7 @@ export default function StudySession() {
   // 'all' | 'unmastered'
   const [filterMode, setFilterMode] = useState('all');
   const [filterChosen, setFilterChosen] = useState(false);
+  const [contactSheetOpen, setContactSheetOpen] = useState(false);
 
   const { data: deck } = useQuery({
     queryKey: ['deck', deckId],
@@ -492,6 +494,13 @@ export default function StudySession() {
         >
           {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
         </button>
+        <button
+          onClick={() => setContactSheetOpen(true)}
+          title="View all cards"
+          className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        >
+          <LayoutGrid className="w-4 h-4" />
+        </button>
         <Button variant="ghost" size="sm" onClick={restart} className="gap-1.5 text-muted-foreground">
           <RotateCcw className="w-4 h-4" /> Restart
         </Button>
@@ -601,6 +610,16 @@ export default function StudySession() {
             />
           </div>
         </div>
+      )}
+
+      {contactSheetOpen && (
+        <ContactSheet
+          cards={shuffledCards}
+          scores={scores}
+          cardIndex={cardIndex}
+          onJump={(i) => { setCardIndex(i); setDone(false); }}
+          onClose={() => setContactSheetOpen(false)}
+        />
       )}
     </div>
   );
