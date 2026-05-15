@@ -495,9 +495,9 @@ export default function StudySession() {
           {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
         </button>
         <button
-          onClick={() => setContactSheetOpen(true)}
-          title="View all cards"
-          className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          onClick={() => setContactSheetOpen(o => !o)}
+          title={contactSheetOpen ? 'Back to card' : 'View all cards'}
+          className={cn('p-1.5 rounded-md transition-colors', contactSheetOpen ? 'text-primary bg-accent' : 'text-muted-foreground hover:text-foreground hover:bg-muted')}
         >
           <LayoutGrid className="w-4 h-4" />
         </button>
@@ -565,6 +565,13 @@ export default function StudySession() {
             <Button onClick={restart} className="gap-1.5"><RotateCcw className="w-4 h-4" /> Study Again</Button>
           </div>
         </div>
+      ) : contactSheetOpen ? (
+        <ContactSheet
+          cards={shuffledCards}
+          scores={scores}
+          cardIndex={cardIndex}
+          onJump={(i) => { setCardIndex(i); setContactSheetOpen(false); }}
+        />
       ) : (
         <div className="flex gap-4 items-start">
           <div className="flex-1 min-w-0">
@@ -612,15 +619,6 @@ export default function StudySession() {
         </div>
       )}
 
-      {contactSheetOpen && (
-        <ContactSheet
-          cards={shuffledCards}
-          scores={scores}
-          cardIndex={cardIndex}
-          onJump={(i) => { setCardIndex(i); setDone(false); }}
-          onClose={() => setContactSheetOpen(false)}
-        />
-      )}
     </div>
   );
 }
