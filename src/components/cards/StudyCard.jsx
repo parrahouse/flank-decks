@@ -186,7 +186,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
         <div className={cn('card-flip-inner w-full', flipped && card.explanation && 'flipped')}>
 
           {/* FRONT */}
-          <div className="card-face bg-card border border-border rounded-2xl overflow-hidden shadow-sm flex flex-col w-full">
+          <div className="card-face bg-card border border-border rounded-b-2xl overflow-hidden shadow-sm flex flex-col w-full">
 
             {/* Image — 4:3 aspect ratio */}
             <div className="relative w-full bg-muted flex items-center justify-center" style={{ aspectRatio: '4/3' }}>
