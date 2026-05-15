@@ -191,7 +191,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
             {/* Image — 4:3 aspect ratio */}
             <div className="relative w-full bg-muted flex items-center justify-center" style={{ aspectRatio: '4/3' }}>
               {card.image_url ?
-              <img src={card.image_url} alt="card" className="absolute inset-0 w-full h-full object-cover rounded-[4px_4px_4px_2px]" /> :
+              <img src={card.image_url} alt="card" className="absolute inset-0 w-full h-full object-cover rounded-none" /> :
 
               <div className="text-muted-foreground text-sm">No image</div>
               }
