@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Brain, Volume2, VolumeX, Info, LayoutGrid } from 'lucide-react';
+import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Brain, Volume2, VolumeX, Info, LayoutGrid, Trophy, TrendingDown, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StudyCard from '@/components/cards/StudyCard';
 import ContactSheet from '@/components/cards/ContactSheet';
@@ -477,6 +477,79 @@ export default function StudySession() {
             </Link>
             <Button onClick={restart} className="gap-1.5"><RotateCcw className="w-4 h-4" /> Study Again</Button>
           </div>
+
+          {/* Historical stats */}
+          {pastSessions.length > 0 && (() => {
+            const allScores = pastSessions.map(s => s.score_pct);
+            const avg = allScores.reduce((a, b) => a + b, 0) / allScores.length;
+            const best = Math.max(...allScores);
+            const masteredCount = cardStats.filter(s => s.mastered).length;
+            const stillLearning = activeCards.length - masteredCount;
+
+            return (
+              <div className="w-full space-y-4 pt-2">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">All-time Stats</h3>
+
+                {/* Summary row */}
+                <div className="grid grid-cols-3 gap-3 w-full">
+                  <div className="bg-card border border-border rounded-xl p-3 flex flex-col gap-1">
+                    <span className="text-xs text-muted-foreground">Sessions</span>
+                    <span className="text-xl font-bold">{pastSessions.length}</span>
+                  </div>
+                  <div className="bg-card border border-border rounded-xl p-3 flex flex-col gap-1">
+                    <span className="text-xs text-muted-foreground">Avg Score</span>
+                    <span className="text-xl font-bold">{Math.round(avg)}%</span>
+                  </div>
+                  <div className="bg-card border border-border rounded-xl p-3 flex flex-col gap-1">
+                    <span className="text-xs text-muted-foreground flex items-center gap-1"><Trophy className="w-3 h-3 text-amber-500" /> Best</span>
+                    <span className="text-xl font-bold text-success">{Math.round(best)}%</span>
+                  </div>
+                </div>
+
+                {/* Mastery overview */}
+                {cardStats.length > 0 && (
+                  <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+                    <div className="flex items-center gap-1.5 text-sm font-medium">
+                      <Trophy className="w-4 h-4 text-amber-500" /> Mastery
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                      <div
+                        className="bg-success h-2 rounded-full transition-all duration-700"
+                        style={{ width: `${activeCards.length > 0 ? (masteredCount / activeCards.length) * 100 : 0}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-success font-medium">✓ {masteredCount} mastered</span>
+                      <span className="text-muted-foreground">{stillLearning} still learning</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Recent session history */}
+                <div className="bg-card border border-border rounded-xl overflow-hidden">
+                  <div className="px-4 py-2.5 border-b border-border bg-muted/40 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    Recent Sessions
+                  </div>
+                  {[...pastSessions].slice(0, 6).map((s, i) => (
+                    <div key={s.id} className={cn('flex items-center justify-between px-4 py-2.5 text-sm', i > 0 && 'border-t border-border')}>
+                      <span className="text-muted-foreground text-xs">
+                        {new Date(s.created_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-20 bg-muted rounded-full h-1.5 overflow-hidden">
+                          <div
+                            className={cn('h-1.5 rounded-full', s.score_pct >= 75 ? 'bg-success' : s.score_pct >= 50 ? 'bg-amber-400' : 'bg-destructive')}
+                            style={{ width: `${s.score_pct}%` }}
+                          />
+                        </div>
+                        <span className="font-semibold w-10 text-right">{Math.round(s.score_pct)}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       ) : contactSheetOpen ? (
         <ContactSheet
