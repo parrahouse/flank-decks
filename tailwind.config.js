@@ -6,7 +6,7 @@ module.exports = {
   	extend: {
       fontFamily: {
         inter: ['var(--font-inter)'],
-        fraunces: ['var(--font-fraunces)'],
+        bricolage: ['var(--font-bricolage)'],
       },
   		borderRadius: {
   			lg: 'var(--radius)',
