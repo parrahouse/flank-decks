@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Pointer, GraduationCap, Lightbulb, X, Eye, SkipForward, StickyNote, Pencil } from 'lucide-react';
+import { Pointer, GraduationCap, X, Eye, SkipForward, StickyNote, Pencil } from 'lucide-react';
 import CardNoteEditor from './CardNoteEditor';
+import CardHud from './CardHud';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
@@ -26,7 +27,7 @@ const SCORE = {
   wrong: 0
 };
 
-export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast, onScore, soundEnabled = true, autoAdvance = false, note = null }) {
+export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast, onScore, soundEnabled = true, autoAdvance = false, note = null, cardIndex = 0, total = 1, sessionStartTime = null, correctStreak = 0, bestStreak = 0 }) {
   const { playCorrect, playWrong } = useSound(soundEnabled);
   const [shuffledChoices, setShuffledChoices] = useState([]);
   const [firstWrong, setFirstWrong] = useState(null);
@@ -180,8 +181,32 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
     setWrongModal(null);
   };
 
+  const isTrueFalse = card.question_type === 'true_false';
+  const isSelectAll = card.question_type === 'select_all';
+  const hudCanEliminate = clueAllowed && !answered && !firstWrong && !isTrueFalse && !isSelectAll && eliminated.length < shuffledChoices.length - 2 && shuffledChoices.length > 2;
+
   return (
     <div className="w-full">
+      {/* HUD */}
+      <CardHud
+        cardIndex={cardIndex}
+        total={total}
+        timeLimitSecs={null}
+        sessionStartTime={sessionStartTime}
+        currentStreak={correctStreak}
+        bestStreak={bestStreak}
+        suddenDeath={false}
+        livesRemaining={3}
+        notesAllowed={true}
+        canEliminate={hudCanEliminate}
+        onEliminate={handleEliminate}
+        onNoteToggle={() => {
+          if (!noteRevealed && note) setNoteRevealed(true);
+          setNoteEditing(e => !e);
+        }}
+        noteActive={noteEditing || noteRevealed}
+      />
+
       <div className="card-flip w-full">
         <div className={cn('card-flip-inner w-full', flipped && card.explanation && 'flipped')}>
 
@@ -304,11 +329,6 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
               {/* Actions row */}
               <div className="flex items-center justify-between pt-2 mt-auto">
                 <div className="flex gap-2 flex-wrap">
-                  {clueAllowed && !answered && !firstWrong && eliminated.length < shuffledChoices.length - 2 && shuffledChoices.length > 2 &&
-                  <Button variant="outline" size="sm" onClick={handleEliminate} className="h-8 text-xs gap-1">
-                      <Lightbulb className="w-3.5 h-3.5" /> Eliminate one
-                    </Button>
-                  }
                   {answered && hasExplanation &&
                   <Button variant="outline" size="sm" onClick={() => {setFlipped(true);cancelCountdown();}} className="h-8 text-xs gap-1">
                       <GraduationCap className="w-3.5 h-3.5" /> Learn More

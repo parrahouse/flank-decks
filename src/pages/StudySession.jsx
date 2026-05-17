@@ -61,6 +61,7 @@ export default function StudySession() {
   const [scores, setScores] = useState([]);
   const [correctStreak, setCorrectStreak] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
+  const [sessionStartTime, setSessionStartTime] = useState(null);
   // 'all' | 'unmastered'
   const [filterMode, setFilterMode] = useState('all');
   const [filterChosen, setFilterChosen] = useState(false);
@@ -138,6 +139,7 @@ export default function StudySession() {
     setFilterChosen(true);
     setCorrectStreak(0);
     setBestStreak(0);
+    setSessionStartTime(new Date());
     sessionSaved.current = false;
   };
 
@@ -426,13 +428,6 @@ export default function StudySession() {
         </Button>
       </div>
 
-      {/* Progress bar */}
-      <StreakBar
-        cardIndex={cardIndex}
-        total={shuffledCards.length}
-        done={done}
-      />
-
       {done ? (
         <div className="flex flex-col items-center py-10 gap-6">
           <div className="text-5xl">🎉</div>
@@ -507,6 +502,11 @@ export default function StudySession() {
               soundEnabled={soundEnabled}
               autoAdvance={autoAdvance}
               note={notesByCardId[current.id] || null}
+              cardIndex={cardIndex}
+              total={shuffledCards.length}
+              sessionStartTime={sessionStartTime}
+              correctStreak={correctStreak}
+              bestStreak={bestStreak}
             />
             {/* Nav arrows */}
             <div className="flex justify-center gap-3 mt-5">
