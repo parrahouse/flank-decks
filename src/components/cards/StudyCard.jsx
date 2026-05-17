@@ -27,7 +27,7 @@ const SCORE = {
   wrong: 0
 };
 
-export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast, onScore, soundEnabled = true, autoAdvance = false, note = null, cardIndex = 0, total = 1, sessionStartTime = null, correctStreak = 0, bestStreak = 0 }) {
+export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast, onScore, soundEnabled = true, autoAdvance = false, note = null, cardIndex = 0, total = 1, sessionStartTime = null, correctStreak = 0, bestStreak = 0, pastSessions = [], masteredCount = 0, totalCards = 0 }) {
   const { playCorrect, playWrong } = useSound(soundEnabled);
   const [shuffledChoices, setShuffledChoices] = useState([]);
   const [firstWrong, setFirstWrong] = useState(null);
@@ -205,6 +205,9 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
           setNoteEditing(e => !e);
         }}
         noteActive={noteEditing || noteRevealed}
+        pastSessions={pastSessions}
+        masteredCount={masteredCount}
+        totalCards={totalCards}
       />
 
       <div className="card-flip w-full">

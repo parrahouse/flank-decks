@@ -3,7 +3,6 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Brain, Volume2, VolumeX, Info, LayoutGrid, Trophy } from 'lucide-react';
-import StreakPanel from '@/components/cards/StreakPanel';
 import { Button } from '@/components/ui/button';
 import StudyCard from '@/components/cards/StudyCard';
 import ContactSheet from '@/components/cards/ContactSheet';
@@ -579,6 +578,9 @@ export default function StudySession() {
               sessionStartTime={sessionStartTime}
               correctStreak={correctStreak}
               bestStreak={bestStreak}
+              pastSessions={pastSessions}
+              masteredCount={cardStats.filter(s => s.mastered).length}
+              totalCards={activeCards.length}
             />
             {/* Nav arrows */}
             <div className="flex justify-center gap-3 mt-5">
@@ -591,18 +593,7 @@ export default function StudySession() {
             </div>
           </div>
 
-          {/* Sidebar: streak panel */}
-          <div className="hidden lg:block w-52 shrink-0">
-            <StreakPanel
-              currentStreak={correctStreak}
-              bestStreak={bestStreak}
-              allTimeBest={allTimeBest}
-              hasPastSession={pastSessions.length > 0}
-              pastSessions={pastSessions}
-              masteredCount={cardStats.filter(s => s.mastered).length}
-              totalCards={activeCards.length}
-            />
-          </div>
+
         </div>
       )}
 

@@ -27,6 +27,10 @@ export default function CardHud({
   onEliminate,
   onNoteToggle,
   noteActive = false,
+  // Deck stats
+  pastSessions = [],
+  masteredCount = 0,
+  totalCards = 0,
 }) {
   const [elapsed, setElapsed] = useState(0);
   const timerRef = useRef(null);
@@ -150,6 +154,27 @@ export default function CardHud({
 
       </div>
 
+      {/* Stats row */}
+      {pastSessions.length > 0 && (() => {
+        const allScores = pastSessions.map(s => s.score_pct);
+        const avg = Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length);
+        const best = Math.round(Math.max(...allScores));
+        return (
+          <div className="border-t border-border px-4 py-2 flex items-center gap-4 bg-muted/30 flex-wrap text-xs text-muted-foreground">
+            <span><span className="font-medium text-foreground">{pastSessions.length}</span> sessions</span>
+            <span>Avg <span className="font-medium text-foreground">{avg}%</span></span>
+            <span>Best <span className="font-medium text-success">{best}%</span></span>
+            {totalCards > 0 && (
+              <div className="flex items-center gap-2 ml-auto">
+                <span className="whitespace-nowrap"><span className="text-success font-medium">{masteredCount}</span>/{totalCards} mastered</span>
+                <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-success rounded-full" style={{ width: `${(masteredCount / totalCards) * 100}%` }} />
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }
