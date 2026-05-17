@@ -13,8 +13,8 @@ export default function CardHud({
   cardIndex,
   total,
   // Timer
-  timeLimitSecs = null,        // null = no limit, number = limit in seconds
-  sessionStartTime,            // Date object when session started
+  timeLimitSecs = null,
+  sessionStartTime,
   // Streak
   currentStreak = 0,
   bestStreak = 0,
@@ -23,10 +23,16 @@ export default function CardHud({
   livesRemaining = 3,
   // Actions
   notesAllowed = true,
-  canEliminate = true,         // false for true/false or select-all question types
+  canEliminate = true,
   onEliminate,
   onNoteToggle,
   noteActive = false,
+  // Historical stats
+  pastSessionCount = 0,
+  avgScore = null,
+  bestScore = null,
+  masteredCount = 0,
+  totalCards = 0,
 }) {
   const [elapsed, setElapsed] = useState(0);
   const timerRef = useRef(null);
@@ -149,6 +155,38 @@ export default function CardHud({
         </div>
 
       </div>
+
+      {/* Historical stats row */}
+      {pastSessionCount > 0 && (
+        <div className="border-t border-border px-4 py-2 flex items-center gap-4 bg-muted/30 flex-wrap">
+          <span className="text-xs text-muted-foreground tabular-nums">
+            <span className="font-medium text-foreground">{pastSessionCount}</span> sessions
+          </span>
+          {avgScore !== null && (
+            <span className="text-xs text-muted-foreground tabular-nums">
+              Avg <span className="font-medium text-foreground">{Math.round(avgScore)}%</span>
+            </span>
+          )}
+          {bestScore !== null && (
+            <span className="text-xs text-muted-foreground tabular-nums">
+              Best <span className="font-medium text-success">{Math.round(bestScore)}%</span>
+            </span>
+          )}
+          {totalCards > 0 && (
+            <div className="flex items-center gap-2 ml-auto">
+              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                <span className="text-success font-medium">{masteredCount}</span>/{totalCards} mastered
+              </span>
+              <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-success rounded-full transition-all duration-500"
+                  style={{ width: `${(masteredCount / totalCards) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

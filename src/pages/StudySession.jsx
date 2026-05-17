@@ -578,6 +578,11 @@ export default function StudySession() {
               sessionStartTime={sessionStartTime}
               correctStreak={correctStreak}
               bestStreak={bestStreak}
+              pastSessionCount={pastSessions.length}
+              avgScore={pastSessions.length > 0 ? pastSessions.reduce((a, s) => a + s.score_pct, 0) / pastSessions.length : null}
+              bestScore={pastSessions.length > 0 ? Math.max(...pastSessions.map(s => s.score_pct)) : null}
+              masteredCount={cardStats.filter(s => s.mastered).length}
+              totalCards={activeCards.length}
             />
             {/* Nav arrows */}
             <div className="flex justify-center gap-3 mt-5">
