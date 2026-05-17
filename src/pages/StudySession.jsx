@@ -2,12 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Brain, Volume2, VolumeX, Info, Gamepad2, Check, LayoutGrid } from 'lucide-react';
+import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Brain, Volume2, VolumeX, Info, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StudyCard from '@/components/cards/StudyCard';
 import StreakBar from '@/components/cards/StreakBar';
 import StreakPanel from '@/components/cards/StreakPanel';
-import ClimberGame from '@/components/minigames/ClimberGame';
 import ContactSheet from '@/components/cards/ContactSheet';
 import { cn } from '@/lib/utils';
 
@@ -56,21 +55,12 @@ export default function StudySession() {
   const { deckId } = useParams();
   const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem('flashdeck_sound') !== '0');
   const [autoAdvance, setAutoAdvance] = useState(() => localStorage.getItem('flashdeck_autoadvance') === '1');
-  const [activeMinigames, setActiveMinigames] = useState(() => {
-    const saved = localStorage.getItem('flashdeck_minigames');
-    return saved ? JSON.parse(saved) : { climber: true };
-  });
   const [cardIndex, setCardIndex] = useState(0);
   const [shuffledCards, setShuffledCards] = useState([]);
   const [done, setDone] = useState(false);
   const [scores, setScores] = useState([]);
   const [correctStreak, setCorrectStreak] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
-  // Climber game state
-  const [climberLevel, setClimberLevel] = useState(0);
-  const [climberConsecWrong, setClimberConsecWrong] = useState(0);
-  const [climberGameOver, setClimberGameOver] = useState(false);
-  const [climberState, setClimberState] = useState('idle'); // idle | jump | scramble | fall
   // 'all' | 'unmastered'
   const [filterMode, setFilterMode] = useState('all');
   const [filterChosen, setFilterChosen] = useState(false);
@@ -292,41 +282,6 @@ export default function StudySession() {
       if (wasCorrect) setBestStreak(b => Math.max(b, next));
       return next;
     });
-
-    // Climber game logic
-    const isScramble = key === 'correct_after_clue' || key === 'second_guess' || key === 'second_guess_after_clue';
-    if (wasCorrect) {
-      if (climberGameOver) {
-        // Restart on correct answer after game over
-        setClimberGameOver(false);
-        setClimberLevel(0);
-        setClimberConsecWrong(0);
-        setClimberState('jump');
-        setTimeout(() => setClimberState('idle'), 600);
-      } else {
-        setClimberConsecWrong(0);
-        setClimberState(isScramble ? 'scramble' : 'jump');
-        setTimeout(() => {
-          setClimberLevel(l => l + 1);
-          setClimberState('idle');
-        }, 500);
-      }
-    } else {
-      setClimberConsecWrong(prev => {
-        const next = prev + 1;
-        if (next >= 3) {
-          setClimberState('fall');
-          setTimeout(() => setClimberGameOver(true), 700);
-        } else {
-          setClimberState('fall');
-          setTimeout(() => {
-            setClimberLevel(l => Math.max(0, l - 1));
-            setClimberState('idle');
-          }, 500);
-        }
-        return next >= 3 ? 0 : next;
-      });
-    }
   };
 
   if (isLoading || !activeCards.length) {
@@ -405,41 +360,6 @@ export default function StudySession() {
                  )}
               </div>
             </button>
-
-            {/* Mini-games section */}
-            <div className="pt-2">
-              <div className="flex items-center gap-1.5 mb-2 px-1">
-                <Gamepad2 className="w-4 h-4 text-muted-foreground" />
-                <p className="text-sm font-medium">Mini-games</p>
-              </div>
-              <div className="flex flex-col gap-2">
-                {[{ id: 'climber', label: 'Climber', description: 'A pixel climber that reacts to your answers' }].map(game => {
-                  const isOn = !!activeMinigames[game.id];
-                  return (
-                    <button
-                      key={game.id}
-                      onClick={() => {
-                        const next = { ...activeMinigames, [game.id]: !isOn };
-                        setActiveMinigames(next);
-                        localStorage.setItem('flashdeck_minigames', JSON.stringify(next));
-                      }}
-                      className={cn(
-                        'w-full border-2 rounded-xl p-3 text-left transition-all flex items-center gap-3',
-                        isOn ? 'border-primary bg-accent/40' : 'border-border hover:border-muted-foreground/40'
-                      )}
-                    >
-                      <div className={cn('w-5 h-5 rounded flex items-center justify-center shrink-0 border-2 transition-colors', isOn ? 'bg-primary border-primary' : 'border-border')}>
-                        {isOn && <Check className="w-3 h-3 text-white" />}
-                      </div>
-                      <div>
-                        <div className="font-semibold text-sm">{game.label}</div>
-                        <div className="text-xs text-muted-foreground">{game.description}</div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
 
             {/* Auto-advance toggle */}
             <div className="flex items-center justify-between px-1 pt-1">
@@ -601,14 +521,6 @@ export default function StudySession() {
 
           {/* Side panels */}
           <div className="hidden md:flex flex-col gap-3 shrink-0 w-44 sticky top-8 self-start">
-            {activeMinigames.climber && (
-              <ClimberGame
-                currentLevel={climberLevel}
-                consecutiveWrong={climberConsecWrong}
-                gameOver={climberGameOver}
-                climberState={climberState}
-              />
-            )}
             <StreakPanel
               currentStreak={correctStreak}
               bestStreak={bestStreak}
