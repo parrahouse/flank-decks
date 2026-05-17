@@ -5,8 +5,6 @@ import { base44 } from '@/api/base44Client';
 import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Brain, Volume2, VolumeX, Info, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StudyCard from '@/components/cards/StudyCard';
-import StreakBar from '@/components/cards/StreakBar';
-import StreakPanel from '@/components/cards/StreakPanel';
 import ContactSheet from '@/components/cards/ContactSheet';
 import { cn } from '@/lib/utils';
 
@@ -519,15 +517,7 @@ export default function StudySession() {
             </div>
           </div>
 
-          {/* Side panels */}
-          <div className="hidden md:flex flex-col gap-3 shrink-0 w-44 sticky top-8 self-start">
-            <StreakPanel
-              currentStreak={correctStreak}
-              bestStreak={bestStreak}
-              allTimeBest={allTimeBest > 0 ? allTimeBest : null}
-              hasPastSession={pastSessions.length > 0}
-            />
-          </div>
+
         </div>
       )}
 
