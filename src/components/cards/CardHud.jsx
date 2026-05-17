@@ -49,7 +49,7 @@ export default function CardHud({
   const lifesDimmed = !suddenDeath;
 
   return (
-    <div className="w-full bg-card border border-border rounded-2xl overflow-hidden mb-3">
+    <div className="w-full bg-card border border-border mb-3">
       <div className="flex items-stretch divide-x divide-border">
 
         {/* Section 1 — Progress + Timer */}
