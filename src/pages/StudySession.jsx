@@ -6,6 +6,7 @@ import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Brain, Volu
 import { Button } from '@/components/ui/button';
 import StudyCard from '@/components/cards/StudyCard';
 import ContactSheet from '@/components/cards/ContactSheet';
+import StreakPanel from '@/components/cards/StreakPanel';
 import { cn } from '@/lib/utils';
 
 function shuffle(arr) {
@@ -560,6 +561,17 @@ export default function StudySession() {
         />
       ) : (
         <div className="flex gap-4 items-start">
+          <div className="hidden lg:block w-52 shrink-0">
+            <StreakPanel
+              currentStreak={correctStreak}
+              bestStreak={bestStreak}
+              allTimeBest={allTimeBest}
+              hasPastSession={pastSessions.length > 0}
+              pastSessions={pastSessions}
+              masteredCount={cardStats.filter(s => s.mastered).length}
+              totalCards={activeCards.length}
+            />
+          </div>
           <div className="flex-1 min-w-0">
             <StudyCard
               key={`${current.id}-${cardIndex}`}
