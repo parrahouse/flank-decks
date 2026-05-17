@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { Tally1, Tally2, Tally3, Tally4, Tally5 } from 'lucide-react';
+import { Tally1, Tally2, Tally3, Tally4, Tally5, Trophy } from 'lucide-react';
 import StudyBuddy from './StudyBuddy';
+import { cn } from '@/lib/utils';
 
 const TALLY_ICONS = [null, Tally1, Tally2, Tally3, Tally4, Tally5];
 
@@ -37,7 +38,7 @@ function TallyDisplay({ streak, animateKey }) {
   );
 }
 
-export default function StreakPanel({ currentStreak, bestStreak, allTimeBest, hasPastSession }) {
+export default function StreakPanel({ currentStreak, bestStreak, allTimeBest, hasPastSession, pastSessions = [], masteredCount = 0, totalCards = 0 }) {
   const [animateKey, setAnimateKey] = useState(0);
   const panelRef = useRef(null);
   const [panelWidth, setPanelWidth] = useState(160);
@@ -86,6 +87,63 @@ export default function StreakPanel({ currentStreak, bestStreak, allTimeBest, ha
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">All-time best</p>
           <p className="text-lg font-bold text-foreground">{allTimeBest ?? '—'}</p>
         </div>
+
+        {/* Historical stats — sessions, avg, best */}
+        {pastSessions.length > 0 && (() => {
+          const allScores = pastSessions.map(s => s.score_pct);
+          const avg = allScores.reduce((a, b) => a + b, 0) / allScores.length;
+          const best = Math.max(...allScores);
+          return (
+            <div className="border-t border-border pt-3 space-y-2">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">History</p>
+              <div className="grid grid-cols-3 gap-1.5 text-center">
+                <div className="bg-muted/60 rounded-lg py-1.5">
+                  <p className="text-[10px] text-muted-foreground leading-none mb-0.5">Sessions</p>
+                  <p className="text-sm font-bold">{pastSessions.length}</p>
+                </div>
+                <div className="bg-muted/60 rounded-lg py-1.5">
+                  <p className="text-[10px] text-muted-foreground leading-none mb-0.5">Avg</p>
+                  <p className="text-sm font-bold">{Math.round(avg)}%</p>
+                </div>
+                <div className="bg-muted/60 rounded-lg py-1.5">
+                  <p className="text-[10px] text-muted-foreground leading-none mb-0.5">Best</p>
+                  <p className="text-sm font-bold text-success">{Math.round(best)}%</p>
+                </div>
+              </div>
+
+              {/* Recent sessions mini-list */}
+              <div className="space-y-1 pt-1">
+                {[...pastSessions].slice(0, 5).map((s, i) => (
+                  <div key={s.id} className="flex items-center gap-2">
+                    <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className={cn('h-full rounded-full', s.score_pct >= 75 ? 'bg-success' : s.score_pct >= 50 ? 'bg-amber-400' : 'bg-destructive')}
+                        style={{ width: `${s.score_pct}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] tabular-nums text-muted-foreground w-7 text-right">{Math.round(s.score_pct)}%</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Mastery bar */}
+              {totalCards > 0 && (
+                <div className="pt-1 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] text-muted-foreground">Mastered</p>
+                    <p className="text-[10px] font-medium text-success">{masteredCount}/{totalCards}</p>
+                  </div>
+                  <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-success rounded-full transition-all duration-500"
+                      style={{ width: `${totalCards > 0 ? (masteredCount / totalCards) * 100 : 0}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Study Buddy toggle — only after at least one past session */}
         {hasPastSession && (
