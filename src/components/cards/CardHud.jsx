@@ -155,40 +155,26 @@ export default function CardHud({
       </div>
 
       {/* Stats row */}
-      <div className="border-t border-border px-4 py-3 bg-muted/40 space-y-2">
-        {pastSessions.length > 0 ? (() => {
-          const allScores = pastSessions.map(s => s.score_pct);
-          const avg = Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length);
-          const best = Math.round(Math.max(...allScores));
-          return (
-            <div className="grid grid-cols-4 gap-2 text-xs">
-              <div className="flex flex-col gap-0.5">
-                <span className="text-muted-foreground font-medium uppercase tracking-wide text-[10px]">Sessions</span>
-                <span className="text-sm font-bold">{pastSessions.length}</span>
+      {pastSessions.length > 0 && (() => {
+        const allScores = pastSessions.map(s => s.score_pct);
+        const avg = Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length);
+        const best = Math.round(Math.max(...allScores));
+        return (
+          <div className="border-t border-border px-4 py-2 flex items-center gap-4 bg-muted/30 flex-wrap text-xs text-muted-foreground">
+            <span><span className="font-medium text-foreground">{pastSessions.length}</span> sessions</span>
+            <span>Avg <span className="font-medium text-foreground">{avg}%</span></span>
+            <span>Best <span className="font-medium text-success">{best}%</span></span>
+            {totalCards > 0 && (
+              <div className="flex items-center gap-2 ml-auto">
+                <span className="whitespace-nowrap"><span className="text-success font-medium">{masteredCount}</span>/{totalCards} mastered</span>
+                <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-success rounded-full" style={{ width: `${(masteredCount / totalCards) * 100}%` }} />
+                </div>
               </div>
-              <div className="flex flex-col gap-0.5">
-                <span className="text-muted-foreground font-medium uppercase tracking-wide text-[10px]">Avg</span>
-                <span className="text-sm font-bold">{avg}%</span>
-              </div>
-              <div className="flex flex-col gap-0.5">
-                <span className="text-muted-foreground font-medium uppercase tracking-wide text-[10px]">Best</span>
-                <span className="text-sm font-bold text-success">{best}%</span>
-              </div>
-              <div className="flex flex-col gap-0.5">
-                <span className="text-muted-foreground font-medium uppercase tracking-wide text-[10px]">Mastered</span>
-                <span className="text-sm font-bold text-success">{totalCards > 0 ? `${masteredCount}/${totalCards}` : '—'}</span>
-              </div>
-            </div>
-          );
-        })() : (
-          <div className="text-xs text-muted-foreground text-center py-1">No sessions yet</div>
-        )}
-        {totalCards > 0 && (
-          <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-            <div className="h-full bg-success rounded-full transition-all" style={{ width: `${masteredCount / totalCards * 100}%` }} />
+            )}
           </div>
-        )}
-      </div>
+        );
+      })()}
     </div>
   );
 }
