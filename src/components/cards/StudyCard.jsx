@@ -6,6 +6,7 @@ import {
   Sparkles,
   Glasses,
   Bookmark,
+  BookmarkX,
   Pencil,
   SkipForward,
   GraduationCap,
@@ -67,6 +68,8 @@ export default function StudyCard({
   masteredCount = 0,
   totalCards = 0,
   cardStats = null,
+  isBookmarked = false,
+  onToggleBookmark = null,
 }) {
   const { playCorrect, playWrong } = useSound(soundEnabled);
   const [shuffledChoices, setShuffledChoices] = useState([]);
@@ -540,9 +543,17 @@ export default function StudyCard({
 
         {/* Action buttons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-          <button style={{ fontSize: 16, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
-            <Bookmark style={{ width: 16, height: 16, flexShrink: 0 }} />
-            <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2 }}>Add Bookmark</span>
+          <button
+            onClick={() => onToggleBookmark && onToggleBookmark(card.id, !isBookmarked)}
+            style={{ fontSize: 16, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: isBookmarked ? '#d97706' : 'inherit' }}
+          >
+            {isBookmarked
+              ? <BookmarkX style={{ width: 16, height: 16, flexShrink: 0 }} />
+              : <Bookmark style={{ width: 16, height: 16, flexShrink: 0 }} />
+            }
+            <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2 }}>
+              {isBookmarked ? 'Remove Bookmark' : 'Add Bookmark'}
+            </span>
           </button>
           <button
             onClick={() => setNoteEditing(v => !v)}

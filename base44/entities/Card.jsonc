@@ -63,6 +63,11 @@
       "type": "boolean",
       "default": false,
       "description": "Soft-delete flag"
+    },
+    "bookmarked": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the user has bookmarked this card for focused study"
     }
   },
   "required": [

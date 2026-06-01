@@ -73,7 +73,7 @@ export default function StudySession() {
     enabled: !!deckId,
   });
 
-  const { data: allCards = [], isLoading } = useQuery({
+  const { data: allCards = [], isLoading, refetch: refetchCards } = useQuery({
     queryKey: ['cards', deckId],
     queryFn: () => base44.entities.Card.filter({ deck_id: deckId }, 'order'),
     enabled: !!deckId,
@@ -128,9 +128,15 @@ export default function StudySession() {
   const masteredCardIds = new Set(cardStats.filter(s => s.mastered).map(s => s.card_id));
   const unmasteredCards = activeCards.filter(c => !masteredCardIds.has(c.id));
   const allMastered = unmasteredCards.length === 0 && activeCards.length > 0;
+  const bookmarkedCards = activeCards.filter(c => c.bookmarked);
+
+  const handleToggleBookmark = async (cardId, newVal) => {
+    await base44.entities.Card.update(cardId, { bookmarked: newVal });
+    refetchCards();
+  };
 
   const startSession = (mode) => {
-    const pool = mode === 'unmastered' ? unmasteredCards : activeCards;
+    const pool = mode === 'unmastered' ? unmasteredCards : mode === 'bookmarked' ? bookmarkedCards : activeCards;
     setShuffledCards(shuffle(pool));
     setCardIndex(0);
     setDone(false);
@@ -363,6 +369,29 @@ export default function StudySession() {
               </div>
             </button>
 
+            <button
+              onClick={() => startSession('bookmarked')}
+              disabled={bookmarkedCards.length === 0}
+              className={cn(
+                'w-full border-2 rounded-xl p-4 text-left transition-all',
+                bookmarkedCards.length === 0
+                  ? 'border-border opacity-50 cursor-not-allowed'
+                  : 'border-border hover:border-primary hover:bg-accent/40'
+              )}
+            >
+              <div className="font-semibold flex items-center gap-2">
+                Bookmarked only
+                {bookmarkedCards.length > 0 && (
+                  <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">
+                    {bookmarkedCards.length} card{bookmarkedCards.length !== 1 ? 's' : ''}
+                  </span>
+                )}
+              </div>
+              <div className="text-sm text-muted-foreground mt-0.5">
+                {bookmarkedCards.length === 0 ? 'No bookmarked cards yet' : 'Study only your bookmarked cards'}
+              </div>
+            </button>
+
             {/* Auto-advance toggle */}
             <div className="flex items-center justify-between px-1 pt-1">
               <div>
@@ -451,6 +480,7 @@ export default function StudySession() {
           <h1 className="font-semibold">{deck?.title}</h1>
           <p className="text-xs text-muted-foreground">
             {filterMode === 'unmastered' && <span className="text-amber-600">Unmastered only</span>}
+            {filterMode === 'bookmarked' && <span className="text-amber-600">Bookmarked only</span>}
           </p>
         </div>
         <button
@@ -634,6 +664,8 @@ export default function StudySession() {
               cardStats={cardStats.find(s => s.card_id === current.id) || null}
               hintsAllowed={hintsAllowed}
               eliminateAllowed={eliminateAllowed}
+              isBookmarked={!!current.bookmarked}
+              onToggleBookmark={handleToggleBookmark}
             />
             {/* Nav arrows */}
             <div className="flex justify-center gap-3 mt-5">
