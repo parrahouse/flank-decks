@@ -292,12 +292,11 @@ export default function StudyCard({
           position: 'relative',
           padding: '20px 20px 40px 20px',
           boxSizing: 'border-box',
-          height: 120,
-          overflow: 'hidden',
+          minHeight: 120,
           transition: 'background-color 0.2s',
         }}
       >
-        <p style={{ color: hintVisible ? '#1a237e' : '#113656', fontSize: hintVisible ? 'clamp(14px, 2vw, 20px)' : 'clamp(18px, 3.2vw, 32px)', fontWeight: 500, lineHeight: 1.3, margin: 0, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+        <p style={{ color: hintVisible ? '#1a237e' : '#113656', fontSize: hintVisible ? 'clamp(14px, 2vw, 20px)' : 'clamp(18px, 3.2vw, 32px)', fontWeight: 500, lineHeight: 1.3, margin: 0 }}>
           {hintVisible ? note : (card.clue || '')}
         </p>
 
