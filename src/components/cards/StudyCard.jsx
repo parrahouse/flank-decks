@@ -246,7 +246,8 @@ export default function StudyCard({
   const handleTryAgain = () => setWrongModal(null);
 
   const timesStudied = cardStats?.sessions_completed ?? null;
-  const masteryPct = cardStats && cardStats.total_attempts > 0
+  const minSessions = deck?.mastery_min_sessions ?? 3;
+  const masteryPct = cardStats && cardStats.sessions_completed >= minSessions
     ? Math.round((cardStats.correct_attempts / cardStats.total_attempts) * 100)
     : null;
 
