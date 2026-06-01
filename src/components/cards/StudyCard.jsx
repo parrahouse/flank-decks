@@ -1,7 +1,18 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { Pointer, GraduationCap, X, Eye, SkipForward, StickyNote, Pencil } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import {
+  HelpCircle,
+  SquareCheck,
+  ToggleLeft,
+  CopyCheck,
+  Brush,
+  Glasses,
+  Bookmark,
+  Pencil,
+  SkipForward,
+  GraduationCap,
+  X,
+} from 'lucide-react';
 import CardNoteEditor from './CardNoteEditor';
-import CardHud from './CardHud';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
@@ -18,38 +29,57 @@ function shuffle(arr) {
   return a;
 }
 
-// Scoring constants
 const SCORE = {
   correct: 1,
   second_guess: 0.75,
   correct_after_clue: 0.5,
   second_guess_after_clue: 0.35,
-  wrong: 0
+  wrong: 0,
 };
 
-export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast, onScore, soundEnabled = true, autoAdvance = false, note = null, cardIndex = 0, total = 1, sessionStartTime = null, correctStreak = 0, bestStreak = 0, pastSessions = [], masteredCount = 0, totalCards = 0 }) {
+const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
+
+export default function StudyCard({
+  card,
+  deck,
+  onNext,
+  onPrev,
+  isFirst,
+  isLast,
+  onScore,
+  soundEnabled = true,
+  autoAdvance = false,
+  note = null,
+  cardIndex = 0,
+  total = 1,
+  sessionStartTime = null,
+  correctStreak = 0,
+  bestStreak = 0,
+  pastSessions = [],
+  masteredCount = 0,
+  totalCards = 0,
+  cardStats = null,
+}) {
   const { playCorrect, playWrong } = useSound(soundEnabled);
   const [shuffledChoices, setShuffledChoices] = useState([]);
   const [firstWrong, setFirstWrong] = useState(null);
   const [finalAnswer, setFinalAnswer] = useState(null);
   const [eliminated, setEliminated] = useState([]);
   const [clueRevealed, setClueRevealed] = useState(!!deck?.clue_default_revealed);
-  // Only penalise if the user manually revealed the clue (not when it's shown by default)
   const [clueManuallyRevealed, setClueManuallyRevealed] = useState(false);
   const [flipped, setFlipped] = useState(false);
   const [shake, setShake] = useState(false);
-  const [wrongModal, setWrongModal] = useState(null); // the wrong choice that triggered it
+  const [wrongModal, setWrongModal] = useState(null);
   const [countdown, setCountdown] = useState(null);
-  const [noteRevealed, setNoteRevealed] = useState(false);
   const [noteEditing, setNoteEditing] = useState(false);
   const countdownRef = useRef(null);
-
-  const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
   const clueAllowed = deck?.clue_mode !== 'disabled';
   const hasClue = !!card.clue;
   const hasExplanation = !!card.explanation;
-  const eliminateUsed = eliminated.length > 0;
+  const isTrueFalse = card.question_type === 'true_false';
+  const isSelectAll = card.question_type === 'select_all';
+  const secondGuessAllowed = true;
 
   const cancelCountdown = () => {
     clearInterval(countdownRef.current);
@@ -82,7 +112,6 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
     setFlipped(false);
     setShake(false);
     setWrongModal(null);
-    setNoteRevealed(false);
     setNoteEditing(false);
     cancelCountdown();
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
@@ -90,11 +119,10 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
 
   useEffect(() => () => cancelCountdown(), []);
 
-  // Keyboard letter shortcuts
   useEffect(() => {
     const onKey = (e) => {
       if (wrongModal) return;
-      const idx = e.key.toUpperCase().charCodeAt(0) - 65; // A=0, B=1, ...
+      const idx = e.key.toUpperCase().charCodeAt(0) - 65;
       if (idx < 0 || idx >= shuffledChoices.length) return;
       const choice = shuffledChoices[idx];
       if (eliminated.includes(choice) || finalAnswer) return;
@@ -104,18 +132,19 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
     return () => window.removeEventListener('keydown', onKey);
   }, [shuffledChoices, eliminated, finalAnswer, wrongModal, firstWrong, clueManuallyRevealed]);
 
-  const correctAnswers = (card.correct_answers || card.correct_answer || '').split('|').map((s) => s.trim()).filter(Boolean);
+  const correctAnswers = (card.correct_answers || card.correct_answer || '')
+    .split('|')
+    .map((s) => s.trim())
+    .filter(Boolean);
 
   const handleSelect = (choice) => {
-    if (finalAnswer) return; // already locked
+    if (finalAnswer) return;
     const correct = correctAnswers.includes(choice);
-
     if (correct) {
-      // Determine score
       const penaliseClue = clueManuallyRevealed;
-      const scoreKey = firstWrong ?
-      penaliseClue ? 'second_guess_after_clue' : 'second_guess' :
-      penaliseClue ? 'correct_after_clue' : 'correct';
+      const scoreKey = firstWrong
+        ? penaliseClue ? 'second_guess_after_clue' : 'second_guess'
+        : penaliseClue ? 'correct_after_clue' : 'correct';
       setFinalAnswer(choice);
       playCorrect();
       onScore && onScore(SCORE[scoreKey], scoreKey);
@@ -124,12 +153,10 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
       playWrong();
       setShake(true);
       setTimeout(() => setShake(false), 400);
-      if (!firstWrong && !eliminateUsed) {
-        // First wrong guess — show modal with try-again / skip
+      if (!firstWrong && !eliminated.length) {
         setFirstWrong(choice);
         setWrongModal(choice);
       } else {
-        // Second wrong OR eliminate was used — lock as wrong, no modal
         setFinalAnswer(choice);
         onScore && onScore(SCORE.wrong, 'wrong');
       }
@@ -137,7 +164,7 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
   };
 
   const handleEliminate = () => {
-    if (finalAnswer || firstWrong) return; // can't use after any wrong guess
+    if (finalAnswer || firstWrong) return;
     const wrong = shuffledChoices.filter((c) => !correctAnswers.includes(c) && !eliminated.includes(c));
     if (wrong.length === 0) return;
     const toElim = wrong[Math.floor(Math.random() * wrong.length)];
@@ -145,31 +172,24 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
   };
 
   const answered = !!finalAnswer;
-  const isCorrect = correctAnswers.includes(finalAnswer);
 
-  // A choice is "wrong-first" (orange) but not locked
   const getChoiceState = (choice) => {
     const isElim = eliminated.includes(choice);
     const correct = correctAnswers.includes(choice);
     if (isElim) return 'eliminated';
     if (!answered && !firstWrong) return 'idle';
     if (!answered && firstWrong) {
-      // one wrong guess used, waiting for second pick
       if (choice === firstWrong) return 'first-wrong';
-      if (isElim) return 'eliminated';
       return 'idle-retry';
     }
-    // answered (locked)
     if (choice === finalAnswer && correct) return 'correct';
     if (choice === finalAnswer && !correct) return 'wrong-final';
-    if (!choice === finalAnswer && correct) return 'reveal-correct';
     if (correct) return 'reveal-correct';
     return 'dim';
   };
 
   const handleSkip = () => {
     setWrongModal(null);
-    // Mark as wrong if not already locked
     if (!finalAnswer) {
       setFinalAnswer(firstWrong);
       onScore && onScore(SCORE.wrong, 'wrong');
@@ -177,214 +197,321 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
     onNext();
   };
 
-  const handleTryAgain = () => {
-    setWrongModal(null);
+  const handleTryAgain = () => setWrongModal(null);
+
+  const canEliminate =
+    clueAllowed && !answered && !firstWrong && !isTrueFalse && !isSelectAll &&
+    eliminated.length < shuffledChoices.length - 2 && shuffledChoices.length > 2;
+
+  const timesStudied = cardStats?.sessions_completed ?? null;
+  const masteryPct = cardStats && cardStats.sessions_completed > 0
+    ? Math.round((cardStats.correct_attempts / cardStats.sessions_completed) * 100)
+    : null;
+
+  const qtLabel = isTrueFalse ? 'True or False?' : isSelectAll ? 'Multi-Select' : 'Single Select';
+
+  const choiceBorderColor = (state) => {
+    if (state === 'correct' || state === 'reveal-correct') return '#00A842';
+    if (state === 'wrong-final') return '#dc2626';
+    if (state === 'first-wrong') return '#f97316';
+    if (state === 'eliminated') return '#ccc';
+    return '#000';
   };
 
-  const isTrueFalse = card.question_type === 'true_false';
-  const isSelectAll = card.question_type === 'select_all';
-  const hudCanEliminate = clueAllowed && !answered && !firstWrong && !isTrueFalse && !isSelectAll && eliminated.length < shuffledChoices.length - 2 && shuffledChoices.length > 2;
+  const choiceBgColor = (state) => {
+    if (state === 'correct' || state === 'reveal-correct') return '#f0fdf4';
+    if (state === 'wrong-final') return '#fef2f2';
+    if (state === 'first-wrong') return '#fff7ed';
+    if (state === 'eliminated') return '#f5f5f5';
+    return '#fff';
+  };
 
   return (
-    <div className="w-full">
-      {/* HUD */}
-      <CardHud
-        cardIndex={cardIndex}
-        total={total}
-        timeLimitSecs={null}
-        sessionStartTime={sessionStartTime}
-        currentStreak={correctStreak}
-        bestStreak={bestStreak}
-        suddenDeath={false}
-        livesRemaining={3}
-        notesAllowed={true}
-        canEliminate={hudCanEliminate}
-        onEliminate={handleEliminate}
-        onNoteToggle={() => {
-          if (!noteRevealed && note) setNoteRevealed(true);
-          setNoteEditing(e => !e);
+    <div style={{ width: 700 }} className="mx-auto flex flex-col">
+
+      {/* ── Card Pane: 700×525 ── */}
+      <div
+        style={{
+          width: 700, height: 525,
+          border: '2px solid #000', borderBottom: 'none',
+          overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          backgroundColor: '#f3f4f6',
         }}
-        noteActive={noteEditing || noteRevealed}
-        pastSessions={pastSessions}
-        masteredCount={masteredCount}
-        totalCards={totalCards}
+      >
+        {card.image_url
+          ? <img src={card.image_url} alt="card" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          : <span style={{ color: '#9ca3af', fontSize: 14 }}>No image</span>
+        }
+      </div>
+
+      {/* ── Question Pane: 700×200 ── */}
+      <div
+        style={{
+          width: 700, height: 200,
+          backgroundColor: '#DFEDF5',
+          border: '2px solid #000', borderBottom: 'none',
+          position: 'relative',
+          padding: '20px 20px 40px 20px',
+          boxSizing: 'border-box',
+        }}
+      >
+        <p style={{ color: '#113656', fontSize: 40, fontWeight: 600, lineHeight: 1.2, margin: 0 }}>
+          {card.clue || correctAnswers[0] || ''}
+        </p>
+
+        {/* Bottom left: card counter */}
+        <span style={{ position: 'absolute', bottom: 10, left: 20, color: '#113656', fontSize: 14 }}>
+          {cardIndex + 1}/{total}
+        </span>
+
+        {/* Bottom right: clue toggle */}
+        {hasClue && clueAllowed && (
+          <button
+            style={{ position: 'absolute', bottom: 8, right: 16, color: '#113656', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+            onClick={() => { setClueRevealed(v => !v); if (!clueRevealed) setClueManuallyRevealed(true); }}
+            title={clueRevealed ? 'Hide clue' : 'Show clue'}
+          >
+            <HelpCircle style={{ width: 22, height: 22 }} />
+          </button>
+        )}
+      </div>
+
+      {/* ── Progress Pane: 700×100 ── */}
+      <div
+        style={{
+          width: 700, height: 100,
+          border: '2px solid #000', borderBottom: 'none',
+          boxSizing: 'border-box',
+        }}
       />
 
-      <div className="card-flip w-full">
-        <div className={cn('card-flip-inner w-full', flipped && card.explanation && 'flipped')}>
-
-          {/* FRONT */}
-          <div className="card-face bg-card border border-border rounded-2xl overflow-hidden shadow-sm flex flex-col w-full">
-
-            {/* Image — 4:3 aspect ratio */}
-            <div className="relative w-full bg-muted flex items-center justify-center" style={{ aspectRatio: '4/3' }}>
-              {card.image_url ?
-              <img src={card.image_url} alt="card" className="absolute inset-0 w-full h-full object-cover rounded-none" /> :
-
-              <div className="text-muted-foreground text-sm">No image</div>
-              }
-            </div>
-
-            {/* Clue */}
-            {hasClue && clueAllowed &&
-            <div className="border-t border-border flex items-center bg-accent/60 px-4 py-2" style={{ minHeight: '5rem' }}>
-                {clueRevealed ?
-              <p className="font-bricolage text-accent-foreground leading-snug my-2 text-2xl">{card.clue}</p> :
-
-              !answered &&
-              <button
-                onClick={() => {setClueRevealed(true);setClueManuallyRevealed(true);}}
-                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
-                
-                      <Eye className="w-3.5 h-3.5" /> Reveal clue
-                    </button>
-
-              }
-              </div>
+      {/* ── Answer Pane: 700×340 ── */}
+      <div
+        style={{
+          width: 700, height: 340,
+          backgroundColor: '#FAFAFA',
+          border: '2px solid #D9D9D9', borderBottom: 'none',
+          boxSizing: 'border-box',
+          padding: '12px 16px',
+          display: 'flex', flexDirection: 'column',
+        }}
+      >
+        {/* Top row: question type + second guess */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#00A842', fontSize: 24, fontWeight: 600 }}>
+            <span>{qtLabel}</span>
+            {isTrueFalse
+              ? <ToggleLeft style={{ width: 28, height: 28 }} />
+              : isSelectAll
+                ? <span style={{ display: 'inline-flex', gap: 2 }}>
+                    <SquareCheck style={{ width: 28, height: 28 }} />
+                    <SquareCheck style={{ width: 22, height: 22 }} />
+                  </span>
+                : <SquareCheck style={{ width: 28, height: 28 }} />
             }
-
-            {/* Choices + Actions */}
-            <div className="p-5 flex flex-col gap-3 border-t border-border">
-              <div className="flex flex-col gap-2">
-                {shuffledChoices.map((choice, idx) => {
-                  const state = getChoiceState(choice);
-                  const isShaking = shake && (state === 'first-wrong' || state === 'wrong-final');
-                  const letter = LETTERS[idx];
-
-                  return (
-                    <button
-                      key={choice}
-                      disabled={state === 'eliminated' || answered}
-                      onClick={() => handleSelect(choice)}
-                      className={cn(
-                        'w-full rounded-xl border-2 px-3 py-2.5 text-sm font-medium text-left transition-all duration-150 min-h-[2.75rem] flex items-start gap-3',
-                        state === 'eliminated' && 'opacity-25 line-through cursor-not-allowed border-border text-muted-foreground',
-                        state === 'idle' && 'border-border hover:border-primary hover:bg-accent cursor-pointer',
-                        state === 'idle-retry' && 'border-border hover:border-primary hover:bg-accent cursor-pointer',
-                        state === 'first-wrong' && cn('border-orange-400 bg-orange-50 text-orange-700', isShaking && 'animate-shake'),
-                        state === 'correct' && 'border-success bg-success/10 text-success animate-pop-in',
-                        state === 'wrong-final' && cn('border-destructive bg-destructive/10 text-destructive', isShaking && 'animate-shake'),
-                        state === 'reveal-correct' && 'border-success bg-success/10 text-success',
-                        state === 'dim' && 'border-border text-muted-foreground opacity-50'
-                      )}>
-                      
-                      <span className={cn(
-                        'shrink-0 w-5 h-5 mt-0.5 rounded flex items-center justify-center text-xs font-bold',
-                        state === 'idle' || state === 'idle-retry' ? 'bg-muted text-muted-foreground' : 'bg-current/10'
-                      )}>
-                        {letter}
-                      </span>
-                      <span className="whitespace-normal break-words">{choice}</span>
-                    </button>);
-
-                })}
-              </div>
-
-              {/* Personal Note */}
-              <div className="border border-amber-200 bg-amber-50">
-                {noteEditing ?
-                <div className="p-2">
-                    <CardNoteEditor cardId={card.id} />
-                    <button
-                    onClick={() => setNoteEditing(false)}
-                    className="mt-2 w-full text-xs text-amber-600 hover:text-amber-800 transition-colors text-center">
-                    
-                      Done
-                    </button>
-                  </div> :
-                note && noteRevealed ?
-                <div className="px-3 py-2.5">
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-1.5">
-                        <StickyNote className="w-3.5 h-3.5 text-amber-600" />
-                        <span className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Note</span>
-                      </div>
-                      <button onClick={() => setNoteEditing(true)} className="text-amber-500 hover:text-amber-700 transition-colors">
-                        <Pencil className="w-3 h-3" />
-                      </button>
-                    </div>
-                    <p className="text-sm text-amber-900 leading-snug whitespace-pre-wrap">{note}</p>
-                  </div> :
-                note ?
-                <div className="flex items-center justify-between px-3 py-2">
-                    <button
-                    onClick={() => setNoteRevealed(true)}
-                    className="flex items-center gap-1.5 text-xs text-amber-600 hover:text-amber-800 transition-colors">
-                    
-                      <StickyNote className="w-3.5 h-3.5" />
-                      Reveal note
-                    </button>
-                    <button onClick={() => setNoteEditing(true)} className="text-amber-400 hover:text-amber-700 transition-colors">
-                      <Pencil className="w-3 h-3" />
-                    </button>
-                  </div> :
-
-                <button
-                  onClick={() => setNoteEditing(true)}
-                  className="w-full flex items-center gap-1.5 px-3 py-2 text-xs text-amber-500 hover:text-amber-700 transition-colors">
-                  
-                    <StickyNote className="w-3.5 h-3.5" />
-                    Add a note
-                  </button>
-                }
-              </div>
-
-              {/* Actions row */}
-              <div className="flex items-center justify-between pt-2 mt-auto">
-                <div className="flex gap-2 flex-wrap">
-                  {answered && hasExplanation &&
-                  <Button variant="outline" size="sm" onClick={() => {setFlipped(true);cancelCountdown();}} className="h-8 text-xs gap-1">
-                      <GraduationCap className="w-3.5 h-3.5" /> Learn More
-                    </Button>
-                  }
-                </div>
-                {answered && !flipped &&
-                <div className="flex items-center gap-2">
-                    <button
-                    onClick={() => {cancelCountdown();onNext();}}
-                    className="relative h-8 px-3 rounded-md text-xs font-medium overflow-hidden"
-                    style={{ minWidth: '4.5rem', backgroundColor: 'hsl(var(--primary) / 0.15)', color: 'hsl(var(--primary))' }}>
-                    
-                      {/* Progressive fill */}
-                      <span
-                      className="absolute inset-0 origin-left"
-                      style={{
-                        backgroundColor: 'hsl(var(--primary) / 0.35)',
-                        transform: countdown !== null ?
-                        `scaleX(${(COUNTDOWN_SECS - countdown + 1) / COUNTDOWN_SECS})` :
-                        'scaleX(1)',
-                        transition: countdown !== null ? 'transform 1s linear' : 'none'
-                      }} />
-                    
-                      <span className="relative z-10">{isLast ? 'Finish →' : 'Next →'}</span>
-                    </button>
-                  </div>
-                }
-
-              </div>
-            </div>
           </div>
 
-          {/* BACK — full explanation */}
-          <div className="card-face card-face-back bg-card border border-border rounded-2xl flex flex-col p-6 gap-4 shadow-sm w-full overflow-y-auto">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center shrink-0">
-                <Pointer className="w-4 h-4 text-accent-foreground" />
-              </div>
-              <h3 className="font-semibold text-lg text-foreground">{correctAnswers.join(', ')}</h3>
+          {!isTrueFalse && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#6b7280', fontSize: 13 }}>
+              <CopyCheck style={{ width: 15, height: 15 }} />
+              <span>Second Guess: {secondGuessAllowed ? 'ON' : 'OFF'}</span>
             </div>
-            <div
-              className="prose prose-sm max-w-none text-muted-foreground flex-1"
-              dangerouslySetInnerHTML={{ __html: card.explanation }} />
-            
-            <Button variant="outline" size="sm" onClick={() => setFlipped(false)} className="self-start mt-auto">
-              ← Back to card
-            </Button>
-          </div>
+          )}
         </div>
+
+        {/* Choice buttons */}
+        <div style={{ flex: 1, overflow: 'hidden' }}>
+          {isTrueFalse ? (
+            <div style={{ display: 'flex', gap: 12 }}>
+              {shuffledChoices.map((choice, idx) => {
+                const state = getChoiceState(choice);
+                return (
+                  <button
+                    key={choice}
+                    disabled={answered}
+                    onClick={() => handleSelect(choice)}
+                    className={cn(shake && (state === 'first-wrong' || state === 'wrong-final') && 'animate-shake')}
+                    style={{
+                      flex: 1, height: 80,
+                      borderRadius: 14,
+                      border: `2px solid ${choiceBorderColor(state)}`,
+                      backgroundColor: choiceBgColor(state),
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '0 20px',
+                      cursor: answered ? 'default' : 'pointer',
+                      fontSize: 30, fontWeight: 500,
+                    }}
+                  >
+                    <span style={{
+                      width: 34, height: 34, borderRadius: 6,
+                      backgroundColor: '#000', color: '#fff',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 14, fontWeight: 700, flexShrink: 0,
+                    }}>
+                      {LETTERS[idx]}
+                    </span>
+                    {choice}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignContent: 'flex-start' }}>
+              {shuffledChoices.map((choice, idx) => {
+                const state = getChoiceState(choice);
+                return (
+                  <button
+                    key={choice}
+                    disabled={state === 'eliminated' || answered}
+                    onClick={() => handleSelect(choice)}
+                    className={cn(shake && (state === 'first-wrong' || state === 'wrong-final') && 'animate-shake')}
+                    style={{
+                      height: 64,
+                      borderRadius: 14,
+                      border: `2px solid ${choiceBorderColor(state)}`,
+                      backgroundColor: choiceBgColor(state),
+                      opacity: state === 'eliminated' || state === 'dim' ? 0.4 : 1,
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '0 18px',
+                      cursor: answered || state === 'eliminated' ? 'default' : 'pointer',
+                      fontSize: 30, fontWeight: 500,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    <span style={{
+                      width: 34, height: 34, borderRadius: 6,
+                      backgroundColor: '#000', color: '#fff',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 14, fontWeight: 700, flexShrink: 0,
+                    }}>
+                      {LETTERS[idx]}
+                    </span>
+                    {choice}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Bottom right: eliminate icon */}
+        {!isTrueFalse && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
+            <button
+              onClick={canEliminate ? handleEliminate : undefined}
+              disabled={!canEliminate}
+              title="Eliminate one wrong answer"
+              style={{ color: canEliminate ? '#765E09' : '#d1d5db', cursor: canEliminate ? 'pointer' : 'not-allowed', background: 'none', border: 'none', padding: 0 }}
+            >
+              <Brush style={{ width: 20, height: 20 }} />
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* ── Card Action Pane ── */}
+      <div
+        style={{
+          width: 700,
+          border: '2px solid #D9D9D9',
+          boxSizing: 'border-box',
+          padding: '10px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+          backgroundColor: '#fff',
+        }}
+      >
+        {/* Mastery pill */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          backgroundColor: '#F5F5F0', borderRadius: 20,
+          padding: '6px 16px', fontSize: 13, flexShrink: 0,
+        }}>
+          <Glasses style={{ width: 20, height: 20, flexShrink: 0 }} />
+          <span>Mastery: <strong>{masteryPct !== null ? `${masteryPct}%` : '--'}</strong></span>
+          <span>Times Studied: <strong>{timesStudied !== null ? timesStudied : '--'}</strong></span>
+        </div>
+
+        {/* Action buttons */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+          <button style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, borderBottom: '1.5px dashed #555', paddingBottom: 1, background: 'none', border: 'none', borderBottom: '1.5px dashed #555', cursor: 'pointer' }}>
+            <Bookmark style={{ width: 14, height: 14 }} />
+            Add Bookmark
+          </button>
+          <button
+            onClick={() => setNoteEditing(v => !v)}
+            style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, borderBottom: '1.5px dashed #555', paddingBottom: 1, background: 'none', border: 'none', borderBottom: '1.5px dashed #555', cursor: 'pointer' }}
+          >
+            <Pencil style={{ width: 14, height: 14 }} />
+            Add/Edit Hint
+          </button>
+          <button
+            onClick={() => { if (!finalAnswer) { onScore && onScore(SCORE.wrong, 'wrong'); } onNext(); }}
+            style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, borderBottom: '1.5px dashed #555', paddingBottom: 1, background: 'none', border: 'none', borderBottom: '1.5px dashed #555', cursor: 'pointer' }}
+          >
+            <SkipForward style={{ width: 14, height: 14 }} />
+            Skip
+          </button>
+        </div>
+
+        {/* Next/Finish when answered */}
+        {answered && (
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+            {hasExplanation && (
+              <Button variant="outline" size="sm" onClick={() => { setFlipped(true); cancelCountdown(); }} className="h-8 text-xs gap-1">
+                <GraduationCap className="w-3.5 h-3.5" /> Learn More
+              </Button>
+            )}
+            <button
+              onClick={() => { cancelCountdown(); onNext(); }}
+              className="relative h-8 px-3 rounded-md text-xs font-medium overflow-hidden"
+              style={{ minWidth: '4.5rem', backgroundColor: 'hsl(var(--primary) / 0.15)', color: 'hsl(var(--primary))' }}
+            >
+              <span
+                className="absolute inset-0 origin-left"
+                style={{
+                  backgroundColor: 'hsl(var(--primary) / 0.35)',
+                  transform: countdown !== null
+                    ? `scaleX(${(COUNTDOWN_SECS - countdown + 1) / COUNTDOWN_SECS})`
+                    : 'scaleX(1)',
+                  transition: countdown !== null ? 'transform 1s linear' : 'none',
+                }}
+              />
+              <span className="relative z-10">{isLast ? 'Finish →' : 'Next →'}</span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Note editor */}
+      {noteEditing && (
+        <div style={{ width: 700, border: '2px solid #D9D9D9', borderTop: 'none', backgroundColor: '#fffbeb', padding: 12, boxSizing: 'border-box' }}>
+          <CardNoteEditor cardId={card.id} />
+          <button onClick={() => setNoteEditing(false)} style={{ marginTop: 8, width: '100%', fontSize: 12, color: '#d97706', background: 'none', border: 'none', cursor: 'pointer' }}>
+            Done
+          </button>
+        </div>
+      )}
+
+      {/* Explanation panel */}
+      {flipped && hasExplanation && (
+        <div style={{ width: 700, border: '2px solid #D9D9D9', borderTop: 'none', backgroundColor: '#fff', padding: 20, boxSizing: 'border-box' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center">
+              <GraduationCap className="w-4 h-4 text-accent-foreground" />
+            </div>
+            <h3 className="font-semibold text-lg">{correctAnswers.join(', ')}</h3>
+          </div>
+          <div className="prose prose-sm max-w-none text-muted-foreground" dangerouslySetInnerHTML={{ __html: card.explanation }} />
+          <Button variant="outline" size="sm" onClick={() => setFlipped(false)} style={{ marginTop: 16 }}>
+            ← Back to card
+          </Button>
+        </div>
+      )}
+
       {/* Wrong answer modal */}
-      <Dialog open={!!wrongModal} onOpenChange={(open) => {if (!open) handleTryAgain();}}>
+      <Dialog open={!!wrongModal} onOpenChange={(open) => { if (!open) handleTryAgain(); }}>
         <DialogContent className="max-w-sm text-center">
           <div className="flex flex-col items-center gap-4 py-2">
             <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
@@ -392,25 +519,14 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
             </div>
             <div>
               <h3 className="font-semibold text-lg">Not quite!</h3>
-              {!finalAnswer ?
-              <p className="text-muted-foreground text-sm mt-1">You have one attempt remaining.</p> :
-
-              <p className="text-muted-foreground text-sm mt-1">
-                  The correct answer was <span className="font-semibold text-foreground">{correctAnswers.join(', ')}</span>.
-                </p>
+              {!finalAnswer
+                ? <p className="text-muted-foreground text-sm mt-1">You have one attempt remaining.</p>
+                : <p className="text-muted-foreground text-sm mt-1">The correct answer was <span className="font-semibold text-foreground">{correctAnswers.join(', ')}</span>.</p>
               }
             </div>
             <div className="flex gap-2 w-full">
-              {!finalAnswer &&
-              <Button className="flex-1" onClick={handleTryAgain}>
-                  Try Again
-                </Button>
-              }
-              <Button
-                variant={finalAnswer ? 'default' : 'outline'}
-                className="flex-1 gap-1.5"
-                onClick={handleSkip}>
-                
+              {!finalAnswer && <Button className="flex-1" onClick={handleTryAgain}>Try Again</Button>}
+              <Button variant={finalAnswer ? 'default' : 'outline'} className="flex-1 gap-1.5" onClick={handleSkip}>
                 <SkipForward className="w-4 h-4" />
                 {isLast ? 'Finish' : 'Skip'}
               </Button>
@@ -418,6 +534,6 @@ export default function StudyCard({ card, deck, onNext, onPrev, isFirst, isLast,
           </div>
         </DialogContent>
       </Dialog>
-    </div>);
-
+    </div>
+  );
 }

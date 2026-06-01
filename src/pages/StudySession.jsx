@@ -581,6 +581,7 @@ export default function StudySession() {
               pastSessions={pastSessions}
               masteredCount={cardStats.filter(s => s.mastered).length}
               totalCards={activeCards.length}
+              cardStats={cardStats.find(s => s.card_id === current.id) || null}
             />
             {/* Nav arrows */}
             <div className="flex justify-center gap-3 mt-5">
