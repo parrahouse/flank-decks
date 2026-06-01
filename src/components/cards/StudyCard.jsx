@@ -182,6 +182,14 @@ export default function StudyCard({
     clearTimeout(idleTimerRef.current);
   };
 
+  // Auto-hide hint after answer
+  useEffect(() => {
+    if (answered && hintVisible) {
+      const t = setTimeout(() => setHintVisible(false), 1200);
+      return () => clearTimeout(t);
+    }
+  }, [answered, hintVisible]);
+
   // 30-second idle shake for eliminate button
   useEffect(() => {
     if (answered || firstWrong || !canEliminate) return;
@@ -288,7 +296,7 @@ export default function StudyCard({
           transition: 'background-color 0.2s',
         }}
       >
-        <p style={{ color: '#1a237e', fontSize: 'clamp(18px, 3.2vw, 32px)', fontWeight: 500, lineHeight: 1.2, margin: 0, color: hintVisible ? '#1a237e' : '#113656' }}>
+        <p style={{ color: hintVisible ? '#1a237e' : '#113656', fontSize: hintVisible ? 'clamp(14px, 2vw, 20px)' : 'clamp(18px, 3.2vw, 32px)', fontWeight: 500, lineHeight: 1.3, margin: 0 }}>
           {hintVisible ? note : (card.clue || '')}
         </p>
 
