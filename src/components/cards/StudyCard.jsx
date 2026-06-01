@@ -393,9 +393,9 @@ export default function StudyCard({
           )}
         </div>
 
-        {/* Bottom right: eliminate icon */}
-        {!isTrueFalse && (
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
+        {/* Bottom row: eliminate icon + Learn More / Next when answered */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
+          {!isTrueFalse ? (
             <button
               onClick={canEliminate ? handleEliminate : undefined}
               disabled={!canEliminate}
@@ -404,8 +404,37 @@ export default function StudyCard({
             >
               <Brush style={{ width: 20, height: 20 }} />
             </button>
-          </div>
-        )}
+          ) : <span />}
+
+          {answered && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+              {hasExplanation && (
+                <button
+                  onClick={() => { setFlipped(true); cancelCountdown(); }}
+                  style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', borderBottom: '1.5px dotted #555', paddingBottom: 1, cursor: 'pointer' }}
+                >
+                  <GraduationCap style={{ width: 14, height: 14 }} />
+                  Learn More
+                </button>
+              )}
+              <button
+                onClick={() => { cancelCountdown(); onNext(); }}
+                style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', borderBottom: '1.5px dotted #555', paddingBottom: 1, cursor: 'pointer', position: 'relative' }}
+              >
+                {countdown !== null && (
+                  <span style={{
+                    position: 'absolute', bottom: 0, left: 0,
+                    height: '1.5px', backgroundColor: '#555',
+                    width: `${((COUNTDOWN_SECS - countdown + 1) / COUNTDOWN_SECS) * 100}%`,
+                    transition: 'width 1s linear',
+                  }} />
+                )}
+                <SkipForward style={{ width: 14, height: 14 }} />
+                {isLast ? 'Finish' : 'Next'}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── Card Action Pane ── */}
@@ -453,33 +482,7 @@ export default function StudyCard({
           </button>
         </div>
 
-        {/* Next/Finish when answered */}
-        {answered && (
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-            {hasExplanation && (
-              <Button variant="outline" size="sm" onClick={() => { setFlipped(true); cancelCountdown(); }} className="h-8 text-xs gap-1">
-                <GraduationCap className="w-3.5 h-3.5" /> Learn More
-              </Button>
-            )}
-            <button
-              onClick={() => { cancelCountdown(); onNext(); }}
-              className="relative h-8 px-3 rounded-md text-xs font-medium overflow-hidden"
-              style={{ minWidth: '4.5rem', backgroundColor: 'hsl(var(--primary) / 0.15)', color: 'hsl(var(--primary))' }}
-            >
-              <span
-                className="absolute inset-0 origin-left"
-                style={{
-                  backgroundColor: 'hsl(var(--primary) / 0.35)',
-                  transform: countdown !== null
-                    ? `scaleX(${(COUNTDOWN_SECS - countdown + 1) / COUNTDOWN_SECS})`
-                    : 'scaleX(1)',
-                  transition: countdown !== null ? 'transform 1s linear' : 'none',
-                }}
-              />
-              <span className="relative z-10">{isLast ? 'Finish →' : 'Next →'}</span>
-            </button>
-          </div>
-        )}
+
       </div>
 
       {/* Note editor */}
