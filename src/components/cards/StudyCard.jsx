@@ -417,6 +417,7 @@ export default function StudyCard({
                   Learn More
                 </button>
               )}
+
               <button
                 onClick={() => { cancelCountdown(); onNext(); }}
                 style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', borderBottom: '1.5px dotted #555', paddingBottom: 1, cursor: 'pointer', position: 'relative' }}
@@ -495,21 +496,18 @@ export default function StudyCard({
         </div>
       )}
 
-      {/* Explanation panel */}
-      {flipped && hasExplanation && (
-        <div style={{ width: 700, border: '2px solid #D9D9D9', backgroundColor: '#fff', padding: 20, boxSizing: 'border-box' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-            <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center">
+      {/* Learn More modal */}
+      <Dialog open={flipped && hasExplanation} onOpenChange={(open) => { if (!open) setFlipped(false); }}>
+        <DialogContent className="max-w-lg">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center shrink-0">
               <GraduationCap className="w-4 h-4 text-accent-foreground" />
             </div>
             <h3 className="font-semibold text-lg">{correctAnswers.join(', ')}</h3>
           </div>
           <div className="prose prose-sm max-w-none text-muted-foreground" dangerouslySetInnerHTML={{ __html: card.explanation }} />
-          <Button variant="outline" size="sm" onClick={() => setFlipped(false)} style={{ marginTop: 16 }}>
-            ← Back to card
-          </Button>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {/* Wrong answer modal */}
       <Dialog open={!!wrongModal} onOpenChange={(open) => { if (!open) handleTryAgain(); }}>
