@@ -433,20 +433,20 @@ export default function StudyCard({
 
         {/* Action buttons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-          <button style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, borderBottom: '1.5px dashed #555', paddingBottom: 1, background: 'none', border: 'none', borderBottom: '1.5px dashed #555', cursor: 'pointer' }}>
+          <button style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, borderBottom: '1.5px dotted #555', paddingBottom: 1, background: 'none', border: 'none', borderBottom: '1.5px dotted #555', cursor: 'pointer' }}>
             <Bookmark style={{ width: 14, height: 14 }} />
             Add Bookmark
           </button>
           <button
             onClick={() => setNoteEditing(v => !v)}
-            style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, borderBottom: '1.5px dashed #555', paddingBottom: 1, background: 'none', border: 'none', borderBottom: '1.5px dashed #555', cursor: 'pointer' }}
+            style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, borderBottom: '1.5px dotted #555', paddingBottom: 1, background: 'none', border: 'none', borderBottom: '1.5px dotted #555', cursor: 'pointer' }}
           >
             <Pencil style={{ width: 14, height: 14 }} />
             Add/Edit Hint
           </button>
           <button
             onClick={() => { if (!finalAnswer) { onScore && onScore(SCORE.wrong, 'wrong'); } onNext(); }}
-            style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, borderBottom: '1.5px dashed #555', paddingBottom: 1, background: 'none', border: 'none', borderBottom: '1.5px dashed #555', cursor: 'pointer' }}
+            style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, borderBottom: '1.5px dotted #555', paddingBottom: 1, background: 'none', border: 'none', borderBottom: '1.5px dotted #555', cursor: 'pointer' }}
           >
             <SkipForward style={{ width: 14, height: 14 }} />
             Skip
