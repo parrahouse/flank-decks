@@ -163,7 +163,6 @@ export default function StudyCard({
       setTimeout(() => setShake(false), 400);
       if (!firstWrong && !eliminated.length) {
         setFirstWrong(choice);
-        setWrongModal(choice);
       } else {
         setFinalAnswer(choice);
         onScore && onScore(SCORE.wrong, 'wrong');
