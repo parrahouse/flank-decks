@@ -10,6 +10,7 @@ import {
   SkipForward,
   GraduationCap,
   X,
+  MessageCircleQuestion,
 } from 'lucide-react';
 import CardNoteEditor from './CardNoteEditor';
 import { Button } from '@/components/ui/button';
@@ -292,6 +293,14 @@ export default function StudyCard({
         <span style={{ position: 'absolute', bottom: 10, left: 20, color: '#113656', fontSize: 14, fontWeight: 700 }}>
           {cardIndex + 1}/{total}
         </span>
+
+        {/* Bottom right: hint indicator */}
+        {note && (
+          <MessageCircleQuestion
+            title="You have a hint for this card"
+            style={{ position: 'absolute', bottom: 10, right: 16, width: 20, height: 20, color: '#113656', opacity: 0.6 }}
+          />
+        )}
       </div>
 
       {/* ── Progress Pane ── */}
