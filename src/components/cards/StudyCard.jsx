@@ -427,7 +427,7 @@ export default function StudyCard({
         </div>
 
         {/* Bottom row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 }}>
           {/* Left: empty placeholder */}
           <span />
 
