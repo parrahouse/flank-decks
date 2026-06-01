@@ -4,7 +4,7 @@ import {
   SquareCheck,
   ToggleLeft,
   CopyCheck,
-  Brush,
+  Sparkles,
   Glasses,
   Bookmark,
   Pencil,
@@ -407,20 +407,24 @@ export default function StudyCard({
           )}
         </div>
 
-        {/* Bottom row: eliminate icon + Learn More / Next when answered */}
+        {/* Bottom row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
-          {!isTrueFalse ? (
-            <button
-              onClick={canEliminate ? handleEliminate : undefined}
-              disabled={!canEliminate}
-              title="Eliminate one wrong answer"
-              style={{ color: canEliminate ? '#765E09' : '#d1d5db', cursor: canEliminate ? 'pointer' : 'not-allowed', background: 'none', border: 'none', padding: 0 }}
-            >
-              <Brush style={{ width: 20, height: 20 }} />
-            </button>
-          ) : <span />}
+          {/* Left: empty placeholder */}
+          <span />
 
-          {answered && (
+          {/* Right: Sparkles when not answered, Learn More + Next when answered */}
+          {!answered ? (
+            !isTrueFalse && (
+              <button
+                onClick={canEliminate ? handleEliminate : undefined}
+                disabled={!canEliminate}
+                title="Eliminate one wrong answer"
+                style={{ color: canEliminate ? '#765E09' : '#d1d5db', cursor: canEliminate ? 'pointer' : 'not-allowed', background: 'none', border: 'none', padding: 0 }}
+              >
+                <Sparkles style={{ width: 20, height: 20 }} />
+              </button>
+            )
+          ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
               {hasExplanation && (
                 <button
@@ -431,7 +435,6 @@ export default function StudyCard({
                   Learn More
                 </button>
               )}
-
               <button
                 onClick={() => { cancelCountdown(); onNext(); }}
                 style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', borderBottom: '1.5px dotted #555', paddingBottom: 1, cursor: 'pointer', position: 'relative' }}
