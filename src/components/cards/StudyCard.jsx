@@ -279,7 +279,6 @@ export default function StudyCard({
         style={{
           width: '100%',
           aspectRatio: '700 / 525',
-          border: '2px solid #000',
           overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
           backgroundColor: '#f3f4f6',
         }}
