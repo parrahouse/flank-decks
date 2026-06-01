@@ -280,31 +280,44 @@ export default function StudyCard({
       <div
         style={{
           width: '100%',
-          backgroundColor: '#DFEDF5',
+          backgroundColor: hintVisible ? '#EEFF41' : '#DFEDF5',
           position: 'relative',
           padding: '20px 20px 40px 20px',
           boxSizing: 'border-box',
           minHeight: 100,
+          transition: 'background-color 0.2s',
         }}
       >
-        <p style={{ color: '#113656', fontSize: 'clamp(18px, 3.2vw, 32px)', fontWeight: 500, lineHeight: 1.2, margin: 0 }}>
-          {card.clue || ''}
+        <p style={{ color: '#1a237e', fontSize: 'clamp(18px, 3.2vw, 32px)', fontWeight: 500, lineHeight: 1.2, margin: 0, color: hintVisible ? '#1a237e' : '#113656' }}>
+          {hintVisible ? note : (card.clue || '')}
         </p>
 
-        {/* Bottom left: card counter */}
-        <span style={{ position: 'absolute', bottom: 10, left: 20, color: '#113656', fontSize: 14, fontWeight: 700 }}>
-          {cardIndex + 1}/{total}
+        {/* Bottom left: card counter or "Hint" label */}
+        <span style={{ position: 'absolute', bottom: 10, left: 20, color: hintVisible ? '#1a237e' : '#113656', fontSize: 14, fontWeight: hintVisible ? 400 : 700, opacity: hintVisible ? 0.7 : 1 }}>
+          {hintVisible ? 'Hint' : `${cardIndex + 1}/${total}`}
         </span>
 
-        {/* Bottom right: hint indicator */}
+        {/* Bottom right: hint icon or back arrow */}
         {note && (
-          <button
-            onClick={() => setHintVisible(true)}
-            title="View your hint"
-            style={{ position: 'absolute', bottom: 8, right: 14, background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#113656', opacity: 0.6, lineHeight: 0 }}
-          >
-            <MessageCircleQuestion style={{ width: 20, height: 20 }} />
-          </button>
+          hintVisible ? (
+            <button
+              onClick={() => setHintVisible(false)}
+              style={{ position: 'absolute', bottom: 8, right: 14, background: 'none', border: 'none', cursor: 'pointer', color: '#1a237e', padding: 0, lineHeight: 0 }}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 14L4 9l5-5"/>
+                <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>
+              </svg>
+            </button>
+          ) : (
+            <button
+              onClick={() => setHintVisible(true)}
+              title="View your hint"
+              style={{ position: 'absolute', bottom: 8, right: 14, background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#113656', opacity: 0.6, lineHeight: 0 }}
+            >
+              <MessageCircleQuestion style={{ width: 20, height: 20 }} />
+            </button>
+          )
         )}
       </div>
 
@@ -327,36 +340,8 @@ export default function StudyCard({
           boxSizing: 'border-box',
           padding: '12px 16px',
           display: 'flex', flexDirection: 'column',
-          position: 'relative',
-          overflow: 'hidden',
         }}
       >
-        {/* Hint overlay */}
-        {hintVisible && note && (
-          <div style={{
-            position: 'absolute', inset: 0,
-            backgroundColor: '#EEFF41',
-            padding: '20px 20px 40px 20px',
-            display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-            zIndex: 10,
-          }}>
-            <p style={{ color: '#1a237e', fontSize: 'clamp(16px, 2.8vw, 28px)', fontWeight: 500, lineHeight: 1.3, margin: 0 }}>
-              {note}
-            </p>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ color: '#1a237e', fontSize: 13, opacity: 0.7 }}>Hint</span>
-              <button
-                onClick={() => setHintVisible(false)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1a237e', padding: 0, lineHeight: 0 }}
-              >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 14L4 9l5-5"/>
-                  <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>
-                </svg>
-              </button>
-            </div>
-          </div>
-        )}
         {/* Top row: question type + second guess */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#00A842', fontSize: 24, fontWeight: 500 }}>
