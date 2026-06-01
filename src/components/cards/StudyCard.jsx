@@ -228,9 +228,7 @@ export default function StudyCard({
       if (choice === firstWrong) return 'first-wrong';
       return 'idle-retry';
     }
-    if (choice === finalAnswer && correct) return 'correct';
-    if (choice === finalAnswer && !correct) return 'wrong-final';
-    if (correct) return 'reveal-correct';
+    if (correct) return 'correct';
     return 'dim';
   };
 
@@ -413,11 +411,12 @@ export default function StudyCard({
                   >
                     <span style={{
                       width: 34, height: 34, borderRadius: 6,
-                      backgroundColor: '#000', color: '#fff',
+                      backgroundColor: state === 'correct' ? '#00A842' : '#000',
+                      color: '#fff',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 14, fontWeight: 700, flexShrink: 0,
+                      fontSize: state === 'correct' ? 18 : 14, fontWeight: 700, flexShrink: 0,
                     }}>
-                      {LETTERS[idx]}
+                      {state === 'correct' ? '✓' : LETTERS[idx]}
                     </span>
                     {choice}
                   </button>
@@ -449,11 +448,12 @@ export default function StudyCard({
                   >
                     <span style={{
                       width: 34, height: 34, borderRadius: 6,
-                      backgroundColor: '#000', color: '#fff',
+                      backgroundColor: state === 'correct' ? '#00A842' : '#000',
+                      color: '#fff',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 14, fontWeight: 700, flexShrink: 0,
+                      fontSize: state === 'correct' ? 18 : 14, fontWeight: 700, flexShrink: 0,
                     }}>
-                      {LETTERS[idx]}
+                      {state === 'correct' ? '✓' : LETTERS[idx]}
                     </span>
                     {choice}
                   </button>
