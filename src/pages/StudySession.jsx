@@ -53,6 +53,8 @@ export default function StudySession() {
   const { deckId } = useParams();
   const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem('flashdeck_sound') !== '0');
   const [autoAdvance, setAutoAdvance] = useState(() => localStorage.getItem('flashdeck_autoadvance') === '1');
+  const [hintsAllowed, setHintsAllowed] = useState(() => localStorage.getItem('flashdeck_hints') !== '0');
+  const [eliminateAllowed, setEliminateAllowed] = useState(() => localStorage.getItem('flashdeck_eliminate') !== '0');
   const [cardIndex, setCardIndex] = useState(0);
   const [shuffledCards, setShuffledCards] = useState([]);
   const [done, setDone] = useState(false);
@@ -384,6 +386,54 @@ export default function StudySession() {
                 )} />
               </button>
             </div>
+
+            {/* Hints toggle */}
+            <div className="flex items-center justify-between px-1 pt-1">
+              <div>
+                <p className="text-sm font-medium">Allow hints</p>
+                <p className="text-xs text-muted-foreground">Show the clue toggle on each card</p>
+              </div>
+              <button
+                onClick={() => {
+                  const next = !hintsAllowed;
+                  setHintsAllowed(next);
+                  localStorage.setItem('flashdeck_hints', next ? '1' : '0');
+                }}
+                className={cn(
+                  'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer ml-4',
+                  hintsAllowed ? 'bg-primary' : 'bg-muted'
+                )}
+              >
+                <span className={cn(
+                  'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform',
+                  hintsAllowed ? 'translate-x-5' : 'translate-x-0'
+                )} />
+              </button>
+            </div>
+
+            {/* Eliminate toggle */}
+            <div className="flex items-center justify-between px-1 pt-1">
+              <div>
+                <p className="text-sm font-medium">Allow eliminate one</p>
+                <p className="text-xs text-muted-foreground">Let the sparkle button remove a wrong answer choice</p>
+              </div>
+              <button
+                onClick={() => {
+                  const next = !eliminateAllowed;
+                  setEliminateAllowed(next);
+                  localStorage.setItem('flashdeck_eliminate', next ? '1' : '0');
+                }}
+                className={cn(
+                  'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer ml-4',
+                  eliminateAllowed ? 'bg-primary' : 'bg-muted'
+                )}
+              >
+                <span className={cn(
+                  'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform',
+                  eliminateAllowed ? 'translate-x-5' : 'translate-x-0'
+                )} />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -582,6 +632,8 @@ export default function StudySession() {
               masteredCount={cardStats.filter(s => s.mastered).length}
               totalCards={activeCards.length}
               cardStats={cardStats.find(s => s.card_id === current.id) || null}
+              hintsAllowed={hintsAllowed}
+              eliminateAllowed={eliminateAllowed}
             />
             {/* Nav arrows */}
             <div className="flex justify-center gap-3 mt-5">
