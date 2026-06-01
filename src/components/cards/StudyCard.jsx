@@ -285,12 +285,12 @@ export default function StudyCard({
           minHeight: 100,
         }}
       >
-        <p style={{ color: '#113656', fontSize: 'clamp(22px, 4vw, 40px)', fontWeight: 600, lineHeight: 1.2, margin: 0 }}>
+        <p style={{ color: '#113656', fontSize: 'clamp(18px, 3.2vw, 32px)', fontWeight: 400, lineHeight: 1.2, margin: 0 }}>
           {card.clue || correctAnswers[0] || ''}
         </p>
 
         {/* Bottom left: card counter */}
-        <span style={{ position: 'absolute', bottom: 10, left: 20, color: '#113656', fontSize: 14 }}>
+        <span style={{ position: 'absolute', bottom: 10, left: 20, color: '#113656', fontSize: 14, fontWeight: 700 }}>
           {cardIndex + 1}/{total}
         </span>
 
