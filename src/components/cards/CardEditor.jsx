@@ -312,7 +312,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
       {/* Short Clue */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="flex items-center gap-1.5">Short Clue <InfoTooltip text="Optional — one sentence, revealed before answering" /></Label>
+          <Label className="flex items-center gap-1.5">Written Question <InfoTooltip text="Optional — one sentence, revealed before answering" /></Label>
           <span className={`text-xs tabular-nums ${clue.length >= 180 ? 'text-destructive' : 'text-muted-foreground'}`}>
             {clue.length}/200
           </span>
