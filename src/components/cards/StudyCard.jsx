@@ -246,8 +246,8 @@ export default function StudyCard({
   const handleTryAgain = () => setWrongModal(null);
 
   const timesStudied = cardStats?.sessions_completed ?? null;
-  const masteryPct = cardStats && cardStats.sessions_completed > 0
-    ? Math.round((cardStats.correct_attempts / cardStats.sessions_completed) * 100)
+  const masteryPct = cardStats && cardStats.total_attempts > 0
+    ? Math.round((cardStats.correct_attempts / cardStats.total_attempts) * 100)
     : null;
 
   const qtLabel = isTrueFalse ? 'True or False?' : isSelectAll ? 'Multi-Select' : 'Single Select';
