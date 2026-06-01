@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import {
-  MessageCircleQuestion,
   SquareCheck,
   ToggleLeft,
   CopyCheck,
@@ -73,7 +72,7 @@ export default function StudyCard({
   const [firstWrong, setFirstWrong] = useState(null);
   const [finalAnswer, setFinalAnswer] = useState(null);
   const [eliminated, setEliminated] = useState([]);
-  const [clueRevealed, setClueRevealed] = useState(!!deck?.clue_default_revealed);
+  const [questionRevealed] = useState(true);
   const [clueManuallyRevealed, setClueManuallyRevealed] = useState(false);
   const [flipped, setFlipped] = useState(false);
   const [shake, setShake] = useState(false);
@@ -87,7 +86,6 @@ export default function StudyCard({
   const idleTimerRef = useRef(null);
 
   const clueAllowed = deck?.clue_mode !== 'disabled';
-  const hasClue = !!card.clue;
   const hasExplanation = !!card.explanation;
   const isTrueFalse = card.question_type === 'true_false';
   const isSelectAll = card.question_type === 'select_all';
@@ -119,7 +117,6 @@ export default function StudyCard({
     setFirstWrong(null);
     setFinalAnswer(null);
     setEliminated([]);
-    setClueRevealed(!!deck?.clue_default_revealed);
     setClueManuallyRevealed(false);
     setFlipped(false);
     setShake(false);
@@ -144,7 +141,7 @@ export default function StudyCard({
   const answered = !!finalAnswer;
 
   const canEliminate =
-    clueAllowed && !answered && !firstWrong && !isTrueFalse && !isSelectAll &&
+    !answered && !firstWrong && !isTrueFalse && !isSelectAll &&
     eliminated.length < shuffledChoices.length - 2 && shuffledChoices.length > 2;
 
   const handleSelect = (choice) => {
@@ -288,38 +285,13 @@ export default function StudyCard({
         }}
       >
         <p style={{ color: '#113656', fontSize: 'clamp(18px, 3.2vw, 32px)', fontWeight: 500, lineHeight: 1.2, margin: 0 }}>
-          {correctAnswers[0] || ''}
+          {card.clue || ''}
         </p>
-
-        {/* Clue slide-in */}
-        {hasClue && clueAllowed && (
-          <div style={{
-            overflow: 'hidden',
-            maxHeight: clueRevealed ? 120 : 0,
-            transition: 'max-height 0.35s ease',
-            marginTop: clueRevealed ? 12 : 0,
-          }}>
-            <p style={{ color: '#113656', fontSize: 'clamp(13px, 2vw, 18px)', fontStyle: 'italic', margin: 0, opacity: 0.8 }}>
-              {card.clue}
-            </p>
-          </div>
-        )}
 
         {/* Bottom left: card counter */}
         <span style={{ position: 'absolute', bottom: 10, left: 20, color: '#113656', fontSize: 14, fontWeight: 700 }}>
           {cardIndex + 1}/{total}
         </span>
-
-        {/* Bottom right: clue toggle */}
-        {hasClue && clueAllowed && (
-          <button
-            style={{ position: 'absolute', bottom: 8, right: 16, color: clueRevealed ? '#0165fc' : '#113656', background: 'none', border: 'none', cursor: 'pointer', padding: 0, transition: 'color 0.2s' }}
-            onClick={() => { setClueRevealed(v => !v); if (!clueRevealed) setClueManuallyRevealed(true); }}
-            title={clueRevealed ? 'Hide clue' : 'Show clue'}
-          >
-            <MessageCircleQuestion style={{ width: 22, height: 22 }} />
-          </button>
-        )}
       </div>
 
       {/* ── Progress Pane ── */}
@@ -556,10 +528,7 @@ export default function StudyCard({
           </h3>
           {/* Card reference */}
           <div className="rounded-lg bg-muted/50 border border-border px-3 py-2.5 mb-4 space-y-1">
-            {card.clue && (
-              <p className="text-xs text-muted-foreground">{card.clue}</p>
-            )}
-            <p className="text-sm font-semibold">{correctAnswers.join(', ')}</p>
+            <p className="text-sm font-semibold">{card.clue || correctAnswers.join(', ')}</p>
           </div>
           <CardNoteEditor cardId={card.id} />
         </DialogContent>
