@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { StickyNote, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -62,18 +62,13 @@ export default function CardNoteEditor({ cardId }) {
   }
 
   return (
-    <div className="rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800 p-4 space-y-3">
-      <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
-        <StickyNote className="w-4 h-4" />
-        <span className="text-xs font-semibold uppercase tracking-wide">Personal Note</span>
-      </div>
-
+    <div className="space-y-3">
       <Textarea
         value={noteText}
         onChange={e => setNoteText(e.target.value)}
         placeholder="Add a personal note for this card…"
-        className="resize-none bg-white/70 dark:bg-amber-900/20 border-amber-200 dark:border-amber-700 text-amber-900 dark:text-amber-100 placeholder:text-amber-400 focus-visible:ring-amber-400 min-h-[80px]"
-        rows={3}
+        className="resize-none min-h-[140px]"
+        rows={6}
       />
 
       <div className="flex items-center justify-between">
