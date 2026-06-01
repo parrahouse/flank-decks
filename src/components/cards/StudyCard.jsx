@@ -285,7 +285,7 @@ export default function StudyCard({
           minHeight: 100
         }}>
         
-        <p style={{ color: '#113656', fontSize: 'clamp(18px, 3.2vw, 32px)', fontWeight: 400, lineHeight: 1.2, margin: 0 }} className="text-lg text-left font-semibold">
+        <p style={{ color: '#113656', fontSize: 'clamp(18px, 3.2vw, 32px)', fontWeight: 400, lineHeight: 1.2, margin: 0 }} className="text-lg text-left font-medium">
           {card.clue || correctAnswers[0] || ''}
         </p>
 
