@@ -87,6 +87,7 @@ export default function StudyCard({
   const [eliminateUsed, setEliminateUsed] = useState(false);
   const [noteRevealed, setNoteRevealed] = useState(false);
   const [hintVisible, setHintVisible] = useState(false);
+  const [bookmarked, setBookmarked] = useState(isBookmarked);
   const countdownRef = useRef(null);
   const idleTimerRef = useRef(null);
 
@@ -131,6 +132,7 @@ export default function StudyCard({
     setEliminateUsed(false);
     setNoteRevealed(false);
     setHintVisible(false);
+    setBookmarked(isBookmarked);
     cancelCountdown();
     clearTimeout(idleTimerRef.current);
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
@@ -544,15 +546,19 @@ export default function StudyCard({
         {/* Action buttons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
           <button
-            onClick={() => onToggleBookmark && onToggleBookmark(card.id, !isBookmarked)}
-            style={{ fontSize: 16, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: isBookmarked ? '#d97706' : 'inherit' }}
+            onClick={() => {
+              const next = !bookmarked;
+              setBookmarked(next);
+              onToggleBookmark && onToggleBookmark(card.id, next);
+            }}
+            style={{ fontSize: 16, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: bookmarked ? '#d97706' : 'inherit' }}
           >
-            {isBookmarked
+            {bookmarked
               ? <BookmarkX style={{ width: 16, height: 16, flexShrink: 0 }} />
               : <Bookmark style={{ width: 16, height: 16, flexShrink: 0 }} />
             }
             <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2 }}>
-              {isBookmarked ? 'Remove Bookmark' : 'Add Bookmark'}
+              {bookmarked ? 'Remove Bookmark' : 'Add Bookmark'}
             </span>
           </button>
           <button
