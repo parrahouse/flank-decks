@@ -310,41 +310,15 @@ export default function StudyCard({
           {cardIndex + 1}/{total}
         </span>
 
-        {/* Bottom right: icons */}
-        <div style={{ position: 'absolute', bottom: 8, right: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
-          {/* Clue toggle */}
-          {hasClue && clueAllowed && (
-            <button
-              style={{ color: clueRevealed ? '#0165fc' : '#113656', background: 'none', border: 'none', cursor: 'pointer', padding: 0, transition: 'color 0.2s' }}
-              onClick={() => { setClueRevealed(v => !v); if (!clueRevealed) setClueManuallyRevealed(true); }}
-              title={clueRevealed ? 'Hide clue' : 'Show clue'}
-            >
-              <MessageCircleQuestion style={{ width: 22, height: 22 }} />
-            </button>
-          )}
-          {/* Hint toggle */}
-          {note && (
-            <button
-              style={{ color: noteRevealed ? '#ca8a04' : '#113656', background: 'none', border: 'none', cursor: 'pointer', padding: 0, transition: 'color 0.2s' }}
-              onClick={() => setNoteRevealed(v => !v)}
-              title={noteRevealed ? 'Hide hint' : 'Show hint'}
-            >
-              <Pencil style={{ width: 18, height: 18 }} />
-            </button>
-          )}
-        </div>
-
-        {/* Hint overlay */}
-        {note && noteRevealed && (
-          <div style={{
-            position: 'absolute', inset: 0,
-            backgroundColor: '#FEFF9C',
-            padding: '16px 20px',
-            display: 'flex', flexDirection: 'column', justifyContent: 'center',
-            zIndex: 10,
-          }}>
-            <p style={{ margin: 0, fontSize: 'clamp(13px, 2vw, 18px)', color: '#713f12', lineHeight: 1.5 }}>{note}</p>
-          </div>
+        {/* Bottom right: clue toggle */}
+        {hasClue && clueAllowed && (
+          <button
+            style={{ position: 'absolute', bottom: 8, right: 16, color: clueRevealed ? '#0165fc' : '#113656', background: 'none', border: 'none', cursor: 'pointer', padding: 0, transition: 'color 0.2s' }}
+            onClick={() => { setClueRevealed(v => !v); if (!clueRevealed) setClueManuallyRevealed(true); }}
+            title={clueRevealed ? 'Hide clue' : 'Show clue'}
+          >
+            <MessageCircleQuestion style={{ width: 22, height: 22 }} />
+          </button>
         )}
       </div>
 
