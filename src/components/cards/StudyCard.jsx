@@ -288,20 +288,34 @@ export default function StudyCard({
         }}
       >
         <p style={{ color: '#113656', fontSize: 'clamp(18px, 3.2vw, 32px)', fontWeight: 500, lineHeight: 1.2, margin: 0 }}>
-          {card.clue || correctAnswers[0] || ''}
+          {correctAnswers[0] || ''}
         </p>
+
+        {/* Clue slide-in */}
+        {hasClue && clueAllowed && (
+          <div style={{
+            overflow: 'hidden',
+            maxHeight: clueRevealed ? 120 : 0,
+            transition: 'max-height 0.35s ease',
+            marginTop: clueRevealed ? 12 : 0,
+          }}>
+            <p style={{ color: '#113656', fontSize: 'clamp(13px, 2vw, 18px)', fontStyle: 'italic', margin: 0, opacity: 0.8 }}>
+              {card.clue}
+            </p>
+          </div>
+        )}
 
         {/* Bottom left: card counter */}
         <span style={{ position: 'absolute', bottom: 10, left: 20, color: '#113656', fontSize: 14, fontWeight: 700 }}>
           {cardIndex + 1}/{total}
         </span>
 
-        {/* Bottom right: hint (personal note) toggle */}
-        {note && (
+        {/* Bottom right: clue toggle */}
+        {hasClue && clueAllowed && (
           <button
-            style={{ position: 'absolute', bottom: 8, right: 16, color: noteRevealed ? '#0165fc' : '#113656', background: 'none', border: 'none', cursor: 'pointer', padding: 0, transition: 'color 0.2s' }}
-            onClick={() => setNoteRevealed(v => !v)}
-            title={noteRevealed ? 'Hide hint' : 'Show hint'}
+            style={{ position: 'absolute', bottom: 8, right: 16, color: clueRevealed ? '#0165fc' : '#113656', background: 'none', border: 'none', cursor: 'pointer', padding: 0, transition: 'color 0.2s' }}
+            onClick={() => { setClueRevealed(v => !v); if (!clueRevealed) setClueManuallyRevealed(true); }}
+            title={clueRevealed ? 'Hide clue' : 'Show clue'}
           >
             <MessageCircleQuestion style={{ width: 22, height: 22 }} />
           </button>
@@ -329,24 +343,6 @@ export default function StudyCard({
           display: 'flex', flexDirection: 'column',
         }}
       >
-        {/* Hint slide-in banner */}
-        <div style={{
-          overflow: 'hidden',
-          maxHeight: noteRevealed ? 120 : 0,
-          transition: 'max-height 0.35s ease',
-          marginBottom: noteRevealed ? 10 : 0,
-        }}>
-          <div style={{
-            backgroundColor: '#FEFF9C',
-            padding: '10px 14px',
-            borderRadius: 8,
-            display: 'flex', alignItems: 'flex-start', gap: 8,
-          }}>
-            <MessageCircleQuestion style={{ width: 16, height: 16, color: '#113656', flexShrink: 0, marginTop: 2 }} />
-            <p style={{ margin: 0, fontSize: 14, color: '#113656', lineHeight: 1.4 }}>{note}</p>
-          </div>
-        </div>
-
         {/* Top row: question type + second guess */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#00A842', fontSize: 24, fontWeight: 500 }}>
