@@ -296,10 +296,13 @@ export default function StudyCard({
 
         {/* Bottom right: hint indicator */}
         {note && (
-          <MessageCircleQuestion
-            title="You have a hint for this card"
-            style={{ position: 'absolute', bottom: 10, right: 16, width: 20, height: 20, color: '#113656', opacity: 0.6 }}
-          />
+          <button
+            onClick={() => setNoteEditing(true)}
+            title="View your hint"
+            style={{ position: 'absolute', bottom: 8, right: 14, background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#113656', opacity: 0.6, lineHeight: 0 }}
+          >
+            <MessageCircleQuestion style={{ width: 20, height: 20 }} />
+          </button>
         )}
       </div>
 
