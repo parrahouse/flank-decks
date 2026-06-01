@@ -455,26 +455,28 @@ export default function StudyCard({
               {hasExplanation && (
                 <button
                   onClick={() => { setFlipped(true); cancelCountdown(); }}
-                  style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', borderBottom: '1.5px dotted #555', paddingBottom: 1, cursor: 'pointer' }}
+                  style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}
                 >
-                  <GraduationCap style={{ width: 14, height: 14 }} />
-                  Learn More
+                  <GraduationCap style={{ width: 14, height: 14, flexShrink: 0 }} />
+                  <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 1 }}>Learn More</span>
                 </button>
               )}
               <button
                 onClick={() => { cancelCountdown(); onNext(); }}
-                style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', borderBottom: '1.5px dotted #555', paddingBottom: 1, cursor: 'pointer', position: 'relative' }}
+                style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', position: 'relative' }}
               >
-                {countdown !== null && (
-                  <span style={{
-                    position: 'absolute', bottom: 0, left: 0,
-                    height: '1.5px', backgroundColor: '#555',
-                    width: `${((COUNTDOWN_SECS - countdown + 1) / COUNTDOWN_SECS) * 100}%`,
-                    transition: 'width 1s linear',
-                  }} />
-                )}
-                <SkipForward style={{ width: 14, height: 14 }} />
-                {isLast ? 'Finish' : 'Next'}
+                <SkipForward style={{ width: 14, height: 14, flexShrink: 0 }} />
+                <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 1, position: 'relative' }}>
+                  {countdown !== null && (
+                    <span style={{
+                      position: 'absolute', bottom: 0, left: 0,
+                      height: '1.5px', backgroundColor: '#555',
+                      width: `${((COUNTDOWN_SECS - countdown + 1) / COUNTDOWN_SECS) * 100}%`,
+                      transition: 'width 1s linear',
+                    }} />
+                  )}
+                  {isLast ? 'Finish' : 'Next'}
+                </span>
               </button>
             </div>
           )}
