@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import {
-  HelpCircle,
+  MessageCircleQuestion,
   SquareCheck,
   ToggleLeft,
   CopyCheck,
@@ -82,6 +82,7 @@ export default function StudyCard({
   const [noteEditing, setNoteEditing] = useState(false);
   const [eliminateShake, setEliminateShake] = useState(false);
   const [eliminateUsed, setEliminateUsed] = useState(false);
+  const [noteRevealed, setNoteRevealed] = useState(false);
   const countdownRef = useRef(null);
   const idleTimerRef = useRef(null);
 
@@ -126,6 +127,7 @@ export default function StudyCard({
     setNoteEditing(false);
     setEliminateShake(false);
     setEliminateUsed(false);
+    setNoteRevealed(false);
     cancelCountdown();
     clearTimeout(idleTimerRef.current);
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
@@ -294,14 +296,14 @@ export default function StudyCard({
           {cardIndex + 1}/{total}
         </span>
 
-        {/* Bottom right: clue toggle */}
-        {hasClue && clueAllowed && (
+        {/* Bottom right: hint (personal note) toggle */}
+        {note && (
           <button
-            style={{ position: 'absolute', bottom: 8, right: 16, color: '#113656', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-            onClick={() => { setClueRevealed(v => !v); if (!clueRevealed) setClueManuallyRevealed(true); }}
-            title={clueRevealed ? 'Hide clue' : 'Show clue'}
+            style={{ position: 'absolute', bottom: 8, right: 16, color: noteRevealed ? '#0165fc' : '#113656', background: 'none', border: 'none', cursor: 'pointer', padding: 0, transition: 'color 0.2s' }}
+            onClick={() => setNoteRevealed(v => !v)}
+            title={noteRevealed ? 'Hide hint' : 'Show hint'}
           >
-            <HelpCircle style={{ width: 22, height: 22 }} />
+            <MessageCircleQuestion style={{ width: 22, height: 22 }} />
           </button>
         )}
       </div>
@@ -327,6 +329,24 @@ export default function StudyCard({
           display: 'flex', flexDirection: 'column',
         }}
       >
+        {/* Hint slide-in banner */}
+        <div style={{
+          overflow: 'hidden',
+          maxHeight: noteRevealed ? 120 : 0,
+          transition: 'max-height 0.35s ease',
+          marginBottom: noteRevealed ? 10 : 0,
+        }}>
+          <div style={{
+            backgroundColor: '#FEFF9C',
+            padding: '10px 14px',
+            borderRadius: 8,
+            display: 'flex', alignItems: 'flex-start', gap: 8,
+          }}>
+            <MessageCircleQuestion style={{ width: 16, height: 16, color: '#113656', flexShrink: 0, marginTop: 2 }} />
+            <p style={{ margin: 0, fontSize: 14, color: '#113656', lineHeight: 1.4 }}>{note}</p>
+          </div>
+        </div>
+
         {/* Top row: question type + second guess */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#00A842', fontSize: 24, fontWeight: 500 }}>
