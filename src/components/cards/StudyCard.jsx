@@ -480,23 +480,23 @@ export default function StudyCard({
 
         {/* Action buttons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-          <button style={{ fontSize: 16, display: 'flex', alignItems: 'center', gap: 4, paddingBottom: 2, background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none', borderBottom: '1.5px dotted #555', cursor: 'pointer' }}>
-            <Bookmark style={{ width: 16, height: 16 }} />
-            Add Bookmark
+          <button style={{ fontSize: 16, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
+            <Bookmark style={{ width: 16, height: 16, flexShrink: 0 }} />
+            <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2 }}>Add Bookmark</span>
           </button>
           <button
             onClick={() => setNoteEditing(v => !v)}
-            style={{ fontSize: 16, display: 'flex', alignItems: 'center', gap: 4, paddingBottom: 2, background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none', borderBottom: '1.5px dotted #555', cursor: 'pointer' }}
+            style={{ fontSize: 16, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}
           >
-            <Pencil style={{ width: 16, height: 16 }} />
-            Add/Edit Hint
+            <Pencil style={{ width: 16, height: 16, flexShrink: 0 }} />
+            <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2 }}>Add/Edit Hint</span>
           </button>
           <button
             onClick={() => { if (!finalAnswer) { onScore && onScore(SCORE.wrong, 'wrong'); } onNext(); }}
-            style={{ fontSize: 16, display: 'flex', alignItems: 'center', gap: 4, paddingBottom: 2, background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none', borderBottom: '1.5px dotted #555', cursor: 'pointer' }}
+            style={{ fontSize: 16, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}
           >
-            <SkipForward style={{ width: 16, height: 16 }} />
-            Skip
+            <SkipForward style={{ width: 16, height: 16, flexShrink: 0 }} />
+            <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2 }}>Skip</span>
           </button>
         </div>
 
