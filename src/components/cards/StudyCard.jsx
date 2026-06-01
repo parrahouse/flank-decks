@@ -249,7 +249,6 @@ export default function StudyCard({
         style={{
           width: 700, height: 200,
           backgroundColor: '#DFEDF5',
-          border: '2px solid #000',
           position: 'relative',
           padding: '20px 20px 40px 20px',
           boxSizing: 'border-box',
@@ -413,7 +412,6 @@ export default function StudyCard({
       <div
         style={{
           width: 700,
-          border: '2px solid #D9D9D9',
           boxSizing: 'border-box',
           padding: '10px 16px',
           display: 'flex',
