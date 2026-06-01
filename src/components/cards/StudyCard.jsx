@@ -440,7 +440,7 @@ export default function StudyCard({
                 title="Eliminate one wrong answer"
                 className={cn(eliminateShake && 'animate-subtle-shake')}
                 style={{
-                  color: eliminateUsed ? '#d1d5db' : canEliminate ? '0165fc' : '#d1d5db',
+                  color: eliminateUsed ? '#d1d5db' : canEliminate ? '#0165fc' : '#d1d5db',
                   opacity: eliminateUsed ? 0.4 : 1,
                   cursor: canEliminate && !eliminateUsed ? 'pointer' : 'not-allowed',
                   background: 'none', border: 'none', padding: 0,
