@@ -285,7 +285,7 @@ export default function StudyCard({
         }}
       >
         {card.image_url
-          ? <img src={card.image_url} alt="card" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ? <img src={card.image_url} alt="card" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: card.image_focal_point ? `${card.image_focal_point.x}% ${card.image_focal_point.y}%` : 'center' }} />
           : <span style={{ color: '#9ca3af', fontSize: 14 }}>No image</span>
         }
       </div>

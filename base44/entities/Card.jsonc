@@ -14,6 +14,18 @@
       "type": "string",
       "description": "Uploaded image URL"
     },
+    "image_focal_point": {
+      "type": "object",
+      "description": "Focal point for image cropping, as {x, y} percentages (0-100)",
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      }
+    },
     "question_type": {
       "type": "string",
       "enum": [

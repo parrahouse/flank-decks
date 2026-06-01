@@ -39,6 +39,8 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
   // Which choices are marked correct (a Set of choice strings)
   const [correctSet, setCorrectSet] = useState(() => new Set(initCorrectAnswers));
 
+  const [focalPoint, setFocalPoint] = useState(card?.image_focal_point || null);
+  const [settingFocalPoint, setSettingFocalPoint] = useState(false);
   const [clue, setClue] = useState(card?.clue || '');
   const [explanation, setExplanation] = useState(card?.explanation || '');
   const [tags, setTags] = useState(card?.tags || []);
@@ -60,6 +62,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
     const origChoices = card?.choices || (initQType === 'true_false' ? ['True', 'False'] : ['', '', '', '']);
     const origCorrect = new Set(parseCorrectAnswers(card?.correct_answers || card?.correct_answer || ''));
     if (imageUrl !== (card?.image_url || '')) return true;
+    if (JSON.stringify(focalPoint) !== JSON.stringify(card?.image_focal_point || null)) return true;
     if (qType !== initQType) return true;
     if (clue !== (card?.clue || '')) return true;
     if (explanation !== (card?.explanation || '')) return true;
@@ -184,6 +187,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
 
     onSave({
       image_url: finalImageUrl,
+      image_focal_point: focalPoint,
       correct_answers,
       correct_answer: correctList[0], // legacy compat
       choices: filledChoices,
@@ -264,7 +268,36 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
           style={{ minHeight: 180 }}
         >
           {imageUrl ? (
-            <img src={imageUrl} alt="card" className="w-full h-48 object-cover" />
+            <div
+              className="relative w-full h-48 overflow-hidden"
+              onClick={(e) => {
+                if (!settingFocalPoint) return;
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = Math.round(((e.clientX - rect.left) / rect.width) * 100);
+                const y = Math.round(((e.clientY - rect.top) / rect.height) * 100);
+                setFocalPoint({ x, y });
+                setSettingFocalPoint(false);
+              }}
+              style={{ cursor: settingFocalPoint ? 'crosshair' : 'default' }}
+            >
+              <img
+                src={imageUrl}
+                alt="card"
+                className="w-full h-48 object-cover"
+                style={{ objectPosition: focalPoint ? `${focalPoint.x}% ${focalPoint.y}%` : 'center' }}
+              />
+              {settingFocalPoint && (
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center text-white text-sm font-medium pointer-events-none">
+                  Click to set focal point
+                </div>
+              )}
+              {focalPoint && !settingFocalPoint && (
+                <div
+                  className="absolute w-4 h-4 rounded-full border-2 border-white bg-primary/80 -translate-x-1/2 -translate-y-1/2 pointer-events-none shadow"
+                  style={{ left: `${focalPoint.x}%`, top: `${focalPoint.y}%` }}
+                />
+              )}
+            </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-48 gap-2 text-muted-foreground">
               {uploading ? <Loader2 className="w-6 h-6 animate-spin" /> : <ImageIcon className="w-8 h-8" />}
@@ -286,6 +319,20 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
         <div className="flex items-center justify-between">
           <InfoTooltip text="Accepted: JPG, PNG, GIF, WebP · Min 10 KB · Max 10 MB" />
           <div className="flex items-center gap-3">
+            {imageUrl && (
+              <button
+                type="button"
+                onClick={() => setSettingFocalPoint(v => !v)}
+                className={cn('flex items-center gap-1 text-xs hover:underline', settingFocalPoint ? 'text-primary font-medium' : 'text-muted-foreground')}
+              >
+                {settingFocalPoint ? 'Cancel' : focalPoint ? 'Reposition' : 'Set focal point'}
+              </button>
+            )}
+            {imageUrl && focalPoint && !settingFocalPoint && (
+              <button type="button" onClick={() => setFocalPoint(null)} className="flex items-center gap-1 text-xs text-muted-foreground hover:underline">
+                Reset focal point
+              </button>
+            )}
             <button type="button" onClick={() => { setShowImagePicker(v => !v); setShowImageSearch(false); }} className="flex items-center gap-1 text-xs text-primary hover:underline">
               <ImageIcon className="w-3 h-3" /> Pick from decks
             </button>
