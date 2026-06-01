@@ -554,12 +554,9 @@ export default function StudyCard({
             style={{ fontSize: 16, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: bookmarked ? '#d97706' : 'inherit' }}
           >
             {bookmarked
-              ? <BookmarkX style={{ width: 16, height: 16, flexShrink: 0 }} />
-              : <Bookmark style={{ width: 16, height: 16, flexShrink: 0 }} />
+              ? <BookmarkX style={{ width: 20, height: 20, flexShrink: 0 }} />
+              : <Bookmark style={{ width: 20, height: 20, flexShrink: 0 }} />
             }
-            <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2, display: 'inline-block', minWidth: 100 }}>
-              {bookmarked ? 'Un-bookmark' : 'Bookmark'}
-            </span>
           </button>
           <button
             onClick={() => setNoteEditing(v => !v)}
