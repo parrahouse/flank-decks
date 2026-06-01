@@ -83,6 +83,7 @@ export default function StudyCard({
   const [eliminateShake, setEliminateShake] = useState(false);
   const [eliminateUsed, setEliminateUsed] = useState(false);
   const [noteRevealed, setNoteRevealed] = useState(false);
+  const [hintVisible, setHintVisible] = useState(false);
   const countdownRef = useRef(null);
   const idleTimerRef = useRef(null);
 
@@ -126,6 +127,7 @@ export default function StudyCard({
     setEliminateShake(false);
     setEliminateUsed(false);
     setNoteRevealed(false);
+    setHintVisible(false);
     cancelCountdown();
     clearTimeout(idleTimerRef.current);
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
@@ -297,7 +299,7 @@ export default function StudyCard({
         {/* Bottom right: hint indicator */}
         {note && (
           <button
-            onClick={() => setNoteEditing(true)}
+            onClick={() => setHintVisible(true)}
             title="View your hint"
             style={{ position: 'absolute', bottom: 8, right: 14, background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#113656', opacity: 0.6, lineHeight: 0 }}
           >
@@ -325,8 +327,36 @@ export default function StudyCard({
           boxSizing: 'border-box',
           padding: '12px 16px',
           display: 'flex', flexDirection: 'column',
+          position: 'relative',
+          overflow: 'hidden',
         }}
       >
+        {/* Hint overlay */}
+        {hintVisible && note && (
+          <div style={{
+            position: 'absolute', inset: 0,
+            backgroundColor: '#EEFF41',
+            padding: '20px 20px 40px 20px',
+            display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+            zIndex: 10,
+          }}>
+            <p style={{ color: '#1a237e', fontSize: 'clamp(16px, 2.8vw, 28px)', fontWeight: 500, lineHeight: 1.3, margin: 0 }}>
+              {note}
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ color: '#1a237e', fontSize: 13, opacity: 0.7 }}>Hint</span>
+              <button
+                onClick={() => setHintVisible(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1a237e', padding: 0, lineHeight: 0 }}
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 14L4 9l5-5"/>
+                  <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
         {/* Top row: question type + second guess */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#00A842', fontSize: 24, fontWeight: 500 }}>
