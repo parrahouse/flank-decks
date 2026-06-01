@@ -296,9 +296,18 @@ export default function StudyCard({
           transition: 'background-color 0.2s',
         }}
       >
-        <p style={{ color: hintVisible ? '#1a237e' : '#113656', fontSize: hintVisible ? 'clamp(14px, 2vw, 20px)' : 'clamp(18px, 3.2vw, 32px)', fontWeight: 500, lineHeight: 1.3, margin: 0 }}>
-          {hintVisible ? note : (card.clue || '')}
+        <p style={{ color: '#113656', fontSize: 'clamp(18px, 3.2vw, 32px)', fontWeight: 500, lineHeight: 1.3, margin: 0, visibility: hintVisible ? 'hidden' : 'visible' }}>
+          {card.clue || ''}
         </p>
+
+        {/* Hint overlay — absolutely positioned so it doesn't affect pane height */}
+        {hintVisible && note && (
+          <div style={{ position: 'absolute', inset: 0, padding: '20px 20px 40px 20px', display: 'flex', alignItems: 'flex-start' }}>
+            <p style={{ color: '#1a237e', fontSize: 'clamp(14px, 2vw, 20px)', fontWeight: 500, lineHeight: 1.3, margin: 0 }}>
+              {note}
+            </p>
+          </div>
+        )}
 
         {/* Bottom left: card counter or "Hint" label */}
         <span style={{ position: 'absolute', bottom: 10, left: 20, color: hintVisible ? '#1a237e' : '#113656', fontSize: 14, fontWeight: hintVisible ? 400 : 700, opacity: hintVisible ? 0.7 : 1 }}>
