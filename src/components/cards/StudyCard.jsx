@@ -10,8 +10,8 @@ import {
   Pencil,
   SkipForward,
   GraduationCap,
-  X,
-} from 'lucide-react';
+  X } from
+'lucide-react';
 import CardNoteEditor from './CardNoteEditor';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -34,13 +34,13 @@ const SCORE = {
   second_guess: 0.75,
   correct_after_clue: 0.5,
   second_guess_after_clue: 0.35,
-  wrong: 0,
+  wrong: 0
 };
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
 function getChoiceFontSize(choices) {
-  const maxLen = Math.max(...choices.map(c => c.length));
+  const maxLen = Math.max(...choices.map((c) => c.length));
   if (maxLen > 60) return 16;
   if (maxLen > 40) return 20;
   if (maxLen > 25) return 24;
@@ -66,7 +66,7 @@ export default function StudyCard({
   pastSessions = [],
   masteredCount = 0,
   totalCards = 0,
-  cardStats = null,
+  cardStats = null
 }) {
   const { playCorrect, playWrong } = useSound(soundEnabled);
   const [shuffledChoices, setShuffledChoices] = useState([]);
@@ -131,28 +131,28 @@ export default function StudyCard({
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
   }, [card.id]);
 
-  useEffect(() => () => { cancelCountdown(); clearTimeout(idleTimerRef.current); }, []);
+  useEffect(() => () => {cancelCountdown();clearTimeout(idleTimerRef.current);}, []);
 
   // Derived values (must be before effects that use them)
-  const correctAnswers = (card.correct_answers || card.correct_answer || '')
-    .split('|')
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const correctAnswers = (card.correct_answers || card.correct_answer || '').
+  split('|').
+  map((s) => s.trim()).
+  filter(Boolean);
 
   const answered = !!finalAnswer;
 
   const canEliminate =
-    clueAllowed && !answered && !firstWrong && !isTrueFalse && !isSelectAll &&
-    eliminated.length < shuffledChoices.length - 2 && shuffledChoices.length > 2;
+  clueAllowed && !answered && !firstWrong && !isTrueFalse && !isSelectAll &&
+  eliminated.length < shuffledChoices.length - 2 && shuffledChoices.length > 2;
 
   const handleSelect = (choice) => {
     if (finalAnswer) return;
     const correct = correctAnswers.includes(choice);
     if (correct) {
       const penaliseClue = clueManuallyRevealed;
-      const scoreKey = firstWrong
-        ? penaliseClue ? 'second_guess_after_clue' : 'second_guess'
-        : penaliseClue ? 'correct_after_clue' : 'correct';
+      const scoreKey = firstWrong ?
+      penaliseClue ? 'second_guess_after_clue' : 'second_guess' :
+      penaliseClue ? 'correct_after_clue' : 'correct';
       setFinalAnswer(choice);
       playCorrect();
       onScore && onScore(SCORE[scoreKey], scoreKey);
@@ -231,9 +231,9 @@ export default function StudyCard({
   const handleTryAgain = () => setWrongModal(null);
 
   const timesStudied = cardStats?.sessions_completed ?? null;
-  const masteryPct = cardStats && cardStats.sessions_completed > 0
-    ? Math.round((cardStats.correct_attempts / cardStats.sessions_completed) * 100)
-    : null;
+  const masteryPct = cardStats && cardStats.sessions_completed > 0 ?
+  Math.round(cardStats.correct_attempts / cardStats.sessions_completed * 100) :
+  null;
 
   const qtLabel = isTrueFalse ? 'True or False?' : isSelectAll ? 'Multi-Select' : 'Single Select';
 
@@ -265,12 +265,12 @@ export default function StudyCard({
           aspectRatio: '700 / 525',
           border: '2px solid #000',
           overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          backgroundColor: '#f3f4f6',
-        }}
-      >
-        {card.image_url
-          ? <img src={card.image_url} alt="card" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          : <span style={{ color: '#9ca3af', fontSize: 14 }}>No image</span>
+          backgroundColor: '#f3f4f6'
+        }}>
+        
+        {card.image_url ?
+        <img src={card.image_url} alt="card" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> :
+        <span style={{ color: '#9ca3af', fontSize: 14 }}>No image</span>
         }
       </div>
 
@@ -282,10 +282,10 @@ export default function StudyCard({
           position: 'relative',
           padding: '20px 20px 40px 20px',
           boxSizing: 'border-box',
-          minHeight: 100,
-        }}
-      >
-        <p style={{ color: '#113656', fontSize: 'clamp(18px, 3.2vw, 32px)', fontWeight: 400, lineHeight: 1.2, margin: 0 }}>
+          minHeight: 100
+        }}>
+        
+        <p style={{ color: '#113656', fontSize: 'clamp(18px, 3.2vw, 32px)', fontWeight: 400, lineHeight: 1.2, margin: 0 }} className="text-lg font-medium">
           {card.clue || correctAnswers[0] || ''}
         </p>
 
@@ -295,15 +295,15 @@ export default function StudyCard({
         </span>
 
         {/* Bottom right: clue toggle */}
-        {hasClue && clueAllowed && (
-          <button
-            style={{ position: 'absolute', bottom: 8, right: 16, color: '#113656', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-            onClick={() => { setClueRevealed(v => !v); if (!clueRevealed) setClueManuallyRevealed(true); }}
-            title={clueRevealed ? 'Hide clue' : 'Show clue'}
-          >
+        {hasClue && clueAllowed &&
+        <button
+          style={{ position: 'absolute', bottom: 8, right: 16, color: '#113656', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+          onClick={() => {setClueRevealed((v) => !v);if (!clueRevealed) setClueManuallyRevealed(true);}}
+          title={clueRevealed ? 'Hide clue' : 'Show clue'}>
+          
             <HelpCircle style={{ width: 22, height: 22 }} />
           </button>
-        )}
+        }
       </div>
 
       {/* ── Progress Pane ── */}
@@ -312,9 +312,9 @@ export default function StudyCard({
           width: '100%',
           height: 100,
           border: '2px solid #000',
-          boxSizing: 'border-box',
-        }}
-      />
+          boxSizing: 'border-box'
+        }} />
+      
 
       {/* ── Answer Pane ── */}
       <div
@@ -324,106 +324,106 @@ export default function StudyCard({
           border: '2px solid #D9D9D9',
           boxSizing: 'border-box',
           padding: '12px 16px',
-          display: 'flex', flexDirection: 'column',
-        }}
-      >
+          display: 'flex', flexDirection: 'column'
+        }}>
+        
         {/* Top row: question type + second guess */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#00A842', fontSize: 24, fontWeight: 600 }}>
             <span>{qtLabel}</span>
-            {isTrueFalse
-              ? <ToggleLeft style={{ width: 28, height: 28 }} />
-              : isSelectAll
-                ? <span style={{ display: 'inline-flex', gap: 2 }}>
+            {isTrueFalse ?
+            <ToggleLeft style={{ width: 28, height: 28 }} /> :
+            isSelectAll ?
+            <span style={{ display: 'inline-flex', gap: 2 }}>
                     <SquareCheck style={{ width: 28, height: 28 }} />
                     <SquareCheck style={{ width: 22, height: 22 }} />
-                  </span>
-                : <SquareCheck style={{ width: 28, height: 28 }} />
+                  </span> :
+            <SquareCheck style={{ width: 28, height: 28 }} />
             }
           </div>
 
-          {!isTrueFalse && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#6b7280', fontSize: 13 }}>
+          {!isTrueFalse &&
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#6b7280', fontSize: 13 }}>
               <CopyCheck style={{ width: 15, height: 15 }} />
               <span>Second Guess: {secondGuessAllowed ? 'ON' : 'OFF'}</span>
             </div>
-          )}
+          }
         </div>
 
         {/* Choice buttons */}
         <div style={{ flex: 1, overflow: 'hidden' }}>
-          {isTrueFalse ? (
-            <div style={{ display: 'flex', gap: 12 }}>
+          {isTrueFalse ?
+          <div style={{ display: 'flex', gap: 12 }}>
               {shuffledChoices.map((choice, idx) => {
-                const state = getChoiceState(choice);
-                return (
-                  <button
-                    key={choice}
-                    disabled={answered}
-                    onClick={() => handleSelect(choice)}
-                    className={cn(shake && (state === 'first-wrong' || state === 'wrong-final') && 'animate-shake')}
-                    style={{
-                      flex: 1, minHeight: 80,
-                      borderRadius: 14,
-                      border: `2px solid ${choiceBorderColor(state)}`,
-                      backgroundColor: choiceBgColor(state),
-                      display: 'flex', alignItems: 'center', gap: 12,
-                      padding: '12px 20px',
-                      cursor: answered ? 'default' : 'pointer',
-                      fontSize: choiceFontSize, fontWeight: 500,
-                      textAlign: 'left',
-                    }}
-                  >
+              const state = getChoiceState(choice);
+              return (
+                <button
+                  key={choice}
+                  disabled={answered}
+                  onClick={() => handleSelect(choice)}
+                  className={cn(shake && (state === 'first-wrong' || state === 'wrong-final') && 'animate-shake')}
+                  style={{
+                    flex: 1, minHeight: 80,
+                    borderRadius: 14,
+                    border: `2px solid ${choiceBorderColor(state)}`,
+                    backgroundColor: choiceBgColor(state),
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '12px 20px',
+                    cursor: answered ? 'default' : 'pointer',
+                    fontSize: choiceFontSize, fontWeight: 500,
+                    textAlign: 'left'
+                  }}>
+                  
                     <span style={{
-                      width: 34, height: 34, borderRadius: 6,
-                      backgroundColor: '#000', color: '#fff',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 14, fontWeight: 700, flexShrink: 0,
-                    }}>
+                    width: 34, height: 34, borderRadius: 6,
+                    backgroundColor: '#000', color: '#fff',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 14, fontWeight: 700, flexShrink: 0
+                  }}>
                       {LETTERS[idx]}
                     </span>
                     {choice}
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignContent: 'flex-start' }}>
+                  </button>);
+
+            })}
+            </div> :
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignContent: 'flex-start' }}>
               {shuffledChoices.map((choice, idx) => {
-                const state = getChoiceState(choice);
-                return (
-                  <button
-                    key={choice}
-                    disabled={state === 'eliminated' || answered}
-                    onClick={() => handleSelect(choice)}
-                    className={cn(shake && (state === 'first-wrong' || state === 'wrong-final') && 'animate-shake')}
-                    style={{
-                      minHeight: 64,
-                      borderRadius: 14,
-                      border: `2px solid ${choiceBorderColor(state)}`,
-                      backgroundColor: choiceBgColor(state),
-                      opacity: state === 'eliminated' || state === 'dim' ? 0.4 : 1,
-                      display: 'flex', alignItems: 'center', gap: 10,
-                      padding: '10px 18px',
-                      cursor: answered || state === 'eliminated' ? 'default' : 'pointer',
-                      fontSize: choiceFontSize, fontWeight: 500,
-                      textAlign: 'left',
-                    }}
-                  >
+              const state = getChoiceState(choice);
+              return (
+                <button
+                  key={choice}
+                  disabled={state === 'eliminated' || answered}
+                  onClick={() => handleSelect(choice)}
+                  className={cn(shake && (state === 'first-wrong' || state === 'wrong-final') && 'animate-shake')}
+                  style={{
+                    minHeight: 64,
+                    borderRadius: 14,
+                    border: `2px solid ${choiceBorderColor(state)}`,
+                    backgroundColor: choiceBgColor(state),
+                    opacity: state === 'eliminated' || state === 'dim' ? 0.4 : 1,
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '10px 18px',
+                    cursor: answered || state === 'eliminated' ? 'default' : 'pointer',
+                    fontSize: choiceFontSize, fontWeight: 500,
+                    textAlign: 'left'
+                  }}>
+                  
                     <span style={{
-                      width: 34, height: 34, borderRadius: 6,
-                      backgroundColor: '#000', color: '#fff',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 14, fontWeight: 700, flexShrink: 0,
-                    }}>
+                    width: 34, height: 34, borderRadius: 6,
+                    backgroundColor: '#000', color: '#fff',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 14, fontWeight: 700, flexShrink: 0
+                  }}>
                       {LETTERS[idx]}
                     </span>
                     {choice}
-                  </button>
-                );
-              })}
+                  </button>);
+
+            })}
             </div>
-          )}
+          }
         </div>
 
         {/* Bottom row */}
@@ -432,54 +432,54 @@ export default function StudyCard({
           <span />
 
           {/* Right: Sparkles when not answered, Learn More + Next when answered */}
-          {!answered ? (
-            !isTrueFalse && (
-              <button
-                onClick={canEliminate ? handleEliminate : undefined}
-                disabled={!canEliminate}
-                title="Eliminate one wrong answer"
-                className={cn(eliminateShake && 'animate-subtle-shake')}
-                style={{
-                  color: eliminateUsed ? '#d1d5db' : canEliminate ? '#765E09' : '#d1d5db',
-                  opacity: eliminateUsed ? 0.4 : 1,
-                  cursor: canEliminate && !eliminateUsed ? 'pointer' : 'not-allowed',
-                  background: 'none', border: 'none', padding: 0,
-                  transition: 'opacity 0.3s, color 0.3s',
-                }}
-              >
+          {!answered ?
+          !isTrueFalse &&
+          <button
+            onClick={canEliminate ? handleEliminate : undefined}
+            disabled={!canEliminate}
+            title="Eliminate one wrong answer"
+            className={cn(eliminateShake && 'animate-subtle-shake')}
+            style={{
+              color: eliminateUsed ? '#d1d5db' : canEliminate ? '#765E09' : '#d1d5db',
+              opacity: eliminateUsed ? 0.4 : 1,
+              cursor: canEliminate && !eliminateUsed ? 'pointer' : 'not-allowed',
+              background: 'none', border: 'none', padding: 0,
+              transition: 'opacity 0.3s, color 0.3s'
+            }}>
+            
                 <Sparkles style={{ width: 20, height: 20 }} />
-              </button>
-            )
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-              {hasExplanation && (
-                <button
-                  onClick={() => { setFlipped(true); cancelCountdown(); }}
-                  style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}
-                >
+              </button> :
+
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+              {hasExplanation &&
+            <button
+              onClick={() => {setFlipped(true);cancelCountdown();}}
+              style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
+              
                   <GraduationCap style={{ width: 14, height: 14, flexShrink: 0 }} />
                   <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 1 }}>Learn More</span>
                 </button>
-              )}
+            }
               <button
-                onClick={() => { cancelCountdown(); onNext(); }}
-                style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', position: 'relative' }}
-              >
+              onClick={() => {cancelCountdown();onNext();}}
+              style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', position: 'relative' }}>
+              
                 <SkipForward style={{ width: 14, height: 14, flexShrink: 0 }} />
                 <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 1, position: 'relative' }}>
-                  {countdown !== null && (
-                    <span style={{
-                      position: 'absolute', bottom: 0, left: 0,
-                      height: '1.5px', backgroundColor: '#555',
-                      width: `${((COUNTDOWN_SECS - countdown + 1) / COUNTDOWN_SECS) * 100}%`,
-                      transition: 'width 1s linear',
-                    }} />
-                  )}
+                  {countdown !== null &&
+                <span style={{
+                  position: 'absolute', bottom: 0, left: 0,
+                  height: '1.5px', backgroundColor: '#555',
+                  width: `${(COUNTDOWN_SECS - countdown + 1) / COUNTDOWN_SECS * 100}%`,
+                  transition: 'width 1s linear'
+                }} />
+                }
                   {isLast ? 'Finish' : 'Next'}
                 </span>
               </button>
             </div>
-          )}
+          }
         </div>
       </div>
 
@@ -492,14 +492,14 @@ export default function StudyCard({
           display: 'flex',
           alignItems: 'center',
           gap: 16,
-          backgroundColor: '#fff',
-        }}
-      >
+          backgroundColor: '#fff'
+        }}>
+        
         {/* Mastery pill */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
           backgroundColor: '#F5F5F0', borderRadius: 20,
-          padding: '6px 16px', fontSize: 13, flexShrink: 0,
+          padding: '6px 16px', fontSize: 13, flexShrink: 0
         }}>
           <Glasses style={{ width: 20, height: 20, flexShrink: 0 }} />
           <span style={{ fontSize: 15 }}>Mastery: <strong>{masteryPct !== null ? `${masteryPct}%` : '--'}</strong></span>
@@ -513,17 +513,17 @@ export default function StudyCard({
             <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2 }}>Add Bookmark</span>
           </button>
           <button
-            onClick={() => setNoteEditing(v => !v)}
-            style={{ fontSize: 16, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}
-          >
+            onClick={() => setNoteEditing((v) => !v)}
+            style={{ fontSize: 16, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
+            
             <Pencil style={{ width: 16, height: 16, flexShrink: 0 }} />
             <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2 }}>Add/Edit Hint</span>
           </button>
           <button
-            onClick={() => { if (!finalAnswer) { onScore && onScore(SCORE.wrong, 'wrong'); } onNext(); }}
+            onClick={() => {if (!finalAnswer) {onScore && onScore(SCORE.wrong, 'wrong');}onNext();}}
             disabled={!!finalAnswer}
-            style={{ fontSize: 16, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: finalAnswer ? 'not-allowed' : 'pointer', opacity: finalAnswer ? 0.35 : 1, transition: 'opacity 0.3s' }}
-          >
+            style={{ fontSize: 16, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: finalAnswer ? 'not-allowed' : 'pointer', opacity: finalAnswer ? 0.35 : 1, transition: 'opacity 0.3s' }}>
+            
             <SkipForward style={{ width: 16, height: 16, flexShrink: 0 }} />
             <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2 }}>Skip</span>
           </button>
@@ -533,17 +533,17 @@ export default function StudyCard({
       </div>
 
       {/* Note editor */}
-      {noteEditing && (
-        <div style={{ width: '100%', border: '2px solid #D9D9D9', backgroundColor: '#fffbeb', padding: 12, boxSizing: 'border-box' }}>
+      {noteEditing &&
+      <div style={{ width: '100%', border: '2px solid #D9D9D9', backgroundColor: '#fffbeb', padding: 12, boxSizing: 'border-box' }}>
           <CardNoteEditor cardId={card.id} />
           <button onClick={() => setNoteEditing(false)} style={{ marginTop: 8, width: '100%', fontSize: 12, color: '#d97706', background: 'none', border: 'none', cursor: 'pointer' }}>
             Done
           </button>
         </div>
-      )}
+      }
 
       {/* Learn More modal */}
-      <Dialog open={flipped && hasExplanation} onOpenChange={(open) => { if (!open) setFlipped(false); }}>
+      <Dialog open={flipped && hasExplanation} onOpenChange={(open) => {if (!open) setFlipped(false);}}>
         <DialogContent className="max-w-lg">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center shrink-0">
@@ -556,7 +556,7 @@ export default function StudyCard({
       </Dialog>
 
       {/* Wrong answer modal */}
-      <Dialog open={!!wrongModal} onOpenChange={(open) => { if (!open) handleTryAgain(); }}>
+      <Dialog open={!!wrongModal} onOpenChange={(open) => {if (!open) handleTryAgain();}}>
         <DialogContent className="max-w-sm text-center">
           <div className="flex flex-col items-center gap-4 py-2">
             <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
@@ -564,9 +564,9 @@ export default function StudyCard({
             </div>
             <div>
               <h3 className="font-semibold text-lg">Not quite!</h3>
-              {!finalAnswer
-                ? <p className="text-muted-foreground text-sm mt-1">You have one attempt remaining.</p>
-                : <p className="text-muted-foreground text-sm mt-1">The correct answer was <span className="font-semibold text-foreground">{correctAnswers.join(', ')}</span>.</p>
+              {!finalAnswer ?
+              <p className="text-muted-foreground text-sm mt-1">You have one attempt remaining.</p> :
+              <p className="text-muted-foreground text-sm mt-1">The correct answer was <span className="font-semibold text-foreground">{correctAnswers.join(', ')}</span>.</p>
               }
             </div>
             <div className="flex gap-2 w-full">
@@ -579,6 +579,6 @@ export default function StudyCard({
           </div>
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </div>);
+
 }
