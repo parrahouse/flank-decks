@@ -557,8 +557,8 @@ export default function StudyCard({
               ? <BookmarkX style={{ width: 16, height: 16, flexShrink: 0 }} />
               : <Bookmark style={{ width: 16, height: 16, flexShrink: 0 }} />
             }
-            <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2 }}>
-              {bookmarked ? 'Remove Bookmark' : 'Add Bookmark'}
+            <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2, display: 'inline-block', minWidth: 100 }}>
+              {bookmarked ? 'Un-bookmark' : 'Bookmark'}
             </span>
           </button>
           <button
