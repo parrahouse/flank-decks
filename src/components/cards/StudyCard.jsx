@@ -12,6 +12,7 @@ import {
   GraduationCap,
   X,
   MessageCircleQuestion,
+  Check,
 } from 'lucide-react';
 import CardNoteEditor from './CardNoteEditor';
 import { Button } from '@/components/ui/button';
@@ -416,7 +417,7 @@ export default function StudyCard({
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: state === 'correct' ? 18 : 14, fontWeight: 700, flexShrink: 0,
                     }}>
-                      {state === 'correct' ? '✓' : LETTERS[idx]}
+                      {state === 'correct' ? <Check style={{ width: 18, height: 18 }} /> : LETTERS[idx]}
                     </span>
                     {choice}
                   </button>
@@ -453,7 +454,7 @@ export default function StudyCard({
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: state === 'correct' ? 18 : 14, fontWeight: 700, flexShrink: 0,
                     }}>
-                      {state === 'correct' ? '✓' : LETTERS[idx]}
+                      {state === 'correct' ? <Check style={{ width: 18, height: 18 }} /> : LETTERS[idx]}
                     </span>
                     {choice}
                   </button>
