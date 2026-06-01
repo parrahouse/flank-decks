@@ -4,7 +4,7 @@ import {
   SquareCheck,
   ToggleLeft,
   CopyCheck,
-  Brush,
+  BrushCleaning,
   Glasses,
   Bookmark,
   Pencil,
@@ -402,7 +402,7 @@ export default function StudyCard({
               title="Eliminate one wrong answer"
               style={{ color: canEliminate ? '#765E09' : '#d1d5db', cursor: canEliminate ? 'pointer' : 'not-allowed', background: 'none', border: 'none', padding: 0 }}
             >
-              <Brush style={{ width: 20, height: 20 }} />
+              <BrushCleaning style={{ width: 20, height: 20 }} />
             </button>
           ) : <span />}
 
