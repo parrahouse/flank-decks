@@ -293,7 +293,9 @@ export default function StudyCard({
           padding: '20px 20px 40px 20px',
           boxSizing: 'border-box',
           minHeight: 100,
+          height: 100,
           transition: 'background-color 0.2s',
+          overflow: 'hidden',
         }}
       >
         <p style={{ color: hintVisible ? '#1a237e' : '#113656', fontSize: hintVisible ? 'clamp(14px, 2vw, 20px)' : 'clamp(18px, 3.2vw, 32px)', fontWeight: 500, lineHeight: 1.3, margin: 0 }}>
