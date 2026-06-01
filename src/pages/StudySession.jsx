@@ -391,7 +391,7 @@ export default function StudySession() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="max-w-6xl mx-auto px-4 py-8 bg-white min-h-screen">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <Link to={`/deck/${deckId}`} className="text-muted-foreground hover:text-foreground transition-colors">
