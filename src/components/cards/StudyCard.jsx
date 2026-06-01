@@ -532,15 +532,18 @@ export default function StudyCard({
 
       </div>
 
-      {/* Note editor */}
-      {noteEditing && (
-        <div style={{ width: '100%', border: '2px solid #D9D9D9', backgroundColor: '#fffbeb', padding: 12, boxSizing: 'border-box' }}>
+      {/* Note editor modal */}
+      <Dialog open={noteEditing} onOpenChange={setNoteEditing}>
+        <DialogContent className="max-w-md">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+              <Pencil className="w-4 h-4 text-amber-600" />
+            </div>
+            <h3 className="font-semibold text-lg">Add / Edit Hint</h3>
+          </div>
           <CardNoteEditor cardId={card.id} />
-          <button onClick={() => setNoteEditing(false)} style={{ marginTop: 8, width: '100%', fontSize: 12, color: '#d97706', background: 'none', border: 'none', cursor: 'pointer' }}>
-            Done
-          </button>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {/* Learn More modal */}
       <Dialog open={flipped && hasExplanation} onOpenChange={(open) => { if (!open) setFlipped(false); }}>
