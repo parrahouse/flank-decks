@@ -540,7 +540,8 @@ export default function StudyCard({
           </h3>
           {/* Card reference */}
           <div className="rounded-lg bg-muted/50 border border-border px-3 py-2.5 mb-4 space-y-1">
-            <p className="text-sm font-semibold">{card.clue || correctAnswers.join(', ')}</p>
+            {card.clue && <p className="text-sm font-semibold">{card.clue}</p>}
+            <p className="text-sm text-muted-foreground">Answer: <span className="font-semibold text-foreground">{correctAnswers.join(', ')}</span></p>
           </div>
           <CardNoteEditor cardId={card.id} />
         </DialogContent>
