@@ -535,11 +535,15 @@ export default function StudyCard({
       {/* Note editor modal */}
       <Dialog open={noteEditing} onOpenChange={setNoteEditing}>
         <DialogContent className="max-w-md">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-              <Pencil className="w-4 h-4 text-amber-600" />
-            </div>
-            <h3 className="font-semibold text-lg">Add / Edit Hint</h3>
+          <h3 className="font-semibold text-base flex items-center gap-2 mb-3">
+            <Pencil className="w-4 h-4 text-amber-600" /> Add / Edit Hint
+          </h3>
+          {/* Card reference */}
+          <div className="rounded-lg bg-muted/50 border border-border px-3 py-2.5 mb-4 space-y-1">
+            {card.clue && (
+              <p className="text-xs text-muted-foreground">{card.clue}</p>
+            )}
+            <p className="text-sm font-semibold">{correctAnswers.join(', ')}</p>
           </div>
           <CardNoteEditor cardId={card.id} />
         </DialogContent>
