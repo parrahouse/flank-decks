@@ -80,7 +80,10 @@ export default function StudyCard({
   const [wrongModal, setWrongModal] = useState(null);
   const [countdown, setCountdown] = useState(null);
   const [noteEditing, setNoteEditing] = useState(false);
+  const [eliminateShake, setEliminateShake] = useState(false);
+  const [eliminateUsed, setEliminateUsed] = useState(false);
   const countdownRef = useRef(null);
+  const idleTimerRef = useRef(null);
 
   const clueAllowed = deck?.clue_mode !== 'disabled';
   const hasClue = !!card.clue;
@@ -121,11 +124,25 @@ export default function StudyCard({
     setShake(false);
     setWrongModal(null);
     setNoteEditing(false);
+    setEliminateShake(false);
+    setEliminateUsed(false);
     cancelCountdown();
+    clearTimeout(idleTimerRef.current);
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
   }, [card.id]);
 
-  useEffect(() => () => cancelCountdown(), []);
+  useEffect(() => () => { cancelCountdown(); clearTimeout(idleTimerRef.current); }, []);
+
+  // 30-second idle shake for eliminate button
+  useEffect(() => {
+    if (answered || firstWrong || !canEliminate) return;
+    clearTimeout(idleTimerRef.current);
+    idleTimerRef.current = setTimeout(() => {
+      setEliminateShake(true);
+      setTimeout(() => setEliminateShake(false), 600);
+    }, 30000);
+    return () => clearTimeout(idleTimerRef.current);
+  }, [answered, firstWrong, canEliminate, card.id]);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -176,6 +193,8 @@ export default function StudyCard({
     if (wrong.length === 0) return;
     const toElim = wrong[Math.floor(Math.random() * wrong.length)];
     setEliminated((prev) => [...prev, toElim]);
+    setEliminateUsed(true);
+    clearTimeout(idleTimerRef.current);
   };
 
   const answered = !!finalAnswer;
@@ -418,7 +437,14 @@ export default function StudyCard({
                 onClick={canEliminate ? handleEliminate : undefined}
                 disabled={!canEliminate}
                 title="Eliminate one wrong answer"
-                style={{ color: canEliminate ? '#765E09' : '#d1d5db', cursor: canEliminate ? 'pointer' : 'not-allowed', background: 'none', border: 'none', padding: 0 }}
+                className={cn(eliminateShake && 'animate-subtle-shake')}
+                style={{
+                  color: eliminateUsed ? '#d1d5db' : canEliminate ? '#765E09' : '#d1d5db',
+                  opacity: eliminateUsed ? 0.4 : 1,
+                  cursor: canEliminate && !eliminateUsed ? 'pointer' : 'not-allowed',
+                  background: 'none', border: 'none', padding: 0,
+                  transition: 'opacity 0.3s, color 0.3s',
+                }}
               >
                 <Sparkles style={{ width: 20, height: 20 }} />
               </button>
