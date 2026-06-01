@@ -133,34 +133,17 @@ export default function StudyCard({
 
   useEffect(() => () => { cancelCountdown(); clearTimeout(idleTimerRef.current); }, []);
 
-  // 30-second idle shake for eliminate button
-  useEffect(() => {
-    if (answered || firstWrong || !canEliminate) return;
-    clearTimeout(idleTimerRef.current);
-    idleTimerRef.current = setTimeout(() => {
-      setEliminateShake(true);
-      setTimeout(() => setEliminateShake(false), 600);
-    }, 30000);
-    return () => clearTimeout(idleTimerRef.current);
-  }, [answered, firstWrong, canEliminate, card.id]);
-
-  useEffect(() => {
-    const onKey = (e) => {
-      if (wrongModal) return;
-      const idx = e.key.toUpperCase().charCodeAt(0) - 65;
-      if (idx < 0 || idx >= shuffledChoices.length) return;
-      const choice = shuffledChoices[idx];
-      if (eliminated.includes(choice) || finalAnswer) return;
-      handleSelect(choice);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [shuffledChoices, eliminated, finalAnswer, wrongModal, firstWrong, clueManuallyRevealed]);
-
+  // Derived values (must be before effects that use them)
   const correctAnswers = (card.correct_answers || card.correct_answer || '')
     .split('|')
     .map((s) => s.trim())
     .filter(Boolean);
+
+  const answered = !!finalAnswer;
+
+  const canEliminate =
+    clueAllowed && !answered && !firstWrong && !isTrueFalse && !isSelectAll &&
+    eliminated.length < shuffledChoices.length - 2 && shuffledChoices.length > 2;
 
   const handleSelect = (choice) => {
     if (finalAnswer) return;
@@ -197,7 +180,29 @@ export default function StudyCard({
     clearTimeout(idleTimerRef.current);
   };
 
-  const answered = !!finalAnswer;
+  // 30-second idle shake for eliminate button
+  useEffect(() => {
+    if (answered || firstWrong || !canEliminate) return;
+    clearTimeout(idleTimerRef.current);
+    idleTimerRef.current = setTimeout(() => {
+      setEliminateShake(true);
+      setTimeout(() => setEliminateShake(false), 600);
+    }, 30000);
+    return () => clearTimeout(idleTimerRef.current);
+  }, [answered, firstWrong, canEliminate, card.id]);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (wrongModal) return;
+      const idx = e.key.toUpperCase().charCodeAt(0) - 65;
+      if (idx < 0 || idx >= shuffledChoices.length) return;
+      const choice = shuffledChoices[idx];
+      if (eliminated.includes(choice) || finalAnswer) return;
+      handleSelect(choice);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [shuffledChoices, eliminated, finalAnswer, wrongModal, firstWrong, clueManuallyRevealed]);
 
   const getChoiceState = (choice) => {
     const isElim = eliminated.includes(choice);
@@ -224,10 +229,6 @@ export default function StudyCard({
   };
 
   const handleTryAgain = () => setWrongModal(null);
-
-  const canEliminate =
-    clueAllowed && !answered && !firstWrong && !isTrueFalse && !isSelectAll &&
-    eliminated.length < shuffledChoices.length - 2 && shuffledChoices.length > 2;
 
   const timesStudied = cardStats?.sessions_completed ?? null;
   const masteryPct = cardStats && cardStats.sessions_completed > 0
