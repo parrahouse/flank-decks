@@ -227,13 +227,13 @@ export default function StudyCard({
   };
 
   return (
-    <div style={{ width: 700 }} className="mx-auto flex flex-col">
+    <div style={{ width: 700 }} className="mx-auto flex flex-col gap-3">
 
       {/* ── Card Pane: 700×525 ── */}
       <div
         style={{
           width: 700, height: 525,
-          border: '2px solid #000', borderBottom: 'none',
+          border: '2px solid #000',
           overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
           backgroundColor: '#f3f4f6',
         }}
@@ -249,7 +249,7 @@ export default function StudyCard({
         style={{
           width: 700, height: 200,
           backgroundColor: '#DFEDF5',
-          border: '2px solid #000', borderBottom: 'none',
+          border: '2px solid #000',
           position: 'relative',
           padding: '20px 20px 40px 20px',
           boxSizing: 'border-box',
@@ -280,7 +280,7 @@ export default function StudyCard({
       <div
         style={{
           width: 700, height: 100,
-          border: '2px solid #000', borderBottom: 'none',
+          border: '2px solid #000',
           boxSizing: 'border-box',
         }}
       />
@@ -290,7 +290,7 @@ export default function StudyCard({
         style={{
           width: 700, height: 340,
           backgroundColor: '#FAFAFA',
-          border: '2px solid #D9D9D9', borderBottom: 'none',
+          border: '2px solid #D9D9D9',
           boxSizing: 'border-box',
           padding: '12px 16px',
           display: 'flex', flexDirection: 'column',
@@ -486,7 +486,7 @@ export default function StudyCard({
 
       {/* Note editor */}
       {noteEditing && (
-        <div style={{ width: 700, border: '2px solid #D9D9D9', borderTop: 'none', backgroundColor: '#fffbeb', padding: 12, boxSizing: 'border-box' }}>
+        <div style={{ width: 700, border: '2px solid #D9D9D9', backgroundColor: '#fffbeb', padding: 12, boxSizing: 'border-box' }}>
           <CardNoteEditor cardId={card.id} />
           <button onClick={() => setNoteEditing(false)} style={{ marginTop: 8, width: '100%', fontSize: 12, color: '#d97706', background: 'none', border: 'none', cursor: 'pointer' }}>
             Done
@@ -496,7 +496,7 @@ export default function StudyCard({
 
       {/* Explanation panel */}
       {flipped && hasExplanation && (
-        <div style={{ width: 700, border: '2px solid #D9D9D9', borderTop: 'none', backgroundColor: '#fff', padding: 20, boxSizing: 'border-box' }}>
+        <div style={{ width: 700, border: '2px solid #D9D9D9', backgroundColor: '#fff', padding: 20, boxSizing: 'border-box' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center">
               <GraduationCap className="w-4 h-4 text-accent-foreground" />
