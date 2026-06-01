@@ -39,6 +39,14 @@ const SCORE = {
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
+function getChoiceFontSize(choices) {
+  const maxLen = Math.max(...choices.map(c => c.length));
+  if (maxLen > 60) return 16;
+  if (maxLen > 40) return 20;
+  if (maxLen > 25) return 24;
+  return 30;
+}
+
 export default function StudyCard({
   card,
   deck,
@@ -226,13 +234,16 @@ export default function StudyCard({
     return '#fff';
   };
 
-  return (
-    <div style={{ width: 700 }} className="mx-auto flex flex-col gap-3">
+  const choiceFontSize = getChoiceFontSize(shuffledChoices);
 
-      {/* ── Card Pane: 700×525 ── */}
+  return (
+    <div className="mx-auto flex flex-col gap-3 w-full max-w-[700px]">
+
+      {/* ── Card Pane: 4:3 aspect ratio ── */}
       <div
         style={{
-          width: 700, height: 525,
+          width: '100%',
+          aspectRatio: '700 / 525',
           border: '2px solid #000',
           overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
           backgroundColor: '#f3f4f6',
@@ -244,17 +255,18 @@ export default function StudyCard({
         }
       </div>
 
-      {/* ── Question Pane: 700×200 ── */}
+      {/* ── Question Pane ── */}
       <div
         style={{
-          width: 700, height: 200,
+          width: '100%',
           backgroundColor: '#DFEDF5',
           position: 'relative',
           padding: '20px 20px 40px 20px',
           boxSizing: 'border-box',
+          minHeight: 100,
         }}
       >
-        <p style={{ color: '#113656', fontSize: 40, fontWeight: 600, lineHeight: 1.2, margin: 0 }}>
+        <p style={{ color: '#113656', fontSize: 'clamp(22px, 4vw, 40px)', fontWeight: 600, lineHeight: 1.2, margin: 0 }}>
           {card.clue || correctAnswers[0] || ''}
         </p>
 
@@ -275,19 +287,20 @@ export default function StudyCard({
         )}
       </div>
 
-      {/* ── Progress Pane: 700×100 ── */}
+      {/* ── Progress Pane ── */}
       <div
         style={{
-          width: 700, height: 100,
+          width: '100%',
+          height: 100,
           border: '2px solid #000',
           boxSizing: 'border-box',
         }}
       />
 
-      {/* ── Answer Pane: 700×340 ── */}
+      {/* ── Answer Pane ── */}
       <div
         style={{
-          width: 700, height: 340,
+          width: '100%',
           backgroundColor: '#FAFAFA',
           border: '2px solid #D9D9D9',
           boxSizing: 'border-box',
@@ -331,14 +344,15 @@ export default function StudyCard({
                     onClick={() => handleSelect(choice)}
                     className={cn(shake && (state === 'first-wrong' || state === 'wrong-final') && 'animate-shake')}
                     style={{
-                      flex: 1, height: 80,
+                      flex: 1, minHeight: 80,
                       borderRadius: 14,
                       border: `2px solid ${choiceBorderColor(state)}`,
                       backgroundColor: choiceBgColor(state),
                       display: 'flex', alignItems: 'center', gap: 12,
-                      padding: '0 20px',
+                      padding: '12px 20px',
                       cursor: answered ? 'default' : 'pointer',
-                      fontSize: 30, fontWeight: 500,
+                      fontSize: choiceFontSize, fontWeight: 500,
+                      textAlign: 'left',
                     }}
                   >
                     <span style={{
@@ -365,16 +379,16 @@ export default function StudyCard({
                     onClick={() => handleSelect(choice)}
                     className={cn(shake && (state === 'first-wrong' || state === 'wrong-final') && 'animate-shake')}
                     style={{
-                      height: 64,
+                      minHeight: 64,
                       borderRadius: 14,
                       border: `2px solid ${choiceBorderColor(state)}`,
                       backgroundColor: choiceBgColor(state),
                       opacity: state === 'eliminated' || state === 'dim' ? 0.4 : 1,
                       display: 'flex', alignItems: 'center', gap: 10,
-                      padding: '0 18px',
+                      padding: '10px 18px',
                       cursor: answered || state === 'eliminated' ? 'default' : 'pointer',
-                      fontSize: 30, fontWeight: 500,
-                      whiteSpace: 'nowrap',
+                      fontSize: choiceFontSize, fontWeight: 500,
+                      textAlign: 'left',
                     }}
                   >
                     <span style={{
@@ -441,7 +455,7 @@ export default function StudyCard({
       {/* ── Card Action Pane ── */}
       <div
         style={{
-          width: 700,
+          width: '100%',
           boxSizing: 'border-box',
           padding: '10px 16px',
           display: 'flex',
@@ -488,7 +502,7 @@ export default function StudyCard({
 
       {/* Note editor */}
       {noteEditing && (
-        <div style={{ width: 700, border: '2px solid #D9D9D9', backgroundColor: '#fffbeb', padding: 12, boxSizing: 'border-box' }}>
+        <div style={{ width: '100%', border: '2px solid #D9D9D9', backgroundColor: '#fffbeb', padding: 12, boxSizing: 'border-box' }}>
           <CardNoteEditor cardId={card.id} />
           <button onClick={() => setNoteEditing(false)} style={{ marginTop: 8, width: '100%', fontSize: 12, color: '#d97706', background: 'none', border: 'none', cursor: 'pointer' }}>
             Done
