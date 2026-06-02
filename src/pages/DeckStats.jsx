@@ -47,7 +47,7 @@ export default function DeckStats() {
 
   const { data: cards = [] } = useQuery({
     queryKey: ['cards', deckId],
-    queryFn: () => base44.entities.Card.filter({ deck_id: deckId, deleted: false }, 'order'),
+    queryFn: () => base44.entities.Card.filter({ deck_id: deckId }, 'order').then(r => r.filter(c => !c.deleted)),
     enabled: !!deckId,
   });
 
