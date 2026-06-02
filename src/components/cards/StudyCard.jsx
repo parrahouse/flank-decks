@@ -238,14 +238,18 @@ export default function StudyCard({
     }
   }, [answered, hintVisible]);
 
-  // 30-second idle shake for eliminate button
+  // 30-second idle shake for eliminate button, then repeat every 5 seconds
   useEffect(() => {
     if (answered || firstWrong || !canEliminate) return;
     clearTimeout(idleTimerRef.current);
-    idleTimerRef.current = setTimeout(() => {
+
+    const doShake = () => {
       setEliminateShake(true);
       setTimeout(() => setEliminateShake(false), 600);
-    }, 30000);
+      idleTimerRef.current = setTimeout(doShake, 5000);
+    };
+
+    idleTimerRef.current = setTimeout(doShake, 30000);
     return () => clearTimeout(idleTimerRef.current);
   }, [answered, firstWrong, canEliminate, card.id]);
 
