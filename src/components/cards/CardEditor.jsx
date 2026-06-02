@@ -290,6 +290,25 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
               }}
               onMouseUp={() => setDraggingFocal(false)}
               onMouseLeave={() => setDraggingFocal(false)}
+              onTouchStart={(e) => {
+                e.stopPropagation();
+                setDraggingFocal(true);
+                const touch = e.touches[0];
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = Math.round(((touch.clientX - rect.left) / rect.width) * 100);
+                const y = Math.round(((touch.clientY - rect.top) / rect.height) * 100);
+                setFocalPoint({ x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) });
+              }}
+              onTouchMove={(e) => {
+                if (!draggingFocal) return;
+                e.preventDefault();
+                const touch = e.touches[0];
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = Math.round(((touch.clientX - rect.left) / rect.width) * 100);
+                const y = Math.round(((touch.clientY - rect.top) / rect.height) * 100);
+                setFocalPoint({ x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) });
+              }}
+              onTouchEnd={() => setDraggingFocal(false)}
               onClick={(e) => e.stopPropagation()}
             >
               <img
