@@ -437,6 +437,7 @@ export default function DeckBuilder() {
                 <DialogTitle>{editingCard ? 'Edit Card' : 'Add Card'}</DialogTitle>
               </DialogHeader>
               <CardEditor
+                key={editingCard?.id ?? 'new'}
                 card={editingCard}
                 onSave={(data) => saveMutation.mutate(data)}
                 onCancel={requestCloseEditor}
@@ -459,6 +460,7 @@ export default function DeckBuilder() {
             </div>
             <div className="flex-1 overflow-y-auto px-5 pt-5 pb-4">
               <CardEditor
+                key={editingCard?.id ?? 'new'}
                 card={editingCard}
                 onSave={(data) => saveMutation.mutate(data)}
                 onCancel={requestCloseEditor}
