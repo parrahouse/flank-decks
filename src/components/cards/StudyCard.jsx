@@ -89,6 +89,7 @@ export default function StudyCard({
   const [noteRevealed, setNoteRevealed] = useState(false);
   const [hintVisible, setHintVisible] = useState(false);
   const [bookmarked, setBookmarked] = useState(isBookmarked);
+  const [selectAllPending, setSelectAllPending] = useState(new Set()); // choices toggled but not yet graded
   const countdownRef = useRef(null);
   const idleTimerRef = useRef(null);
 
@@ -134,6 +135,7 @@ export default function StudyCard({
     setNoteRevealed(false);
     setHintVisible(false);
     setBookmarked(isBookmarked);
+    setSelectAllPending(new Set());
     cancelCountdown();
     clearTimeout(idleTimerRef.current);
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
@@ -147,7 +149,7 @@ export default function StudyCard({
     .map((s) => s.trim())
     .filter(Boolean);
 
-  const answered = !!finalAnswer;
+  const answered = !!finalAnswer && finalAnswer !== '';
 
   const canEliminate =
     !answered && !firstWrong && !isTrueFalse && !isSelectAll &&
@@ -155,6 +157,18 @@ export default function StudyCard({
 
   const handleSelect = (choice) => {
     if (finalAnswer) return;
+
+    // Select-all: just toggle the pending set, grading happens on "Done"
+    if (isSelectAll) {
+      setSelectAllPending(prev => {
+        const next = new Set(prev);
+        if (next.has(choice)) next.delete(choice);
+        else next.add(choice);
+        return next;
+      });
+      return;
+    }
+
     const correct = correctAnswers.includes(choice);
     if (correct) {
       const penaliseClue = clueManuallyRevealed;
@@ -175,6 +189,26 @@ export default function StudyCard({
         setFinalAnswer(choice);
         onScore && onScore(SCORE.wrong, 'wrong');
       }
+    }
+  };
+
+  const handleSelectAllDone = () => {
+    // Grade: correct if selected set exactly matches correctAnswers set
+    const selectedArr = Array.from(selectAllPending);
+    const allCorrect =
+      selectedArr.length === correctAnswers.length &&
+      selectedArr.every(c => correctAnswers.includes(c));
+
+    if (allCorrect) {
+      playCorrect();
+      const scoreKey = clueManuallyRevealed ? 'correct_after_clue' : 'correct';
+      setFinalAnswer('__select_all_correct__');
+      onScore && onScore(SCORE[scoreKey], scoreKey);
+      if (autoAdvance && !isLast) startCountdown();
+    } else {
+      playWrong();
+      setFinalAnswer('__select_all_wrong__');
+      onScore && onScore(SCORE.wrong, 'wrong');
     }
   };
 
@@ -224,6 +258,19 @@ export default function StudyCard({
     const isElim = eliminated.includes(choice);
     const correct = correctAnswers.includes(choice);
     if (isElim) return 'eliminated';
+
+    // Select-all: pending (not yet submitted)
+    if (isSelectAll && !answered) {
+      return selectAllPending.has(choice) ? 'selected-pending' : 'idle';
+    }
+
+    // Select-all: after grading
+    if (isSelectAll && answered) {
+      if (correct) return 'correct';
+      if (selectAllPending.has(choice)) return 'first-wrong'; // wrongly selected
+      return 'dim';
+    }
+
     if (!answered && !firstWrong) return 'idle';
     if (!answered && firstWrong) {
       if (choice === firstWrong) return 'first-wrong';
@@ -257,6 +304,7 @@ export default function StudyCard({
     if (state === 'wrong-final') return '#dc2626';
     if (state === 'first-wrong') return '#f97316';
     if (state === 'eliminated') return '#ccc';
+    if (state === 'selected-pending') return '#0165fc';
     return '#000';
   };
 
@@ -265,6 +313,7 @@ export default function StudyCard({
     if (state === 'wrong-final') return '#fef2f2';
     if (state === 'first-wrong') return '#fff7ed';
     if (state === 'eliminated') return '#f5f5f5';
+    if (state === 'selected-pending') return '#eff6ff';
     return '#fff';
   };
 
@@ -449,12 +498,12 @@ export default function StudyCard({
                   >
                     <span style={{
                       width: 34, height: 34, borderRadius: 6,
-                      backgroundColor: state === 'correct' ? '#00A842' : '#000',
+                      backgroundColor: state === 'correct' ? '#00A842' : state === 'selected-pending' ? '#0165fc' : '#000',
                       color: '#fff',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: state === 'correct' ? 18 : 14, fontWeight: 700, flexShrink: 0,
+                      fontSize: state === 'correct' || state === 'selected-pending' ? 18 : 14, fontWeight: 700, flexShrink: 0,
                     }}>
-                      {state === 'correct' ? <Check style={{ width: 18, height: 18 }} /> : LETTERS[idx]}
+                      {state === 'correct' ? <Check style={{ width: 18, height: 18 }} /> : state === 'selected-pending' ? <Check style={{ width: 18, height: 18 }} /> : LETTERS[idx]}
                     </span>
                     {choice}
                   </button>
@@ -469,9 +518,28 @@ export default function StudyCard({
           {/* Left: empty placeholder */}
           <span />
 
-          {/* Right: Sparkles when not answered, Learn More + Next when answered */}
+          {/* Right: Sparkles / Done when not answered, Learn More + Next when answered */}
           {!answered ? (
-            !isTrueFalse && (
+            isSelectAll ? (
+              <button
+                onClick={handleSelectAllDone}
+                disabled={selectAllPending.size === 0}
+                style={{
+                  backgroundColor: selectAllPending.size > 0 ? '#00A842' : '#d1d5db',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '8px 20px',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: selectAllPending.size > 0 ? 'pointer' : 'not-allowed',
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  transition: 'background-color 0.2s',
+                }}
+              >
+                <Check style={{ width: 16, height: 16 }} /> Done
+              </button>
+            ) : !isTrueFalse && (
               <button
                 onClick={canEliminate ? handleEliminate : undefined}
                 disabled={!canEliminate}
