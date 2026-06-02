@@ -432,7 +432,7 @@ export default function StudyCard({
               : isSelectAll
                 ? <span style={{ display: 'inline-flex', gap: 2 }}>
                     <SquareCheck style={{ width: 28, height: 28 }} />
-                    <SquareCheck style={{ width: 22, height: 22 }} />
+                    <SquareCheck style={{ width: 28, height: 28 }} />
                   </span>
                 : <SquareCheck style={{ width: 28, height: 28 }} />
             }
