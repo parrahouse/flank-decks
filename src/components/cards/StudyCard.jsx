@@ -367,7 +367,7 @@ export default function StudyCard({
           transition: 'background-color 0.2s',
         }}
       >
-        <p style={{ color: '#113656', fontSize: 'clamp(18px, 3.2vw, 32px)', fontWeight: 500, lineHeight: 1.3, margin: 0, visibility: hintVisible ? 'hidden' : 'visible' }}>
+        <p style={{ color: '#113656', fontSize: 'clamp(14px, 2.2vw, 22px)', fontWeight: 500, lineHeight: 1.3, margin: 0, visibility: hintVisible ? 'hidden' : 'visible' }}>
           {card.clue || ''}
         </p>
 
