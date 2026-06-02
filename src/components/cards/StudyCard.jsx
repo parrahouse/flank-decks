@@ -42,12 +42,17 @@ const SCORE = {
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
-function getChoiceFontSize(choices) {
+function getChoiceStyle(choices) {
+  const count = choices.length;
   const maxLen = Math.max(...choices.map(c => c.length));
-  if (maxLen > 60) return 16;
-  if (maxLen > 40) return 20;
-  if (maxLen > 25) return 24;
-  return 30;
+  // More choices or longer text → smaller font + less padding
+  let fontSize = 18;
+  let minHeight = 52;
+  let padding = '8px 14px';
+  if (count >= 5 || maxLen > 60) { fontSize = 13; minHeight = 36; padding = '5px 10px'; }
+  else if (count >= 4 || maxLen > 40) { fontSize = 14; minHeight = 42; padding = '6px 12px'; }
+  else if (maxLen > 25) { fontSize = 16; minHeight = 46; padding = '7px 12px'; }
+  return { fontSize, minHeight, padding };
 }
 
 export default function StudyCard({
@@ -334,7 +339,7 @@ export default function StudyCard({
     return '#fff';
   };
 
-  const choiceFontSize = getChoiceFontSize(shuffledChoices);
+  const choiceStyle = getChoiceStyle(shuffledChoices);
 
   return (
     <div className="mx-auto flex flex-col gap-3 w-full max-w-[700px]">
@@ -455,9 +460,9 @@ export default function StudyCard({
         </div>
 
         {/* Choice buttons */}
-        <div style={{ flex: 1, overflow: 'visible' }}>
+        <div style={{ flex: 1, overflow: 'hidden' }}>
           {isTrueFalse ? (
-            <div style={{ display: 'flex', gap: 12 }}>
+            <div style={{ display: 'flex', gap: 10 }}>
               {shuffledChoices.map((choice, idx) => {
                 const state = getChoiceState(choice);
                 return (
@@ -467,25 +472,25 @@ export default function StudyCard({
                     onClick={() => handleSelect(choice)}
                     className={cn(shake && (state === 'first-wrong' || state === 'wrong-final') && 'animate-shake')}
                     style={{
-                      flex: 1, minHeight: 80,
-                      borderRadius: 14,
+                      flex: 1, minHeight: 64,
+                      borderRadius: 12,
                       border: `2px solid ${choiceBorderColor(state)}`,
                       backgroundColor: choiceBgColor(state),
-                      display: 'flex', alignItems: 'center', gap: 12,
-                      padding: '12px 20px',
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '10px 16px',
                       cursor: answered ? 'default' : 'pointer',
-                      fontSize: choiceFontSize, fontWeight: 500,
+                      fontSize: 16, fontWeight: 500,
                       textAlign: 'left',
                     }}
                   >
                     <span style={{
-                      width: 34, height: 34, borderRadius: 6,
+                      width: 30, height: 30, borderRadius: 6, flexShrink: 0,
                       backgroundColor: state === 'correct' ? '#00A842' : '#000',
                       color: '#fff',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: state === 'correct' ? 18 : 14, fontWeight: 700, flexShrink: 0,
+                      fontSize: 13, fontWeight: 700,
                     }}>
-                      {state === 'correct' ? <Check style={{ width: 18, height: 18 }} /> : LETTERS[idx]}
+                      {state === 'correct' ? <Check style={{ width: 16, height: 16 }} /> : LETTERS[idx]}
                     </span>
                     {choice}
                   </button>
@@ -493,7 +498,8 @@ export default function StudyCard({
               })}
             </div>
           ) : (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignContent: 'flex-start' }}>
+            /* Stack choices vertically — one per row — so long text never overflows horizontally */
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {shuffledChoices.map((choice, idx) => {
                 const state = getChoiceState(choice);
                 return (
@@ -503,35 +509,35 @@ export default function StudyCard({
                     onClick={() => handleSelect(choice)}
                     className={cn(shake && (state === 'first-wrong' || state === 'wrong-final') && 'animate-shake')}
                     style={{
-                      minHeight: 64,
-                      borderRadius: 14,
+                      width: '100%',
+                      minHeight: choiceStyle.minHeight,
+                      borderRadius: 10,
                       border: `2px solid ${choiceBorderColor(state)}`,
                       backgroundColor: choiceBgColor(state),
                       opacity: state === 'eliminated' || state === 'dim' ? 0.4 : 1,
                       display: 'flex', alignItems: 'center', gap: 10,
-                      padding: '10px 18px',
+                      padding: choiceStyle.padding,
                       cursor: answered || state === 'eliminated' ? 'default' : 'pointer',
-                      fontSize: choiceFontSize, fontWeight: 500,
+                      fontSize: choiceStyle.fontSize, fontWeight: 500,
                       textAlign: 'left',
                     }}
                   >
                     <span style={{
-                     width: 34, height: 34, borderRadius: 6,
-                     backgroundColor:
-                       state === 'correct' ? '#00A842' :
-                       state === 'missed-correct' ? '#d97706' :
-                       state === 'selected-pending' ? '#0165fc' :
-                       '#000',
-                     color: '#fff',
-                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                     fontSize: 14, fontWeight: 700, flexShrink: 0,
+                      width: 28, height: 28, borderRadius: 5, flexShrink: 0,
+                      backgroundColor:
+                        state === 'correct' ? '#00A842' :
+                        state === 'missed-correct' ? '#d97706' :
+                        state === 'selected-pending' ? '#0165fc' :
+                        '#000',
+                      color: '#fff',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 12, fontWeight: 700,
                     }}>
-                     {state === 'correct' ? <Check style={{ width: 18, height: 18 }} /> :
-                      state === 'missed-correct' ? <Check style={{ width: 18, height: 18 }} /> :
-                      state === 'selected-pending' ? <Check style={{ width: 18, height: 18 }} /> :
-                      LETTERS[idx]}
+                      {state === 'correct' || state === 'missed-correct' || state === 'selected-pending'
+                        ? <Check style={{ width: 14, height: 14 }} />
+                        : LETTERS[idx]}
                     </span>
-                    {choice}
+                    <span style={{ flex: 1, lineHeight: 1.3 }}>{choice}</span>
                   </button>
                 );
               })}
