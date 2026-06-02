@@ -168,7 +168,8 @@ export default function DeckStats() {
           {cardStats.length > 0 && (() => {
             const minSessions = deck?.mastery_min_sessions ?? 3;
             const masteryPct = deck?.mastery_pct ?? 90;
-            const masteredCount = cardStats.filter(s => s.mastered).length;
+            const activeCardIds = new Set(cards.map(c => c.id));
+            const masteredCount = cardStats.filter(s => s.mastered && activeCardIds.has(s.card_id)).length;
             const totalCards = cards.length;
             const eligible = cardStats.filter(s => (s.sessions_completed ?? 0) >= minSessions);
             return (
