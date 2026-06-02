@@ -137,3 +137,7 @@
   position: absolute;
   inset: 0;
 }
+
+.choice-btn:active {
+  transform: scale(0.95);
+}

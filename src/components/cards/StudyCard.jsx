@@ -470,7 +470,7 @@ export default function StudyCard({
                     key={choice}
                     disabled={answered}
                     onClick={() => handleSelect(choice)}
-                    className={cn(shake && (state === 'first-wrong' || state === 'wrong-final') && 'animate-shake')}
+                    className={cn('choice-btn', shake && (state === 'first-wrong' || state === 'wrong-final') && 'animate-shake')}
                     style={{
                       flex: 1, minHeight: 64,
                       borderRadius: 12,
@@ -508,7 +508,7 @@ export default function StudyCard({
                     key={choice}
                     disabled={state === 'eliminated' || answered}
                     onClick={() => handleSelect(choice)}
-                    className={cn(shake && (state === 'first-wrong' || state === 'wrong-final') && 'animate-shake')}
+                    className={cn('choice-btn', shake && (state === 'first-wrong' || state === 'wrong-final') && 'animate-shake')}
                     style={{
                       width: '100%',
                       minHeight: choiceStyle.minHeight,
@@ -521,7 +521,7 @@ export default function StudyCard({
                       cursor: answered || state === 'eliminated' ? 'default' : 'pointer',
                       fontSize: choiceStyle.fontSize, fontWeight: 500,
                       textAlign: 'left',
-                      transition: 'border-color 0.4s ease 0.15s, background-color 0.4s ease 0.15s, opacity 0.4s ease 0.15s',
+                      transition: 'border-color 0.4s ease 0.15s, background-color 0.4s ease 0.15s, opacity 0.4s ease 0.15s, transform 0.12s ease',
                     }}
                   >
                     <span style={{
