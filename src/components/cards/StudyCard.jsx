@@ -274,8 +274,9 @@ export default function StudyCard({
 
     // Select-all: after grading
     if (isSelectAll && answered) {
-      if (correct) return 'correct';
-      if (selectAllPending.has(choice)) return 'first-wrong'; // wrongly selected
+      if (correct && selectAllPending.has(choice)) return 'correct';        // hit correctly
+      if (correct && !selectAllPending.has(choice)) return 'missed-correct'; // should have selected
+      if (!correct && selectAllPending.has(choice)) return 'first-wrong';    // wrongly selected
       return 'dim';
     }
 
@@ -311,6 +312,7 @@ export default function StudyCard({
     if (state === 'correct' || state === 'reveal-correct') return '#00A842';
     if (state === 'wrong-final') return '#dc2626';
     if (state === 'first-wrong') return '#f97316';
+    if (state === 'missed-correct') return '#d97706';
     if (state === 'eliminated') return '#ccc';
     if (state === 'selected-pending') return '#0165fc';
     return '#000';
@@ -320,6 +322,7 @@ export default function StudyCard({
     if (state === 'correct' || state === 'reveal-correct') return '#f0fdf4';
     if (state === 'wrong-final') return '#fef2f2';
     if (state === 'first-wrong') return '#fff7ed';
+    if (state === 'missed-correct') return '#fffbeb';
     if (state === 'eliminated') return '#f5f5f5';
     if (state === 'selected-pending') return '#eff6ff';
     return '#fff';
@@ -505,13 +508,20 @@ export default function StudyCard({
                     }}
                   >
                     <span style={{
-                      width: 34, height: 34, borderRadius: 6,
-                      backgroundColor: state === 'correct' ? '#00A842' : state === 'selected-pending' ? '#0165fc' : '#000',
-                      color: '#fff',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: state === 'correct' || state === 'selected-pending' ? 18 : 14, fontWeight: 700, flexShrink: 0,
+                     width: 34, height: 34, borderRadius: 6,
+                     backgroundColor:
+                       state === 'correct' ? '#00A842' :
+                       state === 'missed-correct' ? '#d97706' :
+                       state === 'selected-pending' ? '#0165fc' :
+                       '#000',
+                     color: '#fff',
+                     display: 'flex', alignItems: 'center', justifyContent: 'center',
+                     fontSize: 14, fontWeight: 700, flexShrink: 0,
                     }}>
-                      {state === 'correct' ? <Check style={{ width: 18, height: 18 }} /> : state === 'selected-pending' ? <Check style={{ width: 18, height: 18 }} /> : LETTERS[idx]}
+                     {state === 'correct' ? <Check style={{ width: 18, height: 18 }} /> :
+                      state === 'missed-correct' ? <Check style={{ width: 18, height: 18 }} /> :
+                      state === 'selected-pending' ? <Check style={{ width: 18, height: 18 }} /> :
+                      LETTERS[idx]}
                     </span>
                     {choice}
                   </button>
