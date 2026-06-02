@@ -428,7 +428,7 @@ export default function StudyCard({
       <div
         style={{
           width: '100%',
-          height: 340,
+          minHeight: 340,
           backgroundColor: '#FAFAFA',
           border: '2px solid #D9D9D9',
           boxSizing: 'border-box',
@@ -460,7 +460,7 @@ export default function StudyCard({
         </div>
 
         {/* Choice buttons */}
-        <div style={{ flex: 1, overflow: 'hidden' }}>
+        <div style={{ flex: 1 }}>
           {isTrueFalse ? (
             <div style={{ display: 'flex', gap: 10 }}>
               {shuffledChoices.map((choice, idx) => {
