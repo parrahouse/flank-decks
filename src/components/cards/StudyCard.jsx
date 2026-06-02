@@ -343,7 +343,7 @@ export default function StudyCard({
       <div
         style={{
           width: '100%',
-          aspectRatio: '700 / 525',
+          aspectRatio: '700 / 394',
           overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
           backgroundColor: '#f3f4f6',
         }}
@@ -429,7 +429,6 @@ export default function StudyCard({
           boxSizing: 'border-box',
           padding: '12px 16px',
           display: 'flex', flexDirection: 'column',
-          overflow: 'hidden',
         }}
       >
         {/* Top row: question type + second guess */}
@@ -456,7 +455,7 @@ export default function StudyCard({
         </div>
 
         {/* Choice buttons */}
-        <div style={{ flex: 1, overflowY: 'auto' }}>
+        <div style={{ flex: 1, overflow: 'visible' }}>
           {isTrueFalse ? (
             <div style={{ display: 'flex', gap: 12 }}>
               {shuffledChoices.map((choice, idx) => {
