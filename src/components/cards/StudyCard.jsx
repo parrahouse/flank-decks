@@ -36,6 +36,7 @@ const SCORE = {
   second_guess: 0.75,
   correct_after_clue: 0.5,
   second_guess_after_clue: 0.35,
+  partial: null, // computed dynamically for select_all
   wrong: 0,
 };
 
@@ -193,11 +194,12 @@ export default function StudyCard({
   };
 
   const handleSelectAllDone = () => {
-    // Grade: correct if selected set exactly matches correctAnswers set
     const selectedArr = Array.from(selectAllPending);
-    const allCorrect =
-      selectedArr.length === correctAnswers.length &&
-      selectedArr.every(c => correctAnswers.includes(c));
+    const numCorrect = selectedArr.filter(c => correctAnswers.includes(c)).length;
+    const numWrong = selectedArr.filter(c => !correctAnswers.includes(c)).length;
+    const total = correctAnswers.length;
+
+    const allCorrect = numCorrect === total && numWrong === 0;
 
     if (allCorrect) {
       playCorrect();
@@ -206,9 +208,15 @@ export default function StudyCard({
       onScore && onScore(SCORE[scoreKey], scoreKey);
       if (autoAdvance && !isLast) startCountdown();
     } else {
-      playWrong();
-      setFinalAnswer('__select_all_wrong__');
-      onScore && onScore(SCORE.wrong, 'wrong');
+      // Partial credit: (correct hits - wrong picks) / total, floored at 0
+      const partialScore = Math.max(0, (numCorrect - numWrong) / total);
+      if (partialScore > 0) {
+        playCorrect();
+      } else {
+        playWrong();
+      }
+      setFinalAnswer('__select_all_partial__');
+      onScore && onScore(partialScore, 'partial');
     }
   };
 

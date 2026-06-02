@@ -22,10 +22,11 @@ const SCORE_LABELS = {
   second_guess: { label: '2nd try', color: 'text-orange-500' },
   correct_after_clue: { label: 'Correct (with clue)', color: 'text-amber-500' },
   second_guess_after_clue: { label: '2nd try + clue', color: 'text-orange-400' },
+  partial: { label: 'Partial', color: 'text-amber-500' },
   wrong: { label: 'Incorrect', color: 'text-destructive' },
 };
 
-const CORRECT_KEYS = new Set(['correct', 'second_guess', 'correct_after_clue', 'second_guess_after_clue']);
+const CORRECT_KEYS = new Set(['correct', 'second_guess', 'correct_after_clue', 'second_guess_after_clue', 'partial']);
 
 function MasteryTooltip({ minSessions, masteryPct }) {
   const [open, setOpen] = useState(false);
