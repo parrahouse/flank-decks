@@ -555,24 +555,25 @@ export default function StudyCard({
           {/* Right: Sparkles / Done when not answered, Learn More + Next when answered */}
           {!answered ? (
             isSelectAll ? (
-              <button
-                onClick={handleSelectAllDone}
-                disabled={selectAllPending.size === 0}
-                style={{
-                  backgroundColor: selectAllPending.size > 0 ? '#00A842' : '#d1d5db',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 8,
-                  padding: '8px 20px',
-                  fontSize: 14,
-                  fontWeight: 600,
-                  cursor: selectAllPending.size > 0 ? 'pointer' : 'not-allowed',
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  transition: 'background-color 0.2s',
-                }}
-              >
-                <Check style={{ width: 16, height: 16 }} /> Done
-              </button>
+              selectAllPending.size >= 2 && (
+                <button
+                  onClick={handleSelectAllDone}
+                  style={{
+                    backgroundColor: '#00A842',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '8px 20px',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    transition: 'background-color 0.2s',
+                  }}
+                >
+                  <Check style={{ width: 16, height: 16 }} /> Done
+                </button>
+              )
             ) : !isTrueFalse && (
               <button
                 onClick={canEliminate ? handleEliminate : undefined}
