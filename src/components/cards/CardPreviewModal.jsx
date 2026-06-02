@@ -6,7 +6,7 @@ export default function CardPreviewModal({ card, deck, open, onClose }) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-lg p-4">
+      <DialogContent className="max-w-2xl p-4">
         <p className="text-xs text-muted-foreground mb-3 text-center">Preview — answers are not scored</p>
         <StudyCard
           card={card}
