@@ -36,8 +36,8 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
     return ['', '', '', ''];
   });
 
-  // Which choices are marked correct (a Set of choice strings)
-  const [correctSet, setCorrectSet] = useState(() => new Set(initCorrectAnswers));
+  // Which choices are marked correct (a Set of trimmed choice strings)
+  const [correctSet, setCorrectSet] = useState(() => new Set(initCorrectAnswers.map(s => s.trim())));
 
   const [focalPoint, setFocalPoint] = useState(card?.image_focal_point || (card?.image_url ? { x: 50, y: 50 } : null));
   const [draggingFocal, setDraggingFocal] = useState(false);
@@ -107,10 +107,10 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
   // ── Choices management ────────────────────────────────────────────────────
   const updateChoice = (i, val) => {
     const next = [...allChoicesList];
-    if (correctSet.has(next[i])) {
+    if (correctSet.has(next[i].trim())) {
       const ns = new Set(correctSet);
-      ns.delete(next[i]);
-      if (val.trim()) ns.add(val);
+      ns.delete(next[i].trim());
+      if (val.trim()) ns.add(val.trim());
       setCorrectSet(ns);
     }
     next[i] = val;
@@ -124,20 +124,21 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
   const removeChoice = (i) => {
     const val = allChoicesList[i];
     const ns = new Set(correctSet);
-    ns.delete(val);
+    ns.delete(val.trim());
     setCorrectSet(ns);
     setAllChoicesList(allChoicesList.filter((_, idx) => idx !== i));
   };
 
   const toggleCorrect = (choice) => {
     if (!choice.trim()) return;
+    const trimmed = choice.trim();
     const ns = new Set(correctSet);
     if (qType === 'select_all') {
-      if (ns.has(choice)) ns.delete(choice);
-      else ns.add(choice);
+      if (ns.has(trimmed)) ns.delete(trimmed);
+      else ns.add(trimmed);
     } else {
       ns.clear();
-      ns.add(choice);
+      ns.add(trimmed);
     }
     setCorrectSet(ns);
   };
@@ -164,8 +165,8 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
   };
 
   const handleSave = async () => {
-    const filledChoices = allChoicesList.filter(c => c.trim());
-    const correctList = Array.from(correctSet).filter(c => filledChoices.includes(c));
+    const filledChoices = allChoicesList.map(c => c.trim()).filter(Boolean);
+    const correctList = Array.from(correctSet).filter(c => filledChoices.includes(c.trim()));
 
     if (correctList.length === 0) { toast.error('Mark at least one correct answer'); return; }
     if (filledChoices.length < 2) { toast.error('Add at least two choices'); return; }
@@ -411,7 +412,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
 
         <div className="space-y-2">
           {allChoicesList.map((c, i) => {
-            const isCorrect = correctSet.has(c);
+            const isCorrect = correctSet.has(c.trim());
             return (
               <div key={i} className="flex gap-2 items-center">
                 <button
