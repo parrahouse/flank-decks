@@ -72,6 +72,7 @@ export default function StudyCard({
   cardStats = null,
   isBookmarked = false,
   onToggleBookmark = null,
+  eliminateAllowed = true,
 }) {
   const { playCorrect, playWrong } = useSound(soundEnabled);
   const [shuffledChoices, setShuffledChoices] = useState([]);
@@ -153,6 +154,7 @@ export default function StudyCard({
   const answered = !!finalAnswer && finalAnswer !== '';
 
   const canEliminate =
+    eliminateAllowed &&
     !answered && !firstWrong && !isTrueFalse && !isSelectAll &&
     eliminated.length < shuffledChoices.length - 2 && shuffledChoices.length > 2;
 
