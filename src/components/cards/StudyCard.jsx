@@ -413,7 +413,7 @@ export default function StudyCard({
       <div
         style={{
           width: '100%',
-          height: 100,
+          height: 50,
           border: '2px solid #000',
           boxSizing: 'border-box',
         }}
