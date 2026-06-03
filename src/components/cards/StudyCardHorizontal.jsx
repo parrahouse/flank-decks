@@ -252,7 +252,7 @@ export default function StudyCardHorizontal({
 
   // ── Left column: image + question ──────────────────────────────────────────
   const ImageQuestionCol = (
-    <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 48%', minWidth: 0 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 48%', minWidth: 0, gap: 8 }}>
       {/* Image */}
       <div style={{ width: '100%', aspectRatio: '4/3', overflow: 'hidden', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {card.image_url
@@ -296,7 +296,7 @@ export default function StudyCardHorizontal({
 
   // ── Right column: progress bar + answers + actions ─────────────────────────
   const AnswerCol = (
-    <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 0', minWidth: 0, alignSelf: 'stretch' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 0', minWidth: 0, alignSelf: 'stretch', gap: 8 }}>
       {/* Progress bar placeholder */}
       <div style={{ width: '100%', height: 44, border: '2px solid #000', boxSizing: 'border-box', marginBottom: 0 }} />
 
