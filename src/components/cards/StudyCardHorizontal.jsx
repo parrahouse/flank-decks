@@ -1,0 +1,468 @@
+/**
+ * StudyCardHorizontal — side-by-side layout for wide screens.
+ * Left/right hand mode controls which side the answer pane sits on.
+ * All interaction logic is identical to StudyCard; this component just
+ * re-arranges the panes without duplicating the logic by accepting the
+ * same props and delegating rendering.
+ *
+ * Layout:
+ *   [Image + Question] | [Progress + Answers + Actions]
+ *   (or reversed for right-hand mode)
+ */
+import { useState, useEffect, useRef } from 'react';
+import {
+  SquareCheck, ToggleLeft, CopyCheck, Sparkles, Glasses,
+  Bookmark, BookmarkX, Pencil, SkipForward, GraduationCap,
+  X, MessageCircleQuestion, Check,
+} from 'lucide-react';
+import CardNoteEditor from './CardNoteEditor';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
+import { useSound } from '@/hooks/useSound';
+
+const COUNTDOWN_SECS = 6;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+const SCORE = {
+  correct: 1, second_guess: 0.75,
+  correct_after_clue: 0.5, second_guess_after_clue: 0.35,
+  partial: null, wrong: 0,
+};
+
+const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
+
+function getChoiceStyle(choices) {
+  const count = choices.length;
+  const maxLen = Math.max(...choices.map(c => c.length));
+  let fontSize = 17; let minHeight = 48; let padding = '7px 12px';
+  if (count >= 5 || maxLen > 60) { fontSize = 13; minHeight = 34; padding = '4px 10px'; }
+  else if (count >= 4 || maxLen > 40) { fontSize = 14; minHeight = 40; padding = '5px 10px'; }
+  else if (maxLen > 25) { fontSize = 15; minHeight = 42; padding = '6px 10px'; }
+  return { fontSize, minHeight, padding };
+}
+
+export default function StudyCardHorizontal({
+  card, deck, onNext, onPrev, isFirst, isLast, onScore,
+  soundEnabled = true, autoAdvance = false,
+  note = null, cardIndex = 0, total = 1,
+  correctStreak = 0, bestStreak = 0, pastSessions = [],
+  masteredCount = 0, totalCards = 0, cardStats = null,
+  isBookmarked = false, onToggleBookmark = null,
+  eliminateAllowed = true,
+  handedness = 'left', // 'left' = answers on right, 'right' = answers on left
+}) {
+  const { playCorrect, playWrong } = useSound(soundEnabled);
+  const [shuffledChoices, setShuffledChoices] = useState([]);
+  const [firstWrong, setFirstWrong] = useState(null);
+  const [finalAnswer, setFinalAnswer] = useState(null);
+  const [eliminated, setEliminated] = useState([]);
+  const [clueManuallyRevealed, setClueManuallyRevealed] = useState(false);
+  const [flipped, setFlipped] = useState(false);
+  const [shake, setShake] = useState(false);
+  const [countdown, setCountdown] = useState(null);
+  const [noteEditing, setNoteEditing] = useState(false);
+  const [eliminateShake, setEliminateShake] = useState(false);
+  const [eliminateUsed, setEliminateUsed] = useState(false);
+  const [hintVisible, setHintVisible] = useState(false);
+  const [bookmarked, setBookmarked] = useState(isBookmarked);
+  const [selectAllPending, setSelectAllPending] = useState(new Set());
+  const countdownRef = useRef(null);
+  const idleTimerRef = useRef(null);
+
+  const clueAllowed = deck?.clue_mode !== 'disabled';
+  const hasExplanation = !!card.explanation;
+  const isTrueFalse = card.question_type === 'true_false';
+  const isSelectAll = card.question_type === 'select_all';
+  const secondGuessAllowed = true;
+
+  const correctAnswers = (card.correct_answers || card.correct_answer || '')
+    .split('|').map(s => s.trim()).filter(Boolean);
+
+  const answered = !!finalAnswer && finalAnswer !== '';
+
+  const canEliminate = eliminateAllowed && !answered && !firstWrong && !isTrueFalse && !isSelectAll &&
+    eliminated.length < shuffledChoices.length - 2 && shuffledChoices.length > 2;
+
+  const cancelCountdown = () => {
+    clearInterval(countdownRef.current);
+    countdownRef.current = null;
+    setCountdown(null);
+  };
+
+  const startCountdown = () => {
+    setCountdown(COUNTDOWN_SECS);
+    countdownRef.current = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) { clearInterval(countdownRef.current); countdownRef.current = null; onNext(); return null; }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  useEffect(() => {
+    setShuffledChoices(shuffle(card.choices));
+    setFirstWrong(null); setFinalAnswer(null); setEliminated([]);
+    setClueManuallyRevealed(false); setFlipped(false); setShake(false);
+    setNoteEditing(false); setEliminateShake(false); setEliminateUsed(false);
+    setHintVisible(false); setBookmarked(isBookmarked); setSelectAllPending(new Set());
+    cancelCountdown(); clearTimeout(idleTimerRef.current);
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  }, [card.id]);
+
+  useEffect(() => () => { cancelCountdown(); clearTimeout(idleTimerRef.current); }, []);
+
+  const handleSelect = (choice) => {
+    if (finalAnswer) return;
+    if (isSelectAll) {
+      setSelectAllPending(prev => {
+        const next = new Set(prev);
+        if (next.has(choice)) next.delete(choice); else next.add(choice);
+        return next;
+      });
+      return;
+    }
+    const correct = correctAnswers.includes(choice);
+    if (correct) {
+      const penaliseClue = clueManuallyRevealed;
+      const scoreKey = firstWrong
+        ? penaliseClue ? 'second_guess_after_clue' : 'second_guess'
+        : penaliseClue ? 'correct_after_clue' : 'correct';
+      setFinalAnswer(choice); playCorrect();
+      onScore && onScore(SCORE[scoreKey], scoreKey);
+      if (autoAdvance && !isLast) startCountdown();
+    } else {
+      playWrong(); setShake(true); setTimeout(() => setShake(false), 400);
+      if (!firstWrong && !eliminated.length) setFirstWrong(choice);
+      else { setFinalAnswer(choice); onScore && onScore(SCORE.wrong, 'wrong'); }
+    }
+  };
+
+  const handleSelectAllDone = () => {
+    const selectedArr = Array.from(selectAllPending);
+    const numCorrect = selectedArr.filter(c => correctAnswers.includes(c)).length;
+    const numWrong = selectedArr.filter(c => !correctAnswers.includes(c)).length;
+    const total = correctAnswers.length;
+    const allCorrect = numCorrect === total && numWrong === 0;
+    if (allCorrect) {
+      playCorrect();
+      const scoreKey = clueManuallyRevealed ? 'correct_after_clue' : 'correct';
+      setFinalAnswer('__select_all_correct__');
+      onScore && onScore(SCORE[scoreKey], scoreKey);
+      if (autoAdvance && !isLast) startCountdown();
+    } else {
+      const partialScore = Math.max(0, (numCorrect - numWrong) / total);
+      partialScore > 0 ? playCorrect() : playWrong();
+      setFinalAnswer('__select_all_partial__');
+      onScore && onScore(partialScore, 'partial');
+    }
+  };
+
+  const handleEliminate = () => {
+    if (finalAnswer || firstWrong) return;
+    const wrong = shuffledChoices.filter(c => !correctAnswers.includes(c) && !eliminated.includes(c));
+    if (wrong.length === 0) return;
+    const toElim = wrong[Math.floor(Math.random() * wrong.length)];
+    setEliminated(prev => [...prev, toElim]);
+    setEliminateUsed(true);
+    clearTimeout(idleTimerRef.current);
+  };
+
+  useEffect(() => {
+    if (answered && hintVisible) {
+      const t = setTimeout(() => setHintVisible(false), 1200);
+      return () => clearTimeout(t);
+    }
+  }, [answered, hintVisible]);
+
+  useEffect(() => {
+    if (answered || firstWrong || !canEliminate) return;
+    clearTimeout(idleTimerRef.current);
+    const doShake = () => {
+      setEliminateShake(true);
+      setTimeout(() => setEliminateShake(false), 600);
+      idleTimerRef.current = setTimeout(doShake, 5000);
+    };
+    idleTimerRef.current = setTimeout(doShake, 30000);
+    return () => clearTimeout(idleTimerRef.current);
+  }, [answered, firstWrong, canEliminate, card.id]);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      const idx = e.key.toUpperCase().charCodeAt(0) - 65;
+      if (idx < 0 || idx >= shuffledChoices.length) return;
+      const choice = shuffledChoices[idx];
+      if (eliminated.includes(choice) || finalAnswer) return;
+      handleSelect(choice);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [shuffledChoices, eliminated, finalAnswer, firstWrong, clueManuallyRevealed]);
+
+  const getChoiceState = (choice) => {
+    const isElim = eliminated.includes(choice);
+    const correct = correctAnswers.includes(choice);
+    if (isElim) return 'eliminated';
+    if (isSelectAll && !answered) return selectAllPending.has(choice) ? 'selected-pending' : 'idle';
+    if (isSelectAll && answered) {
+      if (correct && selectAllPending.has(choice)) return 'correct';
+      if (correct && !selectAllPending.has(choice)) return 'missed-correct';
+      if (!correct && selectAllPending.has(choice)) return 'first-wrong';
+      return 'dim';
+    }
+    if (!answered && !firstWrong) return 'idle';
+    if (!answered && firstWrong) return choice === firstWrong ? 'first-wrong' : 'idle-retry';
+    if (correct) return 'correct';
+    return 'dim';
+  };
+
+  const timesStudied = cardStats?.sessions_completed ?? null;
+  const minSessions = deck?.mastery_min_sessions ?? 3;
+  const masteryPct = cardStats && cardStats.sessions_completed >= minSessions
+    ? Math.round((cardStats.correct_attempts / cardStats.total_attempts) * 100) : null;
+
+  const qtLabel = isTrueFalse ? 'True or False?' : isSelectAll ? 'Multi-Select' : 'Single Select';
+
+  const choiceBorderColor = (state) => {
+    if (state === 'correct') return '#00A842';
+    if (state === 'first-wrong') return '#f97316';
+    if (state === 'missed-correct') return '#d97706';
+    if (state === 'eliminated') return '#ccc';
+    if (state === 'selected-pending') return '#0165fc';
+    return '#000';
+  };
+  const choiceBgColor = (state) => {
+    if (state === 'correct') return '#f0fdf4';
+    if (state === 'first-wrong') return '#fff7ed';
+    if (state === 'missed-correct') return '#fffbeb';
+    if (state === 'eliminated') return '#f5f5f5';
+    if (state === 'selected-pending') return '#eff6ff';
+    return '#fff';
+  };
+
+  const choiceStyle = getChoiceStyle(shuffledChoices);
+
+  // ── Left column: image + question ──────────────────────────────────────────
+  const ImageQuestionCol = (
+    <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 48%', minWidth: 0 }}>
+      {/* Image */}
+      <div style={{ width: '100%', aspectRatio: '4/3', overflow: 'hidden', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {card.image_url
+          ? <img src={card.image_url} alt="card" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: card.image_focal_point ? `${card.image_focal_point.x}% ${card.image_focal_point.y}%` : 'center' }} />
+          : <span style={{ color: '#9ca3af', fontSize: 13 }}>No image</span>
+        }
+      </div>
+
+      {/* Question pane */}
+      <div style={{
+        width: '100%', minHeight: 110,
+        backgroundColor: hintVisible ? '#EEFF41' : '#DFEDF5',
+        position: 'relative', padding: '16px 16px 36px 16px',
+        boxSizing: 'border-box', transition: 'background-color 0.2s',
+      }}>
+        <p style={{ color: '#113656', fontSize: 'clamp(13px, 1.8vw, 20px)', fontWeight: 500, lineHeight: 1.35, margin: 0, visibility: hintVisible ? 'hidden' : 'visible' }}>
+          {card.clue || ''}
+        </p>
+        {hintVisible && note && (
+          <div style={{ position: 'absolute', inset: 0, padding: '16px 16px 36px 16px', display: 'flex', alignItems: 'flex-start' }}>
+            <p style={{ color: '#1a237e', fontSize: 'clamp(13px, 1.6vw, 18px)', fontWeight: 500, lineHeight: 1.35, margin: 0 }}>{note}</p>
+          </div>
+        )}
+        <span style={{ position: 'absolute', bottom: 8, left: 16, color: hintVisible ? '#1a237e' : '#113656', fontSize: 13, fontWeight: hintVisible ? 400 : 700, opacity: hintVisible ? 0.7 : 1 }}>
+          {hintVisible ? 'Hint' : `${cardIndex + 1}/${total}`}
+        </span>
+        {note && (
+          hintVisible ? (
+            <button onClick={() => setHintVisible(false)} style={{ position: 'absolute', bottom: 6, right: 12, background: 'none', border: 'none', cursor: 'pointer', color: '#1a237e', padding: 0, lineHeight: 0 }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+            </button>
+          ) : (
+            <button onClick={() => setHintVisible(true)} title="View your hint" style={{ position: 'absolute', bottom: 6, right: 12, background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#113656', opacity: 0.6, lineHeight: 0 }}>
+              <MessageCircleQuestion style={{ width: 18, height: 18 }} />
+            </button>
+          )
+        )}
+      </div>
+    </div>
+  );
+
+  // ── Right column: progress bar + answers + actions ─────────────────────────
+  const AnswerCol = (
+    <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 0', minWidth: 0 }}>
+      {/* Progress bar placeholder */}
+      <div style={{ width: '100%', height: 44, border: '2px solid #000', boxSizing: 'border-box', marginBottom: 0 }} />
+
+      {/* Answer pane */}
+      <div style={{
+        flex: 1, backgroundColor: '#FAFAFA', border: '2px solid #D9D9D9',
+        borderTop: 'none', boxSizing: 'border-box', padding: '10px 14px',
+        display: 'flex', flexDirection: 'column',
+      }}>
+        {/* Top row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#00A842', fontSize: 20, fontWeight: 500 }}>
+            <span>{qtLabel}</span>
+            {isTrueFalse ? <ToggleLeft style={{ width: 24, height: 24 }} />
+              : isSelectAll ? <span style={{ display: 'inline-flex', gap: 2 }}>
+                <SquareCheck style={{ width: 22, height: 22 }} /><SquareCheck style={{ width: 22, height: 22 }} />
+              </span>
+              : <SquareCheck style={{ width: 22, height: 22 }} />
+            }
+          </div>
+          {!isTrueFalse && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#6b7280', fontSize: 12 }}>
+              <CopyCheck style={{ width: 13, height: 13 }} />
+              <span>2nd Guess: {secondGuessAllowed ? 'ON' : 'OFF'}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Choices */}
+        <div style={{ flex: 1 }}>
+          {isTrueFalse ? (
+            <div style={{ display: 'flex', gap: 8 }}>
+              {shuffledChoices.map((choice, idx) => {
+                const state = getChoiceState(choice);
+                return (
+                  <button key={choice} disabled={answered} onClick={() => handleSelect(choice)}
+                    className={cn('choice-btn', shake && state === 'first-wrong' && 'animate-shake')}
+                    style={{ flex: 1, minHeight: 56, borderRadius: 10, border: `2px solid ${choiceBorderColor(state)}`, backgroundColor: choiceBgColor(state), display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', cursor: answered ? 'default' : 'pointer', fontSize: 15, fontWeight: 500, textAlign: 'left', transition: 'border-color 0.4s ease 0.15s, background-color 0.4s ease 0.15s' }}
+                  >
+                    <span style={{ width: 26, height: 26, borderRadius: 5, flexShrink: 0, backgroundColor: state === 'correct' ? '#00A842' : '#000', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>
+                      {state === 'correct' ? <Check style={{ width: 14, height: 14 }} /> : LETTERS[idx]}
+                    </span>
+                    {choice}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              {shuffledChoices.map((choice, idx) => {
+                const state = getChoiceState(choice);
+                return (
+                  <button key={choice} disabled={state === 'eliminated' || answered} onClick={() => handleSelect(choice)}
+                    className={cn('choice-btn', shake && state === 'first-wrong' && 'animate-shake')}
+                    style={{ width: '100%', minHeight: choiceStyle.minHeight, borderRadius: 8, border: `2px solid ${choiceBorderColor(state)}`, backgroundColor: choiceBgColor(state), opacity: state === 'eliminated' || state === 'dim' ? 0.4 : 1, display: 'flex', alignItems: 'center', gap: 8, padding: choiceStyle.padding, cursor: answered || state === 'eliminated' ? 'default' : 'pointer', fontSize: choiceStyle.fontSize, fontWeight: 500, textAlign: 'left', transition: 'border-color 0.4s ease 0.15s, background-color 0.4s ease 0.15s, opacity 0.4s ease 0.15s' }}
+                  >
+                    <span style={{ width: 26, height: 26, borderRadius: 5, flexShrink: 0, backgroundColor: state === 'correct' ? '#00A842' : state === 'missed-correct' ? '#d97706' : state === 'selected-pending' ? '#0165fc' : '#000', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>
+                      {state === 'correct' || state === 'missed-correct' || state === 'selected-pending' ? <Check style={{ width: 13, height: 13 }} /> : LETTERS[idx]}
+                    </span>
+                    <span style={{ flex: 1, lineHeight: 1.3 }}>{choice}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Bottom row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
+          <span />
+          {!answered ? (
+            isSelectAll ? (
+              selectAllPending.size >= 2 && (
+                <button onClick={handleSelectAllDone} style={{ backgroundColor: '#00A842', color: '#fff', border: 'none', borderRadius: 7, padding: '7px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <Check style={{ width: 14, height: 14 }} /> Done
+                </button>
+              )
+            ) : !isTrueFalse && (
+              <button onClick={canEliminate ? handleEliminate : undefined} disabled={!canEliminate}
+                className={cn(eliminateShake && 'animate-subtle-shake')}
+                style={{ color: eliminateUsed ? '#d1d5db' : canEliminate ? '#0165fc' : '#d1d5db', opacity: eliminateUsed ? 0.4 : 1, cursor: canEliminate && !eliminateUsed ? 'pointer' : 'not-allowed', background: 'none', border: 'none', padding: 0, transition: 'opacity 0.3s, color 0.3s' }}
+              >
+                <Sparkles style={{ width: 18, height: 18 }} />
+              </button>
+            )
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              {hasExplanation && (
+                <button onClick={() => { setFlipped(true); cancelCountdown(); }} style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
+                  <GraduationCap style={{ width: 13, height: 13, flexShrink: 0 }} />
+                  <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 1 }}>Learn More</span>
+                </button>
+              )}
+              <button onClick={() => { cancelCountdown(); onNext(); }} style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', position: 'relative' }}>
+                <SkipForward style={{ width: 13, height: 13, flexShrink: 0 }} />
+                <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 1, position: 'relative' }}>
+                  {countdown !== null && (
+                    <span style={{ position: 'absolute', bottom: 0, left: 0, height: '1.5px', backgroundColor: '#555', width: `${((COUNTDOWN_SECS - countdown + 1) / COUNTDOWN_SECS) * 100}%`, transition: 'width 1s linear' }} />
+                  )}
+                  {isLast ? 'Finish' : 'Next'}
+                </span>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Action pane */}
+      <div style={{ width: '100%', boxSizing: 'border-box', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 12, backgroundColor: '#fff', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, backgroundColor: '#F5F5F0', borderRadius: 18, padding: '5px 12px', fontSize: 12, flexShrink: 0 }}>
+          <Glasses style={{ width: 17, height: 17, flexShrink: 0 }} />
+          <span>Mastery: <strong>{masteryPct !== null ? `${masteryPct}%` : '--'}</strong></span>
+          <span>Studied: <strong>{timesStudied !== null ? timesStudied : '--'}</strong></span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <button onClick={() => { const next = !bookmarked; setBookmarked(next); onToggleBookmark && onToggleBookmark(card.id, next); }} style={{ fontSize: 14, display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', color: bookmarked ? '#d97706' : 'inherit' }}>
+            {bookmarked ? <BookmarkX style={{ width: 17, height: 17 }} /> : <Bookmark style={{ width: 17, height: 17 }} />}
+          </button>
+          <button onClick={() => setNoteEditing(v => !v)} style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer' }}>
+            <Pencil style={{ width: 14, height: 14, flexShrink: 0 }} />
+            <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2 }}>Add/Edit Hint</span>
+          </button>
+          <button onClick={() => { if (!finalAnswer) { onScore && onScore(SCORE.wrong, 'wrong'); } onNext(); }} disabled={!!finalAnswer} style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: finalAnswer ? 'not-allowed' : 'pointer', opacity: finalAnswer ? 0.35 : 1, transition: 'opacity 0.3s' }}>
+            <SkipForward style={{ width: 14, height: 14, flexShrink: 0 }} />
+            <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2 }}>Skip</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // handedness: 'left' = image on left (right-handed mouse), 'right' = image on right (left-handed)
+  const leftCol = handedness === 'right' ? AnswerCol : ImageQuestionCol;
+  const rightCol = handedness === 'right' ? ImageQuestionCol : AnswerCol;
+
+  return (
+    <div style={{ display: 'flex', gap: 16, width: '100%', alignItems: 'flex-start' }}>
+      {leftCol}
+      {rightCol}
+
+      {/* Note editor modal */}
+      <Dialog open={noteEditing} onOpenChange={setNoteEditing}>
+        <DialogContent className="max-w-md">
+          <h3 className="font-semibold text-base flex items-center gap-2 mb-3">
+            <Pencil className="w-4 h-4 text-amber-600" /> Add / Edit Hint
+          </h3>
+          <div className="rounded-lg bg-muted/50 border border-border px-3 py-2.5 mb-4 space-y-1">
+            {card.clue && <p className="text-sm font-semibold">{card.clue}</p>}
+            <p className="text-sm text-muted-foreground">Answer: <span className="font-semibold text-foreground">{correctAnswers.join(', ')}</span></p>
+          </div>
+          <CardNoteEditor cardId={card.id} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Learn More modal */}
+      <Dialog open={flipped && hasExplanation} onOpenChange={(open) => { if (!open) setFlipped(false); }}>
+        <DialogContent className="max-w-lg">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center shrink-0">
+              <GraduationCap className="w-4 h-4 text-accent-foreground" />
+            </div>
+            <h3 className="font-semibold text-lg">{correctAnswers.join(', ')}</h3>
+          </div>
+          <div className="prose prose-sm max-w-none text-muted-foreground" dangerouslySetInnerHTML={{ __html: card.explanation }} />
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

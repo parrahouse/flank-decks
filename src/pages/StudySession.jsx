@@ -2,9 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Brain, Volume2, VolumeX, Info, LayoutGrid, Trophy } from 'lucide-react';
+import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Brain, Volume2, VolumeX, Info, LayoutGrid, Trophy, AlignLeft, AlignRight, Rows2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StudyCard from '@/components/cards/StudyCard';
+import StudyCardHorizontal from '@/components/cards/StudyCardHorizontal';
 import ContactSheet from '@/components/cards/ContactSheet';
 import { cn } from '@/lib/utils';
 
@@ -67,6 +68,17 @@ export default function StudySession() {
   const [filterMode, setFilterMode] = useState('all');
   const [filterChosen, setFilterChosen] = useState(false);
   const [contactSheetOpen, setContactSheetOpen] = useState(false);
+  // Layout: 'auto' uses horizontal when wide, 'vertical' forces stacked, 'horizontal' forces side-by-side
+  const [layoutMode, setLayoutMode] = useState(() => localStorage.getItem('flashdeck_layout') || 'auto');
+  // Handedness: 'left' = image on left (right-handed), 'right' = image on right (left-handed)
+  const [handedness, setHandedness] = useState(() => localStorage.getItem('flashdeck_handedness') || 'left');
+  const [isWide, setIsWide] = useState(() => window.innerWidth >= 900);
+
+  useEffect(() => {
+    const onResize = () => setIsWide(window.innerWidth >= 900);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   const { data: deck } = useQuery({
     queryKey: ['deck', deckId],
@@ -470,8 +482,10 @@ export default function StudySession() {
     );
   }
 
+  const useHorizontal = layoutMode === 'horizontal' || (layoutMode === 'auto' && isWide);
+
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 bg-white min-h-screen">
+    <div className={cn('mx-auto px-4 py-8 bg-white min-h-screen', useHorizontal ? 'max-w-7xl' : 'max-w-6xl')}>
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <Link to={`/deck/${deckId}`} className="text-muted-foreground hover:text-foreground transition-colors">
@@ -502,6 +516,36 @@ export default function StudySession() {
         >
           <LayoutGrid className="w-4 h-4" />
         </button>
+        {/* Layout toggle — only show when horizontal layout is active or screen is wide */}
+        {(isWide || layoutMode === 'horizontal') && (
+          <>
+            <button
+              onClick={() => {
+                const next = layoutMode === 'horizontal' ? 'vertical' : layoutMode === 'vertical' ? 'auto' : 'horizontal';
+                setLayoutMode(next);
+                localStorage.setItem('flashdeck_layout', next);
+              }}
+              title={layoutMode === 'horizontal' ? 'Horizontal layout' : layoutMode === 'vertical' ? 'Vertical layout' : 'Auto layout'}
+              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              {layoutMode === 'horizontal' ? <Rows2 className="w-4 h-4 rotate-90" /> : layoutMode === 'vertical' ? <Rows2 className="w-4 h-4" /> : <Rows2 className="w-4 h-4 text-primary" />}
+            </button>
+            {/* Handedness toggle — only relevant in horizontal mode */}
+            {(layoutMode === 'horizontal' || (layoutMode === 'auto' && isWide)) && (
+              <button
+                onClick={() => {
+                  const next = handedness === 'left' ? 'right' : 'left';
+                  setHandedness(next);
+                  localStorage.setItem('flashdeck_handedness', next);
+                }}
+                title={handedness === 'left' ? 'Right-handed (image left)' : 'Left-handed (image right)'}
+                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                {handedness === 'left' ? <AlignLeft className="w-4 h-4" /> : <AlignRight className="w-4 h-4" />}
+              </button>
+            )}
+          </>
+        )}
         <Button variant="ghost" size="sm" onClick={restart} className="gap-1.5 text-muted-foreground">
           <RotateCcw className="w-4 h-4" /> Restart
         </Button>
@@ -639,49 +683,44 @@ export default function StudySession() {
           cardIndex={cardIndex}
           onJump={(i) => { setCardIndex(i); setContactSheetOpen(false); }}
         />
-      ) : (
-        <div className="flex gap-4 items-start">
-          <div className="flex-1 min-w-0">
-            <StudyCard
-              key={`${current.id}-${cardIndex}`}
-              card={current}
-              deck={deck}
-              onNext={handleNext}
-              onPrev={handlePrev}
-              isFirst={cardIndex === 0}
-              isLast={cardIndex === shuffledCards.length - 1}
-              onScore={handleScore}
-              soundEnabled={soundEnabled}
-              autoAdvance={autoAdvance}
-              note={notesByCardId[current.id] || null}
-              cardIndex={cardIndex}
-              total={shuffledCards.length}
-              sessionStartTime={sessionStartTime}
-              correctStreak={correctStreak}
-              bestStreak={bestStreak}
-              pastSessions={pastSessions}
-              masteredCount={cardStats.filter(s => s.mastered).length}
-              totalCards={activeCards.length}
-              cardStats={cardStats.find(s => s.card_id === current.id) || null}
-              hintsAllowed={hintsAllowed}
-              eliminateAllowed={eliminateAllowed}
-              isBookmarked={!!current.bookmarked}
-              onToggleBookmark={handleToggleBookmark}
-            />
-            {/* Nav arrows */}
-            <div className="flex justify-center gap-3 mt-5">
-              <Button variant="ghost" size="icon" onClick={handlePrev} disabled={cardIndex === 0}>
-                <ChevronLeft className="w-5 h-5" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={handleNext} disabled={cardIndex === shuffledCards.length - 1}>
-                <ChevronRight className="w-5 h-5" />
-              </Button>
+      ) : (() => {
+        const useHorizontal = layoutMode === 'horizontal' || (layoutMode === 'auto' && isWide);
+        const sharedProps = {
+          key: `${current.id}-${cardIndex}`,
+          card: current, deck,
+          onNext: handleNext, onPrev: handlePrev,
+          isFirst: cardIndex === 0, isLast: cardIndex === shuffledCards.length - 1,
+          onScore: handleScore, soundEnabled, autoAdvance,
+          note: notesByCardId[current.id] || null,
+          cardIndex, total: shuffledCards.length,
+          sessionStartTime, correctStreak, bestStreak, pastSessions,
+          masteredCount: cardStats.filter(s => s.mastered).length,
+          totalCards: activeCards.length,
+          cardStats: cardStats.find(s => s.card_id === current.id) || null,
+          eliminateAllowed,
+          isBookmarked: !!current.bookmarked,
+          onToggleBookmark: handleToggleBookmark,
+        };
+
+        return useHorizontal ? (
+          <StudyCardHorizontal {...sharedProps} handedness={handedness} />
+        ) : (
+          <div className="flex gap-4 items-start">
+            <div className="flex-1 min-w-0">
+              <StudyCard {...sharedProps} hintsAllowed={hintsAllowed} />
+              {/* Nav arrows */}
+              <div className="flex justify-center gap-3 mt-5">
+                <Button variant="ghost" size="icon" onClick={handlePrev} disabled={cardIndex === 0}>
+                  <ChevronLeft className="w-5 h-5" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={handleNext} disabled={cardIndex === shuffledCards.length - 1}>
+                  <ChevronRight className="w-5 h-5" />
+                </Button>
+              </div>
             </div>
           </div>
-
-
-        </div>
-      )}
+        );
+      })()}
 
     </div>
   );
