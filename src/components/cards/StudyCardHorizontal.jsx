@@ -303,7 +303,7 @@ export default function StudyCardHorizontal({
       {/* Answer pane */}
       <div style={{
         flex: 1, backgroundColor: '#FAFAFA', border: '2px solid #D9D9D9',
-        borderTop: 'none', boxSizing: 'border-box', padding: '10px 14px',
+        boxSizing: 'border-box', padding: '10px 14px',
         display: 'flex', flexDirection: 'column',
       }}>
         {/* Top row */}
