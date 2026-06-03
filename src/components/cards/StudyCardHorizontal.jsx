@@ -296,7 +296,7 @@ export default function StudyCardHorizontal({
 
   // ── Right column: progress bar + answers + actions ─────────────────────────
   const AnswerCol = (
-    <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 0', minWidth: 0 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 0', minWidth: 0, alignSelf: 'stretch' }}>
       {/* Progress bar placeholder */}
       <div style={{ width: '100%', height: 44, border: '2px solid #000', boxSizing: 'border-box', marginBottom: 0 }} />
 
@@ -433,7 +433,7 @@ export default function StudyCardHorizontal({
   const rightCol = handedness === 'right' ? ImageQuestionCol : AnswerCol;
 
   return (
-    <div style={{ display: 'flex', gap: 16, width: '100%', alignItems: 'flex-start' }}>
+    <div style={{ display: 'flex', gap: 16, width: '100%', alignItems: 'stretch' }}>
       {leftCol}
       {rightCol}
 
