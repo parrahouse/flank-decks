@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Bricolage+Grotesque:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Bricolage+Grotesque:wght@300;400;500;600;700&family=Host+Grotesk:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -30,6 +30,7 @@
     --radius: 0.75rem;
     --font-inter: 'Roboto', sans-serif;
     --font-bricolage: 'Bricolage Grotesque', sans-serif;
+    --font-host-grotesk: 'Host Grotesk', sans-serif;
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
