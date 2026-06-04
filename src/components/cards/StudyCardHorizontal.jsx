@@ -43,10 +43,10 @@ const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 function getChoiceStyle(choices) {
   const count = choices.length;
   const maxLen = Math.max(...choices.map(c => c.length));
-  let fontSize = 17; let minHeight = 48; let padding = '7px 12px';
-  if (count >= 5 || maxLen > 60) { fontSize = 13; minHeight = 34; padding = '4px 10px'; }
-  else if (count >= 4 || maxLen > 40) { fontSize = 14; minHeight = 40; padding = '5px 10px'; }
-  else if (maxLen > 25) { fontSize = 15; minHeight = 42; padding = '6px 10px'; }
+  let fontSize = 20; let minHeight = 52; let padding = '9px 14px';
+  if (count >= 5 || maxLen > 60) { fontSize = 15; minHeight = 38; padding = '5px 12px'; }
+  else if (count >= 4 || maxLen > 40) { fontSize = 17; minHeight = 44; padding = '6px 12px'; }
+  else if (maxLen > 25) { fontSize = 18; minHeight = 48; padding = '7px 12px'; }
   return { fontSize, minHeight, padding };
 }
 
