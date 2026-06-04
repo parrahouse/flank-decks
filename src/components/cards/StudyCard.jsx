@@ -438,7 +438,7 @@ export default function StudyCard({
       >
         {/* Top row: question type + second guess */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#00A842', fontSize: 24, fontWeight: 500 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#00A842', fontSize: 24, fontWeight: 500, fontFamily: 'var(--font-bricolage)' }}>
             <span>{qtLabel}</span>
             {isTrueFalse
               ? <ToggleLeft style={{ width: 28, height: 28 }} />
