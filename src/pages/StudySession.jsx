@@ -346,7 +346,7 @@ export default function StudySession() {
           <div className="flex flex-col gap-3 w-full max-w-sm">
             <button
               onClick={() => startSession('all')}
-              className="w-full border-2 border-border hover:border-primary p-4 text-left transition-all hover:bg-accent/40 rounded-md">
+              className="w-full border-2 border-border hover:border-primary p-4 text-left transition-all hover:bg-accent/40 rounded-[4px]">
               
               <div className="font-semibold">All cards</div>
               <div className="text-sm text-muted-foreground mt-0.5">{activeCards.length} cards</div>
@@ -356,7 +356,7 @@ export default function StudySession() {
               onClick={() => startSession('unmastered')}
               disabled={allMastered}
               className={cn(
-                'w-full border-2 rounded-xl p-4 text-left transition-all',
+                'w-full border-2 rounded-[4px] p-4 text-left transition-all',
                 allMastered ?
                 'border-border opacity-50 cursor-not-allowed' :
                 'border-border hover:border-primary hover:bg-accent/40'
@@ -386,7 +386,7 @@ export default function StudySession() {
               onClick={() => startSession('bookmarked')}
               disabled={bookmarkedCards.length === 0}
               className={cn(
-                'w-full border-2 rounded-xl p-4 text-left transition-all',
+                'w-full border-2 rounded-[4px] p-4 text-left transition-all',
                 bookmarkedCards.length === 0 ?
                 'border-border opacity-50 cursor-not-allowed' :
                 'border-border hover:border-primary hover:bg-accent/40'
