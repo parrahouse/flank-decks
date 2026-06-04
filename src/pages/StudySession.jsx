@@ -485,7 +485,7 @@ export default function StudySession() {
   const useHorizontal = layoutMode === 'horizontal' || layoutMode === 'auto' && isWide;
 
   return (
-    <div className={cn('mx-auto px-4 py-8 min-h-screen', useHorizontal ? 'max-w-7xl' : 'max-w-6xl')}>
+    <div className={cn('mx-auto px-4 py-8 min-h-screen bg-background', useHorizontal ? 'max-w-7xl' : 'max-w-6xl')}>
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <Link to={`/deck/${deckId}`} className="text-muted-foreground hover:text-foreground transition-colors">
