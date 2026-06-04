@@ -203,9 +203,9 @@ export default function StudySession() {
         if (last === today) {
 
 
+
           // already studied today, no change
-        } else if (last === yesterday) {newStreak = streak.current_streak + 1;} else {
-          newStreak = 1;
+        } else if (last === yesterday) {newStreak = streak.current_streak + 1;} else {newStreak = 1;
         }
         const newLongest = Math.max(streak.longest_streak || 0, newStreak);
         const newMilestone = [3, 7, 14, 30, 60, 100].filter((m) => newStreak >= m).pop() || 0;
@@ -346,7 +346,7 @@ export default function StudySession() {
           <div className="flex flex-col gap-3 w-full max-w-sm">
             <button
               onClick={() => startSession('all')}
-              className="w-full border-2 border-border hover:border-primary p-4 text-left transition-all hover:bg-accent/40 rounded-none">
+              className="w-full border-2 border-border hover:border-primary p-4 text-left transition-all hover:bg-accent/40 rounded-md">
               
               <div className="font-semibold">All cards</div>
               <div className="text-sm text-muted-foreground mt-0.5">{activeCards.length} cards</div>
