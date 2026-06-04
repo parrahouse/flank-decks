@@ -703,19 +703,23 @@ export default function StudySession() {
         };
 
         return useHorizontal ?
-        <StudyCardHorizontal {...sharedProps} handedness={handedness} /> :
+        <div className="bg-card border border-border rounded-lg p-4">
+          <StudyCardHorizontal {...sharedProps} handedness={handedness} />
+        </div> :
 
-        <div className="flex gap-4 items-start">
-            <div className="flex-1 min-w-0">
-              <StudyCard {...sharedProps} hintsAllowed={hintsAllowed} />
-              {/* Nav arrows */}
-              <div className="flex justify-center gap-3 mt-5">
-                <Button variant="ghost" size="icon" onClick={handlePrev} disabled={cardIndex === 0}>
-                  <ChevronLeft className="w-5 h-5" />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={handleNext} disabled={cardIndex === shuffledCards.length - 1}>
-                  <ChevronRight className="w-5 h-5" />
-                </Button>
+        <div className="bg-card border border-border rounded-lg p-4">
+            <div className="flex gap-4 items-start">
+              <div className="flex-1 min-w-0">
+                <StudyCard {...sharedProps} hintsAllowed={hintsAllowed} />
+                {/* Nav arrows */}
+                <div className="flex justify-center gap-3 mt-5">
+                  <Button variant="ghost" size="icon" onClick={handlePrev} disabled={cardIndex === 0}>
+                    <ChevronLeft className="w-5 h-5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={handleNext} disabled={cardIndex === shuffledCards.length - 1}>
+                    <ChevronRight className="w-5 h-5" />
+                  </Button>
+                </div>
               </div>
             </div>
           </div>;
