@@ -308,7 +308,7 @@ export default function StudyCardHorizontal({
       }}>
         {/* Top row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#00A842', fontSize: 20, fontWeight: 500, fontFamily: 'var(--font-bricolage)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#00A842', fontSize: 20, fontWeight: 500 }}>
             <span>{qtLabel}</span>
             {isTrueFalse ? <ToggleLeft style={{ width: 24, height: 24 }} />
               : isSelectAll ? <span style={{ display: 'inline-flex', gap: 2 }}>
