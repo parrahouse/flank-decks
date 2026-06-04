@@ -348,7 +348,7 @@ export default function StudySession() {
               onClick={() => startSession('all')}
               className="w-full border-2 border-border hover:border-primary p-4 text-left transition-all hover:bg-accent/40 rounded-[4px]">
               
-              <div className="font-semibold">All cards</div>
+              <div className="font-semibold text-base">All cards</div>
               <div className="text-sm text-muted-foreground mt-0.5">{activeCards.length} cards</div>
             </button>
 
@@ -362,7 +362,7 @@ export default function StudySession() {
                 'border-border hover:border-primary hover:bg-accent/40'
               )}>
               
-              <div className="font-semibold flex items-center gap-2">
+              <div className="font-semibold text-base flex items-center gap-2">
                 Unmastered only
                 {unmasteredCards.length < activeCards.length &&
                 <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">
@@ -392,7 +392,7 @@ export default function StudySession() {
                 'border-border hover:border-primary hover:bg-accent/40'
               )}>
               
-              <div className="font-semibold flex items-center gap-2">
+              <div className="font-semibold text-base flex items-center gap-2">
                 Bookmarked only
                 {bookmarkedCards.length > 0 &&
                 <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">
