@@ -18,7 +18,7 @@ export default function Layout() {
       <header className="border-b border-border bg-card sticky top-0 z-40">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
           <Link to="/" className="text-lg font-semibold tracking-tight text-foreground">
-            FlashDeck
+            Swabbie
           </Link>
           <nav className="flex items-center gap-1">
             {nav.map(({ label, path, icon: Icon }) => (
