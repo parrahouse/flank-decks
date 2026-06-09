@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Brain, Volume2, VolumeX, Info, LayoutGrid, Trophy, AlignLeft, AlignRight, Rows2 } from 'lucide-react';
+import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Brain, Volume2, VolumeX, Info, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StudyCard from '@/components/cards/StudyCard';
 import StudyCardHorizontal from '@/components/cards/StudyCardHorizontal';
@@ -592,43 +592,7 @@ export default function StudySession() {
           {soundEnabled ? <Volume2 className="w-4 h-4 shrink-0" /> : <VolumeX className="w-4 h-4 shrink-0" />}
           <span className="pixel-ui" style={{ fontSize: 9 }}>{soundEnabled ? 'SOUND ON' : 'MUTED'}</span>
         </button>
-        <button
-          onClick={() => setContactSheetOpen((o) => !o)}
-          title={contactSheetOpen ? 'Back to card' : 'View all cards'}
-          className={cn('p-1.5 rounded-md transition-colors', contactSheetOpen ? 'text-primary bg-accent' : 'text-muted-foreground hover:text-foreground hover:bg-muted')}>
-          
-          <LayoutGrid className="w-4 h-4" />
-        </button>
-        {/* Layout toggle — only show when horizontal layout is active or screen is wide */}
-        {(isWide || layoutMode === 'horizontal') &&
-        <>
-            <button
-            onClick={() => {
-              const next = layoutMode === 'horizontal' ? 'vertical' : layoutMode === 'vertical' ? 'auto' : 'horizontal';
-              setLayoutMode(next);
-              localStorage.setItem('flashdeck_layout', next);
-            }}
-            title={layoutMode === 'horizontal' ? 'Horizontal layout' : layoutMode === 'vertical' ? 'Vertical layout' : 'Auto layout'}
-            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-            
-              {layoutMode === 'horizontal' ? <Rows2 className="w-4 h-4 rotate-90" /> : layoutMode === 'vertical' ? <Rows2 className="w-4 h-4" /> : <Rows2 className="w-4 h-4 text-primary" />}
-            </button>
-            {/* Handedness toggle — only relevant in horizontal mode */}
-            {(layoutMode === 'horizontal' || layoutMode === 'auto' && isWide) &&
-          <button
-            onClick={() => {
-              const next = handedness === 'left' ? 'right' : 'left';
-              setHandedness(next);
-              localStorage.setItem('flashdeck_handedness', next);
-            }}
-            title={handedness === 'left' ? 'Right-handed (image left)' : 'Left-handed (image right)'}
-            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-            
-                {handedness === 'left' ? <AlignLeft className="w-4 h-4" /> : <AlignRight className="w-4 h-4" />}
-              </button>
-          }
-          </>
-        }
+
         <button
           onClick={restart}
           className="flex items-center gap-1.5 px-2 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
