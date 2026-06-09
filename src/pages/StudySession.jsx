@@ -68,11 +68,11 @@ export default function StudySession() {
   const [filterMode, setFilterMode] = useState('all');
   const [filterChosen, setFilterChosen] = useState(false);
   const [contactSheetOpen, setContactSheetOpen] = useState(false);
-  // Layout: 'auto' uses horizontal when wide, 'vertical' forces stacked, 'horizontal' forces side-by-side
+  // Layout defaults: seeded from user profile, then overrideable per-session
   const [layoutMode, setLayoutMode] = useState(() => localStorage.getItem('flashdeck_layout') || 'auto');
-  // Handedness: 'left' = image on left (right-handed), 'right' = image on right (left-handed)
   const [handedness, setHandedness] = useState(() => localStorage.getItem('flashdeck_handedness') || 'left');
   const [isWide, setIsWide] = useState(() => window.innerWidth >= 900);
+  const [savingDefaults, setSavingDefaults] = useState(false);
 
   useEffect(() => {
     const onResize = () => setIsWide(window.innerWidth >= 900);
@@ -94,10 +94,17 @@ export default function StudySession() {
 
   const activeCards = allCards.filter((c) => !c.deleted);
 
-  const { data: currentUser } = useQuery({
+  const { data: currentUser, refetch: refetchMe } = useQuery({
     queryKey: ['me'],
     queryFn: () => base44.auth.me()
   });
+
+  // Seed layout prefs from user profile on first load
+  useEffect(() => {
+    if (!currentUser) return;
+    if (currentUser.default_layout_mode) setLayoutMode(currentUser.default_layout_mode);
+    if (currentUser.default_handedness) setHandedness(currentUser.default_handedness);
+  }, [currentUser?.id]);
 
   const { data: streakData = [], refetch: refetchStreak } = useQuery({
     queryKey: ['streak', currentUser?.id],
@@ -469,11 +476,81 @@ export default function StudySession() {
                   'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer ml-4',
                   eliminateAllowed ? 'bg-primary' : 'bg-muted'
                 )}>
-                
                 <span className={cn(
                   'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform',
                   eliminateAllowed ? 'translate-x-5' : 'translate-x-0'
                 )} />
+              </button>
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-border pt-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1 mb-2">Layout Preferences</p>
+            </div>
+
+            {/* Layout mode */}
+            <div className="flex items-center justify-between px-1">
+              <div>
+                <p className="text-sm font-medium">Card layout</p>
+                <p className="text-xs text-muted-foreground">How cards are displayed during study</p>
+              </div>
+              <div className="flex gap-1 ml-4">
+                {['auto', 'vertical', 'horizontal'].map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => {
+                      setLayoutMode(mode);
+                      localStorage.setItem('flashdeck_layout', mode);
+                    }}
+                    className={cn(
+                      'px-2.5 py-1 rounded text-xs font-medium border transition-colors',
+                      layoutMode === mode ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Handedness */}
+            <div className="flex items-center justify-between px-1 pt-1">
+              <div>
+                <p className="text-sm font-medium">Image position</p>
+                <p className="text-xs text-muted-foreground">Which side the image appears on (horizontal layout only)</p>
+              </div>
+              <div className="flex gap-1 ml-4">
+                {[{ value: 'left', label: 'Left' }, { value: 'right', label: 'Right' }].map(({ value, label }) => (
+                  <button
+                    key={value}
+                    onClick={() => {
+                      setHandedness(value);
+                      localStorage.setItem('flashdeck_handedness', value);
+                    }}
+                    className={cn(
+                      'px-2.5 py-1 rounded text-xs font-medium border transition-colors',
+                      handedness === value ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Save as default */}
+            <div className="flex justify-end px-1 pt-1">
+              <button
+                onClick={async () => {
+                  setSavingDefaults(true);
+                  await base44.auth.updateMe({ default_layout_mode: layoutMode, default_handedness: handedness });
+                  refetchMe();
+                  setSavingDefaults(false);
+                }}
+                className="text-xs text-primary hover:underline disabled:opacity-50"
+                disabled={savingDefaults}
+              >
+                {savingDefaults ? 'Saving…' : 'Save as my default'}
               </button>
             </div>
           </div>
