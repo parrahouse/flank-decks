@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { LayoutGrid, Trophy, Puzzle } from 'lucide-react';
+import { LayoutGrid, Trophy, Puzzle, UserCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -36,6 +36,18 @@ export default function Layout() {
                 {label}
               </Link>
             ))}
+            <Link
+              to="/profile"
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
+                location.pathname === '/profile'
+                  ? 'bg-accent text-accent-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+              )}
+            >
+              <UserCircle className="w-4 h-4" />
+              Profile
+            </Link>
           </nav>
         </div>
       </header>
