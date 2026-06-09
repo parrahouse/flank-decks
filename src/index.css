@@ -142,3 +142,25 @@
 .choice-btn:active {
   transform: scale(0.97);
 }
+
+/* Pixel UI — scoped to the four named controls only */
+.pixel-ui {
+  font-family: 'Press Start 2P', monospace;
+  letter-spacing: 0.02em;
+}
+
+/* Game band container */
+.progress-game-band {
+  --band-height: 64px;
+  width: 100%;
+  height: var(--band-height);
+  background-color: #E9E9EC;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.08);
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-game-band img {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}

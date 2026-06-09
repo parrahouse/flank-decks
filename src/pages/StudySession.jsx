@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import StudyCard from '@/components/cards/StudyCard';
 import StudyCardHorizontal from '@/components/cards/StudyCardHorizontal';
 import ContactSheet from '@/components/cards/ContactSheet';
+import ProgressGameBand from '@/components/cards/ProgressGameBand';
 import { cn } from '@/lib/utils';
 
 function shuffle(arr) {
@@ -565,12 +566,17 @@ export default function StudySession() {
     <div className={cn('mx-auto px-4 py-8 min-h-screen bg-background', useHorizontal ? 'max-w-7xl' : 'max-w-6xl')}>
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <Link to={`/deck/${deckId}`} className="text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft className="w-5 h-5" />
+        <Link
+          to={`/deck/${deckId}`}
+          className="pixel-ui text-muted-foreground hover:text-foreground transition-colors"
+          style={{ fontSize: 9, padding: '6px 10px' }}
+          title="Back to deck"
+        >
+          QUIT
         </Link>
         <div className="flex-1">
-          <h1 className="font-semibold">{deck?.title}</h1>
-          <p className="text-xs text-muted-foreground">
+          <h1 className="pixel-ui" style={{ fontSize: 11 }}>{deck?.title}</h1>
+          <p className="text-xs text-muted-foreground mt-1">
             {filterMode === 'unmastered' && <span className="text-amber-600">Unmastered only</span>}
             {filterMode === 'bookmarked' && <span className="text-amber-600">Bookmarked only</span>}
           </p>
@@ -582,9 +588,9 @@ export default function StudySession() {
             localStorage.setItem('flashdeck_sound', next ? '1' : '0');
           }}
           title={soundEnabled ? 'Sound on' : 'Sound off'}
-          className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-          
-          {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+          className="flex items-center gap-1.5 px-2 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+          {soundEnabled ? <Volume2 className="w-4 h-4 shrink-0" /> : <VolumeX className="w-4 h-4 shrink-0" />}
+          <span className="pixel-ui" style={{ fontSize: 9 }}>{soundEnabled ? 'SOUND ON' : 'MUTED'}</span>
         </button>
         <button
           onClick={() => setContactSheetOpen((o) => !o)}
@@ -623,13 +629,26 @@ export default function StudySession() {
           }
           </>
         }
-        <Button variant="ghost" size="sm" onClick={restart} className="gap-1.5 text-muted-foreground">
-          <RotateCcw className="w-4 h-4" /> Restart
-        </Button>
+        <button
+          onClick={restart}
+          className="flex items-center gap-1.5 px-2 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+          <RotateCcw className="w-4 h-4 shrink-0" />
+          <span className="pixel-ui" style={{ fontSize: 9 }}>RESTART</span>
+        </button>
       </div>
 
+      {/* Progress game HUD band — sits between header and card panel */}
+      {!done && filterChosen && (
+        <ProgressGameBand
+          cardIndex={cardIndex}
+          total={shuffledCards.length}
+          scores={scores}
+          correctStreak={correctStreak}
+        />
+      )}
+
       {done ?
-      <div className="flex flex-col items-center py-10 gap-6">
+      <div className="flex flex-col items-center py-10 gap-6 mt-6">
           <div className="text-5xl">🎉</div>
           <div className="text-center space-y-1">
             <h2 className="text-xl font-bold">Deck complete!</h2>
@@ -754,11 +773,11 @@ export default function StudySession() {
         })()}
         </div> :
       contactSheetOpen ?
-      <ContactSheet
+      <div className="mt-4"><ContactSheet
         cards={shuffledCards}
         scores={scores}
         cardIndex={cardIndex}
-        onJump={(i) => {setCardIndex(i);setContactSheetOpen(false);}} /> :
+        onJump={(i) => {setCardIndex(i);setContactSheetOpen(false);}} /></div> :
 
       (() => {
         const useHorizontal = layoutMode === 'horizontal' || layoutMode === 'auto' && isWide;
@@ -780,11 +799,11 @@ export default function StudySession() {
         };
 
         return useHorizontal ?
-        <div className="bg-card border border-border rounded-lg p-4">
+        <div className="bg-card border border-border rounded-lg p-4 mt-4">
           <StudyCardHorizontal {...sharedProps} handedness={handedness} />
         </div> :
 
-        <div className="bg-card border border-border rounded-lg p-4">
+        <div className="bg-card border border-border rounded-lg p-4 mt-4">
             <div className="flex gap-4 items-start">
               <div className="flex-1 min-w-0">
                 <StudyCard {...sharedProps} hintsAllowed={hintsAllowed} />
