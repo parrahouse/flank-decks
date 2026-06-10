@@ -147,7 +147,7 @@ export default function ProgressGameBand({ cardIndex = 0, total = 1, scores = []
       ref={bandRef}
       className="progress-game-band"
       aria-hidden="true"
-      style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden', imageRendering: 'pixelated', background: SKY }}
+      style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden', imageRendering: 'pixelated'}}
     >
       <style>{KEYFRAMES}</style>
 
