@@ -48,11 +48,15 @@ const KEYFRAMES = `
  *   correctStreak — current consecutive correct streak
  */
 export default function ProgressGameBand({ cardIndex = 0, total = 1, scores = [], correctStreak = 0 }) {
-  const bandRef     = useRef(null);
+  const COMPLETE_DELAY_MS = 300;
+
+  const bandRef  = useRef(null);
   const [bandW, setBandW] = useState(0);
-  const [walking, setWalking]   = useState(false);
-  const prevIndexRef = useRef(cardIndex);
-  const walkTimerRef = useRef(null);
+  const [walking, setWalking] = useState(false);
+
+  const completed = scores.filter(Boolean).length;
+  const [shownCompleted, setShownCompleted] = useState(() => scores.filter(Boolean).length);
+  const prevCompleted = useRef(shownCompleted);
 
   // Measure band width
   useLayoutEffect(() => {
@@ -64,24 +68,19 @@ export default function ProgressGameBand({ cardIndex = 0, total = 1, scores = []
     return () => window.removeEventListener('resize', measure);
   }, []);
 
-  // Trigger walk animation on card change
+  // Trigger walk on card completion (delayed)
   useEffect(() => {
-    if (prevIndexRef.current !== cardIndex) {
-      prevIndexRef.current = cardIndex;
-      setWalking(true);
-      clearTimeout(walkTimerRef.current);
-      walkTimerRef.current = setTimeout(() => setWalking(false), STEP_MS);
-    }
-    return () => clearTimeout(walkTimerRef.current);
-  }, [cardIndex]);
+    if (completed === prevCompleted.current) return;
+    const t1 = setTimeout(() => { setWalking(true); setShownCompleted(completed); }, COMPLETE_DELAY_MS);
+    const t2 = setTimeout(() => setWalking(false), COMPLETE_DELAY_MS + STEP_MS);
+    prevCompleted.current = completed;
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [completed]);
 
   // Horizontal position
-  const progress = total > 1 ? cardIndex / (total - 1) : 0;
+  const progress = total > 0 ? shownCompleted / total : 0;
   const travel   = Math.max(0, bandW - W - PAD * 2);
   const x        = PAD + progress * travel;
-
-  // Progress stripe width
-  const progressPct = total > 0 ? (cardIndex / total) * 100 : 0;
 
   return (
     <div
@@ -103,17 +102,6 @@ export default function ProgressGameBand({ cardIndex = 0, total = 1, scores = []
         backgroundRepeat: 'repeat-x',
         backgroundSize: `${TILE_W * SCALE}px ${GROUND_DISP}px`,
         imageRendering: 'pixelated',
-      }} />
-
-      {/* Progress stripe — sits above the ground */}
-      <div style={{
-        position: 'absolute',
-        bottom: GROUND_DISP,
-        left: 0,
-        height: 3,
-        width: `${progressPct}%`,
-        backgroundColor: '#4ade80',
-        transition: 'width 0.4s ease',
       }} />
 
       {/* Cat wrapper — translates horizontally */}
