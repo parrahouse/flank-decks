@@ -69,7 +69,7 @@ const KEYFRAMES = `
  *   scores        — array of score results so far
  *   correctStreak — current consecutive correct streak
  */
-export default function ProgressGameBand({ cardIndex = 0, total = 1, scores = [], correctStreak = 0, deckTitle = '' }) {
+export default function ProgressGameBand({ cardIndex = 0, total = 1, scores = [], correctStreak = 0 }) {
   const COMPLETE_DELAY_MS = 300;
 
   const bandRef  = useRef(null);
@@ -150,23 +150,6 @@ export default function ProgressGameBand({ cardIndex = 0, total = 1, scores = []
       style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden', imageRendering: 'pixelated', background: SKY }}
     >
       <style>{KEYFRAMES}</style>
-
-      {/* Deck title */}
-      {deckTitle && (
-        <div style={{
-          position: 'absolute',
-          top: 6,
-          right: 12,
-          fontFamily: "'Jersey 15', sans-serif",
-          fontSize: 18,
-          color: '#374151',
-          opacity: 0.7,
-          pointerEvents: 'none',
-          lineHeight: 1,
-        }}>
-          {deckTitle}
-        </div>
-      )}
 
       {/* Ground strip */}
       <div style={{

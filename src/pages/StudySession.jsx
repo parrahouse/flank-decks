@@ -587,7 +587,6 @@ export default function StudySession() {
             total={shuffledCards.length}
             scores={scores}
             correctStreak={correctStreak}
-            deckTitle={deck?.title}
           />
         )}
 
