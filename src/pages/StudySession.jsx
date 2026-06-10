@@ -594,11 +594,14 @@ export default function StudySession() {
         <div className="relative z-10 flex items-center gap-3 px-3 py-2">
           <Link
             to={`/deck/${deckId}`}
-            className="pixel-ui text-muted-foreground hover:text-foreground transition-colors"
-            style={{ fontSize: 9, padding: '6px 5px' }}
+            className="text-muted-foreground hover:text-foreground transition-colors"
             title="Back to deck"
           >
-            QUIT
+            <img
+              src="https://media.base44.com/images/public/69fd6153088222f7245f34d6/06551a213_Interface-Essential-Signin-Login--Streamline-Pixel.png"
+              alt="Quit"
+              style={{ width: 16, height: 16, imageRendering: 'pixelated' }}
+            />
           </Link>
           <div className="flex-1">
             <h1 style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: 26, lineHeight: 1 }}>{deck?.title}</h1>
