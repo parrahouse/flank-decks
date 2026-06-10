@@ -152,7 +152,6 @@
 /* Game band container */
 .progress-game-band {
   width: 100%;
-  background-color: #E9E9EC;
   overflow: hidden;
   position: relative;
 }
