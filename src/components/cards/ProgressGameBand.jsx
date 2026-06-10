@@ -3,7 +3,7 @@ import { useRef, useState, useEffect, useLayoutEffect, useMemo } from 'react';
 // ── CONFIG ──────────────────────────────────────────────────────────────────
 const CELL     = 32;
 const BASELINE = 29;
-const SCALE    = 2;
+const SCALE    = 1;
 const TILE_W   = 64;
 const TILE_H   = 16;
 const BAND_H   = 100;
