@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect, useLayoutEffect, useMemo } from 'react';
+import { useSound } from '@/hooks/useSound';
 
 // ── CONFIG ──────────────────────────────────────────────────────────────────
 const CELL     = 32;
@@ -69,8 +70,10 @@ const KEYFRAMES = `
  *   scores        — array of score results so far
  *   correctStreak — current consecutive correct streak
  */
-export default function ProgressGameBand({ cardIndex = 0, total = 1, scores = [], correctStreak = 0 }) {
+export default function ProgressGameBand({ cardIndex = 0, total = 1, scores = [], correctStreak = 0, soundEnabled = true }) {
   const COMPLETE_DELAY_MS = 300;
+
+  const { playWalking, stopWalking } = useSound(soundEnabled);
 
   const bandRef  = useRef(null);
   const [bandW, setBandW] = useState(0);
@@ -131,8 +134,8 @@ export default function ProgressGameBand({ cardIndex = 0, total = 1, scores = []
   // ── Walk trigger ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (completed === prevCompleted.current) return;
-    const t1 = setTimeout(() => { setWalking(true); setShownCompleted(completed); }, COMPLETE_DELAY_MS);
-    const t2 = setTimeout(() => setWalking(false), COMPLETE_DELAY_MS + STEP_MS);
+    const t1 = setTimeout(() => { setWalking(true); playWalking(); setShownCompleted(completed); }, COMPLETE_DELAY_MS);
+    const t2 = setTimeout(() => { setWalking(false); stopWalking(); }, COMPLETE_DELAY_MS + STEP_MS);
     prevCompleted.current = completed;
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [completed]);

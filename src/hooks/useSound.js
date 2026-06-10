@@ -1,4 +1,6 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
+
+const FOOTSTEP_URL = 'https://media.base44.com/files/public/69fd6153088222f7245f34d6/a36755b43_digital_footstep_grass_1.wav';
 
 function createAudioContext() {
   return new (window.AudioContext || window.webkitAudioContext)();
@@ -19,6 +21,8 @@ function playTone(frequency, type, gainVal, duration) {
 }
 
 export function useSound(enabled = true) {
+  const footstepRef = useRef(null);
+
   const playCorrect = useCallback(() => {
     if (!enabled) return;
     // Cheerful three-note ascending chime
@@ -33,5 +37,22 @@ export function useSound(enabled = true) {
     playTone(220, 'sine', 0.18, 0.25);
   }, [enabled]);
 
-  return { playCorrect, playWrong };
+  const playWalking = useCallback(() => {
+    if (!enabled) return;
+    if (!footstepRef.current) {
+      footstepRef.current = new Audio(FOOTSTEP_URL);
+      footstepRef.current.loop = true;
+      footstepRef.current.volume = 0.5;
+    }
+    footstepRef.current.play().catch(() => {});
+  }, [enabled]);
+
+  const stopWalking = useCallback(() => {
+    if (footstepRef.current) {
+      footstepRef.current.pause();
+      footstepRef.current.currentTime = 0;
+    }
+  }, []);
+
+  return { playCorrect, playWrong, playWalking, stopWalking };
 }
