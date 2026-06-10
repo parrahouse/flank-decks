@@ -9,6 +9,8 @@ const TILE_H   = 16;
 const BAND_H   = 100;
 const PAD      = 12;
 
+const SKY = '#e5e7eb';
+
 const GROUND_SRC = "https://media.base44.com/images/public/69fd6153088222f7245f34d6/5e5dbe4f0_groundtile.png";
 const IDLE_SRC   = "https://media.base44.com/images/public/69fd6153088222f7245f34d6/f2e415cfd_catidle.png";
 const WALK_SRC   = "https://media.base44.com/images/public/69fd6153088222f7245f34d6/6ede5faf0_catwalk.png";
@@ -145,7 +147,7 @@ export default function ProgressGameBand({ cardIndex = 0, total = 1, scores = []
       ref={bandRef}
       className="progress-game-band"
       aria-hidden="true"
-      style={{ position: 'relative', height: BAND_H, overflow: 'hidden', imageRendering: 'pixelated' }}
+      style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden', imageRendering: 'pixelated', background: SKY }}
     >
       <style>{KEYFRAMES}</style>
 

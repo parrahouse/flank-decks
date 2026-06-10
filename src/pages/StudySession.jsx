@@ -74,6 +74,7 @@ export default function StudySession() {
   const [layoutMode, setLayoutMode] = useState(() => localStorage.getItem('flashdeck_layout') || 'auto');
   const [handedness, setHandedness] = useState(() => localStorage.getItem('flashdeck_handedness') || 'left');
   const [isWide, setIsWide] = useState(() => window.innerWidth >= 900);
+  const SCENE_FLOOR_H = 100; // px of sky+ground the scene gets BELOW the header line
   const [savingDefaults, setSavingDefaults] = useState(false);
 
   useEffect(() => {
@@ -577,52 +578,58 @@ export default function StudySession() {
 
   return (
     <div className={cn('mx-auto px-4 py-8 min-h-screen bg-background', useHorizontal ? 'max-w-7xl' : 'max-w-6xl')}>
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <Link
-          to={`/deck/${deckId}`}
-          className="pixel-ui text-muted-foreground hover:text-foreground transition-colors"
-          style={{ fontSize: 9, padding: '6px 10px' }}
-          title="Back to deck"
-        >
-          QUIT
-        </Link>
-        <div className="flex-1">
-          <h1 className="pixel-ui" style={{ fontSize: 11 }}>{deck?.title}</h1>
-          <p className="text-xs text-muted-foreground mt-1">
-            {filterMode === 'unmastered' && <span className="text-amber-600">Unmastered only</span>}
-            {filterMode === 'bookmarked' && <span className="text-amber-600">Bookmarked only</span>}
-          </p>
+      {/* Stage: header controls + game scene share one positioned parent so the scene sits behind the controls */}
+      <div className="relative mb-6">
+        {/* Background scene — only during active study */}
+        {!done && filterChosen && (
+          <ProgressGameBand
+            cardIndex={cardIndex}
+            total={shuffledCards.length}
+            scores={scores}
+            correctStreak={correctStreak}
+          />
+        )}
+
+        {/* Controls layer — paints on top of the scene */}
+        <div className="relative z-10 flex items-center gap-3 px-3 py-2">
+          <Link
+            to={`/deck/${deckId}`}
+            className="pixel-ui text-muted-foreground hover:text-foreground transition-colors"
+            style={{ fontSize: 9, padding: '6px 10px' }}
+            title="Back to deck"
+          >
+            QUIT
+          </Link>
+          <div className="flex-1">
+            <h1 className="pixel-ui" style={{ fontSize: 11 }}>{deck?.title}</h1>
+            <p className="text-xs text-muted-foreground mt-1">
+              {filterMode === 'unmastered' && <span className="text-amber-600">Unmastered only</span>}
+              {filterMode === 'bookmarked' && <span className="text-amber-600">Bookmarked only</span>}
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              const next = !soundEnabled;
+              setSoundEnabled(next);
+              localStorage.setItem('flashdeck_sound', next ? '1' : '0');
+            }}
+            title={soundEnabled ? 'Sound on' : 'Sound off'}
+            className="flex items-center gap-1.5 px-2 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+            {soundEnabled ? <Volume2 className="w-4 h-4 shrink-0" /> : <VolumeX className="w-4 h-4 shrink-0" />}
+            <span className="pixel-ui" style={{ fontSize: 9 }}>{soundEnabled ? 'SOUND ON' : 'MUTED'}</span>
+          </button>
+
+          <button
+            onClick={restart}
+            className="flex items-center gap-1.5 px-2 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+            <RotateCcw className="w-4 h-4 shrink-0" />
+            <span className="pixel-ui" style={{ fontSize: 9 }}>RESTART</span>
+          </button>
         </div>
-        <button
-          onClick={() => {
-            const next = !soundEnabled;
-            setSoundEnabled(next);
-            localStorage.setItem('flashdeck_sound', next ? '1' : '0');
-          }}
-          title={soundEnabled ? 'Sound on' : 'Sound off'}
-          className="flex items-center gap-1.5 px-2 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-          {soundEnabled ? <Volume2 className="w-4 h-4 shrink-0" /> : <VolumeX className="w-4 h-4 shrink-0" />}
-          <span className="pixel-ui" style={{ fontSize: 9 }}>{soundEnabled ? 'SOUND ON' : 'MUTED'}</span>
-        </button>
 
-        <button
-          onClick={restart}
-          className="flex items-center gap-1.5 px-2 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-          <RotateCcw className="w-4 h-4 shrink-0" />
-          <span className="pixel-ui" style={{ fontSize: 9 }}>RESTART</span>
-        </button>
+        {/* Floor space: extends the stage downward so the absolute scene has room for sky + ground below the controls */}
+        {!done && filterChosen && <div aria-hidden style={{ height: SCENE_FLOOR_H }} />}
       </div>
-
-      {/* Progress game HUD band — sits between header and card panel */}
-      {!done && filterChosen && (
-        <ProgressGameBand
-          cardIndex={cardIndex}
-          total={shuffledCards.length}
-          scores={scores}
-          correctStreak={correctStreak}
-        />
-      )}
 
       {done ?
       <div className="flex flex-col items-center py-10 gap-6 mt-6">
