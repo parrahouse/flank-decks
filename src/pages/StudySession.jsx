@@ -62,6 +62,7 @@ export default function StudySession() {
   const [shuffledCards, setShuffledCards] = useState([]);
   const [done, setDone] = useState(false);
   const [scores, setScores] = useState([]);
+  const [firstWrongChoices, setFirstWrongChoices] = useState([]);
   const [correctStreak, setCorrectStreak] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
   const [sessionStartTime, setSessionStartTime] = useState(null);
@@ -162,6 +163,7 @@ export default function StudySession() {
     setCardIndex(0);
     setDone(false);
     setScores([]);
+    setFirstWrongChoices([]);
     setFilterMode(mode);
     setFilterChosen(true);
     setCorrectStreak(0);
@@ -186,7 +188,8 @@ export default function StudySession() {
         correct_answer: card.correct_answer,
         image_url: card.image_url || '',
         points: scores[i]?.points ?? 0,
-        key: scores[i]?.key ?? 'skipped'
+        key: scores[i]?.key ?? 'skipped',
+        first_wrong: firstWrongChoices[i] ?? null
       }));
 
       const total = cardResults.reduce((s, r) => s + r.points, 0);
@@ -290,6 +293,7 @@ export default function StudySession() {
     setDone(false);
     setShuffledCards([]);
     setScores([]);
+    setFirstWrongChoices([]);
     sessionSaved.current = false;
   };
 
@@ -298,6 +302,15 @@ export default function StudySession() {
     setDone(true);
   };
   const handlePrev = () => {if (cardIndex > 0) setCardIndex((i) => i - 1);};
+
+  const handleFirstWrong = (choice, meta) => {
+    setFirstWrongChoices((prev) => {
+      const next = [...prev];
+      next[cardIndex] = choice;
+      return next;
+    });
+    // meta.retry reserved for the progress-game flinch animation; not used yet
+  };
 
   const handleScore = (points, key) => {
     setScores((prev) => {
@@ -759,7 +772,8 @@ export default function StudySession() {
           cardStats: cardStats.find((s) => s.card_id === current.id) || null,
           eliminateAllowed,
           isBookmarked: !!current.bookmarked,
-          onToggleBookmark: handleToggleBookmark
+          onToggleBookmark: handleToggleBookmark,
+          onFirstWrong: handleFirstWrong
         };
 
         return useHorizontal ?

@@ -59,6 +59,7 @@ export default function StudyCardHorizontal({
   isBookmarked = false, onToggleBookmark = null,
   eliminateAllowed = true,
   handedness = 'left', // 'left' = answers on right, 'right' = answers on left
+  onFirstWrong = null,
 }) {
   const { playCorrect, playWrong } = useSound(soundEnabled);
   const [shuffledChoices, setShuffledChoices] = useState([]);
@@ -141,8 +142,13 @@ export default function StudyCardHorizontal({
       if (autoAdvance && !isLast) startCountdown();
     } else {
       playWrong(); setShake(true); setTimeout(() => setShake(false), 400);
-      if (!firstWrong && !eliminated.length) setFirstWrong(choice);
-      else { setFinalAnswer(choice); onScore && onScore(SCORE.wrong, 'wrong'); }
+      if (!firstWrong && !eliminated.length) {
+        setFirstWrong(choice);
+        onFirstWrong && onFirstWrong(choice, { retry: true });
+      } else {
+        if (!firstWrong) onFirstWrong && onFirstWrong(choice, { retry: false });
+        setFinalAnswer(choice); onScore && onScore(SCORE.wrong, 'wrong');
+      }
     }
   };
 

@@ -20,9 +20,31 @@
     },
     "card_results": {
       "type": "array",
-      "description": "Per-card results: [{card_id, correct_answer, points, key}]",
+      "description": "Per-card results: [{card_id, correct_answer, image_url, points, key, first_wrong}]",
       "items": {
-        "type": "object"
+        "type": "object",
+        "properties": {
+          "card_id": {
+            "type": "string"
+          },
+          "correct_answer": {
+            "type": "string"
+          },
+          "image_url": {
+            "type": "string"
+          },
+          "points": {
+            "type": "number"
+          },
+          "key": {
+            "type": "string"
+          },
+          "first_wrong": {
+            "type": "string",
+            "description": "Text of the first wrong answer chosen by the user, or null if they answered correctly on their first pick",
+            "default": null
+          }
+        }
       }
     }
   },

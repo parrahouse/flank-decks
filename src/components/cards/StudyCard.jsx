@@ -78,6 +78,7 @@ export default function StudyCard({
   isBookmarked = false,
   onToggleBookmark = null,
   eliminateAllowed = true,
+  onFirstWrong = null,
 }) {
   const { playCorrect, playWrong } = useSound(soundEnabled);
   const [shuffledChoices, setShuffledChoices] = useState([]);
@@ -193,7 +194,9 @@ export default function StudyCard({
       setTimeout(() => setShake(false), 400);
       if (!firstWrong && !eliminated.length) {
         setFirstWrong(choice);
+        onFirstWrong && onFirstWrong(choice, { retry: true });
       } else {
+        if (!firstWrong) onFirstWrong && onFirstWrong(choice, { retry: false });
         setFinalAnswer(choice);
         onScore && onScore(SCORE.wrong, 'wrong');
       }
