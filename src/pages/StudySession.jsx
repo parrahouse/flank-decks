@@ -601,7 +601,7 @@ export default function StudySession() {
             QUIT
           </Link>
           <div className="flex-1">
-            <h1 style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: 16, lineHeight: 1 }}>{deck?.title}</h1>
+            <h1 style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: 26, lineHeight: 1 }}>{deck?.title}</h1>
             <p className="text-xs text-muted-foreground mt-1">
               {filterMode === 'unmastered' && <span className="text-amber-600">Unmastered only</span>}
               {filterMode === 'bookmarked' && <span className="text-amber-600">Bookmarked only</span>}
