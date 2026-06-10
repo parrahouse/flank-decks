@@ -595,7 +595,7 @@ export default function StudySession() {
           <Link
             to={`/deck/${deckId}`}
             className="text-muted-foreground hover:text-foreground transition-colors"
-            title="Back to deck"
+            title="Quit"
           >
             <img
               src="https://media.base44.com/images/public/69fd6153088222f7245f34d6/06551a213_Interface-Essential-Signin-Login--Streamline-Pixel.png"
