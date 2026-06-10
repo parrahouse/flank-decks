@@ -579,7 +579,7 @@ export default function StudySession() {
   return (
     <div className={cn('mx-auto px-4 py-8 min-h-screen bg-background', useHorizontal ? 'max-w-7xl' : 'max-w-6xl')}>
       {/* Stage: header controls + game scene share one positioned parent so the scene sits behind the controls */}
-      <div className="relative mb-6">
+      <div className="relative mb-2">
         {/* Background scene — only during active study */}
         {!done && filterChosen && (
           <ProgressGameBand
