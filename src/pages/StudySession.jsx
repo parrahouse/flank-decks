@@ -595,7 +595,7 @@ export default function StudySession() {
           <Link
             to={`/deck/${deckId}`}
             className="pixel-ui text-muted-foreground hover:text-foreground transition-colors"
-            style={{ fontSize: 9, padding: '6px 10px' }}
+            style={{ fontSize: 9, padding: '6px 5px' }}
             title="Back to deck"
           >
             QUIT
