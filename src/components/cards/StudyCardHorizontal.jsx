@@ -303,9 +303,6 @@ export default function StudyCardHorizontal({
   // ── Right column: progress bar + answers + actions ─────────────────────────
   const AnswerCol = (
     <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 0', minWidth: 0, alignSelf: 'stretch', gap: 8 }}>
-      {/* Progress bar placeholder */}
-      <div style={{ width: '100%', height: 44, border: '2px solid #000', boxSizing: 'border-box', marginBottom: 0 }} />
-
       {/* Answer pane */}
       <div style={{
         flex: 1, backgroundColor: '#FAFAFA', border: '2px solid #D9D9D9',
