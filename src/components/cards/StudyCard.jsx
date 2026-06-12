@@ -10,7 +10,6 @@ import {
   Pencil,
   SkipForward,
   GraduationCap,
-  X,
   MessageCircleQuestion,
   Check,
 } from 'lucide-react';
@@ -89,7 +88,7 @@ export default function StudyCard({
   const [clueManuallyRevealed, setClueManuallyRevealed] = useState(false);
   const [flipped, setFlipped] = useState(false);
   const [shake, setShake] = useState(false);
-  const [wrongModal, setWrongModal] = useState(null);
+
   const [countdown, setCountdown] = useState(null);
   const [noteEditing, setNoteEditing] = useState(false);
   const [eliminateShake, setEliminateShake] = useState(false);
@@ -136,7 +135,6 @@ export default function StudyCard({
     setClueManuallyRevealed(false);
     setFlipped(false);
     setShake(false);
-    setWrongModal(null);
     setNoteEditing(false);
     setEliminateShake(false);
     setEliminateUsed(false);
@@ -265,7 +263,6 @@ export default function StudyCard({
 
   useEffect(() => {
     const onKey = (e) => {
-      if (wrongModal) return;
       const idx = e.key.toUpperCase().charCodeAt(0) - 65;
       if (idx < 0 || idx >= shuffledChoices.length) return;
       const choice = shuffledChoices[idx];
@@ -274,7 +271,7 @@ export default function StudyCard({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [shuffledChoices, eliminated, finalAnswer, wrongModal, firstWrong, clueManuallyRevealed]);
+  }, [shuffledChoices, eliminated, finalAnswer, firstWrong, clueManuallyRevealed]);
 
   const getChoiceState = (choice) => {
     const isElim = eliminated.includes(choice);
@@ -302,17 +299,6 @@ export default function StudyCard({
     if (correct) return 'correct';
     return 'dim';
   };
-
-  const handleSkip = () => {
-    setWrongModal(null);
-    if (!finalAnswer) {
-      setFinalAnswer(firstWrong);
-      onScore && onScore(SCORE.wrong, 'wrong');
-    }
-    onNext();
-  };
-
-  const handleTryAgain = () => setWrongModal(null);
 
   const timesStudied = cardStats?.sessions_completed ?? null;
   const minSessions = deck?.mastery_min_sessions ?? 3;
@@ -703,30 +689,6 @@ export default function StudyCard({
         </DialogContent>
       </Dialog>
 
-      {/* Wrong answer modal */}
-      <Dialog open={!!wrongModal} onOpenChange={(open) => { if (!open) handleTryAgain(); }}>
-        <DialogContent className="max-w-sm text-center">
-          <div className="flex flex-col items-center gap-4 py-2">
-            <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
-              <X className="w-6 h-6 text-destructive" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-lg">Not quite!</h3>
-              {!finalAnswer
-                ? <p className="text-muted-foreground text-sm mt-1">You have one attempt remaining.</p>
-                : <p className="text-muted-foreground text-sm mt-1">The correct answer was <span className="font-semibold text-foreground">{correctAnswers.join(', ')}</span>.</p>
-              }
-            </div>
-            <div className="flex gap-2 w-full">
-              {!finalAnswer && <Button className="flex-1" onClick={handleTryAgain}>Try Again</Button>}
-              <Button variant={finalAnswer ? 'default' : 'outline'} className="flex-1 gap-1.5" onClick={handleSkip}>
-                <SkipForward className="w-4 h-4" />
-                {isLast ? 'Finish' : 'Skip'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
