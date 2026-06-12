@@ -393,9 +393,6 @@ export default function DeckBuilder() {
                 <span className="absolute top-2 right-2 text-xs bg-success/15 text-success px-1.5 py-0.5 rounded font-medium opacity-0 group-hover:opacity-0">Mastered</span>
               )}
               <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => setPreviewCard(card)} className="bg-white/90 hover:bg-white rounded-lg p-1.5 shadow-sm" title="Preview">
-                  <Play className="w-3.5 h-3.5 text-primary" />
-                </button>
                 <button onClick={() => openEdit(card)} className="bg-white/90 hover:bg-white rounded-lg p-1.5 shadow-sm">
                   <Pencil className="w-3.5 h-3.5 text-foreground" />
                 </button>
@@ -493,13 +490,6 @@ export default function DeckBuilder() {
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-
-    <CardPreviewModal
-      card={previewCard}
-      deck={deck}
-      open={!!previewCard}
-      onClose={() => setPreviewCard(null)}
-    />
 
     <BinPanel
       open={showBin}

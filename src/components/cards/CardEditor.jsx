@@ -16,6 +16,7 @@ import ImagePickerFromDeck from './ImagePickerFromDeck';
 import { cn } from '@/lib/utils';
 import ConceptsTab from './ConceptsTab';
 import CardNoteEditor from './CardNoteEditor';
+import CardThumbnail from './CardThumbnail';
 
 // Parse pipe-delimited correct_answers string into array
 const parseCorrectAnswers = (str) => str ? str.split('|').map(s => s.trim()).filter(Boolean) : [];
@@ -213,7 +214,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
 
       {/* Tabs */}
       <div className="flex border-b border-border -mx-0 mb-1">
-        {['edit', 'concepts', 'note'].map(tab => (
+        {['edit', 'preview', 'concepts', 'note'].map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -224,11 +225,29 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
                 : 'border-transparent text-muted-foreground hover:text-foreground'
             )}
           >
-            {tab === 'edit' ? 'Edit' : tab === 'concepts' ? 'Concepts' : 'Note'}
+            {tab === 'edit' ? 'Edit' : tab === 'preview' ? 'Preview' : tab === 'concepts' ? 'Concepts' : 'Note'}
           </button>
         ))}
       </div>
 
+      {activeTab === 'preview' && (
+        <div className="py-2">
+          <CardThumbnail card={{
+            ...card,
+            image_url: imageUrl,
+            image_focal_point: focalPoint,
+            choices: allChoicesList.map(c => c.trim()).filter(Boolean),
+            correct_answers: joinCorrectAnswers(Array.from(correctSet)),
+            question_type: qType,
+            clue,
+          }} />
+        </div>
+      )}
+      {activeTab === 'preview' && (
+        <div className="sticky bottom-0 -mx-5 bg-card flex justify-end gap-2 px-5 pt-2 pb-4 border-t border-border mt-2">
+          <Button variant="ghost" onClick={onCancel}>Close</Button>
+        </div>
+      )}
       {activeTab === 'concepts' && <ConceptsTab card={card} />}
       {activeTab === 'concepts' && (
         <div className="sticky bottom-0 -mx-5 bg-card flex justify-end gap-2 px-5 pt-2 pb-4 border-t border-border mt-2">
