@@ -365,7 +365,7 @@ export default function DeckBuilder() {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           {displayedCards.map((card, idx) => (
-            <div key={card.id} className="group relative bg-card border border-border rounded-xl overflow-hidden hover:shadow-md transition-all">
+            <div key={card.id} onClick={() => openEdit(card)} className="group relative bg-card border border-border rounded-xl overflow-hidden hover:shadow-md transition-all cursor-pointer">
               <div className="bg-muted h-28 flex items-center justify-center">
                 {card.image_url
                   ? <img src={card.image_url} alt="" className="w-full h-full object-cover" />
@@ -393,10 +393,7 @@ export default function DeckBuilder() {
                 <span className="absolute top-2 right-2 text-xs bg-success/15 text-success px-1.5 py-0.5 rounded font-medium opacity-0 group-hover:opacity-0">Mastered</span>
               )}
               <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => openEdit(card)} className="bg-white/90 hover:bg-white rounded-lg p-1.5 shadow-sm">
-                  <Pencil className="w-3.5 h-3.5 text-foreground" />
-                </button>
-                <button onClick={() => deleteMutation.mutate(card)} className="bg-white/90 hover:bg-white rounded-lg p-1.5 shadow-sm">
+                <button onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(card); }} className="bg-white/90 hover:bg-white rounded-lg p-1.5 shadow-sm">
                   <Trash2 className="w-3.5 h-3.5 text-destructive" />
                 </button>
               </div>
