@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Plus, X, Wand2, Image as ImageIcon, Loader2, Pencil, Search } from 'lucide-react';
+import { Plus, X, Wand2, Image as ImageIcon, Loader2, Pencil, Search, Sparkles } from 'lucide-react';
 import InfoTooltip from './InfoTooltip';
 import ImageEditor from './ImageEditor';
 import ImageSearchPanel from './ImageSearchPanel';
@@ -51,6 +51,10 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
   const [showImageEditor, setShowImageEditor] = useState(false);
   const [showImageSearch, setShowImageSearch] = useState(false);
   const [showImagePicker, setShowImagePicker] = useState(false);
+  const [showAiImageGen, setShowAiImageGen] = useState(false);
+  const [aiImagePrompt, setAiImagePrompt] = useState('');
+  const [aiImageStyle, setAiImageStyle] = useState('pixel_art');
+  const [generatingImage, setGeneratingImage] = useState(false);
 
   const fileRef = useRef();
 
@@ -163,6 +167,40 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
     setAllChoicesList(next.slice(0, 6));
     setGeneratingDecoys(false);
     toast.success('Decoys generated');
+  };
+
+  const STYLE_PRESETS = {
+    pixel_art:    { label: 'Pixel Art',    enhancer: 'pixel art style, retro 8-bit aesthetic, vibrant colors, clean lines', emoji: '🕹️' },
+    oil_painting: { label: 'Oil Painting', enhancer: 'classic oil painting style, visible brushstrokes, rich textures, warm lighting', emoji: '🖼️' },
+    minimalist:   { label: 'Minimalist',   enhancer: 'minimalist vector art, clean flat design, simple shapes, limited color palette', emoji: '◻️' },
+    watercolor:   { label: 'Watercolor',   enhancer: 'soft watercolor painting, ethereal feel, gentle color bleeds, artistic style', emoji: '🎨' },
+  };
+
+  const buildAiPromptPrefill = () => {
+    const correct = Array.from(correctSet)[0] || '';
+    const plainExplanation = explanation ? explanation.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120) : '';
+    const parts = [clue, correct, plainExplanation].filter(Boolean);
+    return parts.length ? parts.join(' — ') : '';
+  };
+
+  const openAiImageGen = () => {
+    if (!aiImagePrompt) setAiImagePrompt(buildAiPromptPrefill());
+    setShowAiImageGen(v => !v);
+    setShowImageSearch(false);
+    setShowImagePicker(false);
+  };
+
+  const handleGenerateAiImage = async () => {
+    if (!aiImagePrompt.trim()) { toast.error('Enter a description first'); return; }
+    setGeneratingImage(true);
+    const styleEnhancer = STYLE_PRESETS[aiImageStyle]?.enhancer || '';
+    const fullPrompt = `${aiImagePrompt.trim()}, ${styleEnhancer}`;
+    const { url } = await base44.integrations.Core.GenerateImage({ prompt: fullPrompt });
+    setImageUrl(url);
+    setFocalPoint({ x: 50, y: 50 });
+    setShowAiImageGen(false);
+    setGeneratingImage(false);
+    toast.success('Image generated!');
   };
 
   const handleSave = async () => {
@@ -363,14 +401,52 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
                 Reset to center
               </button>
             )}
-            <button type="button" onClick={() => { setShowImagePicker(v => !v); setShowImageSearch(false); }} className="flex items-center gap-1 text-xs text-primary hover:underline">
+            <button type="button" onClick={() => { setShowImagePicker(v => !v); setShowImageSearch(false); setShowAiImageGen(false); }} className="flex items-center gap-1 text-xs text-primary hover:underline">
               <ImageIcon className="w-3 h-3" /> Pick from decks
             </button>
-            <button type="button" onClick={() => { setShowImageSearch(v => !v); setShowImagePicker(false); }} className="flex items-center gap-1 text-xs text-primary hover:underline">
+            <button type="button" onClick={() => { setShowImageSearch(v => !v); setShowImagePicker(false); setShowAiImageGen(false); }} className="flex items-center gap-1 text-xs text-primary hover:underline">
               <Search className="w-3 h-3" /> Search Wikimedia
+            </button>
+            <button type="button" onClick={openAiImageGen} className="flex items-center gap-1 text-xs text-primary hover:underline">
+              <Sparkles className="w-3 h-3" /> AI Generate
             </button>
           </div>
         </div>
+        {showAiImageGen && (
+          <div className="border border-border rounded-lg p-3 space-y-3 bg-accent/20">
+            <p className="text-xs font-medium text-foreground">Generate an image with AI</p>
+            <Textarea
+              value={aiImagePrompt}
+              onChange={e => setAiImagePrompt(e.target.value)}
+              placeholder="Describe what the image should show…"
+              rows={2}
+              className="resize-none text-sm"
+            />
+            <div className="space-y-1.5">
+              <p className="text-xs text-muted-foreground">Style</p>
+              <div className="grid grid-cols-2 gap-2">
+                {Object.entries(STYLE_PRESETS).map(([key, { label, emoji }]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setAiImageStyle(key)}
+                    className={cn(
+                      'flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition-colors text-left',
+                      aiImageStyle === key
+                        ? 'border-primary bg-primary/10 text-primary font-medium'
+                        : 'border-border hover:border-primary/50 text-muted-foreground'
+                    )}
+                  >
+                    <span>{emoji}</span> {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <Button type="button" size="sm" onClick={handleGenerateAiImage} disabled={generatingImage} className="w-full gap-1.5">
+              {generatingImage ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating…</> : <><Sparkles className="w-3.5 h-3.5" /> Generate Image</>}
+            </Button>
+          </div>
+        )}
         {showImagePicker && (
           <ImagePickerFromDeck
             onSelect={(url) => { setImageUrl(url); setFocalPoint({ x: 50, y: 50 }); setShowImagePicker(false); }}
