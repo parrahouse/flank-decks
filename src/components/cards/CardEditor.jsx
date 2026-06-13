@@ -196,7 +196,19 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
     setGeneratingImage(true);
     const styleEnhancer = STYLE_PRESETS[aiImageStyle]?.enhancer || '';
     const humorEnhancer = aiImageHumor ? ', with a subtle whimsical or humorous detail that adds charm without distracting from the main subject' : '';
-    const fullPrompt = `${aiImagePrompt.trim()}, ${styleEnhancer}${humorEnhancer}`;
+    // Collect all unique words from all answer choices to exclude from appearing as text in the image
+    const allWords = allChoicesList
+      .map(c => c.trim())
+      .filter(Boolean)
+      .join(' ')
+      .split(/\s+/)
+      .map(w => w.replace(/[^a-zA-Z0-9]/g, ''))
+      .filter(w => w.length > 2);
+    const uniqueWords = [...new Set(allWords.map(w => w.toLowerCase()))];
+    const noTextInstruction = uniqueWords.length
+      ? `. Do not render any text, words, or labels in the image — especially not the words: ${uniqueWords.join(', ')}`
+      : '. Do not render any text or words in the image';
+    const fullPrompt = `${aiImagePrompt.trim()}, ${styleEnhancer}${humorEnhancer}${noTextInstruction}`;
     const { url } = await base44.integrations.Core.GenerateImage({ prompt: fullPrompt });
     setImageUrl(url);
     setFocalPoint({ x: 50, y: 50 });
