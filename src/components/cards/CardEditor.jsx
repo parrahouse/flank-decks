@@ -55,6 +55,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
   const [aiImagePrompt, setAiImagePrompt] = useState('');
   const [aiImageStyle, setAiImageStyle] = useState('pixel_art');
   const [generatingImage, setGeneratingImage] = useState(false);
+  const [aiImageHumor, setAiImageHumor] = useState(false);
 
   const fileRef = useRef();
 
@@ -194,7 +195,8 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
     if (!aiImagePrompt.trim()) { toast.error('Enter a description first'); return; }
     setGeneratingImage(true);
     const styleEnhancer = STYLE_PRESETS[aiImageStyle]?.enhancer || '';
-    const fullPrompt = `${aiImagePrompt.trim()}, ${styleEnhancer}`;
+    const humorEnhancer = aiImageHumor ? ', with a subtle whimsical or humorous detail that adds charm without distracting from the main subject' : '';
+    const fullPrompt = `${aiImagePrompt.trim()}, ${styleEnhancer}${humorEnhancer}`;
     const { url } = await base44.integrations.Core.GenerateImage({ prompt: fullPrompt });
     setImageUrl(url);
     setFocalPoint({ x: 50, y: 50 });
@@ -442,6 +444,18 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
                 ))}
               </div>
             </div>
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <div
+                onClick={() => setAiImageHumor(v => !v)}
+                className={cn(
+                  'relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer',
+                  aiImageHumor ? 'bg-primary' : 'bg-muted'
+                )}
+              >
+                <span className={cn('pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform', aiImageHumor ? 'translate-x-4' : 'translate-x-0')} />
+              </div>
+              <span className="text-xs text-muted-foreground">😄 Add a subtle humorous element</span>
+            </label>
             <Button type="button" size="sm" onClick={handleGenerateAiImage} disabled={generatingImage} className="w-full gap-1.5">
               {generatingImage ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating…</> : <><Sparkles className="w-3.5 h-3.5" /> Generate Image</>}
             </Button>
