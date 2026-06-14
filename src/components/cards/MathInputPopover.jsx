@@ -29,7 +29,9 @@ export default function MathButton({ onInsert }) {
   useEffect(() => {
     if (open && btnRef.current) {
       const r = btnRef.current.getBoundingClientRect();
-      setPos({ top: r.bottom + 6, left: r.left });
+      const popoverWidth = 288; // w-72
+      const left = Math.min(r.left, window.innerWidth - popoverWidth - 12);
+      setPos({ top: r.bottom + 6, left: Math.max(8, left) });
       setTimeout(() => inputRef.current?.focus(), 10);
     }
   }, [open]);
