@@ -12,7 +12,7 @@ function toLatex(input) {
 
 const QUICK = [
   { label: '÷', value: '\\div' },
-  { label: '⟌', value: '\\begin{array}{r} \\text{quotient} \\\\ \\hline \\text{divisor}\\overline{)\\,\\text{dividend}} \\end{array}', title: 'Long division' },
+  { label: '⟌', value: '\\begin{array}{r} \\text{quotient} \\\\ \\text{divisor}\\overline{)\\,\\text{dividend}} \\end{array}', title: 'Long division' },
   { label: 'x²', value: 'x^2' },
   { label: '√x', value: 'sqrt(x)' },
   { label: 'π', value: '\\pi' },
