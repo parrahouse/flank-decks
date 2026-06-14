@@ -7,7 +7,7 @@ import 'katex/dist/katex.min.css';
  * Inline math: $...$ — Block math: $$...$$
  * Plain text with no delimiters is rendered as-is.
  */
-export default function MathRenderer({ text = '', className = '' }) {
+export default function MathRenderer({ text = '', className = '', style }) {
   const containerRef = useRef(null);
 
   useEffect(() => {
@@ -47,5 +47,5 @@ export default function MathRenderer({ text = '', className = '' }) {
     containerRef.current.innerHTML = html;
   }, [text]);
 
-  return <span ref={containerRef} className={className} />;
+  return <span ref={containerRef} className={className} style={style} />;
 }

@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/useSound';
+import MathRenderer from '@/components/ui/MathRenderer';
 
 const COUNTDOWN_SECS = 6;
 
@@ -361,9 +362,7 @@ export default function StudyCard({
           transition: 'background-color 0.2s',
         }}
       >
-        <p style={{ color: '#113656', fontSize: 'clamp(14px, 2.2vw, 22px)', fontWeight: 500, lineHeight: 1.3, margin: 0, visibility: hintVisible ? 'hidden' : 'visible' }}>
-          {card.clue || ''}
-        </p>
+        <MathRenderer text={card.clue || ''} className="block" style={{ color: '#113656', fontSize: 'clamp(14px, 2.2vw, 22px)', fontWeight: 500, lineHeight: 1.3, visibility: hintVisible ? 'hidden' : 'visible' }} />
 
         {/* Hint overlay — absolutely positioned so it doesn't affect pane height */}
         {hintVisible && note && (
@@ -472,12 +471,12 @@ export default function StudyCard({
                     }}>
                       {state === 'correct' ? <Check style={{ width: 16, height: 16 }} /> : LETTERS[idx]}
                     </span>
-                    {choice}
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
+                    <MathRenderer text={choice} />
+                    </button>
+                    );
+                    })}
+                    </div>
+                    ) : (
             /* Stack choices vertically — one per row — so long text never overflows horizontally */
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {shuffledChoices.map((choice, idx) => {
@@ -518,7 +517,7 @@ export default function StudyCard({
                         ? <Check style={{ width: 14, height: 14 }} />
                         : LETTERS[idx]}
                     </span>
-                    <span style={{ flex: 1, lineHeight: 1.3 }}>{choice}</span>
+                    <MathRenderer text={choice} className="flex-1" style={{ lineHeight: 1.3 }} />
                   </button>
                 );
               })}

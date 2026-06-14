@@ -1,4 +1,5 @@
 import { Check, SquareCheck, ToggleLeft } from 'lucide-react';
+import MathRenderer from '@/components/ui/MathRenderer';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
@@ -39,9 +40,7 @@ export default function CardThumbnail({ card }) {
           className="w-full rounded px-3 py-2"
           style={{ backgroundColor: '#DFEDF5' }}
         >
-          <p style={{ color: '#113656', fontSize: 14, fontWeight: 500, lineHeight: 1.4, margin: 0 }}>
-            {card.clue}
-          </p>
+          <MathRenderer text={card.clue} style={{ color: '#113656', fontSize: 14, fontWeight: 500, lineHeight: 1.4 }} />
         </div>
       )}
 
@@ -87,7 +86,7 @@ export default function CardThumbnail({ card }) {
                 }}>
                   {isCorrect ? <Check style={{ width: 12, height: 12 }} /> : LETTERS[idx]}
                 </span>
-                <span>{choice}</span>
+                <MathRenderer text={choice} />
               </div>
             );
           })}
