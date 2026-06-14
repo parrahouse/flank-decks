@@ -79,9 +79,10 @@ function rowToCard(row, deckId, order) {
 }
 
 const SAMPLE_CSV = `correct_answers,question_type,choice_2,choice_3,choice_4,written_question,explanation,image_url,tags
-Elephant,multiple_choice,Lion,Giraffe,Zebra,The largest land animal,Elephants are the largest land mammals on Earth,,animals;geography
-Sahara,multiple_choice,Gobi,Kalahari,Atacama,Hottest desert,The Sahara is the world's largest hot desert,,geography
-True,true_false,False,,,,The Earth orbits the Sun,,science`;
+Elephant,multiple_choice,Lion,Giraffe,Zebra,The largest land animal,Elephants are the largest land mammals on Earth,,animals;vocabulary
+Sahara,multiple_choice,Gobi,Kalahari,Atacama,Hottest desert,The Sahara is the world's largest hot desert,,geography;places
+True,true_false,False,,,,The Earth orbits the Sun,,science
+Mitosis|Meiosis,select_all,Photosynthesis,Osmosis,Respiration,Which of the following are types of cell division?,Mitosis produces two identical daughter cells; meiosis produces four genetically unique cells.,,vocabulary`;
 
 export default function CsvUploadModal({ open, onClose, deckId, existingCount, onImported }) {
   const fileRef = useRef();
