@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Plus, X, Wand2, Image as ImageIcon, Loader2, Pencil, Search, Sparkles } from 'lucide-react';
 import InfoTooltip from './InfoTooltip';
 import ImageEditor from './ImageEditor';
@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import ConceptsTab from './ConceptsTab';
 import CardNoteEditor from './CardNoteEditor';
 import CardThumbnail from './CardThumbnail';
+import MathInputPopover from './MathInputPopover';
 
 // Parse pipe-delimited correct_answers string into array
 const parseCorrectAnswers = (str) => str ? str.split('|').map(s => s.trim()).filter(Boolean) : [];
@@ -58,6 +59,9 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
   const [aiImageHumor, setAiImageHumor] = useState(false);
 
   const fileRef = useRef();
+  const quillRef = useRef(null);
+  const [showMathPopoverQuill, setShowMathPopoverQuill] = useState(false);
+  const [showMathPopoverClue, setShowMathPopoverClue] = useState(false);
 
   // Bonus question state
 
@@ -492,9 +496,18 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label className="flex items-center gap-1.5">Written Question <InfoTooltip text="Optional — one sentence, revealed before answering" /></Label>
-          <span className={`text-xs tabular-nums ${clue.length >= 180 ? 'text-destructive' : 'text-muted-foreground'}`}>
-            {clue.length}/200
-          </span>
+          <div className="flex items-center gap-2">
+            <span className={`text-xs tabular-nums ${clue.length >= 180 ? 'text-destructive' : 'text-muted-foreground'}`}>{clue.length}/200</span>
+            <div className="relative">
+              <button type="button" onClick={() => setShowMathPopoverClue(v => !v)} className="text-xs text-primary hover:underline flex items-center gap-1" title="Insert math">∑ Math</button>
+              {showMathPopoverClue && (
+                <MathInputPopover
+                  onInsert={(latex) => setClue(prev => prev + latex)}
+                  onClose={() => setShowMathPopoverClue(false)}
+                />
+              )}
+            </div>
+          </div>
         </div>
         <Textarea
           value={clue}
@@ -582,9 +595,31 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
 
       {/* Long Explanation */}
       <div className="space-y-2">
-        <Label className="flex items-center gap-1.5">Explanation <InfoTooltip text="Optional — shown on the back of the card after answering" /></Label>
+        <div className="flex items-center justify-between">
+          <Label className="flex items-center gap-1.5">Explanation <InfoTooltip text="Optional — shown on the back of the card after answering" /></Label>
+          <div className="relative">
+            <button type="button" onClick={() => setShowMathPopoverQuill(v => !v)} className="text-xs text-primary hover:underline flex items-center gap-1" title="Insert math">∑ Math</button>
+            {showMathPopoverQuill && (
+              <MathInputPopover
+                onInsert={(latex) => {
+                  const quill = quillRef.current?.getEditor();
+                  if (quill) {
+                    const range = quill.getSelection(true);
+                    quill.insertText(range.index, latex, 'user');
+                    quill.setSelection(range.index + latex.length);
+                  } else {
+                    setExplanation(prev => prev + latex);
+                  }
+                  setShowMathPopoverQuill(false);
+                }}
+                onClose={() => setShowMathPopoverQuill(false)}
+              />
+            )}
+          </div>
+        </div>
         <div className="quill-wrapper border border-input overflow-hidden" style={{ borderRadius: 0 }}>
           <ReactQuill
+            ref={quillRef}
             theme="snow"
             value={explanation}
             onChange={setExplanation}
