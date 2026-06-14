@@ -18,6 +18,7 @@ import ConceptsTab from './ConceptsTab';
 import CardNoteEditor from './CardNoteEditor';
 import CardThumbnail from './CardThumbnail';
 import MathButton from './MathInputPopover';
+import MathPreviewField from './MathPreviewField';
 
 // Parse pipe-delimited correct_answers string into array
 const parseCorrectAnswers = (str) => str ? str.split('|').map(s => s.trim()).filter(Boolean) : [];
@@ -499,12 +500,11 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
             <MathButton onInsert={(latex) => setClue(prev => prev + latex)} />
           </div>
         </div>
-        <Textarea
+        <MathPreviewField
           value={clue}
-          onChange={e => setClue(e.target.value)}
+          onChange={setClue}
           placeholder={'e.g. "This animal is the largest land mammal."'}
           maxLength={200}
-          className="rounded-none resize-none min-h-[2.5rem]"
           rows={2}
         />
       </div>
@@ -552,12 +552,13 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
                 >
                   {isCorrect && '✓'}
                 </button>
-                <Input
+                <MathPreviewField
                   value={c}
-                  onChange={e => updateChoice(i, e.target.value)}
+                  onChange={val => updateChoice(i, val)}
                   placeholder={`Choice ${i + 1}`}
                   readOnly={isTrueFalse}
-                  className={cn(isTrueFalse && 'bg-muted cursor-default', isCorrect && 'border-success/60 bg-success/5')}
+                  singleLine
+                  className={cn(isCorrect && 'border-success/60 bg-success/5')}
                 />
                 {!isTrueFalse && allChoicesList.length > 2 && (
                   <Button type="button" variant="ghost" size="icon" onClick={() => removeChoice(i)} className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive">
