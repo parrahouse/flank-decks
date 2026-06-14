@@ -78,11 +78,11 @@ function rowToCard(row, deckId, order) {
   };
 }
 
-const SAMPLE_CSV = `correct_answers,question_type,choice_2,choice_3,choice_4,written_question,explanation,image_url,tags
-Elephant,multiple_choice,Lion,Giraffe,Zebra,The largest land animal,Elephants are the largest land mammals on Earth,,animals;vocabulary
-Sahara,multiple_choice,Gobi,Kalahari,Atacama,Hottest desert,The Sahara is the world's largest hot desert,,geography;places
-True,true_false,False,,,,The Earth orbits the Sun,,science
-Mitosis|Meiosis,select_all,Photosynthesis,Osmosis,Respiration,Which of the following are types of cell division?,Mitosis produces two identical daughter cells; meiosis produces four genetically unique cells.,,vocabulary`;
+const SAMPLE_CSV = `correct_answers,question_type,choice_2,choice_3,choice_4,choice_5,choice_6,written_question,explanation,image_url,tags
+Elephant,multiple_choice,Lion,Giraffe,Zebra,Hippopotamus,Rhinoceros,Which is the largest land animal?,Elephants are the largest land mammals on Earth reaching up to 13 feet tall.,,animals;vocabulary
+Sahara,multiple_choice,Gobi,Kalahari,Atacama,Arabian,Mojave,What is the world's largest hot desert?,The Sahara covers about 9.2 million square kilometers across North Africa.,,geography;places
+True,true_false,False,,,,,,Does the Earth orbit the Sun?,,science
+Mitosis|Meiosis,select_all,Photosynthesis,Osmosis,Respiration,Fermentation,,Which of the following are types of cell division?,Mitosis produces two identical daughter cells; meiosis produces four genetically unique cells.,,vocabulary`;
 
 export default function CsvUploadModal({ open, onClose, deckId, existingCount, onImported }) {
   const fileRef = useRef();
@@ -150,12 +150,33 @@ export default function CsvUploadModal({ open, onClose, deckId, existingCount, o
         {!preview ? (
           <div className="space-y-4">
             {/* Format guide */}
-            <div className="bg-muted/60 rounded-xl px-4 py-3 text-xs text-muted-foreground space-y-1">
-              <p className="font-medium text-foreground">Required columns:</p>
-              <p><code className="bg-background px-1 rounded">correct_answers</code>, <code className="bg-background px-1 rounded">choice_2</code></p>
-              <p className="font-medium text-foreground mt-1">Optional columns:</p>
-              <p><code className="bg-background px-1 rounded">question_type</code> <span className="text-muted-foreground">(multiple_choice / true_false / select_all)</span>, <code className="bg-background px-1 rounded">choice_3</code> … <code className="bg-background px-1 rounded">choice_6</code>, <code className="bg-background px-1 rounded">written_question</code>, <code className="bg-background px-1 rounded">explanation</code>, <code className="bg-background px-1 rounded">image_url</code>, <code className="bg-background px-1 rounded">tags</code> <span className="text-muted-foreground">(semicolon-separated)</span></p>
-              <p className="mt-1 text-muted-foreground">For <strong>select_all</strong> questions, pipe-separate multiple correct answers: <code className="bg-background px-1 rounded">Answer1|Answer2</code></p>
+            <div className="bg-muted/60 rounded-xl px-4 py-3 text-xs text-muted-foreground space-y-2.5">
+              <p className="font-medium text-foreground text-sm">How to fill the CSV</p>
+
+              <div className="space-y-1">
+                <p className="font-medium text-foreground">1. correct_answers <span className="text-destructive">*required</span></p>
+                <p>The correct answer text. For <strong>select_all</strong> questions, pipe-separate multiple answers: <code className="bg-background px-1 rounded">Answer1|Answer2</code></p>
+              </div>
+
+              <div className="space-y-1">
+                <p className="font-medium text-foreground">2. question_type</p>
+                <p>One of: <code className="bg-background px-1 rounded">multiple_choice</code> (default), <code className="bg-background px-1 rounded">true_false</code>, or <code className="bg-background px-1 rounded">select_all</code></p>
+              </div>
+
+              <div className="space-y-1">
+                <p className="font-medium text-foreground">3. choice_2 <span className="text-destructive">*required</span> … choice_6</p>
+                <p>The wrong answer choices (decoys). <code className="bg-background px-1 rounded">choice_2</code> is required; <code className="bg-background px-1 rounded">choice_3</code> through <code className="bg-background px-1 rounded">choice_6</code> are optional. Up to <strong>6 total choices</strong> per card (correct answer counts as choice_1).</p>
+              </div>
+
+              <div className="space-y-1">
+                <p className="font-medium text-foreground">4. Optional columns</p>
+                <p>
+                  <code className="bg-background px-1 rounded">written_question</code> — a question prompt shown before answering ·{' '}
+                  <code className="bg-background px-1 rounded">explanation</code> — shown on the card back ·{' '}
+                  <code className="bg-background px-1 rounded">image_url</code> — direct URL to an image ·{' '}
+                  <code className="bg-background px-1 rounded">tags</code> — semicolon-separated, e.g. <code className="bg-background px-1 rounded">vocabulary;places</code>
+                </p>
+              </div>
             </div>
 
             {/* Drop zone */}
