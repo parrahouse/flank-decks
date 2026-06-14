@@ -203,7 +203,7 @@ export default function DeckBuilder() {
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)]">
     {/* Main content */}
-    <div className={`flex-1 px-4 py-8 transition-all duration-300 ${showEditor ? 'md:mr-[525px]' : ''}`}>
+    <div className={`flex-1 px-4 py-8 transition-all duration-300 ${showEditor ? 'md:mr-[640px]' : ''}`}>
     <div className="max-w-5xl mx-auto">
 
       {/* Header */}
@@ -340,7 +340,7 @@ export default function DeckBuilder() {
 
       {/* Cards grid */}
       {isLoading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+        <div className={`grid gap-4 ${showEditor ? 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4'}`}>
           {[1,2,3,4].map(i => <div key={i} className="h-40 rounded-xl bg-muted animate-pulse" />)}
         </div>
       ) : activeCards.length === 0 ? (
@@ -363,7 +363,7 @@ export default function DeckBuilder() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+        <div className={`grid gap-4 ${showEditor ? 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4'}`}>
           {displayedCards.map((card, idx) => (
             <div key={card.id} onClick={() => openEdit(card)} className="group relative bg-card border border-border rounded-xl overflow-hidden hover:shadow-md transition-all cursor-pointer">
               <div className="bg-muted h-28 flex items-center justify-center">
@@ -445,7 +445,7 @@ export default function DeckBuilder() {
 
         {/* Desktop: fixed side panel */}
         {!isMobile && (
-          <div className="flex fixed top-14 right-0 bottom-0 w-[525px] bg-card border-l border-border flex-col z-30 shadow-xl">
+          <div className="flex fixed top-14 right-0 bottom-0 w-[640px] bg-card border-l border-border flex-col z-30 shadow-xl">
             <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
               <h2 className="font-semibold text-base">Card Details</h2>
               <button onClick={requestCloseEditor} className="text-muted-foreground hover:text-foreground transition-colors">
