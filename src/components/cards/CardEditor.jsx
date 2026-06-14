@@ -499,7 +499,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
           <div className="flex items-center gap-2">
             <span className={`text-xs tabular-nums ${clue.length >= 180 ? 'text-destructive' : 'text-muted-foreground'}`}>{clue.length}/200</span>
             <div className="relative">
-              <button type="button" onClick={() => setShowMathPopoverClue(v => !v)} className="text-xs text-primary hover:underline flex items-center gap-1" title="Insert math">∑ Math</button>
+              <button type="button" onClick={() => setShowMathPopoverClue(v => !v)} className="text-xs text-primary border border-primary/30 rounded px-1.5 py-0.5 hover:bg-primary/10 transition-colors">∑ Math</button>
               {showMathPopoverClue && (
                 <MathInputPopover
                   onInsert={(latex) => setClue(prev => prev + latex)}
@@ -598,7 +598,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
         <div className="flex items-center justify-between">
           <Label className="flex items-center gap-1.5">Explanation <InfoTooltip text="Optional — shown on the back of the card after answering" /></Label>
           <div className="relative">
-            <button type="button" onClick={() => setShowMathPopoverQuill(v => !v)} className="text-xs text-primary hover:underline flex items-center gap-1" title="Insert math">∑ Math</button>
+            <button type="button" onClick={() => setShowMathPopoverQuill(v => !v)} className="text-xs text-primary border border-primary/30 rounded px-1.5 py-0.5 hover:bg-primary/10 transition-colors">∑ Math</button>
             {showMathPopoverQuill && (
               <MathInputPopover
                 onInsert={(latex) => {
