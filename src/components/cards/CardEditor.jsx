@@ -42,6 +42,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
   const [correctSet, setCorrectSet] = useState(() => new Set(initCorrectAnswers.map(s => s.trim())));
 
   const [focalPoint, setFocalPoint] = useState(card?.image_focal_point || (card?.image_url ? { x: 50, y: 50 } : null));
+  const [imageFit, setImageFit] = useState(card?.image_fit || 'cover');
   const [draggingFocal, setDraggingFocal] = useState(false);
   const [clue, setClue] = useState(card?.clue || '');
   const [explanation, setExplanation] = useState(card?.explanation || '');
@@ -72,6 +73,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
     const origCorrect = new Set(parseCorrectAnswers(card?.correct_answers || card?.correct_answer || ''));
     if (imageUrl !== (card?.image_url || '')) return true;
     if (JSON.stringify(focalPoint) !== JSON.stringify(card?.image_focal_point || (card?.image_url ? { x: 50, y: 50 } : null))) return true;
+    if (imageFit !== (card?.image_fit || 'cover')) return true;
     if (qType !== initQType) return true;
     if (clue !== (card?.clue || '')) return true;
     if (explanation !== (card?.explanation || '')) return true;
@@ -99,6 +101,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
     setImageUrl(file_url);
     setFocalPoint({ x: 50, y: 50 });
+    setImageFit('cover');
     setUploading(false);
   };
 
@@ -246,6 +249,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
     onSave({
       image_url: finalImageUrl,
       image_focal_point: focalPoint,
+      image_fit: imageFit,
       correct_answers,
       correct_answer: correctList[0], // legacy compat
       choices: filledChoices,
@@ -367,7 +371,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
           {imageUrl ? (
             <div
               className="relative w-full h-48 overflow-hidden select-none"
-              style={{ cursor: draggingFocal ? 'grabbing' : 'grab' }}
+              style={{ cursor: imageFit === 'cover' ? (draggingFocal ? 'grabbing' : 'grab') : 'default', backgroundColor: '#f3f4f6' }}
               onMouseDown={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -400,12 +404,17 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
               <img
                 src={imageUrl}
                 alt="card"
-                className="w-full h-48 object-cover pointer-events-none"
-                style={{ objectPosition: focalPoint ? `${focalPoint.x}% ${focalPoint.y}%` : 'center' }}
+                className="w-full h-48 pointer-events-none"
+                style={{
+                  objectFit: imageFit,
+                  objectPosition: imageFit === 'cover' && focalPoint ? `${focalPoint.x}% ${focalPoint.y}%` : 'center',
+                }}
               />
-              <div className="absolute inset-0 bg-black/10 flex items-end justify-start pointer-events-none">
-                <span className="text-white text-xs px-2 py-1 bg-black/40 rounded-tr">Drag to reposition</span>
-              </div>
+              {imageFit === 'cover' && (
+                <div className="absolute inset-0 bg-black/10 flex items-end justify-start pointer-events-none">
+                  <span className="text-white text-xs px-2 py-1 bg-black/40 rounded-tr">Drag to reposition</span>
+                </div>
+              )}
               {focalPoint && (
                 <div
                   className="absolute w-5 h-5 rounded-full border-2 border-white bg-primary/80 -translate-x-1/2 -translate-y-1/2 pointer-events-none shadow"
@@ -434,7 +443,17 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
         <div className="flex items-center justify-between">
           <InfoTooltip text="Accepted: JPG, PNG, GIF, WebP · Min 10 KB · Max 10 MB" />
           <div className="flex items-center gap-3">
-            {imageUrl && focalPoint && (
+            {imageUrl && (
+              <button
+                type="button"
+                onClick={() => setImageFit(v => v === 'cover' ? 'contain' : 'cover')}
+                className="flex items-center gap-1 text-xs text-primary hover:underline"
+                title={imageFit === 'cover' ? 'Switch to fit (no crop)' : 'Switch to fill (cropped)'}
+              >
+                {imageFit === 'cover' ? '⬜ Fit to frame' : '🔲 Fill frame'}
+              </button>
+            )}
+            {imageUrl && imageFit === 'cover' && focalPoint && (
               <button type="button" onClick={() => setFocalPoint({ x: 50, y: 50 })} className="flex items-center gap-1 text-xs text-muted-foreground hover:underline">
                 Reset to center
               </button>

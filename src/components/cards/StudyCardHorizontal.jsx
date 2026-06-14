@@ -262,7 +262,7 @@ export default function StudyCardHorizontal({
       {/* Image */}
       <div style={{ width: '100%', aspectRatio: '4/3', overflow: 'hidden', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {card.image_url
-          ? <img src={card.image_url} alt="card" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: card.image_focal_point ? `${card.image_focal_point.x}% ${card.image_focal_point.y}%` : 'center' }} />
+          ? <img src={card.image_url} alt="card" style={{ width: '100%', height: '100%', objectFit: card.image_fit || 'cover', objectPosition: (card.image_fit !== 'contain' && card.image_focal_point) ? `${card.image_focal_point.x}% ${card.image_focal_point.y}%` : 'center' }} />
           : <span style={{ color: '#9ca3af', fontSize: 13 }}>No image</span>
         }
       </div>

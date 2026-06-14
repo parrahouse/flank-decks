@@ -26,6 +26,15 @@
         }
       }
     },
+    "image_fit": {
+      "type": "string",
+      "enum": [
+        "cover",
+        "contain"
+      ],
+      "default": "cover",
+      "description": "How the image fills its frame: 'cover' crops to fill, 'contain' fits without cropping (letterboxed)"
+    },
     "question_type": {
       "type": "string",
       "enum": [
