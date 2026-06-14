@@ -71,14 +71,14 @@ function rowToCard(row, deckId, order) {
     correct_answers: correctAnswers,
     question_type: questionType,
     choices: [firstCorrect, ...decoys],
-    clue: row.clue?.trim() || '',
+    clue: (row.written_question ?? row.clue)?.trim() || '',
     explanation: row.explanation?.trim() || '',
     image_url: row.image_url?.trim() || '',
     tags: row.tags ? row.tags.split(';').map(t => t.trim().toLowerCase()).filter(Boolean) : [],
   };
 }
 
-const SAMPLE_CSV = `correct_answers,question_type,choice_2,choice_3,choice_4,clue,explanation,image_url,tags
+const SAMPLE_CSV = `correct_answers,question_type,choice_2,choice_3,choice_4,written_question,explanation,image_url,tags
 Elephant,multiple_choice,Lion,Giraffe,Zebra,The largest land animal,Elephants are the largest land mammals on Earth,,animals;geography
 Sahara,multiple_choice,Gobi,Kalahari,Atacama,Hottest desert,The Sahara is the world's largest hot desert,,geography
 True,true_false,False,,,,The Earth orbits the Sun,,science`;
@@ -153,7 +153,7 @@ export default function CsvUploadModal({ open, onClose, deckId, existingCount, o
               <p className="font-medium text-foreground">Required columns:</p>
               <p><code className="bg-background px-1 rounded">correct_answers</code>, <code className="bg-background px-1 rounded">choice_2</code></p>
               <p className="font-medium text-foreground mt-1">Optional columns:</p>
-              <p><code className="bg-background px-1 rounded">question_type</code> <span className="text-muted-foreground">(multiple_choice / true_false / select_all)</span>, <code className="bg-background px-1 rounded">choice_3</code> … <code className="bg-background px-1 rounded">choice_6</code>, <code className="bg-background px-1 rounded">clue</code>, <code className="bg-background px-1 rounded">explanation</code>, <code className="bg-background px-1 rounded">image_url</code>, <code className="bg-background px-1 rounded">tags</code> <span className="text-muted-foreground">(semicolon-separated)</span></p>
+              <p><code className="bg-background px-1 rounded">question_type</code> <span className="text-muted-foreground">(multiple_choice / true_false / select_all)</span>, <code className="bg-background px-1 rounded">choice_3</code> … <code className="bg-background px-1 rounded">choice_6</code>, <code className="bg-background px-1 rounded">written_question</code>, <code className="bg-background px-1 rounded">explanation</code>, <code className="bg-background px-1 rounded">image_url</code>, <code className="bg-background px-1 rounded">tags</code> <span className="text-muted-foreground">(semicolon-separated)</span></p>
               <p className="mt-1 text-muted-foreground">For <strong>select_all</strong> questions, pipe-separate multiple correct answers: <code className="bg-background px-1 rounded">Answer1|Answer2</code></p>
             </div>
 
