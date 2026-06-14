@@ -15,24 +15,38 @@ export default function MathRenderer({ text = '', className = '', style }) {
 
     // Split text into segments: delimited math ($$...$$, $...$), bare fractions (a/b), and plain text
     const segments = [];
-    const pattern = /(\$\$[\s\S]+?\$\$|\$[^$\n]+?\$|(?<![/\w])(-?\d+(?:\.\d+)?)\s*\/\s*(-?\d+(?:\.\d+)?)(?![/\w]))/g;
+    // Two separate passes: first handle explicit $ delimiters, then bare fractions within plain text segments
+    const delimPattern = /(\$\$[\s\S]+?\$\$|\$[^$\n]+?\$)/g;
     let last = 0;
     let match;
+    const rawSegments = [];
 
-    while ((match = pattern.exec(text)) !== null) {
-      if (match.index > last) segments.push({ type: 'text', value: text.slice(last, match.index) });
+    while ((match = delimPattern.exec(text)) !== null) {
+      if (match.index > last) rawSegments.push({ type: 'text', value: text.slice(last, match.index) });
       const raw = match[0];
       if (raw.startsWith('$$')) {
-        segments.push({ type: 'math', value: raw.slice(2, -2), block: true });
-      } else if (raw.startsWith('$')) {
-        segments.push({ type: 'math', value: raw.slice(1, -1), block: false });
+        rawSegments.push({ type: 'math', value: raw.slice(2, -2), block: true });
       } else {
-        // bare fraction like 3/4
-        segments.push({ type: 'math', value: `\\frac{${match[3]}}{${match[4]}}`, block: false });
+        rawSegments.push({ type: 'math', value: raw.slice(1, -1), block: false });
       }
       last = match.index + raw.length;
     }
-    if (last < text.length) segments.push({ type: 'text', value: text.slice(last) });
+    if (last < text.length) rawSegments.push({ type: 'text', value: text.slice(last) });
+
+    // Now expand bare fractions within text segments
+    const fracPattern = /(?<![/\w])(-?\d+(?:\.\d+)?)\s*\/\s*(-?\d+(?:\.\d+)?)(?![/\w])/g;
+    for (const seg of rawSegments) {
+      if (seg.type !== 'text') { segments.push(seg); continue; }
+      let flast = 0;
+      let fm;
+      fracPattern.lastIndex = 0;
+      while ((fm = fracPattern.exec(seg.value)) !== null) {
+        if (fm.index > flast) segments.push({ type: 'text', value: seg.value.slice(flast, fm.index) });
+        segments.push({ type: 'math', value: `\\frac{${fm[1]}}{${fm[2]}}`, block: false });
+        flast = fm.index + fm[0].length;
+      }
+      if (flast < seg.value.length) segments.push({ type: 'text', value: seg.value.slice(flast) });
+    }
 
     // Build HTML
     const html = segments.map(seg => {
