@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Plus, X, Wand2, Image as ImageIcon, Loader2, Pencil, Search, Sparkles } from 'lucide-react';
+import { Plus, X, Wand2, Image as ImageIcon, Loader2, Pencil, Search, Sparkles, Tags } from 'lucide-react';
 import InfoTooltip from './InfoTooltip';
 import ImageEditor from './ImageEditor';
 import ImageSearchPanel from './ImageSearchPanel';
@@ -49,6 +49,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [generatingDecoys, setGeneratingDecoys] = useState(false);
+  const [suggestingTags, setSuggestingTags] = useState(false);
   const [showImageEditor, setShowImageEditor] = useState(false);
   const [showImageSearch, setShowImageSearch] = useState(false);
   const [showImagePicker, setShowImagePicker] = useState(false);
@@ -259,6 +260,27 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
   useEffect(() => {
     if (saveRef) saveRef.current = handleSave;
   });
+
+  const QUESTION_TYPE_TAGS = ['vocabulary', 'dates', 'people', 'places', 'concepts'];
+
+  const suggestTags = async () => {
+    const correctList = Array.from(correctSet);
+    const cardText = [clue, ...correctList, ...allChoicesList].filter(Boolean).join(' | ');
+    if (!cardText.trim()) { toast.error('Add some card content first'); return; }
+    setSuggestingTags(true);
+    const result = await base44.integrations.Core.InvokeLLM({
+      prompt: `Analyze this flashcard content and classify it into one or more of these categories: vocabulary, dates, people, places, concepts.\n\nCard content: ${cardText}\n\nReturn only the matching categories from the list above. Do not invent new categories.`,
+      response_json_schema: { type: 'object', properties: { tags: { type: 'array', items: { type: 'string', enum: ['vocabulary', 'dates', 'people', 'places', 'concepts'] } } } }
+    });
+    const suggested = (result?.tags || []).filter(t => QUESTION_TYPE_TAGS.includes(t));
+    if (suggested.length) {
+      setTags(prev => [...new Set([...prev, ...suggested])]);
+      toast.success(`Added: ${suggested.join(', ')}`);
+    } else {
+      toast.info('No category tags could be determined');
+    }
+    setSuggestingTags(false);
+  };
 
   const isTrueFalse = qType === 'true_false';
   const isSelectAll = qType === 'select_all';
@@ -579,7 +601,18 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
 
       {/* Tags */}
       <div className="space-y-2">
-        <Label className="flex items-center gap-1.5">Tags <InfoTooltip text="Optional — add tags to filter and group cards" /></Label>
+        <div className="flex items-center justify-between">
+          <Label className="flex items-center gap-1.5">Tags <InfoTooltip text="Optional — add tags to filter and group cards" /></Label>
+          <button
+            type="button"
+            onClick={suggestTags}
+            disabled={suggestingTags}
+            className="flex items-center gap-1 text-xs text-primary hover:underline disabled:opacity-50"
+          >
+            {suggestingTags ? <Loader2 className="w-3 h-3 animate-spin" /> : <Tags className="w-3 h-3" />}
+            Suggest tags
+          </button>
+        </div>
         <TagInput tags={tags} onChange={setTags} suggestions={allTags} />
       </div>
 
