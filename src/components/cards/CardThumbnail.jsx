@@ -24,9 +24,10 @@ export default function CardThumbnail({ card }) {
           <img
             src={card.image_url}
             alt="card"
-            className="w-full h-full object-cover"
+            className="w-full h-full"
             style={{
-              objectPosition: card.image_focal_point
+              objectFit: card.image_fit || 'cover',
+              objectPosition: (card.image_fit !== 'contain' && card.image_focal_point)
                 ? `${card.image_focal_point.x}% ${card.image_focal_point.y}%`
                 : 'center'
             }}
