@@ -11,9 +11,8 @@ function toLatex(input) {
 }
 
 const QUICK = [
-  { label: '½', value: '1/2' },
-  { label: '¾', value: '3/4' },
-  { label: '⅓', value: '1/3' },
+  { label: '÷', value: '\\div' },
+  { label: '⟌', value: '\\overline{)\\,}', title: 'Long division' },
   { label: 'x²', value: 'x^2' },
   { label: '√x', value: 'sqrt(x)' },
   { label: 'π', value: '\\pi' },
@@ -76,7 +75,7 @@ export default function MathButton({ onInsert }) {
           <p className="text-xs font-semibold text-foreground">Insert Math</p>
           <div className="flex flex-wrap gap-1.5">
             {QUICK.map(q => (
-              <button key={q.label} type="button" onClick={() => insert(toLatex(q.value))}
+              <button key={q.label} type="button" onClick={() => insert(q.value)} title={q.title}
                 className="px-2 py-1 text-sm border border-border rounded hover:bg-accent transition-colors">
                 {q.label}
               </button>
@@ -94,7 +93,7 @@ export default function MathButton({ onInsert }) {
             <Button type="button" size="sm" onClick={handleInsert} className="h-8 px-3">Insert</Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            <code className="bg-muted px-1 rounded">3/4</code> → fraction &nbsp;
+            <code className="bg-muted px-1 rounded">3/4</code> → auto fraction &nbsp;
             <code className="bg-muted px-1 rounded">x^2</code> → exponent &nbsp;
             <code className="bg-muted px-1 rounded">sqrt(x)</code> → root
           </p>
