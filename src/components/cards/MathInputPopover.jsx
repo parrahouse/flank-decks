@@ -1,26 +1,67 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 
-function toLatex(input) {
-  let s = input.trim();
-  s = s.replace(/^(-?\d+(?:\.\d+)?)\s*\/\s*(-?\d+(?:\.\d+)?)$/, '\\frac{$1}{$2}');
-  s = s.replace(/sqrt\(([^)]+)\)/g, '\\sqrt{$1}');
-  return s;
-}
-
-const QUICK = [
-  { label: '÷', value: '\\div' },
-  { label: '⟌', value: '\\begin{array}{r} \\text{quotient} \\\\ \\text{divisor}\\overline{)\\,\\text{dividend}} \\end{array}', title: 'Long division' },
-  { label: 'x²', value: 'x^2' },
-  { label: '√x', value: 'sqrt(x)' },
-  { label: 'π', value: '\\pi' },
+// Groups of symbol buttons — each appends its `value` to the equation input
+const SYMBOL_GROUPS = [
+  {
+    label: 'Arithmetic',
+    symbols: [
+      { label: '+',   value: '+' },
+      { label: '−',   value: '-' },
+      { label: '×',   value: '\\times' },
+      { label: '÷',   value: '\\div' },
+      { label: '=',   value: '=' },
+      { label: '≠',   value: '\\neq' },
+      { label: '±',   value: '\\pm' },
+    ],
+  },
+  {
+    label: 'Fractions & Roots',
+    symbols: [
+      { label: 'a/b',  value: '\\frac{a}{b}' },
+      { label: '√',    value: '\\sqrt{x}' },
+      { label: '∛',    value: '\\sqrt[3]{x}' },
+    ],
+  },
+  {
+    label: 'Powers & Indices',
+    symbols: [
+      { label: 'x²',  value: 'x^{2}' },
+      { label: 'xⁿ',  value: 'x^{n}' },
+      { label: 'xₙ',  value: 'x_{n}' },
+    ],
+  },
+  {
+    label: 'Comparison',
+    symbols: [
+      { label: '<',   value: '<' },
+      { label: '>',   value: '>' },
+      { label: '≤',   value: '\\leq' },
+      { label: '≥',   value: '\\geq' },
+    ],
+  },
+  {
+    label: 'Constants',
+    symbols: [
+      { label: 'π',   value: '\\pi' },
+      { label: '∞',   value: '\\infty' },
+      { label: 'θ',   value: '\\theta' },
+      { label: 'α',   value: '\\alpha' },
+      { label: 'β',   value: '\\beta' },
+    ],
+  },
+  {
+    label: 'Long Division',
+    symbols: [
+      { label: '⟌', value: '\\begin{array}{r} \\text{quotient} \\\\ \\text{divisor}\\overline{)\\,\\text{dividend}} \\end{array}', title: 'Long division template' },
+    ],
+  },
 ];
 
 export default function MathButton({ onInsert }) {
   const [open, setOpen] = useState(false);
-  const [value, setValue] = useState('');
+  const [equation, setEquation] = useState('');
   const btnRef = useRef(null);
   const inputRef = useRef(null);
   const [pos, setPos] = useState({ top: 0, left: 0 });
@@ -28,14 +69,14 @@ export default function MathButton({ onInsert }) {
   useEffect(() => {
     if (open && btnRef.current) {
       const r = btnRef.current.getBoundingClientRect();
-      const popoverWidth = 288; // w-72
+      const popoverWidth = 320;
       const left = Math.min(r.left, window.innerWidth - popoverWidth - 12);
-      setPos({ top: r.bottom + 6, left: Math.max(8, left) });
+      const top = r.bottom + 6;
+      setPos({ top, left: Math.max(8, left) });
       setTimeout(() => inputRef.current?.focus(), 10);
     }
   }, [open]);
 
-  // Close on outside click
   useEffect(() => {
     if (!open) return;
     const handler = (e) => {
@@ -47,11 +88,16 @@ export default function MathButton({ onInsert }) {
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
-  const insert = (latex) => { onInsert(`$${latex}$`); setOpen(false); setValue(''); };
+  const appendSymbol = (value) => {
+    setEquation(prev => prev + value);
+    inputRef.current?.focus();
+  };
 
   const handleInsert = () => {
-    if (!value.trim()) return;
-    insert(toLatex(value));
+    if (!equation.trim()) return;
+    onInsert(`$${equation}$`);
+    setOpen(false);
+    setEquation('');
   };
 
   return (
@@ -69,34 +115,56 @@ export default function MathButton({ onInsert }) {
       {open && createPortal(
         <div
           data-math-popover
-          className="fixed z-[9999] w-72 bg-card border border-border rounded-lg shadow-xl p-3 space-y-3"
+          className="fixed z-[9999] w-80 bg-card border border-border rounded-lg shadow-xl p-3 space-y-3"
           style={{ top: pos.top, left: pos.left }}
         >
-          <p className="text-xs font-semibold text-foreground">Insert Math</p>
-          <div className="flex flex-wrap gap-1.5">
-            {QUICK.map(q => (
-              <button key={q.label} type="button" onClick={() => insert(q.value)} title={q.title}
-                className="px-2 py-1 text-sm border border-border rounded hover:bg-accent transition-colors">
-                {q.label}
-              </button>
+          <p className="text-xs font-semibold text-foreground">Build Equation</p>
+
+          {/* Symbol groups */}
+          <div className="space-y-2">
+            {SYMBOL_GROUPS.map(group => (
+              <div key={group.label}>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">{group.label}</p>
+                <div className="flex flex-wrap gap-1">
+                  {group.symbols.map(sym => (
+                    <button
+                      key={sym.label}
+                      type="button"
+                      title={sym.title || sym.value}
+                      onClick={() => appendSymbol(sym.value)}
+                      className="px-2 py-1 text-sm border border-border rounded hover:bg-accent transition-colors min-w-[2rem] text-center"
+                    >
+                      {sym.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
-          <div className="flex gap-2">
-            <Input
+
+          {/* Equation input */}
+          <div className="space-y-1.5">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Equation</p>
+            <textarea
               ref={inputRef}
-              value={value}
-              onChange={e => setValue(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') handleInsert(); if (e.key === 'Escape') setOpen(false); }}
-              placeholder="e.g. 3/4 or x^2"
-              className="text-sm h-8"
+              value={equation}
+              onChange={e => setEquation(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Escape') setOpen(false); }}
+              placeholder="Type or tap symbols above…"
+              rows={2}
+              className="w-full text-sm rounded border border-input bg-transparent px-3 py-1.5 resize-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-mono"
             />
-            <Button type="button" size="sm" onClick={handleInsert} className="h-8 px-3">Insert</Button>
           </div>
-          <p className="text-xs text-muted-foreground">
-            <code className="bg-muted px-1 rounded">3/4</code> → auto fraction &nbsp;
-            <code className="bg-muted px-1 rounded">x^2</code> → exponent &nbsp;
-            <code className="bg-muted px-1 rounded">sqrt(x)</code> → root
-          </p>
+
+          {/* Actions */}
+          <div className="flex gap-2 justify-end">
+            <Button type="button" variant="ghost" size="sm" onClick={() => { setOpen(false); setEquation(''); }}>
+              Cancel
+            </Button>
+            <Button type="button" size="sm" onClick={handleInsert} disabled={!equation.trim()}>
+              Insert
+            </Button>
+          </div>
         </div>,
         document.body
       )}
