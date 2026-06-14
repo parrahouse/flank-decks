@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Bricolage+Grotesque:wght@300;400;500;600;700&family=Lexend+Deca:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Bricolage+Grotesque:wght@300;400;500;600;700&family=Lexend+Deca:wght@300;400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -159,4 +159,17 @@
 .progress-game-band img {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
+}
+
+/* Fraunces for all KaTeX math rendering */
+.katex {
+  font-family: 'Fraunces', serif !important;
+}
+.katex .mathnormal,
+.katex .mathit,
+.katex .mathrm,
+.katex .mathbf,
+.katex .mathsf,
+.katex .mathtt {
+  font-family: 'Fraunces', serif !important;
 }
