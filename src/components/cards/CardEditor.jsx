@@ -261,7 +261,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
     if (saveRef) saveRef.current = handleSave;
   });
 
-  const QUESTION_TYPE_TAGS = ['vocabulary', 'dates', 'people', 'places', 'concepts'];
+  const QUESTION_TYPE_TAGS = ['vocabulary', 'dates', 'people', 'places'];
 
   const suggestTags = async () => {
     const correctList = Array.from(correctSet);
@@ -269,8 +269,8 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
     if (!cardText.trim()) { toast.error('Add some card content first'); return; }
     setSuggestingTags(true);
     const result = await base44.integrations.Core.InvokeLLM({
-      prompt: `Analyze this flashcard content and classify it into one or more of these categories: vocabulary, dates, people, places, concepts.\n\nCard content: ${cardText}\n\nReturn only the matching categories from the list above. Do not invent new categories.`,
-      response_json_schema: { type: 'object', properties: { tags: { type: 'array', items: { type: 'string', enum: ['vocabulary', 'dates', 'people', 'places', 'concepts'] } } } }
+      prompt: `Analyze this flashcard content and classify it into one or more of these categories: vocabulary, dates, people, places.\n\nCard content: ${cardText}\n\nReturn only the matching categories from the list above. Do not invent new categories.`,
+      response_json_schema: { type: 'object', properties: { tags: { type: 'array', items: { type: 'string', enum: ['vocabulary', 'dates', 'people', 'places'] } } } }
     });
     const suggested = (result?.tags || []).filter(t => QUESTION_TYPE_TAGS.includes(t));
     if (suggested.length) {
