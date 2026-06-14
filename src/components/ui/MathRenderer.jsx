@@ -13,18 +13,23 @@ export default function MathRenderer({ text = '', className = '', style }) {
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Split text into segments: math ($$...$$, $...$) and plain text
+    // Split text into segments: delimited math ($$...$$, $...$), bare fractions (a/b), and plain text
     const segments = [];
-    const pattern = /(\$\$[\s\S]+?\$\$|\$[^$\n]+?\$)/g;
+    const pattern = /(\$\$[\s\S]+?\$\$|\$[^$\n]+?\$|(?<![/\w])(-?\d+(?:\.\d+)?)\s*\/\s*(-?\d+(?:\.\d+)?)(?![/\w]))/g;
     let last = 0;
     let match;
 
     while ((match = pattern.exec(text)) !== null) {
       if (match.index > last) segments.push({ type: 'text', value: text.slice(last, match.index) });
       const raw = match[0];
-      const isBlock = raw.startsWith('$$');
-      const inner = isBlock ? raw.slice(2, -2) : raw.slice(1, -1);
-      segments.push({ type: 'math', value: inner, block: isBlock });
+      if (raw.startsWith('$$')) {
+        segments.push({ type: 'math', value: raw.slice(2, -2), block: true });
+      } else if (raw.startsWith('$')) {
+        segments.push({ type: 'math', value: raw.slice(1, -1), block: false });
+      } else {
+        // bare fraction like 3/4
+        segments.push({ type: 'math', value: `\\frac{${match[3]}}{${match[4]}}`, block: false });
+      }
       last = match.index + raw.length;
     }
     if (last < text.length) segments.push({ type: 'text', value: text.slice(last) });
