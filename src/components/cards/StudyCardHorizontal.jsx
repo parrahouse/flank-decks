@@ -259,9 +259,12 @@ export default function StudyCardHorizontal({
 
   const choiceStyle = getChoiceStyle(shuffledChoices);
 
+  const Pane = childVariant ? motion.div : 'div';
+  const paneProps = childVariant ? { variants: childVariant } : {};
+
   // ── Left column: image + question ──────────────────────────────────────────
   const ImageQuestionCol = (
-    <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 48%', minWidth: 0, gap: 8 }}>
+    <Pane {...paneProps} style={{ display: 'flex', flexDirection: 'column', flex: '0 0 48%', minWidth: 0, gap: 8 }}>
       {/* Image */}
       <div style={{ width: '100%', aspectRatio: '4/3', overflow: 'hidden', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {card.image_url
@@ -300,12 +303,12 @@ export default function StudyCardHorizontal({
           )
         )}
       </div>
-    </div>
+    </Pane>
   );
 
   // ── Right column: progress bar + answers + actions ─────────────────────────
   const AnswerCol = (
-    <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 0', minWidth: 0, alignSelf: 'stretch', gap: 8 }}>
+    <Pane {...paneProps} style={{ display: 'flex', flexDirection: 'column', flex: '1 1 0', minWidth: 0, alignSelf: 'stretch', gap: 8, pointerEvents: introReady ? 'auto' : 'none' }}>
       {/* Answer pane */}
       <div style={{
         flex: 1, backgroundColor: '#FAFAFA', border: '2px solid #D9D9D9',
@@ -431,7 +434,7 @@ export default function StudyCardHorizontal({
           </button>
         </div>
       </div>
-    </div>
+    </Pane>
   );
 
   // handedness: 'left' = image on left (right-handed mouse), 'right' = image on right (left-handed)
