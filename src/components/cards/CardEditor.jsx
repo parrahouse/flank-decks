@@ -177,7 +177,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
   };
 
   const STYLE_PRESETS = {
-    pixel_art:    { label: 'Pixel Art',    enhancer: 'pixel art style, retro 8-bit aesthetic, vibrant colors, clean lines', emoji: '🕹️' },
+    pixel_art:    { label: 'Old School',   enhancer: 'Mid-century retro illustration in vintage halftone print style. No gradients or modern shading. Technique: visible halftone dot texture (Ben-Day dots) throughout, giving a printed-on-cheap-paper look. Bold black ink outlines, simplified shapes, slightly off-register printing feel. Matte, aged quality as if scanned from a vintage magazine or technical brochure.', emoji: '🕹️' },
     oil_painting: { label: 'Oil Painting', enhancer: 'classic oil painting style, visible brushstrokes, rich textures, warm lighting', emoji: '🖼️' },
     minimalist:   { label: 'Minimalist',   enhancer: 'minimalist vector art, clean flat design, simple shapes, limited color palette', emoji: '◻️' },
     watercolor:   { label: 'Watercolor',   enhancer: 'soft watercolor painting, ethereal feel, gentle color bleeds, artistic style', emoji: '🎨' },
