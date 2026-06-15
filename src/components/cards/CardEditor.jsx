@@ -43,7 +43,6 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
 
   const [focalPoint, setFocalPoint] = useState(card?.image_focal_point || (card?.image_url ? { x: 50, y: 50 } : null));
   const [imageFit, setImageFit] = useState(card?.image_fit || 'cover');
-  const [draggingFocal, setDraggingFocal] = useState(false);
   const [clue, setClue] = useState(card?.clue || '');
   const [explanation, setExplanation] = useState(card?.explanation || '');
   const [tags, setTags] = useState(card?.tags || []);
@@ -369,59 +368,17 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
           style={{ minHeight: 180 }}
         >
           {imageUrl ? (
-            <div
-              className="relative w-full h-48 overflow-hidden select-none"
-              style={{ cursor: imageFit === 'cover' ? (draggingFocal ? 'grabbing' : 'grab') : 'default', backgroundColor: '#f3f4f6' }}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setDraggingFocal(true);
-              }}
-              onMouseMove={(e) => {
-                if (!draggingFocal) return;
-                const rect = e.currentTarget.getBoundingClientRect();
-                const x = Math.round(((e.clientX - rect.left) / rect.width) * 100);
-                const y = Math.round(((e.clientY - rect.top) / rect.height) * 100);
-                setFocalPoint({ x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) });
-              }}
-              onMouseUp={() => setDraggingFocal(false)}
-              onMouseLeave={() => setDraggingFocal(false)}
-              onTouchStart={(e) => {
-                e.stopPropagation();
-                setDraggingFocal(true);
-              }}
-              onTouchMove={(e) => {
-                e.preventDefault();
-                const touch = e.touches[0];
-                const rect = e.currentTarget.getBoundingClientRect();
-                const x = Math.round(((touch.clientX - rect.left) / rect.width) * 100);
-                const y = Math.round(((touch.clientY - rect.top) / rect.height) * 100);
-                setFocalPoint({ x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) });
-              }}
-              onTouchEnd={() => setDraggingFocal(false)}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <img
-                src={imageUrl}
-                alt="card"
-                className="w-full h-48 pointer-events-none"
-                style={{
-                  objectFit: imageFit,
-                  objectPosition: imageFit === 'cover' && focalPoint ? `${focalPoint.x}% ${focalPoint.y}%` : 'center',
-                }}
-              />
-              {imageFit === 'cover' && (
-                <div className="absolute inset-0 bg-black/10 flex items-end justify-start pointer-events-none">
-                  <span className="text-white text-xs px-2 py-1 bg-black/40 rounded-tr">Drag to reposition</span>
-                </div>
-              )}
-              {focalPoint && (
-                <div
-                  className="absolute w-5 h-5 rounded-full border-2 border-white bg-primary/80 -translate-x-1/2 -translate-y-1/2 pointer-events-none shadow"
-                  style={{ left: `${focalPoint.x}%`, top: `${focalPoint.y}%` }}
+              <div className="relative w-full h-48 overflow-hidden" style={{ backgroundColor: '#f3f4f6' }} onClick={(e) => e.stopPropagation()}>
+                <img
+                  src={imageUrl}
+                  alt="card"
+                  className="w-full h-48 pointer-events-none"
+                  style={{
+                    objectFit: imageFit,
+                    objectPosition: imageFit === 'cover' && focalPoint ? `${focalPoint.x}% ${focalPoint.y}%` : 'center',
+                  }}
                 />
-              )}
-            </div>
+              </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-48 gap-2 text-muted-foreground">
               {uploading ? <Loader2 className="w-6 h-6 animate-spin" /> : <ImageIcon className="w-8 h-8" />}
@@ -443,21 +400,6 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
         <div className="flex items-center justify-between">
           <InfoTooltip text="Accepted: JPG, PNG, GIF, WebP · Min 10 KB · Max 10 MB" />
           <div className="flex items-center gap-3">
-            {imageUrl && (
-              <button
-                type="button"
-                onClick={() => setImageFit(v => v === 'cover' ? 'contain' : 'cover')}
-                className="flex items-center gap-1 text-xs text-primary hover:underline"
-                title={imageFit === 'cover' ? 'Switch to fit (no crop)' : 'Switch to fill (cropped)'}
-              >
-                {imageFit === 'cover' ? '⬜ Fit to frame' : '🔲 Fill frame'}
-              </button>
-            )}
-            {imageUrl && imageFit === 'cover' && focalPoint && (
-              <button type="button" onClick={() => setFocalPoint({ x: 50, y: 50 })} className="flex items-center gap-1 text-xs text-muted-foreground hover:underline">
-                Reset to center
-              </button>
-            )}
             <button type="button" onClick={() => { setShowImagePicker(v => !v); setShowImageSearch(false); setShowAiImageGen(false); }} className="flex items-center gap-1 text-xs text-primary hover:underline">
               <ImageIcon className="w-3 h-3" /> Pick from decks
             </button>
@@ -675,10 +617,14 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
         <ImageEditor
           open={showImageEditor}
           imageUrl={imageUrl}
+          initialFocalPoint={focalPoint}
+          initialImageFit={imageFit}
           onClose={() => setShowImageEditor(false)}
-          onSave={(dataUrl) => {
+          onSave={(dataUrl, newFocalPoint, newImageFit) => {
             setShowImageEditor(false);
-            setImageUrl(dataUrl);
+            if (dataUrl) setImageUrl(dataUrl);
+            if (newFocalPoint) setFocalPoint(newFocalPoint);
+            if (newImageFit) setImageFit(newImageFit);
           }}
         />
       )}
