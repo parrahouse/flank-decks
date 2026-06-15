@@ -214,8 +214,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
     const noTextInstruction = uniqueWords.length
       ? `. Do not render any text, words, or labels in the image — especially not the words: ${uniqueWords.join(', ')}`
       : '. Do not render any text or words in the image';
-    const compositionInstruction = '. Compose for a 3:4 portrait aspect ratio. Keep all important subjects and details centered and away from the edges, with generous safe margins on all sides.';
-    const fullPrompt = `${aiImagePrompt.trim()}, ${styleEnhancer}${humorEnhancer}${noTextInstruction}${compositionInstruction}`;
+    const fullPrompt = `${aiImagePrompt.trim()}, ${styleEnhancer}${humorEnhancer}${noTextInstruction}`;
     const { url } = await base44.integrations.Core.GenerateImage({ prompt: fullPrompt });
     setImageUrl(url);
     setFocalPoint({ x: 50, y: 50 });
