@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/useSound';
+import { motion } from 'framer-motion';
 
 const COUNTDOWN_SECS = 6;
 
@@ -60,6 +61,8 @@ export default function StudyCardHorizontal({
   eliminateAllowed = true,
   handedness = 'left', // 'left' = answers on right, 'right' = answers on left
   onFirstWrong = null,
+  introReady = true,
+  childVariant = null,
 }) {
   const { playCorrect, playWrong } = useSound(soundEnabled);
   const [shuffledChoices, setShuffledChoices] = useState([]);

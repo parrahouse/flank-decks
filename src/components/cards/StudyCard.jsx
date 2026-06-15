@@ -19,6 +19,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/useSound';
 import MathRenderer from '@/components/ui/MathRenderer';
+import { motion } from 'framer-motion';
 
 const COUNTDOWN_SECS = 6;
 
@@ -79,6 +80,8 @@ export default function StudyCard({
   onToggleBookmark = null,
   eliminateAllowed = true,
   onFirstWrong = null,
+  introReady = true,
+  childVariant = null,
 }) {
   const { playCorrect, playWrong } = useSound(soundEnabled);
   const [shuffledChoices, setShuffledChoices] = useState([]);
@@ -331,11 +334,15 @@ export default function StudyCard({
 
   const choiceStyle = getChoiceStyle(shuffledChoices);
 
+  const Pane = childVariant ? motion.div : 'div';
+  const paneProps = childVariant ? { variants: childVariant } : {};
+
   return (
     <div className="mx-auto flex flex-col gap-3 w-full max-w-[700px]">
 
       {/* ── Card Pane: 4:3 aspect ratio ── */}
-      <div
+      <Pane
+        {...paneProps}
         style={{
           width: '100%',
           aspectRatio: '700 / 394',
@@ -347,10 +354,11 @@ export default function StudyCard({
           ? <img src={card.image_url} alt="card" style={{ width: '100%', height: '100%', objectFit: card.image_fit || 'cover', objectPosition: (card.image_fit !== 'contain' && card.image_focal_point) ? `${card.image_focal_point.x}% ${card.image_focal_point.y}%` : 'center' }} />
           : <span style={{ color: '#9ca3af', fontSize: 14 }}>No image</span>
         }
-      </div>
+      </Pane>
 
       {/* ── Question Pane ── */}
-      <div
+      <Pane
+        {...paneProps}
         style={{
           width: '100%',
           height: 120,
@@ -400,10 +408,11 @@ export default function StudyCard({
             </button>
           )
         )}
-      </div>
+      </Pane>
 
       {/* ── Answer Pane ── */}
-      <div
+      <Pane
+        {...paneProps}
         style={{
           width: '100%',
           minHeight: 340,
@@ -412,6 +421,7 @@ export default function StudyCard({
           boxSizing: 'border-box',
           padding: '12px 16px',
           display: 'flex', flexDirection: 'column',
+          pointerEvents: introReady ? 'auto' : 'none',
         }}
       >
         {/* Top row: question type + second guess */}
@@ -600,10 +610,11 @@ export default function StudyCard({
             </div>
           )}
         </div>
-      </div>
+      </Pane>
 
       {/* ── Card Action Pane ── */}
-      <div
+      <Pane
+        {...paneProps}
         style={{
           width: '100%',
           boxSizing: 'border-box',
@@ -658,7 +669,7 @@ export default function StudyCard({
         </div>
 
 
-      </div>
+      </Pane>
 
       {/* Note editor modal */}
       <Dialog open={noteEditing} onOpenChange={setNoteEditing}>

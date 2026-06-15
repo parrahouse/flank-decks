@@ -9,6 +9,10 @@ import StudyCardHorizontal from '@/components/cards/StudyCardHorizontal';
 import ContactSheet from '@/components/cards/ContactSheet';
 import ProgressGameBand from '@/components/cards/ProgressGameBand';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
+
+const INTRO_REVEAL_MS = 700;
+const INTRO_STAGGER_MS = 0.09; // seconds, for framer-motion staggerChildren
 
 function shuffle(arr) {
   const a = [...arr];
@@ -76,6 +80,8 @@ export default function StudySession() {
   const [isWide, setIsWide] = useState(() => window.innerWidth >= 900);
   const SCENE_FLOOR_H = 75; // px of sky+ground the scene gets BELOW the header line
   const [savingDefaults, setSavingDefaults] = useState(false);
+  const [introPhase, setIntroPhase] = useState('intro'); // 'intro' | 'ready'
+  const introTimerRef = useRef(null);
 
   useEffect(() => {
     const onResize = () => setIsWide(window.innerWidth >= 900);
@@ -171,6 +177,9 @@ export default function StudySession() {
     setBestStreak(0);
     setSessionStartTime(new Date());
     sessionSaved.current = false;
+    setIntroPhase('intro');
+    clearTimeout(introTimerRef.current);
+    introTimerRef.current = setTimeout(() => setIntroPhase('ready'), INTRO_REVEAL_MS);
   };
 
   const sessionSaved = useRef(false);
@@ -296,6 +305,8 @@ export default function StudySession() {
     setScores([]);
     setFirstWrongChoices([]);
     sessionSaved.current = false;
+    setIntroPhase('intro');
+    clearTimeout(introTimerRef.current);
   };
 
   const handleNext = () => {
@@ -579,7 +590,12 @@ export default function StudySession() {
   return (
     <div className={cn('mx-auto px-4 py-8 min-h-screen bg-background', useHorizontal ? 'max-w-7xl' : 'max-w-6xl')}>
       {/* Stage: header controls + game scene share one positioned parent so the scene sits behind the controls */}
-      <div className="relative mb-1">
+      <motion.div
+        className="relative mb-1"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25, ease: 'easeOut' }}
+      >
         {/* Background scene — only during active study */}
         {!done && filterChosen && (
           <ProgressGameBand
@@ -633,7 +649,7 @@ export default function StudySession() {
 
         {/* Floor space: extends the stage downward so the absolute scene has room for sky + ground below the controls */}
         {!done && filterChosen && <div aria-hidden style={{ height: SCENE_FLOOR_H }} />}
-      </div>
+      </motion.div>
 
       {done ?
       <div className="flex flex-col items-center py-10 gap-6 mt-6">
@@ -769,6 +785,7 @@ export default function StudySession() {
 
       (() => {
         const useHorizontal = layoutMode === 'horizontal' || layoutMode === 'auto' && isWide;
+        const introReady = introPhase === 'ready';
         const sharedProps = {
           key: `${current.id}-${cardIndex}`,
           card: current, deck,
@@ -784,22 +801,32 @@ export default function StudySession() {
           eliminateAllowed,
           isBookmarked: !!current.bookmarked,
           onToggleBookmark: handleToggleBookmark,
-          onFirstWrong: handleFirstWrong
+          onFirstWrong: handleFirstWrong,
+          introReady,
         };
 
-        return useHorizontal ?
-        <div className="bg-card border border-border rounded-lg p-4 mt-4">
-          <StudyCardHorizontal {...sharedProps} handedness={handedness} />
-        </div> :
+        const childVariant = {
+          hidden: { opacity: 0, y: 8 },
+          visible: { opacity: 1, y: 0, transition: { duration: 0.25, ease: 'easeOut' } },
+        };
+        const containerVariant = {
+          hidden: {},
+          visible: { transition: { staggerChildren: INTRO_STAGGER_MS } },
+        };
 
-        <div className="bg-card border border-border rounded-lg p-4 mt-4">
-            <div className="flex gap-4 items-start">
-              <div className="flex-1 min-w-0">
-                <StudyCard {...sharedProps} hintsAllowed={hintsAllowed} />
-              </div>
-            </div>
-          </div>;
-
+        return (
+          <motion.div
+            className="bg-card border border-border rounded-lg p-4 mt-4"
+            variants={containerVariant}
+            initial="hidden"
+            animate="visible"
+          >
+            {useHorizontal
+              ? <StudyCardHorizontal {...sharedProps} handedness={handedness} childVariant={childVariant} />
+              : <StudyCard {...sharedProps} hintsAllowed={hintsAllowed} childVariant={childVariant} />
+            }
+          </motion.div>
+        );
       })()}
 
     </div>);
