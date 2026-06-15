@@ -214,7 +214,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
     const noTextInstruction = uniqueWords.length
       ? `. Do not render any text, words, or labels in the image — especially not the words: ${uniqueWords.join(', ')}`
       : '. Do not render any text or words in the image';
-    const fullPrompt = `${aiImagePrompt.trim()}, ${styleEnhancer}${humorEnhancer}${noTextInstruction}`;
+    const fullPrompt = `${aiImagePrompt.trim()}, ${styleEnhancer}${humorEnhancer}${noTextInstruction}. Compose for a 4:3 landscape frame. Keep all important subject matter centered and well within the frame, away from the edges. Leave generous safe margins on all sides.`;
     const { url } = await base44.integrations.Core.GenerateImage({ prompt: fullPrompt });
     setImageUrl(url);
     setFocalPoint({ x: 50, y: 50 });
