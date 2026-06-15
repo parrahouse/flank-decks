@@ -76,17 +76,12 @@ export default function StudySession() {
   const [isWide, setIsWide] = useState(() => window.innerWidth >= 900);
   const SCENE_FLOOR_H = 75; // px of sky+ground the scene gets BELOW the header line
   const [savingDefaults, setSavingDefaults] = useState(false);
-  const [launching, setLaunching] = useState(false);
-  const [launchCount, setLaunchCount] = useState(3);
-  const launchTimers = useRef([]);
 
   useEffect(() => {
     const onResize = () => setIsWide(window.innerWidth >= 900);
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
-
-  useEffect(() => () => launchTimers.current.forEach(clearTimeout), []);
 
   const { data: deck } = useQuery({
     queryKey: ['deck', deckId],
@@ -165,28 +160,17 @@ export default function StudySession() {
 
   const startSession = (mode) => {
     const pool = mode === 'unmastered' ? unmasteredCards : mode === 'bookmarked' ? bookmarkedCards : activeCards;
-    // Pre-shuffle and stage data, but show launch sequence first
     setShuffledCards(shuffle(pool));
     setCardIndex(0);
     setDone(false);
     setScores([]);
     setFirstWrongChoices([]);
     setFilterMode(mode);
+    setFilterChosen(true);
     setCorrectStreak(0);
     setBestStreak(0);
     setSessionStartTime(new Date());
     sessionSaved.current = false;
-
-    // Launch countdown: 3 → 2 → 1 → GO → start
-    setLaunching(true);
-    setLaunchCount(3);
-    launchTimers.current.forEach(clearTimeout);
-    launchTimers.current = [
-      setTimeout(() => setLaunchCount(2), 600),
-      setTimeout(() => setLaunchCount(1), 1200),
-      setTimeout(() => setLaunchCount(0), 1800),   // 0 = "GO"
-      setTimeout(() => { setLaunching(false); setFilterChosen(true); }, 2400),
-    ];
   };
 
   const sessionSaved = useRef(false);
@@ -355,24 +339,6 @@ export default function StudySession() {
   const maxPoints = shuffledCards.length;
   const pct = maxPoints > 0 ? Math.round(totalPoints / maxPoints * 100) : 0;
   const current = shuffledCards[cardIndex];
-
-  // Launch countdown screen
-  if (launching) {
-    const modeLabel = filterMode === 'unmastered' ? 'Unmastered only' : filterMode === 'bookmarked' ? 'Bookmarked only' : 'All cards';
-    return (
-      <div className="fixed inset-0 flex flex-col items-center justify-center bg-background gap-6 z-50">
-        <p className="text-sm font-medium text-muted-foreground tracking-widest uppercase">{deck?.title}</p>
-        <p className="text-xs text-muted-foreground">{modeLabel} · {shuffledCards.length} cards</p>
-        <div
-          key={launchCount}
-          className="text-8xl font-bold tabular-nums"
-          style={{ animation: 'pop-in 0.25s ease-out', color: launchCount === 0 ? 'hsl(var(--success))' : 'hsl(var(--foreground))' }}
-        >
-          {launchCount === 0 ? 'GO!' : launchCount}
-        </div>
-      </div>
-    );
-  }
 
   // Filter selection screen
   if (!filterChosen) {
