@@ -11,8 +11,9 @@ import ProgressGameBand from '@/components/cards/ProgressGameBand';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
-const INTRO_REVEAL_MS = 700;
-const INTRO_STAGGER_MS = 0.09; // seconds, for framer-motion staggerChildren
+const INTRO_REVEAL_MS     = 700;
+const INTRO_STAGGER_MS    = 0.09; // seconds, for framer-motion staggerChildren
+const AVATAR_ENTRY_DELAY_MS = 300; // wait for band container to appear before walking in
 
 function shuffle(arr) {
   const a = [...arr];
@@ -81,7 +82,6 @@ export default function StudySession() {
   const SCENE_FLOOR_H = 75; // px of sky+ground the scene gets BELOW the header line
   const [savingDefaults, setSavingDefaults] = useState(false);
   const [introPhase, setIntroPhase] = useState('intro'); // 'intro' | 'ready'
-  const introTimerRef = useRef(null);
 
   useEffect(() => {
     const onResize = () => setIsWide(window.innerWidth >= 900);
@@ -178,8 +178,6 @@ export default function StudySession() {
     setSessionStartTime(new Date());
     sessionSaved.current = false;
     setIntroPhase('intro');
-    clearTimeout(introTimerRef.current);
-    introTimerRef.current = setTimeout(() => setIntroPhase('ready'), INTRO_REVEAL_MS);
   };
 
   const sessionSaved = useRef(false);
@@ -306,7 +304,6 @@ export default function StudySession() {
     setFirstWrongChoices([]);
     sessionSaved.current = false;
     setIntroPhase('intro');
-    clearTimeout(introTimerRef.current);
   };
 
   const handleNext = () => {
@@ -604,6 +601,8 @@ export default function StudySession() {
             scores={scores}
             correctStreak={correctStreak}
             soundEnabled={soundEnabled}
+            entering={introPhase === 'intro'}
+            onEntryComplete={() => setTimeout(() => setIntroPhase('ready'), 0)}
           />
         )}
 

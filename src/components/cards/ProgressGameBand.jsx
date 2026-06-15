@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect, useLayoutEffect, useMemo } from 'react';
+import { motion, useAnimation } from 'framer-motion';
 import { useSound } from '@/hooks/useSound';
 
 // ── CONFIG ──────────────────────────────────────────────────────────────────
@@ -33,6 +34,11 @@ const FLAG_ACT_FRAMES     = 4;
 const FLAG_WAVE_FRAMES    = 3;
 const FLAG_ACT_MS         = 600;
 const FLAG_WAVE_MS        = 700;
+
+// ── ENTRY ANIMATION CONFIG ───────────────────────────────────────────────────
+const AVATAR_ENTRY_OFFSET = CELL * SCALE * 4; // px left of restX where walk-in starts
+const AVATAR_ENTRY_MS     = 1000;             // walk-in duration
+const AVATAR_ENTRY_EASE   = 'linear';         // steady walking pace
 
 // ── DERIVED ──────────────────────────────────────────────────────────────────
 const W              = CELL * SCALE;
@@ -70,7 +76,7 @@ const KEYFRAMES = `
  *   scores        — array of score results so far
  *   correctStreak — current consecutive correct streak
  */
-export default function ProgressGameBand({ cardIndex = 0, total = 1, scores = [], correctStreak = 0, soundEnabled = true }) {
+export default function ProgressGameBand({ cardIndex = 0, total = 1, scores = [], correctStreak = 0, soundEnabled = true, entering = false, onEntryComplete }) {
   const COMPLETE_DELAY_MS = 300;
 
   const { playWalking, stopWalking } = useSound(soundEnabled);
@@ -78,6 +84,8 @@ export default function ProgressGameBand({ cardIndex = 0, total = 1, scores = []
   const bandRef  = useRef(null);
   const [bandW, setBandW] = useState(0);
   const [walking, setWalking] = useState(false);
+  const catControls = useAnimation();
+  const entryFiredRef = useRef(false);
 
   const completed = scores.filter(Boolean).length;
   const [shownCompleted, setShownCompleted] = useState(() => scores.filter(Boolean).length);
@@ -143,7 +151,28 @@ export default function ProgressGameBand({ cardIndex = 0, total = 1, scores = []
   // ── Horizontal position ───────────────────────────────────────────────────
   const progress = total > 0 ? shownCompleted / total : 0;
   const travel   = Math.max(0, bandW - W - PAD * 2);
-  const x        = PAD + progress * travel;
+  const restX    = PAD + progress * travel;
+
+  // ── Entry walk-in animation ───────────────────────────────────────────────
+  // Reset on each new entry (fires when entering flips from false→true)
+  useEffect(() => {
+    if (!entering) {
+      entryFiredRef.current = false;
+      return;
+    }
+    if (entryFiredRef.current || bandW === 0) return;
+    entryFiredRef.current = true;
+    const startX = restX - AVATAR_ENTRY_OFFSET;
+    catControls.set({ x: startX });
+    catControls.start({
+      x: restX,
+      transition: { duration: AVATAR_ENTRY_MS / 1000, ease: AVATAR_ENTRY_EASE },
+    }).then(() => {
+      onEntryComplete && onEntryComplete();
+    });
+  }, [entering, bandW]);
+
+  const isWalking = entering || walking;
 
   return (
     <div
@@ -188,36 +217,57 @@ export default function ProgressGameBand({ cardIndex = 0, total = 1, scores = []
       })}
 
       {/* Cat wrapper — translates horizontally */}
-      <div style={{
-        position: 'absolute',
-        bottom: CAT_BOTTOM,
-        left: 0,
-        width: W,
-        height: W,
-        transform: `translateX(${x}px)`,
-        transition: `transform ${STEP_MS}ms ease`,
-        willChange: 'transform',
-      }}>
-        {/* Cat sprite */}
+      {entering ? (
+        <motion.div
+          animate={catControls}
+          style={{
+            position: 'absolute',
+            bottom: CAT_BOTTOM,
+            left: 0,
+            width: W,
+            height: W,
+            willChange: 'transform',
+          }}
+        >
+          <div style={{
+            width: W, height: W,
+            backgroundRepeat: 'no-repeat',
+            imageRendering: 'pixelated',
+            backgroundImage: `url(${WALK_SRC})`,
+            backgroundSize: `${WALK_FRAMES * W}px ${W}px`,
+            animation: `pgb-walk ${WALK_CYCLE_MS}ms steps(${WALK_FRAMES}) infinite`,
+          }} />
+        </motion.div>
+      ) : (
         <div style={{
+          position: 'absolute',
+          bottom: CAT_BOTTOM,
+          left: 0,
           width: W,
           height: W,
-          backgroundRepeat: 'no-repeat',
-          imageRendering: 'pixelated',
-          ...(walking
-            ? {
-                backgroundImage: `url(${WALK_SRC})`,
-                backgroundSize: `${WALK_FRAMES * W}px ${W}px`,
-                animation: `pgb-walk ${WALK_CYCLE_MS}ms steps(${WALK_FRAMES}) infinite`,
-              }
-            : {
-                backgroundImage: `url(${IDLE_SRC})`,
-                backgroundSize: `${IDLE_FRAMES * W}px ${W}px`,
-                animation: `pgb-idle ${IDLE_CYCLE_MS}ms steps(${IDLE_FRAMES}) infinite`,
-              }
-          ),
-        }} />
-      </div>
+          transform: `translateX(${restX}px)`,
+          transition: `transform ${STEP_MS}ms ease`,
+          willChange: 'transform',
+        }}>
+          <div style={{
+            width: W, height: W,
+            backgroundRepeat: 'no-repeat',
+            imageRendering: 'pixelated',
+            ...(isWalking
+              ? {
+                  backgroundImage: `url(${WALK_SRC})`,
+                  backgroundSize: `${WALK_FRAMES * W}px ${W}px`,
+                  animation: `pgb-walk ${WALK_CYCLE_MS}ms steps(${WALK_FRAMES}) infinite`,
+                }
+              : {
+                  backgroundImage: `url(${IDLE_SRC})`,
+                  backgroundSize: `${IDLE_FRAMES * W}px ${W}px`,
+                  animation: `pgb-idle ${IDLE_CYCLE_MS}ms steps(${IDLE_FRAMES}) infinite`,
+                }
+            ),
+          }} />
+        </div>
+      )}
     </div>
   );
 }
