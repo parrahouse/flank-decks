@@ -50,6 +50,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
   const [saving, setSaving] = useState(false);
   const [generatingDecoys, setGeneratingDecoys] = useState(false);
   const [suggestingTags, setSuggestingTags] = useState(false);
+  const [generatingExplanation, setGeneratingExplanation] = useState(false);
   const [showImageEditor, setShowImageEditor] = useState(false);
   const [showImageSearch, setShowImageSearch] = useState(false);
   const [showImagePicker, setShowImagePicker] = useState(false);
@@ -581,16 +582,37 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label className="flex items-center gap-1.5">Explanation <InfoTooltip text="Optional — shown on the back of the card after answering" /></Label>
-          <MathButton onInsert={(latex) => {
-            const quill = quillRef.current?.getEditor();
-            if (quill) {
-              const range = quill.getSelection(true);
-              quill.insertText(range.index, latex, 'user');
-              quill.setSelection(range.index + latex.length);
-            } else {
-              setExplanation(prev => prev + latex);
-            }
-          }} />
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={async () => {
+                const correctList = Array.from(correctSet);
+                if (!correctList.length && !clue.trim()) { toast.error('Add a question or correct answer first'); return; }
+                setGeneratingExplanation(true);
+                const result = await base44.integrations.Core.InvokeLLM({
+                  prompt: `Write a concise educational explanation (2–4 sentences) for a flashcard.\nQuestion: ${clue || '(none)'}\nCorrect answer(s): ${correctList.join(', ')}\nExplain why the answer is correct and add any helpful context. Return plain HTML suitable for a rich text editor (use <b>, <i>, <ul>, <li> as needed — no <html>/<body> tags).`,
+                });
+                setExplanation(result || '');
+                setGeneratingExplanation(false);
+                toast.success('Explanation generated');
+              }}
+              disabled={generatingExplanation}
+              className="flex items-center gap-1 text-xs text-primary hover:underline disabled:opacity-50"
+            >
+              {generatingExplanation ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+              AI Generate
+            </button>
+            <MathButton onInsert={(latex) => {
+              const quill = quillRef.current?.getEditor();
+              if (quill) {
+                const range = quill.getSelection(true);
+                quill.insertText(range.index, latex, 'user');
+                quill.setSelection(range.index + latex.length);
+              } else {
+                setExplanation(prev => prev + latex);
+              }
+            }} />
+          </div>
         </div>
         <div className="quill-wrapper border border-input overflow-hidden" style={{ borderRadius: 0 }}>
           <ReactQuill
