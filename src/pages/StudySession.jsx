@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
 const INTRO_REVEAL_MS     = 700;
-const INTRO_STAGGER_MS    = 0.09; // seconds, for framer-motion staggerChildren
+const INTRO_STAGGER_MS    = 0.18; // seconds, for framer-motion staggerChildren
 const AVATAR_ENTRY_DELAY_MS = 300; // wait for band container to appear before walking in
 
 function shuffle(arr) {
@@ -805,8 +805,8 @@ export default function StudySession() {
         };
 
         const childVariant = {
-          hidden: { opacity: 0, y: 8 },
-          visible: { opacity: 1, y: 0, transition: { duration: 0.25, ease: 'easeOut' } },
+          hidden: { opacity: 0, y: 14 },
+          visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: 'easeOut' } },
         };
         const containerVariant = {
           hidden: {},
