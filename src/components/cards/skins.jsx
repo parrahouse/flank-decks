@@ -51,9 +51,9 @@ const EGG = {
   baseline: 47,
   scale:    1,
   sprites: {
-    idle:  { src: '', frames: 4 }, // placeholder — upload to fill
-    walk:  { src: '', frames: 6 }, // confirmed 288×48
-    wrong: { src: '', frames: 4 }, // placeholder — upload to fill
+    idle:  { src: 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/facafef11_EggIdle.png',  frames: 6 },
+    walk:  { src: 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/48422f385_EggWalk.png',  frames: 6 },
+    wrong: { src: 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/61e0a8336_EggWrong.png', frames: 6 },
   },
   flag: {   // egg ships 48px flags so they match its grid
     cell:     48,
@@ -66,7 +66,7 @@ const EGG = {
 };
 
 export const SKINS = [CAT, EGG];
-export const DEFAULT_SKIN_ID = 'cat';
+export const DEFAULT_SKIN_ID = 'egg';
 
 // Lookup with a safety fallback: an unknown/retired id resolves to the default
 // rather than rendering a broken scene.
