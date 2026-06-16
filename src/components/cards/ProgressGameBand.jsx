@@ -1,53 +1,81 @@
 import { useRef, useState, useEffect, useLayoutEffect, useMemo } from 'react';
 import { motion, useAnimation } from 'framer-motion';
 import { useSound } from '@/hooks/useSound';
+import { DEFAULT_GROUND, DEFAULT_FLAG, getSkin, DEFAULT_SKIN_ID } from './skins';
 
-// ── CONFIG ──────────────────────────────────────────────────────────────────
-const CELL     = 32;
-const BASELINE = 29;
-const SCALE    = 1;
-const TILE_W   = 64;
-const TILE_H   = 16;
-const BAND_H   = 100;
-const PAD      = 12;
-
-const SKY = '#e5e7eb';
-
-const GROUND_SRC = "https://media.base44.com/images/public/69fd6153088222f7245f34d6/5e5dbe4f0_groundtile.png";
-const IDLE_SRC   = "https://media.base44.com/images/public/69fd6153088222f7245f34d6/f2e415cfd_catidle.png";
-const WALK_SRC   = "https://media.base44.com/images/public/69fd6153088222f7245f34d6/6ede5faf0_catwalk.png";
-
-const IDLE_FRAMES = 4;
-const WALK_FRAMES = 4;
+// ── ART-INDEPENDENT CONSTANTS ─────────────────────────────────────────────────
+const BAND_H = 100;
+const PAD    = 12;
+const SKY    = '#e5e7eb';
 
 const STEP_MS       = 600;
 const IDLE_CYCLE_MS = 800;
 const WALK_CYCLE_MS = 500;
 
-// ── FLAG CONFIG ──────────────────────────────────────────────────────────────
 const FLAG_EVERY          = 10;
 const MIN_CARDS_FOR_FLAGS = 20;
-const FLAG_INACTIVE_SRC   = "https://media.base44.com/images/public/69fd6153088222f7245f34d6/6cec62a7e_flaginactive.png";
-const FLAG_ACTIVATE_SRC   = "https://media.base44.com/images/public/69fd6153088222f7245f34d6/7ebf67c3a_flagactivation.png";
-const FLAG_WAVE_SRC       = "https://media.base44.com/images/public/69fd6153088222f7245f34d6/c6323ddf5_flagwaving.png";
-const FLAG_ACT_FRAMES     = 4;
-const FLAG_WAVE_FRAMES    = 3;
 const FLAG_ACT_MS         = 600;
 const FLAG_WAVE_MS        = 700;
 
-// ── ENTRY ANIMATION CONFIG ───────────────────────────────────────────────────
-const AVATAR_ENTRY_OFFSET = CELL * SCALE * 4; // px left of restX where walk-in starts
-const AVATAR_ENTRY_MS     = 1000;             // walk-in duration
-const AVATAR_ENTRY_EASE   = 'linear';         // steady walking pace
+const AVATAR_ENTRY_MS   = 1000;
+const AVATAR_ENTRY_EASE = 'linear';
 
-// ── DERIVED ──────────────────────────────────────────────────────────────────
-const W              = CELL * SCALE;
-const GROUND_DISP    = TILE_H * SCALE;
-const FOOT_TO_BOTTOM = (CELL - BASELINE) * SCALE;
-const CAT_BOTTOM     = GROUND_DISP - FOOT_TO_BOTTOM;
-const FLAG_OFFSET    = Math.round(W * 0.6);
+/**
+ * ProgressGameBand — pixel-art walking-character progress HUD.
+ * Pure consumer of props; owns no progress/score state.
+ *
+ * Props:
+ *   skin          — skin descriptor from skins.js (defaults to DEFAULT_SKIN_ID)
+ *   cardIndex     — current card (0-based)
+ *   total         — total cards in session
+ *   scores        — array of score results so far
+ *   correctStreak — current consecutive correct streak
+ *   soundEnabled  — whether sound effects are enabled
+ *   entering      — true while the entry walk-in animation is playing
+ *   onEntryComplete — callback fired when entry animation finishes
+ */
+export default function ProgressGameBand({
+  skin = getSkin(DEFAULT_SKIN_ID),
+  cardIndex = 0,
+  total = 1,
+  scores = [],
+  correctStreak = 0,
+  soundEnabled = true,
+  entering = false,
+  onEntryComplete,
+}) {
+  // ── Derive per-render from skin ─────────────────────────────────────────────
+  const ground  = skin.ground || DEFAULT_GROUND;
+  const flag    = skin.flag   || DEFAULT_FLAG;
+  const sprites = skin.sprites;
 
-const KEYFRAMES = `
+  const CELL     = skin.cell;
+  const BASELINE = skin.baseline;
+  const SCALE    = skin.scale;
+  const W        = CELL * SCALE;
+
+  const TILE_W            = ground.tileW;
+  const TILE_H            = ground.tileH;
+  const GROUND_DISP       = TILE_H * SCALE;
+  const FOOT_TO_BOTTOM    = (CELL - BASELINE) * SCALE;
+  const CHAR_BOTTOM       = GROUND_DISP - FOOT_TO_BOTTOM;
+  const FLAG_OFFSET       = Math.round(W * 0.6);
+
+  const FLAG_CELL         = flag.cell;
+  const FLAG_BASELINE     = flag.baseline;
+  const FW                = FLAG_CELL * SCALE;
+  const FLAG_FOOT_TO_BOTTOM = (FLAG_CELL - FLAG_BASELINE) * SCALE;
+  const FLAG_BOTTOM       = GROUND_DISP - FLAG_FOOT_TO_BOTTOM;
+
+  const IDLE_FRAMES       = sprites.idle.frames;
+  const WALK_FRAMES       = sprites.walk.frames;
+  const FLAG_ACT_FRAMES   = flag.activate.frames;
+  const FLAG_WAVE_FRAMES  = flag.wave.frames;
+
+  const AVATAR_ENTRY_OFFSET = W * 4;
+
+  // ── CSS keyframes (rebuilt whenever skin dims change) ───────────────────────
+  const KEYFRAMES = `
 @keyframes pgb-idle {
   from { background-position-x: 0 }
   to   { background-position-x: -${IDLE_FRAMES * W}px }
@@ -58,26 +86,13 @@ const KEYFRAMES = `
 }
 @keyframes pgb-flag-activate {
   from { background-position-x: 0 }
-  to   { background-position-x: -${FLAG_ACT_FRAMES * W}px }
+  to   { background-position-x: -${FLAG_ACT_FRAMES * FW}px }
 }
 @keyframes pgb-flag-wave {
   from { background-position-x: 0 }
-  to   { background-position-x: -${FLAG_WAVE_FRAMES * W}px }
+  to   { background-position-x: -${FLAG_WAVE_FRAMES * FW}px }
 }
 `;
-
-/**
- * ProgressGameBand — pixel-art walking-cat progress HUD.
- * Pure consumer of props; owns no progress/score state.
- *
- * Props:
- *   cardIndex     — current card (0-based)
- *   total         — total cards in session
- *   scores        — array of score results so far
- *   correctStreak — current consecutive correct streak
- */
-export default function ProgressGameBand({ cardIndex = 0, total = 1, scores = [], correctStreak = 0, soundEnabled = true, entering = false, onEntryComplete }) {
-  const COMPLETE_DELAY_MS = 300;
 
   const { playWalking, stopWalking } = useSound(soundEnabled);
 
@@ -142,8 +157,8 @@ export default function ProgressGameBand({ cardIndex = 0, total = 1, scores = []
   // ── Walk trigger ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (completed === prevCompleted.current) return;
-    const t1 = setTimeout(() => { setWalking(true); playWalking(); setShownCompleted(completed); }, COMPLETE_DELAY_MS);
-    const t2 = setTimeout(() => { setWalking(false); stopWalking(); }, COMPLETE_DELAY_MS + STEP_MS);
+    const t1 = setTimeout(() => { setWalking(true); playWalking(); setShownCompleted(completed); }, 300);
+    const t2 = setTimeout(() => { setWalking(false); stopWalking(); }, 300 + STEP_MS);
     prevCompleted.current = completed;
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [completed]);
@@ -154,7 +169,6 @@ export default function ProgressGameBand({ cardIndex = 0, total = 1, scores = []
   const restX    = PAD + progress * travel;
 
   // ── Entry walk-in animation ───────────────────────────────────────────────
-  // Reset on each new entry (fires when entering flips from false→true)
   useEffect(() => {
     if (!entering) {
       entryFiredRef.current = false;
@@ -179,7 +193,7 @@ export default function ProgressGameBand({ cardIndex = 0, total = 1, scores = []
       ref={bandRef}
       className="progress-game-band"
       aria-hidden="true"
-      style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden', imageRendering: 'pixelated'}}
+      style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden', imageRendering: 'pixelated' }}
     >
       <style>{KEYFRAMES}</style>
 
@@ -190,25 +204,25 @@ export default function ProgressGameBand({ cardIndex = 0, total = 1, scores = []
         left: 0,
         width: '100%',
         height: GROUND_DISP,
-        backgroundImage: `url(${GROUND_SRC})`,
+        backgroundImage: `url(${ground.src})`,
         backgroundRepeat: 'repeat-x',
         backgroundSize: `${TILE_W * SCALE}px ${GROUND_DISP}px`,
         imageRendering: 'pixelated',
       }} />
 
-      {/* Milestone flags — rendered before cat so cat paints on top */}
+      {/* Milestone flags — rendered before character so character paints on top */}
       {milestones.map((m) => {
         const fx    = PAD + (m / total) * travel + FLAG_OFFSET;
         const phase = flagPhase(m);
         const sprite =
           phase === 'activation'
-            ? { backgroundImage: `url(${FLAG_ACTIVATE_SRC})`, backgroundSize: `${FLAG_ACT_FRAMES * W}px ${W}px`, animation: `pgb-flag-activate ${FLAG_ACT_MS}ms steps(${FLAG_ACT_FRAMES}) 1` }
+            ? { backgroundImage: `url(${flag.activate.src})`, backgroundSize: `${FLAG_ACT_FRAMES * FW}px ${FW}px`, animation: `pgb-flag-activate ${FLAG_ACT_MS}ms steps(${FLAG_ACT_FRAMES}) 1` }
             : phase === 'waving'
-            ? { backgroundImage: `url(${FLAG_WAVE_SRC})`,    backgroundSize: `${FLAG_WAVE_FRAMES * W}px ${W}px`, animation: `pgb-flag-wave ${FLAG_WAVE_MS}ms steps(${FLAG_WAVE_FRAMES}) infinite` }
-            : { backgroundImage: `url(${FLAG_INACTIVE_SRC})`, backgroundSize: `${W}px ${W}px`, animation: 'none' };
+            ? { backgroundImage: `url(${flag.wave.src})`,     backgroundSize: `${FLAG_WAVE_FRAMES * FW}px ${FW}px`, animation: `pgb-flag-wave ${FLAG_WAVE_MS}ms steps(${FLAG_WAVE_FRAMES}) infinite` }
+            : { backgroundImage: `url(${flag.inactive.src})`, backgroundSize: `${FW}px ${FW}px`, animation: 'none' };
         return (
           <div key={m} style={{
-            position: 'absolute', bottom: CAT_BOTTOM, left: 0, width: W, height: W,
+            position: 'absolute', bottom: FLAG_BOTTOM, left: 0, width: FW, height: FW,
             transform: `translateX(${fx}px)`,
             backgroundRepeat: 'no-repeat', imageRendering: 'pixelated',
             ...sprite,
@@ -216,13 +230,13 @@ export default function ProgressGameBand({ cardIndex = 0, total = 1, scores = []
         );
       })}
 
-      {/* Cat wrapper — translates horizontally */}
+      {/* Character wrapper — translates horizontally */}
       {entering ? (
         <motion.div
           animate={catControls}
           style={{
             position: 'absolute',
-            bottom: CAT_BOTTOM,
+            bottom: CHAR_BOTTOM,
             left: 0,
             width: W,
             height: W,
@@ -233,7 +247,7 @@ export default function ProgressGameBand({ cardIndex = 0, total = 1, scores = []
             width: W, height: W,
             backgroundRepeat: 'no-repeat',
             imageRendering: 'pixelated',
-            backgroundImage: `url(${WALK_SRC})`,
+            backgroundImage: `url(${sprites.walk.src})`,
             backgroundSize: `${WALK_FRAMES * W}px ${W}px`,
             animation: `pgb-walk ${WALK_CYCLE_MS}ms steps(${WALK_FRAMES}) infinite`,
           }} />
@@ -241,7 +255,7 @@ export default function ProgressGameBand({ cardIndex = 0, total = 1, scores = []
       ) : (
         <div style={{
           position: 'absolute',
-          bottom: CAT_BOTTOM,
+          bottom: CHAR_BOTTOM,
           left: 0,
           width: W,
           height: W,
@@ -255,12 +269,12 @@ export default function ProgressGameBand({ cardIndex = 0, total = 1, scores = []
             imageRendering: 'pixelated',
             ...(isWalking
               ? {
-                  backgroundImage: `url(${WALK_SRC})`,
+                  backgroundImage: `url(${sprites.walk.src})`,
                   backgroundSize: `${WALK_FRAMES * W}px ${W}px`,
                   animation: `pgb-walk ${WALK_CYCLE_MS}ms steps(${WALK_FRAMES}) infinite`,
                 }
               : {
-                  backgroundImage: `url(${IDLE_SRC})`,
+                  backgroundImage: `url(${sprites.idle.src})`,
                   backgroundSize: `${IDLE_FRAMES * W}px ${W}px`,
                   animation: `pgb-idle ${IDLE_CYCLE_MS}ms steps(${IDLE_FRAMES}) infinite`,
                 }
