@@ -82,6 +82,7 @@ export default function StudySession() {
   const SCENE_FLOOR_H = 75; // px of sky+ground the scene gets BELOW the header line
   const [savingDefaults, setSavingDefaults] = useState(false);
   const [introPhase, setIntroPhase] = useState('intro'); // 'intro' | 'ready'
+  const [wrongTick, setWrongTick] = useState(0); // increments each time a wrong answer is picked
 
   useEffect(() => {
     const onResize = () => setIsWide(window.innerWidth >= 900);
@@ -318,7 +319,7 @@ export default function StudySession() {
       next[cardIndex] = choice;
       return next;
     });
-    // meta.retry reserved for the progress-game flinch animation; not used yet
+    setWrongTick((n) => n + 1);
   };
 
   const handleScore = (points, key) => {
@@ -602,6 +603,7 @@ export default function StudySession() {
             correctStreak={correctStreak}
             soundEnabled={soundEnabled}
             entering={introPhase === 'intro'}
+            wrongTick={wrongTick}
             onEntryComplete={() => setTimeout(() => setIntroPhase('ready'), 0)}
           />
         )}

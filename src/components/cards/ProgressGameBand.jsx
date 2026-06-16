@@ -42,6 +42,7 @@ export default function ProgressGameBand({
   correctStreak = 0,
   soundEnabled = true,
   entering = false,
+  wrongTick = 0,
   onEntryComplete,
 }) {
   // ── Derive per-render from skin ─────────────────────────────────────────────
@@ -69,6 +70,7 @@ export default function ProgressGameBand({
 
   const IDLE_FRAMES       = sprites.idle.frames;
   const WALK_FRAMES       = sprites.walk.frames;
+  const WRONG_FRAMES      = sprites.wrong?.frames || 0;
   const FLAG_ACT_FRAMES   = flag.activate.frames;
   const FLAG_WAVE_FRAMES  = flag.wave.frames;
 
@@ -77,8 +79,12 @@ export default function ProgressGameBand({
   // ── CSS keyframes — names are skin-scoped so the browser never reuses stale values ──
   const KF_IDLE         = `pgb-idle-${skin.id}`;
   const KF_WALK         = `pgb-walk-${skin.id}`;
+  const KF_WRONG        = `pgb-wrong-${skin.id}`;
   const KF_FLAG_ACT     = `pgb-flag-activate-${skin.id}`;
   const KF_FLAG_WAVE    = `pgb-flag-wave-${skin.id}`;
+
+  const WRONG_CYCLE_MS  = WRONG_FRAMES > 0 ? Math.round((WRONG_FRAMES / IDLE_FRAMES) * IDLE_CYCLE_MS) : 600;
+  const WRONG_DURATION  = WRONG_CYCLE_MS * 2; // play twice then return to idle
 
   const KEYFRAMES = `
 @keyframes ${KF_IDLE} {
@@ -88,6 +94,10 @@ export default function ProgressGameBand({
 @keyframes ${KF_WALK} {
   from { background-position-x: 0 }
   to   { background-position-x: -${WALK_FRAMES * W}px }
+}
+@keyframes ${KF_WRONG} {
+  from { background-position-x: 0 }
+  to   { background-position-x: -${WRONG_FRAMES * W}px }
 }
 @keyframes ${KF_FLAG_ACT} {
   from { background-position-x: 0 }
@@ -104,6 +114,7 @@ export default function ProgressGameBand({
   const bandRef  = useRef(null);
   const [bandW, setBandW] = useState(0);
   const [walking, setWalking] = useState(false);
+  const [wronging, setWronging] = useState(false);
   const catControls = useAnimation();
   const entryFiredRef = useRef(false);
 
@@ -159,6 +170,17 @@ export default function ProgressGameBand({
     return () => window.removeEventListener('resize', measure);
   }, []);
 
+  // ── Wrong trigger ─────────────────────────────────────────────────────────
+  const prevWrongTick = useRef(wrongTick);
+  useEffect(() => {
+    if (wrongTick === prevWrongTick.current || !sprites.wrong?.src) return;
+    prevWrongTick.current = wrongTick;
+    if (WRONG_FRAMES === 0) return;
+    setWronging(true);
+    const t = setTimeout(() => setWronging(false), WRONG_DURATION);
+    return () => clearTimeout(t);
+  }, [wrongTick]);
+
   // ── Walk trigger ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (completed === prevCompleted.current) return;
@@ -192,6 +214,7 @@ export default function ProgressGameBand({
   }, [entering, bandW]);
 
   const isWalking = entering || walking;
+  const isWrong = wronging && !isWalking && sprites.wrong?.src && WRONG_FRAMES > 0;
 
   return (
     <div
@@ -277,6 +300,12 @@ export default function ProgressGameBand({
                   backgroundImage: `url(${sprites.walk.src})`,
                   backgroundSize: `${WALK_FRAMES * W}px ${W}px`,
                   animation: `${KF_WALK} ${WALK_CYCLE_MS}ms steps(${WALK_FRAMES}) infinite`,
+                }
+              : isWrong
+              ? {
+                  backgroundImage: `url(${sprites.wrong.src})`,
+                  backgroundSize: `${WRONG_FRAMES * W}px ${W}px`,
+                  animation: `${KF_WRONG} ${WRONG_CYCLE_MS}ms steps(${WRONG_FRAMES}) ${Math.ceil(WRONG_DURATION / WRONG_CYCLE_MS)}`,
                 }
               : {
                   backgroundImage: `url(${sprites.idle.src})`,
