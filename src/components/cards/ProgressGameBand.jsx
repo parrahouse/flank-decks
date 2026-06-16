@@ -74,21 +74,26 @@ export default function ProgressGameBand({
 
   const AVATAR_ENTRY_OFFSET = W * 4;
 
-  // ── CSS keyframes (rebuilt whenever skin dims change) ───────────────────────
+  // ── CSS keyframes — names are skin-scoped so the browser never reuses stale values ──
+  const KF_IDLE         = `pgb-idle-${skin.id}`;
+  const KF_WALK         = `pgb-walk-${skin.id}`;
+  const KF_FLAG_ACT     = `pgb-flag-activate-${skin.id}`;
+  const KF_FLAG_WAVE    = `pgb-flag-wave-${skin.id}`;
+
   const KEYFRAMES = `
-@keyframes pgb-idle {
+@keyframes ${KF_IDLE} {
   from { background-position-x: 0 }
   to   { background-position-x: -${IDLE_FRAMES * W}px }
 }
-@keyframes pgb-walk {
+@keyframes ${KF_WALK} {
   from { background-position-x: 0 }
   to   { background-position-x: -${WALK_FRAMES * W}px }
 }
-@keyframes pgb-flag-activate {
+@keyframes ${KF_FLAG_ACT} {
   from { background-position-x: 0 }
   to   { background-position-x: -${FLAG_ACT_FRAMES * FW}px }
 }
-@keyframes pgb-flag-wave {
+@keyframes ${KF_FLAG_WAVE} {
   from { background-position-x: 0 }
   to   { background-position-x: -${FLAG_WAVE_FRAMES * FW}px }
 }
@@ -216,9 +221,9 @@ export default function ProgressGameBand({
         const phase = flagPhase(m);
         const sprite =
           phase === 'activation'
-            ? { backgroundImage: `url(${flag.activate.src})`, backgroundSize: `${FLAG_ACT_FRAMES * FW}px ${FW}px`, animation: `pgb-flag-activate ${FLAG_ACT_MS}ms steps(${FLAG_ACT_FRAMES}) 1` }
+            ? { backgroundImage: `url(${flag.activate.src})`, backgroundSize: `${FLAG_ACT_FRAMES * FW}px ${FW}px`, animation: `${KF_FLAG_ACT} ${FLAG_ACT_MS}ms steps(${FLAG_ACT_FRAMES}) 1` }
             : phase === 'waving'
-            ? { backgroundImage: `url(${flag.wave.src})`,     backgroundSize: `${FLAG_WAVE_FRAMES * FW}px ${FW}px`, animation: `pgb-flag-wave ${FLAG_WAVE_MS}ms steps(${FLAG_WAVE_FRAMES}) infinite` }
+            ? { backgroundImage: `url(${flag.wave.src})`,     backgroundSize: `${FLAG_WAVE_FRAMES * FW}px ${FW}px`, animation: `${KF_FLAG_WAVE} ${FLAG_WAVE_MS}ms steps(${FLAG_WAVE_FRAMES}) infinite` }
             : { backgroundImage: `url(${flag.inactive.src})`, backgroundSize: `${FW}px ${FW}px`, animation: 'none' };
         return (
           <div key={m} style={{
@@ -249,7 +254,7 @@ export default function ProgressGameBand({
             imageRendering: 'pixelated',
             backgroundImage: `url(${sprites.walk.src})`,
             backgroundSize: `${WALK_FRAMES * W}px ${W}px`,
-            animation: `pgb-walk ${WALK_CYCLE_MS}ms steps(${WALK_FRAMES}) infinite`,
+            animation: `${KF_WALK} ${WALK_CYCLE_MS}ms steps(${WALK_FRAMES}) infinite`,
           }} />
         </motion.div>
       ) : (
@@ -271,12 +276,12 @@ export default function ProgressGameBand({
               ? {
                   backgroundImage: `url(${sprites.walk.src})`,
                   backgroundSize: `${WALK_FRAMES * W}px ${W}px`,
-                  animation: `pgb-walk ${WALK_CYCLE_MS}ms steps(${WALK_FRAMES}) infinite`,
+                  animation: `${KF_WALK} ${WALK_CYCLE_MS}ms steps(${WALK_FRAMES}) infinite`,
                 }
               : {
                   backgroundImage: `url(${sprites.idle.src})`,
                   backgroundSize: `${IDLE_FRAMES * W}px ${W}px`,
-                  animation: `pgb-idle ${IDLE_CYCLE_MS}ms steps(${IDLE_FRAMES}) infinite`,
+                  animation: `${KF_IDLE} ${IDLE_CYCLE_MS}ms steps(${IDLE_FRAMES}) infinite`,
                 }
             ),
           }} />
