@@ -59,7 +59,7 @@ export default function DeckCard({ deck, cardCount, coverUrl, stats, savedHoursL
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-foreground truncate">{deck.title}</h3>
             {deck.description && (
-              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{deck.description}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{deck.description}</p>
             )}
           </div>
           <DropdownMenu>
