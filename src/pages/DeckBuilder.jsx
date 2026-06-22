@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, ArrowLeft, Pencil, Trash2, BookOpen, Image as ImageIcon, Settings2, X, Upload, RotateCcw, BarChart2, Archive, Volume2, VolumeX, Download, CircleDot, CheckSquare, ToggleRight, Play } from 'lucide-react';
+import { Plus, ArrowLeft, Pencil, Trash2, BookOpen, Image as ImageIcon, Settings2, X, Upload, RotateCcw, BarChart2, Archive, Volume2, VolumeX, Download, CircleDot, CheckSquare, ToggleRight, Play, Sparkles, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -67,6 +67,25 @@ export default function DeckBuilder() {
   const [showSettings, setShowSettings] = useState(false);
   const [previewCard, setPreviewCard] = useState(null);
   const editorSaveRef = useRef(null);
+
+  // Description editing
+  const [editingDesc, setEditingDesc] = useState(false);
+  const [descValue, setDescValue] = useState('');
+  const [draftingDesc, setDraftingDesc] = useState(false);
+
+  const startEditDesc = () => { setDescValue(deck?.description || ''); setEditingDesc(true); };
+  const saveDesc = () => { updateDeckMutation.mutate({ description: descValue }); setEditingDesc(false); };
+  const cancelEditDesc = () => setEditingDesc(false);
+
+  const draftDescription = async () => {
+    setDraftingDesc(true);
+    const cardList = activeCards.map(c => c.correct_answers || c.correct_answer).filter(Boolean).slice(0, 60).join(', ');
+    const result = await base44.integrations.Core.InvokeLLM({
+      prompt: `Write a concise 1–2 sentence description for a flashcard deck titled "${deck?.title}". The deck contains cards about: ${cardList}. Be specific and informative. No fluff.`,
+    });
+    setDescValue(typeof result === 'string' ? result : result?.text || '');
+    setDraftingDesc(false);
+  };
 
   // Filter / sort state
   const [search, setSearch] = useState('');
@@ -211,9 +230,46 @@ export default function DeckBuilder() {
         <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <h1 className="text-xl font-bold">{deck?.title || 'Loading…'}</h1>
-          <p className="text-muted-foreground text-sm">{activeCards.length} {activeCards.length === 1 ? 'card' : 'cards'}</p>
+          {/* Description */}
+          {editingDesc ? (
+            <div className="mt-1.5 flex flex-col gap-1.5">
+              <textarea
+                autoFocus
+                value={descValue}
+                onChange={e => setDescValue(e.target.value)}
+                placeholder="Add a description…"
+                rows={2}
+                className="w-full text-sm border border-border rounded-md px-2.5 py-1.5 bg-background text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+              <div className="flex items-center gap-2">
+                <button onClick={saveDesc} className="flex items-center gap-1 text-xs text-primary hover:underline font-medium">
+                  <Check className="w-3.5 h-3.5" /> Save
+                </button>
+                <button onClick={cancelEditDesc} className="text-xs text-muted-foreground hover:text-foreground">Cancel</button>
+                {activeCards.length > 0 && (
+                  <button
+                    onClick={draftDescription}
+                    disabled={draftingDesc}
+                    className="ml-auto flex items-center gap-1 text-xs text-accent-foreground bg-accent hover:bg-accent/80 px-2 py-0.5 rounded-md disabled:opacity-50"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    {draftingDesc ? 'Drafting…' : 'AI draft'}
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <button onClick={startEditDesc} className="group flex items-start gap-1 text-left mt-0.5">
+              {deck?.description
+                ? <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors line-clamp-2">{deck.description}</span>
+                : <span className="text-sm text-muted-foreground/50 italic group-hover:text-muted-foreground transition-colors">Add description…</span>
+              }
+              <Pencil className="w-3 h-3 text-muted-foreground/40 group-hover:text-muted-foreground shrink-0 mt-0.5 transition-colors" />
+            </button>
+          )}
+          <p className="text-muted-foreground text-xs mt-1">{activeCards.length} {activeCards.length === 1 ? 'card' : 'cards'}</p>
         </div>
         <div className="flex gap-2 flex-wrap justify-end">
           {activeCards.length > 0 && (
