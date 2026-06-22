@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Plus, ArrowLeft, Pencil, Trash2, BookOpen, Image as ImageIcon, Settings2, X, Upload, RotateCcw, BarChart2, Archive, Volume2, VolumeX, Download, CircleDot, CheckSquare, ToggleRight, Play, Sparkles, Check } from 'lucide-react';
+import AiCardSuggestionsModal from '@/components/cards/AiCardSuggestionsModal';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -64,6 +65,7 @@ export default function DeckBuilder() {
   const [editorDirty, setEditorDirty] = useState(false);
   const [showDiscardDialog, setShowDiscardDialog] = useState(false);
   const [showBin, setShowBin] = useState(false);
+  const [showAiSuggest, setShowAiSuggest] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [previewCard, setPreviewCard] = useState(null);
   const editorSaveRef = useRef(null);
@@ -307,6 +309,11 @@ export default function DeckBuilder() {
             <Button variant="outline" size="sm" onClick={exportCsv} className="gap-1.5"><Download className="w-4 h-4" /> Export CSV</Button>
           )}
           <Button onClick={openAdd} size="sm" className="gap-1.5"><Plus className="w-4 h-4" /> Add Card</Button>
+          {activeCards.length > 0 && (
+            <Button variant="outline" size="sm" onClick={() => setShowAiSuggest(true)} className="gap-1.5 text-primary border-primary/40 hover:bg-primary/5">
+              <Sparkles className="w-4 h-4" /> AI Suggest
+            </Button>
+          )}
         </div>
       </div>
 
@@ -574,6 +581,21 @@ export default function DeckBuilder() {
       deckId={deckId}
       existingCount={activeCards.length}
       onImported={() => { qc.invalidateQueries(['cards', deckId]); qc.invalidateQueries(['cards-all']); }}
+    />
+
+    <AiCardSuggestionsModal
+      open={showAiSuggest}
+      onClose={() => setShowAiSuggest(false)}
+      deck={deck}
+      activeCards={activeCards}
+      onAddCards={async (cards) => {
+        await base44.entities.Card.bulkCreate(
+          cards.map((c, i) => ({ ...c, deck_id: deckId, order: activeCards.length + i }))
+        );
+        qc.invalidateQueries(['cards', deckId]);
+        qc.invalidateQueries(['cards-all']);
+        toast.success(`${cards.length} card${cards.length !== 1 ? 's' : ''} added`);
+      }}
     />
     </div>
   );
