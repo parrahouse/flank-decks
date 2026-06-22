@@ -29,6 +29,27 @@ export default function Home() {
     queryFn: () => base44.entities.Card.list(),
   });
 
+  const { data: sessions = [] } = useQuery({
+    queryKey: ['study-sessions-home'],
+    queryFn: () => base44.entities.StudySession.list('-created_date', 500),
+  });
+
+  // Compute per-deck stats from session history
+  const deckStats = (deckId) => {
+    const s = sessions.filter(x => x.deck_id === deckId);
+    if (!s.length) return null;
+    const finished = s.filter(x => x.score_pct != null);
+    const scores = finished.map(x => x.score_pct);
+    const last = s[0]; // already sorted by -created_date
+    return {
+      timesStarted: s.length,
+      timesFinished: finished.length,
+      highScore: scores.length ? Math.round(Math.max(...scores)) : null,
+      lowScore: scores.length ? Math.round(Math.min(...scores)) : null,
+      lastStudied: last?.created_date || null,
+    };
+  };
+
   const [showForm, setShowForm] = useState(false);
   const [editingDeck, setEditingDeck] = useState(null);
   const [shareDeck, setShareDeck] = useState(null);
@@ -116,6 +137,7 @@ export default function Home() {
               deck={deck}
               cardCount={cardCount(deck.id)}
               coverUrl={getCoverUrl(deck)}
+              stats={deckStats(deck.id)}
               onEdit={openEdit}
               onDelete={(d) => deleteMutation.mutate(d)}
               onDuplicate={(d) => duplicateMutation.mutate(d)}
