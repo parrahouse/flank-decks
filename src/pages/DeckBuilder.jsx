@@ -77,13 +77,16 @@ export default function DeckBuilder() {
   const saveDesc = () => { updateDeckMutation.mutate({ description: descValue }); setEditingDesc(false); };
   const cancelEditDesc = () => setEditingDesc(false);
 
+  const DESC_MAX = 150;
+
   const draftDescription = async () => {
     setDraftingDesc(true);
     const cardList = activeCards.map(c => c.correct_answers || c.correct_answer).filter(Boolean).slice(0, 60).join(', ');
     const result = await base44.integrations.Core.InvokeLLM({
-      prompt: `Write a concise 1–2 sentence description for a flashcard deck titled "${deck?.title}". The deck contains cards about: ${cardList}. Be specific and informative. No fluff.`,
+      prompt: `Write a concise description for a flashcard deck titled "${deck?.title}". The deck contains cards about: ${cardList}. Be specific and informative. No fluff. IMPORTANT: the description must be 150 characters or fewer.`,
     });
-    setDescValue(typeof result === 'string' ? result : result?.text || '');
+    const draft = typeof result === 'string' ? result : result?.text || '';
+    setDescValue(draft.slice(0, DESC_MAX));
     setDraftingDesc(false);
   };
 
@@ -235,14 +238,20 @@ export default function DeckBuilder() {
           {/* Description */}
           {editingDesc ? (
             <div className="mt-1.5 flex flex-col gap-1.5">
-              <textarea
-                autoFocus
-                value={descValue}
-                onChange={e => setDescValue(e.target.value)}
-                placeholder="Add a description…"
-                rows={2}
-                className="w-full text-sm border border-border rounded-md px-2.5 py-1.5 bg-background text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-ring"
-              />
+              <div className="relative">
+                <textarea
+                  autoFocus
+                  value={descValue}
+                  onChange={e => setDescValue(e.target.value.slice(0, DESC_MAX))}
+                  placeholder="Add a description…"
+                  rows={2}
+                  maxLength={DESC_MAX}
+                  className="w-full text-sm border border-border rounded-md px-2.5 py-1.5 bg-background text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-ring pr-14"
+                />
+                <span className={`absolute bottom-2 right-2 text-xs tabular-nums ${descValue.length >= DESC_MAX ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
+                  {descValue.length}/{DESC_MAX}
+                </span>
+              </div>
               <div className="flex items-center gap-2">
                 <button onClick={saveDesc} className="flex items-center gap-1 text-xs text-primary hover:underline font-medium">
                   <Check className="w-3.5 h-3.5" /> Save
