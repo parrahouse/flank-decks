@@ -1,0 +1,53 @@
+{
+  "name": "SavedSession",
+  "type": "object",
+  "properties": {
+    "deck_id": {
+      "type": "string",
+      "description": "ID of the deck being studied"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "ID of the user who owns this saved session"
+    },
+    "card_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Ordered array of card IDs in the shuffled session"
+    },
+    "card_index": {
+      "type": "number",
+      "description": "Index of the card the user was on when they saved"
+    },
+    "scores": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "description": "Scores array up to the saved point"
+    },
+    "first_wrong_choices": {
+      "type": "array",
+      "items": {},
+      "description": "First wrong choices array up to the saved point"
+    },
+    "filter_mode": {
+      "type": "string",
+      "description": "all | unmastered | bookmarked"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO timestamp when this saved session expires (24h from save)"
+    }
+  },
+  "required": [
+    "deck_id",
+    "user_id",
+    "card_ids",
+    "card_index",
+    "expires_at"
+  ]
+}

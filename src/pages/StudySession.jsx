@@ -1,15 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Brain, Volume2, VolumeX, Info, Trophy } from 'lucide-react';
+import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Brain, Volume2, VolumeX, Info, Trophy, PlayCircle, RefreshCw, Clock, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import StudyCard from '@/components/cards/StudyCard';
 import StudyCardHorizontal from '@/components/cards/StudyCardHorizontal';
 import ContactSheet from '@/components/cards/ContactSheet';
 import ProgressGameBand from '@/components/cards/ProgressGameBand';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { useSavedSession } from '@/hooks/useSavedSession';
 
 const INTRO_REVEAL_MS     = 700;
 const INTRO_STAGGER_MS    = 0.18; // seconds, for framer-motion staggerChildren
@@ -59,6 +61,7 @@ function MasteryTooltip({ minSessions, masteryPct }) {
 
 export default function StudySession() {
   const { deckId } = useParams();
+  const navigate = useNavigate();
   const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem('flashdeck_sound') !== '0');
   const [autoAdvance, setAutoAdvance] = useState(() => localStorage.getItem('flashdeck_autoadvance') === '1');
   const [hintsAllowed, setHintsAllowed] = useState(() => localStorage.getItem('flashdeck_hints') !== '0');
@@ -83,6 +86,8 @@ export default function StudySession() {
   const [savingDefaults, setSavingDefaults] = useState(false);
   const [introPhase, setIntroPhase] = useState('intro'); // 'intro' | 'ready'
   const [wrongTick, setWrongTick] = useState(0); // increments each time a wrong answer is picked
+  const [showExitWarning, setShowExitWarning] = useState(false);
+  const pendingExitRef = useRef(null); // stores the path to navigate to after exit decision
 
   useEffect(() => {
     const onResize = () => setIsWide(window.innerWidth >= 900);
@@ -108,6 +113,8 @@ export default function StudySession() {
     queryKey: ['me'],
     queryFn: () => base44.auth.me()
   });
+
+  const { savedSession, hoursLeft, saveSession, clearSession } = useSavedSession(deckId, currentUser?.id);
 
   // Seed layout prefs from user profile on first load
   useEffect(() => {
@@ -166,6 +173,7 @@ export default function StudySession() {
   };
 
   const startSession = (mode) => {
+    clearSession(); // discard any saved session on fresh start
     const pool = mode === 'unmastered' ? unmasteredCards : mode === 'bookmarked' ? bookmarkedCards : activeCards;
     setShuffledCards(shuffle(pool));
     setCardIndex(0);
@@ -173,6 +181,25 @@ export default function StudySession() {
     setScores([]);
     setFirstWrongChoices([]);
     setFilterMode(mode);
+    setFilterChosen(true);
+    setCorrectStreak(0);
+    setBestStreak(0);
+    setSessionStartTime(new Date());
+    sessionSaved.current = false;
+    setIntroPhase('intro');
+  };
+
+  const resumeSession = () => {
+    if (!savedSession || !activeCards.length) return;
+    // Reconstruct card order from saved card_ids
+    const cardMap = Object.fromEntries(activeCards.map(c => [c.id, c]));
+    const ordered = savedSession.card_ids.map(id => cardMap[id]).filter(Boolean);
+    if (!ordered.length) return;
+    setShuffledCards(ordered);
+    setCardIndex(savedSession.card_index || 0);
+    setScores(savedSession.scores || []);
+    setFirstWrongChoices(savedSession.first_wrong_choices || []);
+    setFilterMode(savedSession.filter_mode || 'all');
     setFilterChosen(true);
     setCorrectStreak(0);
     setBestStreak(0);
@@ -298,6 +325,7 @@ export default function StudySession() {
   }, [done]);
 
   const restart = () => {
+    clearSession();
     setFilterChosen(false);
     setDone(false);
     setShuffledCards([]);
@@ -305,6 +333,36 @@ export default function StudySession() {
     setFirstWrongChoices([]);
     sessionSaved.current = false;
     setIntroPhase('intro');
+  };
+
+  // Called when user tries to exit mid-session
+  const requestExit = (path) => {
+    const progress = scores.filter(Boolean).length;
+    const isIncomplete = filterChosen && !done && progress > 0 && progress < shuffledCards.length;
+    if (isIncomplete) {
+      pendingExitRef.current = path;
+      setShowExitWarning(true);
+    } else {
+      navigate(path);
+    }
+  };
+
+  const handleExitSave = async () => {
+    await saveSession({
+      cardIds: shuffledCards.map(c => c.id),
+      cardIndex,
+      scores,
+      firstWrongChoices,
+      filterMode,
+    });
+    setShowExitWarning(false);
+    navigate(pendingExitRef.current || `/deck/${deckId}`);
+  };
+
+  const handleExitDiscard = () => {
+    clearSession();
+    setShowExitWarning(false);
+    navigate(pendingExitRef.current || `/deck/${deckId}`);
   };
 
   const handleNext = () => {
@@ -354,14 +412,32 @@ export default function StudySession() {
     return (
       <div className="max-w-2xl mx-auto px-4 py-8">
         <div className="flex items-center gap-3 mb-8">
-          <Link to={`/deck/${deckId}`} className="text-muted-foreground hover:text-foreground transition-colors">
+          <button onClick={() => navigate(`/deck/${deckId}`)} className="text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="w-5 h-5" />
-          </Link>
+          </button>
           <div className="flex-1">
             <h1 className="font-semibold">{deck?.title}</h1>
             <p className="text-xs text-muted-foreground">{activeCards.length} cards total</p>
           </div>
         </div>
+
+        {/* Resume banner */}
+        {savedSession && (
+          <div className="mb-6 border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 rounded-xl p-4 flex items-start gap-3">
+            <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">You have a saved session</p>
+              <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
+                {savedSession.card_index} of {savedSession.card_ids?.length} cards done · expires in {hoursLeft}h
+              </p>
+            </div>
+            <div className="flex gap-2 shrink-0">
+              <Button size="sm" onClick={resumeSession} className="h-7 text-xs gap-1 bg-amber-600 hover:bg-amber-700 text-white border-0">
+                <PlayCircle className="w-3.5 h-3.5" /> Resume
+              </Button>
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-col items-center gap-6 py-8">
           <div className="w-14 h-14 rounded-2xl bg-accent flex items-center justify-center">
@@ -583,6 +659,35 @@ export default function StudySession() {
 
   }
 
+  // ── Exit warning dialog — rendered inside the active study return ─────────
+  const ExitWarningDialog = (
+    <Dialog open={showExitWarning} onOpenChange={setShowExitWarning}>
+      <DialogContent className="max-w-sm">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+            <AlertTriangle className="w-5 h-5 text-amber-600" />
+          </div>
+          <h3 className="font-semibold text-base">Leave this session?</h3>
+        </div>
+        <p className="text-sm text-muted-foreground mb-4">
+          You've answered <strong>{scores.filter(Boolean).length}</strong> of <strong>{shuffledCards.length}</strong> cards.
+          Would you like to save your progress so you can resume within 24 hours?
+        </p>
+        <div className="flex flex-col gap-2">
+          <Button onClick={handleExitSave} className="w-full gap-1.5">
+            <Clock className="w-4 h-4" /> Save progress &amp; exit
+          </Button>
+          <Button variant="outline" onClick={handleExitDiscard} className="w-full gap-1.5">
+            <RefreshCw className="w-4 h-4" /> Discard &amp; exit
+          </Button>
+          <Button variant="ghost" onClick={() => setShowExitWarning(false)} className="w-full">
+            Keep studying
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
   const useHorizontal = layoutMode === 'horizontal' || layoutMode === 'auto' && isWide;
 
   return (
@@ -610,8 +715,8 @@ export default function StudySession() {
 
         {/* Controls layer — paints on top of the scene */}
         <div className="relative z-10 flex items-center gap-1 px-3 py-2">
-          <Link
-            to={`/deck/${deckId}`}
+          <button
+            onClick={() => requestExit(`/deck/${deckId}`)}
             className="text-muted-foreground hover:text-foreground transition-colors"
             title="Quit"
           >
@@ -620,7 +725,7 @@ export default function StudySession() {
               alt="Quit"
               style={{ width: 16, height: 16, imageRendering: 'pixelated' }}
             />
-          </Link>
+          </button>
           <div className="flex-1">
             <h1 style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: 26, lineHeight: 1 }}>{deck?.title}</h1>
             <p className="text-xs text-muted-foreground mt-1">
@@ -830,6 +935,7 @@ export default function StudySession() {
         );
       })()}
 
+      {ExitWarningDialog}
     </div>);
 
 }

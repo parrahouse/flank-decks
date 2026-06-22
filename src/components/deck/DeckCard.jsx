@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { MoreHorizontal, BookOpen, Copy, Trash2, Share2, Pencil, LayoutList, Image as ImageIcon, Trophy, TrendingDown, Clock, RotateCcw, CheckCircle2 } from 'lucide-react';
+import { MoreHorizontal, BookOpen, Copy, Trash2, Share2, Pencil, LayoutList, Image as ImageIcon, Trophy, TrendingDown, Clock, RotateCcw, CheckCircle2, PlayCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -31,7 +31,7 @@ function MasteryBar({ pct }) {
   );
 }
 
-export default function DeckCard({ deck, cardCount, coverUrl, stats, onEdit, onDelete, onDuplicate, onShare, onSetCover }) {
+export default function DeckCard({ deck, cardCount, coverUrl, stats, savedHoursLeft, onEdit, onDelete, onDuplicate, onShare, onSetCover }) {
   const avgScore = stats && stats.highScore !== null && stats.lowScore !== null
     ? Math.round((stats.highScore + stats.lowScore) / 2)
     : null;
@@ -126,6 +126,14 @@ export default function DeckCard({ deck, cardCount, coverUrl, stats, onEdit, onD
           </div>
         ) : (
           <p className="text-xs text-muted-foreground italic">Not studied yet</p>
+        )}
+
+        {/* Saved session badge */}
+        {savedHoursLeft !== null && (
+          <div className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-md px-2 py-1">
+            <PlayCircle className="w-3 h-3 shrink-0" />
+            <span>Session saved · {savedHoursLeft}h left to resume</span>
+          </div>
         )}
 
         {/* Actions */}

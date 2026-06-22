@@ -34,6 +34,23 @@ export default function Home() {
     queryFn: () => base44.entities.StudySession.list('-created_date', 500),
   });
 
+  const { data: currentUser } = useQuery({
+    queryKey: ['me'],
+    queryFn: () => base44.auth.me(),
+  });
+
+  const { data: savedSessions = [] } = useQuery({
+    queryKey: ['saved-sessions-home', currentUser?.id],
+    queryFn: () => base44.entities.SavedSession.filter({ user_id: currentUser.id }),
+    enabled: !!currentUser?.id,
+  });
+
+  const savedHoursLeft = (deckId) => {
+    const s = savedSessions.find(x => x.deck_id === deckId && new Date(x.expires_at).getTime() > Date.now());
+    if (!s) return null;
+    return Math.max(0, Math.ceil((new Date(s.expires_at).getTime() - Date.now()) / 3600000));
+  };
+
   // Compute per-deck stats from session history
   const deckStats = (deckId) => {
     const s = sessions.filter(x => x.deck_id === deckId);
@@ -138,6 +155,7 @@ export default function Home() {
               cardCount={cardCount(deck.id)}
               coverUrl={getCoverUrl(deck)}
               stats={deckStats(deck.id)}
+              savedHoursLeft={savedHoursLeft(deck.id)}
               onEdit={openEdit}
               onDelete={(d) => deleteMutation.mutate(d)}
               onDuplicate={(d) => duplicateMutation.mutate(d)}
