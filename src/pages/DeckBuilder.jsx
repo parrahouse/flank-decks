@@ -286,24 +286,27 @@ export default function DeckBuilder() {
           </div>
           {/* Study button — right-aligned, prominent */}
           {activeCards.length > 0 && (
-            <Link to={`/study/${deckId}`} className="shrink-0">
-              <Button className="gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-5 h-10 text-sm font-semibold">
-                <BookOpen className="w-4 h-4" /> Study
-              </Button>
-            </Link>
+            <div className="shrink-0 flex flex-col items-stretch gap-1.5">
+              <Link to={`/study/${deckId}`}>
+                <Button className="gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl w-full px-8 h-10 text-sm font-semibold">
+                  <BookOpen className="w-4 h-4" /> Study
+                </Button>
+              </Link>
+              {/* Stats + Settings as icon + underlined text under Study */}
+              <div className="flex items-center justify-center gap-4">
+                <Link to={`/stats/${deckId}`} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors">
+                  <BarChart2 className="w-3.5 h-3.5" /> Stats
+                </Link>
+                <button onClick={() => setShowSettings(v => !v)} className={`flex items-center gap-1 text-xs underline underline-offset-2 transition-colors ${showSettings ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
+                  <Settings2 className="w-3.5 h-3.5" /> Settings
+                </button>
+              </div>
+            </div>
           )}
         </div>
 
         {/* Second row: secondary action buttons */}
         <div className="flex gap-2 flex-wrap mt-3 ml-8">
-          {activeCards.length > 0 && (
-            <Link to={`/stats/${deckId}`}>
-              <Button variant="outline" size="sm" className="gap-1.5"><BarChart2 className="w-4 h-4" /> Stats</Button>
-            </Link>
-          )}
-          <Button variant="outline" size="sm" onClick={() => setShowSettings(v => !v)} className={`gap-1.5 ${showSettings ? 'bg-accent' : ''}`}>
-            <Settings2 className="w-4 h-4" /> Settings
-          </Button>
           <Button variant="outline" size="sm" onClick={() => setShowCsvUpload(true)} className="gap-1.5"><Upload className="w-4 h-4" /> Import CSV</Button>
           {activeCards.length > 0 && (
             <Button variant="outline" size="sm" onClick={exportCsv} className="gap-1.5"><Download className="w-4 h-4" /> Export CSV</Button>
