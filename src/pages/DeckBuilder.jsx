@@ -231,7 +231,7 @@ export default function DeckBuilder() {
           <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors mt-1">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div className="flex-1 min-w-0">
+          <div className="min-w-0 w-0 flex-1 max-w-xs">
             <h1 className="text-xl font-bold">{deck?.title || 'Loading…'}</h1>
             {/* Description */}
             {editingDesc ? (
@@ -282,7 +282,7 @@ export default function DeckBuilder() {
           {activeCards.length > 0 && (
             <div className="shrink-0 flex flex-col items-stretch gap-1.5">
               <Link to={`/study/${deckId}`}>
-                <Button className="gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl w-full px-8 h-10 text-sm font-semibold">
+                <Button className="gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl w-full px-14 h-10 text-sm font-semibold">
                   <BookOpen className="w-4 h-4" /> Study
                 </Button>
               </Link>
