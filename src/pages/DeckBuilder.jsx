@@ -2,13 +2,11 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, ArrowLeft, Pencil, Trash2, BookOpen, Image as ImageIcon, Settings2, X, Upload, RotateCcw, BarChart2, Archive, Volume2, VolumeX, Download, CircleDot, CheckSquare, ToggleRight, Play, Sparkles, Check } from 'lucide-react';
+import { Plus, ArrowLeft, Pencil, Trash2, BookOpen, Image as ImageIcon, Settings2, X, Upload, RotateCcw, BarChart2, Archive, Download, CircleDot, CheckSquare, ToggleRight, Play, Sparkles, Check } from 'lucide-react';
 import AiCardSuggestionsModal from '@/components/cards/AiCardSuggestionsModal';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
 import CardEditor from '@/components/cards/CardEditor';
 import CsvUploadModal from '@/components/cards/CsvUploadModal';
 import CardFilterBar from '@/components/cards/CardFilterBar';
@@ -55,9 +53,6 @@ export default function DeckBuilder() {
     return () => window.removeEventListener('resize', handler);
   }, []);
 
-  // Sound preference
-  const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem('flashdeck_sound') !== '0');
-
   // UI state
   const [showEditor, setShowEditor] = useState(false);
   const [editingCard, setEditingCard] = useState(null);
@@ -66,7 +61,6 @@ export default function DeckBuilder() {
   const [showDiscardDialog, setShowDiscardDialog] = useState(false);
   const [showBin, setShowBin] = useState(false);
   const [showAiSuggest, setShowAiSuggest] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
   const [previewCard, setPreviewCard] = useState(null);
   const editorSaveRef = useRef(null);
 
@@ -297,9 +291,9 @@ export default function DeckBuilder() {
                 <Link to={`/stats/${deckId}`} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors">
                   <BarChart2 className="w-3.5 h-3.5" /> Stats
                 </Link>
-                <button onClick={() => setShowSettings(v => !v)} className={`flex items-center gap-1 text-xs underline underline-offset-2 transition-colors ${showSettings ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
+                <Link to={`/settings/${deckId}`} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors">
                   <Settings2 className="w-3.5 h-3.5" /> Settings
-                </button>
+                </Link>
               </div>
             </div>
           )}
@@ -319,91 +313,6 @@ export default function DeckBuilder() {
           )}
         </div>
       </div>
-
-      {/* Deck settings */}
-      {deck && showSettings && (
-        <div className="mb-6 bg-card border border-border rounded-xl px-4 py-3 flex flex-wrap items-center gap-x-6 gap-y-3">
-          <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-            <Settings2 className="w-3.5 h-3.5" /> Deck Settings
-          </div>
-          <div className="flex items-center gap-2">
-            <Label className="text-xs text-muted-foreground whitespace-nowrap">Clue / Eliminate feature</Label>
-            <Select
-              value={deck.clue_mode || 'allowed'}
-              onValueChange={(val) => updateDeckMutation.mutate({ clue_mode: val })}
-            >
-              <SelectTrigger className="h-7 text-xs w-36">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="allowed">Allowed</SelectItem>
-                <SelectItem value="disabled">Disabled</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center gap-2">
-            <Label className="text-xs text-muted-foreground whitespace-nowrap">Show clue by default</Label>
-            <Select
-              value={deck.clue_default_revealed ? 'yes' : 'no'}
-              onValueChange={(val) => updateDeckMutation.mutate({ clue_default_revealed: val === 'yes' })}
-            >
-              <SelectTrigger className="h-7 text-xs w-24">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="no">Hidden</SelectItem>
-                <SelectItem value="yes">Shown</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center gap-2">
-            <Label className="text-xs text-muted-foreground whitespace-nowrap">Min sessions for mastery</Label>
-            <Select
-              value={String(deck.mastery_min_sessions ?? 3)}
-              onValueChange={(val) => updateDeckMutation.mutate({ mastery_min_sessions: Number(val) })}
-            >
-              <SelectTrigger className="h-7 text-xs w-24">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {[1, 2, 3, 5, 7, 10].map(n => (
-                  <SelectItem key={n} value={String(n)}>{n} session{n !== 1 ? 's' : ''}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center gap-2">
-            <Label className="text-xs text-muted-foreground whitespace-nowrap">Mastery % required</Label>
-            <Select
-              value={String(deck.mastery_pct ?? 90)}
-              onValueChange={(val) => updateDeckMutation.mutate({ mastery_pct: Number(val) })}
-            >
-              <SelectTrigger className="h-7 text-xs w-24">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {[70, 75, 80, 85, 90, 95, 100].map(n => (
-                  <SelectItem key={n} value={String(n)}>{n}%</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center gap-2">
-            <Label className="text-xs text-muted-foreground whitespace-nowrap">Answer sounds</Label>
-            <button
-              onClick={() => {
-                const next = !soundEnabled;
-                setSoundEnabled(next);
-                localStorage.setItem('flashdeck_sound', next ? '1' : '0');
-              }}
-              className={`flex items-center gap-1 text-xs px-2 py-1 rounded-md border transition-colors ${soundEnabled ? 'border-primary text-primary bg-accent' : 'border-border text-muted-foreground'}`}
-            >
-              {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
-              {soundEnabled ? 'On' : 'Off'}
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Filter bar */}
       {activeCards.length > 0 && (

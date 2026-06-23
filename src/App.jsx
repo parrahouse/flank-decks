@@ -13,6 +13,7 @@ import StudySession from '@/pages/StudySession';
 import SharedDeck from '@/pages/SharedDeck';
 import QuizMaster from '@/pages/QuizMaster';
 import DeckStats from '@/pages/DeckStats';
+import DeckSettings from '@/pages/DeckSettings';
 import AdminExtras from '@/pages/AdminExtras';
 import Profile from '@/pages/Profile';
 
@@ -40,6 +41,7 @@ const AuthenticatedApp = () => {
         <Route path="/study/:deckId" element={<StudySession />} />
         <Route path="/quiz" element={<QuizMaster />} />
         <Route path="/stats/:deckId" element={<DeckStats />} />
+        <Route path="/settings/:deckId" element={<DeckSettings />} />
         <Route path="/admin/extras" element={<AdminExtras />} />
         <Route path="/profile" element={<Profile />} />
       </Route>
