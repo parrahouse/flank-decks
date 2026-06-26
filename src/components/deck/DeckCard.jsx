@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { MoreHorizontal, GalleryVerticalEnd, Copy, Trash2, Share2, Pencil, Image as ImageIcon, Trophy, TrendingDown, Clock, RotateCcw, CheckCircle2, PlayCircle } from 'lucide-react';
+import { MoreHorizontal, GalleryVerticalEnd, Copy, Trash2, Share2, Pencil, Image as ImageIcon, PlayCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -180,37 +180,13 @@ export default function DeckCard({ deck, cardCount, coverUrl, stats, savedHoursL
             </div>
 
             {/* Stats block */}
-            {stats ? (
-              <div className="space-y-1">
-                {avgScore !== null && (
-                  <div className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: avgScore >= 80 ? '#16a34a' : avgScore >= 50 ? '#d97706' : '#dc2626' }}>
-                    <CheckCircle2 className="w-3 h-3" /> {avgScore}% avg score
-                  </div>
-                )}
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                  {stats.highScore !== null && (
-                    <span className="flex items-center gap-1 text-green-600">
-                      <Trophy className="w-3 h-3" /> {stats.highScore}%
-                    </span>
-                  )}
-                  {stats.lowScore !== null && (
-                    <span className="flex items-center gap-1 text-amber-600">
-                      <TrendingDown className="w-3 h-3" /> {stats.lowScore}%
-                    </span>
-                  )}
-                  <span className="flex items-center gap-1">
-                    <RotateCcw className="w-3 h-3" /> {stats.timesFinished}/{stats.timesStarted}
-                  </span>
-                  {stats.lastStudied && (
-                    <span className="flex items-center gap-1 ml-auto">
-                      <Clock className="w-3 h-3" /> {timeAgo(stats.lastStudied)}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <p className="text-xs text-muted-foreground italic">Ready to start</p>
-            )}
+            <p className="text-xs text-muted-foreground">
+              {cardCount} {cardCount === 1 ? 'card' : 'cards'}
+              {stats && avgScore !== null
+                ? <span style={{ color: avgScore >= 80 ? '#16a34a' : avgScore >= 50 ? '#d97706' : '#dc2626' }}> · {avgScore}% avg score</span>
+                : <span className="italic"> · ready to start</span>
+              }
+            </p>
 
             {/* Saved session badge */}
             {savedHoursLeft !== null && (
@@ -221,8 +197,7 @@ export default function DeckCard({ deck, cardCount, coverUrl, stats, savedHoursL
             )}
 
             {/* Actions */}
-            <div className="flex items-center justify-between mt-auto pt-1 border-t border-border/60">
-              <span className="text-xs text-muted-foreground">{cardCount} {cardCount === 1 ? 'card' : 'cards'}</span>
+            <div className="flex items-center justify-end mt-auto pt-1 border-t border-border/60">
               <div className="flex gap-1.5">
                 <Link to={`/study/${deck.id}`} className="flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors">
                   <GalleryVerticalEnd className="w-4 h-4" /> Study
