@@ -52,48 +52,47 @@ function WaterFill({ pct }) {
         transition: 'height 1.6s cubic-bezier(0.22, 1, 0.36, 1)',
       }}
     >
-      {/* Wave surface */}
-      <div className="absolute top-0 left-0 right-0" style={{ height: 18, marginTop: -14, overflow: 'visible' }}>
+      {/* Water body — fills the full height, waves sit on top */}
+      <div className="absolute left-0 right-0 bottom-0 top-0" style={{ backgroundColor: '#EDF3F8' }} />
+
+      {/* Wave surface — pinned to the very top of the fill */}
+      <div className="absolute top-0 left-0 right-0" style={{ height: 14, marginTop: -13, overflow: 'visible' }}>
         {/* Wave 1 — slower */}
         <svg
-          viewBox="0 0 800 18"
+          viewBox="0 0 800 14"
           preserveAspectRatio="none"
           style={{
             position: 'absolute',
             top: 0,
             width: '200%',
-            height: 18,
-            opacity: 0.6,
+            height: 14,
             animation: 'waveScroll1 16s linear infinite',
           }}
         >
           <path
-            d="M0,9 C50,0 100,18 150,9 C200,0 250,18 300,9 C350,0 400,18 450,9 C500,0 550,18 600,9 C650,0 700,18 750,9 C800,0 800,9 800,9 L800,18 L0,18 Z"
-            fill="#c5dff0"
+            d="M0,7 C50,0 100,14 150,7 C200,0 250,14 300,7 C350,0 400,14 450,7 C500,0 550,14 600,7 C650,0 700,14 750,7 C800,0 800,7 800,7 L800,14 L0,14 Z"
+            fill="#EDF3F8"
           />
         </svg>
         {/* Wave 2 — faster, offset */}
         <svg
-          viewBox="0 0 800 18"
+          viewBox="0 0 800 14"
           preserveAspectRatio="none"
           style={{
             position: 'absolute',
-            top: 2,
+            top: 1,
             width: '200%',
-            height: 18,
+            height: 14,
             opacity: 0.5,
             animation: 'waveScroll2 11s linear infinite reverse',
           }}
         >
           <path
-            d="M0,12 C60,4 120,18 180,10 C240,2 300,18 360,10 C420,2 480,18 540,10 C600,2 660,18 720,10 C780,2 800,14 800,14 L800,18 L0,18 Z"
-            fill="#b0d4ec"
+            d="M0,9 C60,2 120,14 180,7 C240,0 300,14 360,7 C420,0 480,14 540,7 C600,0 660,14 720,7 C780,0 800,9 800,9 L800,14 L0,14 Z"
+            fill="#EDF3F8"
           />
         </svg>
       </div>
-
-      {/* Water body */}
-      <div className="absolute left-0 right-0 bottom-0 top-4" style={{ backgroundColor: '#EDF3F8' }} />
     </div>
   );
 }
