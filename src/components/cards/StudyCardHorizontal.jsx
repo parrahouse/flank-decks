@@ -411,27 +411,26 @@ export default function StudyCardHorizontal({
             </div>
           )}
         </div>
-      </div>
-
-      {/* Action pane */}
-      <div style={{ width: '100%', boxSizing: 'border-box', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 12, backgroundColor: '#fff', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, backgroundColor: '#F5F5F0', borderRadius: 18, padding: '5px 12px', fontSize: 12, flexShrink: 0 }}>
-          <Glasses style={{ width: 17, height: 17, flexShrink: 0 }} />
-          <span>Mastery: <strong>{masteryPct !== null ? `${masteryPct}%` : '--'}</strong></span>
-          <span>Studied: <strong>{timesStudied !== null ? timesStudied : '--'}</strong></span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <button onClick={() => { const next = !bookmarked; setBookmarked(next); onToggleBookmark && onToggleBookmark(card.id, next); }} style={{ fontSize: 14, display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', color: bookmarked ? '#d97706' : 'inherit' }}>
-            {bookmarked ? <BookmarkX style={{ width: 17, height: 17 }} /> : <Bookmark style={{ width: 17, height: 17 }} />}
-          </button>
-          <button onClick={() => setNoteEditing(v => !v)} style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer' }}>
-            <Pencil style={{ width: 14, height: 14, flexShrink: 0 }} />
-            <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2 }}>Add/Edit Hint</span>
-          </button>
-          <button onClick={() => { if (!finalAnswer) { onScore && onScore(SCORE.wrong, 'wrong'); } onNext(); }} disabled={!!finalAnswer} style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: finalAnswer ? 'not-allowed' : 'pointer', opacity: finalAnswer ? 0.35 : 1, transition: 'opacity 0.3s' }}>
-            <SkipForward style={{ width: 14, height: 14, flexShrink: 0 }} />
-            <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2 }}>Skip</span>
-          </button>
+        {/* Action row — inside the answer pane */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10, paddingTop: 10, borderTop: '1px solid #E5E5E5', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, backgroundColor: '#F5F5F0', borderRadius: 18, padding: '5px 12px', fontSize: 12, flexShrink: 0 }}>
+            <Glasses style={{ width: 17, height: 17, flexShrink: 0 }} />
+            <span>Mastery: <strong>{masteryPct !== null ? `${masteryPct}%` : '--'}</strong></span>
+            <span>Studied: <strong>{timesStudied !== null ? timesStudied : '--'}</strong></span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <button onClick={() => { const next = !bookmarked; setBookmarked(next); onToggleBookmark && onToggleBookmark(card.id, next); }} style={{ fontSize: 14, display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', color: bookmarked ? '#d97706' : 'inherit' }}>
+              {bookmarked ? <BookmarkX style={{ width: 17, height: 17 }} /> : <Bookmark style={{ width: 17, height: 17 }} />}
+            </button>
+            <button onClick={() => setNoteEditing(v => !v)} style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer' }}>
+              <Pencil style={{ width: 14, height: 14, flexShrink: 0 }} />
+              <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2 }}>Add/Edit Hint</span>
+            </button>
+            <button onClick={() => { if (!finalAnswer) { onScore && onScore(SCORE.wrong, 'wrong'); } onNext(); }} disabled={!!finalAnswer} style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: finalAnswer ? 'not-allowed' : 'pointer', opacity: finalAnswer ? 0.35 : 1, transition: 'opacity 0.3s' }}>
+              <SkipForward style={{ width: 14, height: 14, flexShrink: 0 }} />
+              <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2 }}>Skip</span>
+            </button>
+          </div>
         </div>
       </div>
     </Pane>
