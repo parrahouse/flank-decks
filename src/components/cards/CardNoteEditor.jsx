@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
-export default function CardNoteEditor({ cardId }) {
+export default function CardNoteEditor({ cardId, onSaved }) {
   const qc = useQueryClient();
 
   const { data: notes = [], isLoading } = useQuery({
@@ -49,6 +49,7 @@ export default function CardNoteEditor({ cardId }) {
     qc.invalidateQueries({ predicate: q => q.queryKey[0] === 'card-notes-session' });
     setSaving(false);
     toast.success('Note saved');
+    onSaved && onSaved();
   };
 
   if (!cardId) {
@@ -88,7 +89,7 @@ export default function CardNoteEditor({ cardId }) {
           disabled={saving}
           className="h-7 text-xs bg-amber-500 hover:bg-amber-600 text-white border-0"
         >
-          {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Save Note'}
+          {saving ? <><Loader2 className="w-3 h-3 animate-spin" /> Saving…</> : 'Save Note'}
         </Button>
       </div>
 

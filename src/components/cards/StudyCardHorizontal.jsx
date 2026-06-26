@@ -466,7 +466,7 @@ export default function StudyCardHorizontal({
             {card.clue && <p className="text-sm font-semibold">{card.clue}</p>}
             <p className="text-sm text-muted-foreground">Answer: <span className="font-semibold text-foreground">{correctAnswers.join(', ')}</span></p>
           </div>
-          <CardNoteEditor cardId={card.id} />
+          <CardNoteEditor cardId={card.id} onSaved={() => setNoteEditing(false)} />
         </DialogContent>
       </Dialog>
 
