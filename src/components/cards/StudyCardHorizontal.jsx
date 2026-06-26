@@ -423,7 +423,7 @@ export default function StudyCardHorizontal({
             </button>
             <button onClick={() => setNoteEditing(v => !v)} style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer' }}>
               <Pencil style={{ width: 14, height: 14, flexShrink: 0 }} />
-              <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2 }}>Add/Edit Hint</span>
+              <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2 }}>{note ? 'Edit Hint' : 'Add Hint'}</span>
             </button>
             <button onClick={() => { if (!finalAnswer) { onScore && onScore(SCORE.wrong, 'wrong'); } onNext(); }} disabled={!!finalAnswer} style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: finalAnswer ? 'not-allowed' : 'pointer', opacity: finalAnswer ? 0.35 : 1, transition: 'opacity 0.3s' }}>
               <SkipForward style={{ width: 14, height: 14, flexShrink: 0 }} />
