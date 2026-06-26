@@ -179,14 +179,7 @@ export default function DeckCard({ deck, cardCount, coverUrl, stats, savedHoursL
               </DropdownMenu>
             </div>
 
-            {/* Stats block */}
-            <p className="text-xs text-muted-foreground">
-              {cardCount} {cardCount === 1 ? 'card' : 'cards'}
-              {stats && avgScore !== null
-                ? <span style={{ color: avgScore >= 80 ? '#16a34a' : avgScore >= 50 ? '#d97706' : '#dc2626' }}> · {avgScore}% avg score</span>
-                : <span className="italic"> · ready to start</span>
-              }
-            </p>
+
 
             {/* Saved session badge */}
             {savedHoursLeft !== null && (
@@ -197,12 +190,17 @@ export default function DeckCard({ deck, cardCount, coverUrl, stats, savedHoursL
             )}
 
             {/* Actions */}
-            <div className="flex items-center justify-end mt-auto pt-1 border-t border-border/60">
-              <div className="flex gap-1.5">
-                <Link to={`/study/${deck.id}`} className="flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors">
-                  <GalleryVerticalEnd className="w-4 h-4" /> Study
-                </Link>
-              </div>
+            <div className="flex items-center justify-between mt-auto">
+              <p className="text-xs text-muted-foreground">
+                {cardCount} {cardCount === 1 ? 'card' : 'cards'}
+                {stats && avgScore !== null
+                  ? <span style={{ color: avgScore >= 80 ? '#16a34a' : avgScore >= 50 ? '#d97706' : '#dc2626' }}> · {avgScore}% avg score</span>
+                  : <span className="italic"> · ready to start</span>
+                }
+              </p>
+              <Link to={`/study/${deck.id}`} className="flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors">
+                <GalleryVerticalEnd className="w-4 h-4" /> Study
+              </Link>
             </div>
           </div>
         </div>
