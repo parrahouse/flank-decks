@@ -12,7 +12,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   SquareCheck, ToggleLeft, CopyCheck, Sparkles, Glasses,
-  Bookmark, BookmarkX, Pencil, SkipForward, GraduationCap,
+  Bookmark, Pencil, SkipForward, GraduationCap,
   X, MessageCircleQuestion, Check,
 } from 'lucide-react';
 import CardNoteEditor from './CardNoteEditor';
@@ -266,11 +266,18 @@ export default function StudyCardHorizontal({
   const ImageQuestionCol = (
     <Pane {...paneProps} style={{ display: 'flex', flexDirection: 'column', flex: '0 0 48%', minWidth: 0, gap: 8 }}>
       {/* Image */}
-      <div style={{ width: '100%', aspectRatio: '4/3', overflow: 'hidden', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: '100%', aspectRatio: '4/3', overflow: 'hidden', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
         {card.image_url
           ? <img src={card.image_url} alt="card" style={{ width: '100%', height: '100%', objectFit: card.image_fit || 'cover', objectPosition: (card.image_fit !== 'contain' && card.image_focal_point) ? `${card.image_focal_point.x}% ${card.image_focal_point.y}%` : 'center' }} />
           : <span style={{ color: '#9ca3af', fontSize: 13 }}>No image</span>
         }
+        {/* Bookmark — top right of image */}
+        <button
+          onClick={() => { const next = !bookmarked; setBookmarked(next); onToggleBookmark && onToggleBookmark(card.id, next); }}
+          style={{ position: 'absolute', top: 8, right: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 0 }}
+        >
+          <Bookmark style={{ width: 22, height: 22, fill: bookmarked ? '#d97706' : 'none', color: bookmarked ? '#d97706' : '#9ca3af', strokeWidth: 2 }} />
+        </button>
       </div>
 
       {/* Question pane */}
@@ -418,9 +425,6 @@ export default function StudyCardHorizontal({
             <span>Studied: <strong>{timesStudied !== null ? timesStudied : '--'}</strong></span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <button onClick={() => { const next = !bookmarked; setBookmarked(next); onToggleBookmark && onToggleBookmark(card.id, next); }} style={{ fontSize: 14, display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', color: bookmarked ? '#d97706' : 'inherit' }}>
-              {bookmarked ? <BookmarkX style={{ width: 17, height: 17 }} /> : <Bookmark style={{ width: 17, height: 17 }} />}
-            </button>
             <button onClick={() => setNoteEditing(v => !v)} style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer' }}>
               <Pencil style={{ width: 14, height: 14, flexShrink: 0 }} />
               <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2 }}>{note ? 'Edit Hint' : 'Add Hint'}</span>
