@@ -293,10 +293,15 @@ export default function StudyCardHorizontal({
         </span>
         {/* Hint button — bottom right of question pane */}
         {hintVisible && note ? (
-          // Hint is open + exists: show edit (pencil)
-          <button onClick={() => setNoteEditing(true)} title="Edit hint" style={{ position: 'absolute', bottom: 6, right: 12, background: 'none', border: 'none', cursor: 'pointer', color: '#1a237e', padding: 0, lineHeight: 0 }}>
-            <Pencil style={{ width: 16, height: 16 }} />
-          </button>
+          // Hint is open + exists: show close and edit buttons
+          <div style={{ position: 'absolute', bottom: 6, right: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button onClick={() => setNoteEditing(true)} title="Edit hint" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1a237e', padding: 0, lineHeight: 0 }}>
+              <Pencil style={{ width: 15, height: 15 }} />
+            </button>
+            <button onClick={() => setHintVisible(false)} title="Close hint" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1a237e', padding: 0, lineHeight: 0 }}>
+              <X style={{ width: 16, height: 16 }} />
+            </button>
+          </div>
         ) : note ? (
           // Hint exists but not visible: show message icon to open it
           <button onClick={() => setHintVisible(true)} title="View your hint" style={{ position: 'absolute', bottom: 6, right: 12, background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#113656', opacity: 0.6, lineHeight: 0 }}>
