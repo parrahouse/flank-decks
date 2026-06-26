@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { MoreHorizontal, BookOpen, Copy, Trash2, Share2, Pencil, Image as ImageIcon, Trophy, TrendingDown, Clock, RotateCcw, CheckCircle2, PlayCircle } from 'lucide-react';
+import { MoreHorizontal, GalleryVerticalEnd, Copy, Trash2, Share2, Pencil, Image as ImageIcon, Trophy, TrendingDown, Clock, RotateCcw, CheckCircle2, PlayCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -224,10 +224,8 @@ export default function DeckCard({ deck, cardCount, coverUrl, stats, savedHoursL
             <div className="flex items-center justify-between mt-auto pt-1 border-t border-border/60">
               <span className="text-xs text-muted-foreground">{cardCount} {cardCount === 1 ? 'card' : 'cards'}</span>
               <div className="flex gap-1.5">
-                <Link to={`/study/${deck.id}`}>
-                  <Button size="sm" className="h-7 text-xs gap-1">
-                    <BookOpen className="w-3.5 h-3.5" /> Study
-                  </Button>
+                <Link to={`/study/${deck.id}`} className="flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors">
+                  <GalleryVerticalEnd className="w-4 h-4" /> Study
                 </Link>
               </div>
             </div>
