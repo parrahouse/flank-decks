@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import { MoreHorizontal, BookOpen, Copy, Trash2, Share2, Pencil, LayoutList, Image as ImageIcon, Trophy, TrendingDown, Clock, RotateCcw, CheckCircle2, PlayCircle } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { MoreHorizontal, BookOpen, Copy, Trash2, Share2, Pencil, Image as ImageIcon, Trophy, TrendingDown, Clock, RotateCcw, CheckCircle2, PlayCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -103,6 +103,7 @@ export default function DeckCard({ deck, cardCount, coverUrl, stats, savedHoursL
     : null;
 
   const waterPct = avgScore !== null ? avgScore : 0;
+  const navigate = useNavigate();
 
   return (
     <>
@@ -158,7 +159,7 @@ export default function DeckCard({ deck, cardCount, coverUrl, stats, savedHoursL
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-44">
-                  <DropdownMenuItem onClick={() => onEdit(deck)}>
+                  <DropdownMenuItem onClick={() => navigate(`/deck/${deck.id}`)}>
                     <Pencil className="w-4 h-4 mr-2" /> Edit deck
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onSetCover(deck)}>
@@ -223,11 +224,6 @@ export default function DeckCard({ deck, cardCount, coverUrl, stats, savedHoursL
             <div className="flex items-center justify-between mt-auto pt-1 border-t border-border/60">
               <span className="text-xs text-muted-foreground">{cardCount} {cardCount === 1 ? 'card' : 'cards'}</span>
               <div className="flex gap-1.5">
-                <Link to={`/deck/${deck.id}`}>
-                  <Button size="sm" variant="ghost" className="h-7 text-xs gap-1">
-                    <LayoutList className="w-3.5 h-3.5" /> Edit deck
-                  </Button>
-                </Link>
                 <Link to={`/study/${deck.id}`}>
                   <Button size="sm" className="h-7 text-xs gap-1">
                     <BookOpen className="w-3.5 h-3.5" /> Study
