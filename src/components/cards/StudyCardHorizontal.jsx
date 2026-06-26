@@ -13,7 +13,7 @@ import { useState, useEffect, useRef } from 'react';
 import {
   SquareCheck, ToggleLeft, CopyCheck, Sparkles, Glasses,
   Bookmark, Pencil, SkipForward, GraduationCap,
-  X, MessageCircleQuestion, Check,
+  X, MessageCircleQuestion, Check, PlusCircle,
 } from 'lucide-react';
 import CardNoteEditor from './CardNoteEditor';
 import { Button } from '@/components/ui/button';
@@ -291,16 +291,22 @@ export default function StudyCardHorizontal({
         <span style={{ position: 'absolute', bottom: 8, left: 16, color: hintVisible ? '#1a237e' : '#113656', fontSize: 13, fontWeight: hintVisible ? 400 : 700, opacity: hintVisible ? 0.7 : 1 }}>
           {hintVisible ? 'Hint' : `${cardIndex + 1}/${total}`}
         </span>
-        {note && (
-          hintVisible ? (
-            <button onClick={() => setHintVisible(false)} style={{ position: 'absolute', bottom: 6, right: 12, background: 'none', border: 'none', cursor: 'pointer', color: '#1a237e', padding: 0, lineHeight: 0 }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
-            </button>
-          ) : (
-            <button onClick={() => setHintVisible(true)} title="View your hint" style={{ position: 'absolute', bottom: 6, right: 12, background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#113656', opacity: 0.6, lineHeight: 0 }}>
-              <MessageCircleQuestion style={{ width: 18, height: 18 }} />
-            </button>
-          )
+        {/* Hint button — bottom right of question pane */}
+        {hintVisible && note ? (
+          // Hint is open + exists: show edit (pencil)
+          <button onClick={() => setNoteEditing(true)} title="Edit hint" style={{ position: 'absolute', bottom: 6, right: 12, background: 'none', border: 'none', cursor: 'pointer', color: '#1a237e', padding: 0, lineHeight: 0 }}>
+            <Pencil style={{ width: 16, height: 16 }} />
+          </button>
+        ) : note ? (
+          // Hint exists but not visible: show message icon to open it
+          <button onClick={() => setHintVisible(true)} title="View your hint" style={{ position: 'absolute', bottom: 6, right: 12, background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#113656', opacity: 0.6, lineHeight: 0 }}>
+            <MessageCircleQuestion style={{ width: 18, height: 18 }} />
+          </button>
+        ) : (
+          // No hint: show + icon to add one
+          <button onClick={() => setNoteEditing(true)} title="Add a hint" style={{ position: 'absolute', bottom: 6, right: 12, background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#113656', opacity: 0.45, lineHeight: 0 }}>
+            <PlusCircle style={{ width: 18, height: 18 }} />
+          </button>
         )}
       </div>
     </Pane>
@@ -426,10 +432,6 @@ export default function StudyCardHorizontal({
             <span>Studied: <strong>{timesStudied !== null ? timesStudied : '--'}</strong></span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <button onClick={() => setNoteEditing(v => !v)} style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer' }}>
-              <Pencil style={{ width: 14, height: 14, flexShrink: 0 }} />
-              <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2 }}>{note ? 'Edit Hint' : 'Add Hint'}</span>
-            </button>
             <button onClick={() => { if (!finalAnswer) { onScore && onScore(SCORE.wrong, 'wrong'); } onNext(); }} disabled={!!finalAnswer} style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: finalAnswer ? 'not-allowed' : 'pointer', opacity: finalAnswer ? 0.35 : 1, transition: 'opacity 0.3s' }}>
               <SkipForward style={{ width: 14, height: 14, flexShrink: 0 }} />
               <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2 }}>Skip</span>
