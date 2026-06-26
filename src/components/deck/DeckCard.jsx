@@ -33,15 +33,25 @@ function RulerTicks({ count = 8 }) {
   );
 }
 
-// Tilt offset shared across all cards (singleton listener)
+// Shared tilt value driven by mouse (desktop) or device orientation (mobile)
 let _tiltListeners = [];
-let _tiltGamma = 0; // left/right tilt in degrees
+let _tiltValue = 0;
+
+function _notifyTilt(v) {
+  _tiltValue = v;
+  _tiltListeners.forEach(fn => fn(v));
+}
 
 if (typeof window !== 'undefined') {
+  // Desktop: mouse X position mapped to ±1
+  window.addEventListener('mousemove', (e) => {
+    const v = (e.clientX / window.innerWidth - 0.5) * 2; // -1 to 1
+    _notifyTilt(v);
+  });
+  // Mobile: device gamma mapped to ±1
   window.addEventListener('deviceorientation', (e) => {
-    // gamma: left/right tilt (-90 to 90). Clamp to ±20 for subtlety.
-    _tiltGamma = Math.max(-20, Math.min(20, e.gamma || 0));
-    _tiltListeners.forEach(fn => fn(_tiltGamma));
+    const v = Math.max(-1, Math.min(1, (e.gamma || 0) / 20));
+    _notifyTilt(v);
   });
 }
 
@@ -66,8 +76,8 @@ function WaterFill({ pct }) {
 
   if (pct === 0) return null;
 
-  // Subtle tilt: shift height by up to ±3% based on device lean
-  const tiltOffset = (tilt / 20) * 3;
+  // Subtle tilt: shift height by up to ±3% based on mouse/device lean
+  const tiltOffset = tilt * 3;
   const displayPct = Math.max(0, Math.min(100, animPct + tiltOffset));
 
   return (
