@@ -391,11 +391,10 @@ export default function StudyCardHorizontal({
           )}
         </div>
 
-        {/* Bottom row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
-          <span />
-          {!answered ? (
-            isSelectAll ? (
+        {/* Bottom row — eliminate / select-all done (unanswered only) */}
+        {!answered && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: 10 }}>
+            {isSelectAll ? (
               selectAllPending.size >= 2 && (
                 <button onClick={handleSelectAllDone} style={{ backgroundColor: '#00A842', color: '#fff', border: 'none', borderRadius: 7, padding: '7px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
                   <Check style={{ width: 14, height: 14 }} /> Done
@@ -408,38 +407,38 @@ export default function StudyCardHorizontal({
               >
                 <Sparkles style={{ width: 18, height: 18 }} />
               </button>
-            )
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              {hasExplanation && (
-                <button onClick={() => { setFlipped(true); cancelCountdown(); }} style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
-                  <GraduationCap style={{ width: 13, height: 13, flexShrink: 0 }} />
-                  <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 1 }}>Learn More</span>
-                </button>
-              )}
-              <button onClick={() => { cancelCountdown(); onNext(); }} style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', position: 'relative' }}>
-                <SkipForward style={{ width: 13, height: 13, flexShrink: 0 }} />
-                <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 1, position: 'relative' }}>
-                  {countdown !== null && (
-                    <span style={{ position: 'absolute', bottom: 0, left: 0, height: '1.5px', backgroundColor: '#555', width: `${((COUNTDOWN_SECS - countdown + 1) / COUNTDOWN_SECS) * 100}%`, transition: 'width 1s linear' }} />
-                  )}
-                  {isLast ? 'Finish' : 'Next'}
-                </span>
-              </button>
-            </div>
-          )}
-        </div>
-        {/* Action row — inside the answer pane */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10, paddingTop: 10, borderTop: '1px solid #E5E5E5', flexWrap: 'wrap' }}>
+            )}
+          </div>
+        )}
+
+        {/* Action row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 10, paddingTop: 10, borderTop: '1px solid #E5E5E5', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, backgroundColor: '#F5F5F0', borderRadius: 18, padding: '5px 12px', fontSize: 12, flexShrink: 0 }}>
             <Glasses style={{ width: 17, height: 17, flexShrink: 0 }} />
             <span>Mastery: <strong>{masteryPct !== null ? `${masteryPct}%` : '--'}</strong></span>
             <span>Studied: <strong>{timesStudied !== null ? timesStudied : '--'}</strong></span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <button onClick={() => { if (!finalAnswer) { onScore && onScore(SCORE.wrong, 'wrong'); } onNext(); }} disabled={!!finalAnswer} style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: finalAnswer ? 'not-allowed' : 'pointer', opacity: finalAnswer ? 0.35 : 1, transition: 'opacity 0.3s' }}>
+            {answered && hasExplanation && (
+              <button onClick={() => { setFlipped(true); cancelCountdown(); }} style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
+                <GraduationCap style={{ width: 14, height: 14, flexShrink: 0 }} />
+                <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2 }}>Learn More</span>
+              </button>
+            )}
+            <button
+              onClick={() => {
+                if (!answered) { onScore && onScore(SCORE.wrong, 'wrong'); onNext(); }
+                else { cancelCountdown(); onNext(); }
+              }}
+              style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', position: 'relative' }}
+            >
               <SkipForward style={{ width: 14, height: 14, flexShrink: 0 }} />
-              <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2 }}>Skip</span>
+              <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2, position: 'relative' }}>
+                {countdown !== null && (
+                  <span style={{ position: 'absolute', bottom: 0, left: 0, height: '1.5px', backgroundColor: '#555', width: `${((COUNTDOWN_SECS - countdown + 1) / COUNTDOWN_SECS) * 100}%`, transition: 'width 1s linear' }} />
+                )}
+                {answered ? (isLast ? 'Finish' : 'Next') : 'Skip'}
+              </span>
             </button>
           </div>
         </div>
