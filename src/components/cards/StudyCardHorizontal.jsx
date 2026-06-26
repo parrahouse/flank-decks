@@ -311,8 +311,7 @@ export default function StudyCardHorizontal({
     <Pane {...paneProps} style={{ display: 'flex', flexDirection: 'column', flex: '1 1 0', minWidth: 0, alignSelf: 'stretch', gap: 8, pointerEvents: introReady ? 'auto' : 'none' }}>
       {/* Answer pane */}
       <div style={{
-        flex: 1, backgroundColor: '#FAFAFA', border: '2px solid #D9D9D9',
-        boxSizing: 'border-box', padding: '10px 14px',
+        flex: 1, boxSizing: 'border-box', padding: '10px 14px',
         display: 'flex', flexDirection: 'column',
       }}>
         {/* Top row */}
