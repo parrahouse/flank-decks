@@ -266,18 +266,11 @@ export default function StudyCardHorizontal({
   const ImageQuestionCol = (
     <Pane {...paneProps} style={{ display: 'flex', flexDirection: 'column', flex: '0 0 48%', minWidth: 0, gap: 8 }}>
       {/* Image */}
-      <div style={{ width: '100%', aspectRatio: '4/3', overflow: 'hidden', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+      <div style={{ width: '100%', aspectRatio: '4/3', overflow: 'hidden', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {card.image_url
           ? <img src={card.image_url} alt="card" style={{ width: '100%', height: '100%', objectFit: card.image_fit || 'cover', objectPosition: (card.image_fit !== 'contain' && card.image_focal_point) ? `${card.image_focal_point.x}% ${card.image_focal_point.y}%` : 'center' }} />
           : <span style={{ color: '#9ca3af', fontSize: 13 }}>No image</span>
         }
-        {/* Bookmark — top right of image */}
-        <button
-          onClick={() => { const next = !bookmarked; setBookmarked(next); onToggleBookmark && onToggleBookmark(card.id, next); }}
-          style={{ position: 'absolute', top: 8, right: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 0 }}
-        >
-          <Bookmark style={{ width: 22, height: 22, fill: bookmarked ? '#d97706' : 'none', color: bookmarked ? '#d97706' : '#9ca3af', strokeWidth: 2 }} />
-        </button>
       </div>
 
       {/* Question pane */}
@@ -332,12 +325,20 @@ export default function StudyCardHorizontal({
               : <SquareCheck style={{ width: 22, height: 22 }} />
             }
           </div>
-          {!isTrueFalse && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#6b7280', fontSize: 12 }}>
-              <CopyCheck style={{ width: 13, height: 13 }} />
-              <span>2nd Guess: {secondGuessAllowed ? 'ON' : 'OFF'}</span>
-            </div>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {!isTrueFalse && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#6b7280', fontSize: 12 }}>
+                <CopyCheck style={{ width: 13, height: 13 }} />
+                <span>2nd Guess: {secondGuessAllowed ? 'ON' : 'OFF'}</span>
+              </div>
+            )}
+            <button
+              onClick={() => { const next = !bookmarked; setBookmarked(next); onToggleBookmark && onToggleBookmark(card.id, next); }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 0 }}
+            >
+              <Bookmark style={{ width: 20, height: 20, fill: bookmarked ? '#d97706' : 'none', color: bookmarked ? '#d97706' : '#9ca3af', strokeWidth: 2 }} />
+            </button>
+          </div>
         </div>
 
         {/* Choices */}
