@@ -33,9 +33,31 @@ function RulerTicks({ count = 8 }) {
   );
 }
 
+// Tilt offset shared across all cards (singleton listener)
+let _tiltListeners = [];
+let _tiltGamma = 0; // left/right tilt in degrees
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('deviceorientation', (e) => {
+    // gamma: left/right tilt (-90 to 90). Clamp to ±20 for subtlety.
+    _tiltGamma = Math.max(-20, Math.min(20, e.gamma || 0));
+    _tiltListeners.forEach(fn => fn(_tiltGamma));
+  });
+}
+
+function useTilt() {
+  const [tilt, setTilt] = useState(0);
+  useEffect(() => {
+    _tiltListeners.push(setTilt);
+    return () => { _tiltListeners = _tiltListeners.filter(fn => fn !== setTilt); };
+  }, []);
+  return tilt;
+}
+
 // Animated water fill with wave surface
 function WaterFill({ pct }) {
   const [animPct, setAnimPct] = useState(0);
+  const tilt = useTilt();
 
   useEffect(() => {
     const t = setTimeout(() => setAnimPct(pct), 80);
@@ -44,11 +66,15 @@ function WaterFill({ pct }) {
 
   if (pct === 0) return null;
 
+  // Subtle tilt: shift height by up to ±3% based on device lean
+  const tiltOffset = (tilt / 20) * 3;
+  const displayPct = Math.max(0, Math.min(100, animPct + tiltOffset));
+
   return (
     <div
       className="absolute left-0 right-0 bottom-0 overflow-hidden"
       style={{
-        height: `${animPct}%`,
+        height: `${displayPct}%`,
         transition: 'height 1.6s cubic-bezier(0.22, 1, 0.36, 1)',
       }}
     >
