@@ -86,7 +86,7 @@ export default function CardNoteEditor({ cardId, onSaved }) {
         <Button
           size="sm"
           onClick={handleSave}
-          disabled={saving}
+          disabled={saving || !noteText.trim()}
           className="h-7 text-xs bg-amber-500 hover:bg-amber-600 text-white border-0"
         >
           {saving ? <><Loader2 className="w-3 h-3 animate-spin" /> Saving…</> : 'Save Note'}
