@@ -59,6 +59,7 @@ export default function StudyCardHorizontal({
   masteredCount = 0, totalCards = 0, cardStats = null,
   isBookmarked = false, onToggleBookmark = null,
   eliminateAllowed = true,
+  learningMode = false,
   handedness = 'left', // 'left' = answers on right, 'right' = answers on left
   onFirstWrong = null,
   introReady = true,
@@ -151,6 +152,7 @@ export default function StudyCardHorizontal({
       } else {
         if (!firstWrong) onFirstWrong && onFirstWrong(choice, { retry: false });
         setFinalAnswer(choice); onScore && onScore(SCORE.wrong, 'wrong');
+        if (learningMode && hasExplanation) setTimeout(() => setFlipped(true), 400);
       }
     }
   };

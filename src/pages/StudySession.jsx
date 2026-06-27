@@ -66,6 +66,7 @@ export default function StudySession() {
   const [autoAdvance, setAutoAdvance] = useState(() => localStorage.getItem('flashdeck_autoadvance') === '1');
   const [hintsAllowed, setHintsAllowed] = useState(() => localStorage.getItem('flashdeck_hints') !== '0');
   const [eliminateAllowed, setEliminateAllowed] = useState(() => localStorage.getItem('flashdeck_eliminate') !== '0');
+  const [learningModeOverride, setLearningModeOverride] = useState(null); // null = auto, true/false = manual
   const [cardIndex, setCardIndex] = useState(0);
   const [shuffledCards, setShuffledCards] = useState([]);
   const [done, setDone] = useState(false);
@@ -149,6 +150,13 @@ export default function StudySession() {
   });
 
   const notesByCardId = Object.fromEntries(cardNotes.map((n) => [n.card_id, n.note]));
+
+  // Learning mode: auto-enabled until the deck has been completed fully (no skips) at least once
+  const hasCompletedFullSession = pastSessions.some((s) =>
+    (s.card_results || []).length > 0 &&
+    (s.card_results || []).every((r) => r.key && r.key !== 'skipped')
+  );
+  const learningMode = learningModeOverride !== null ? learningModeOverride : !hasCompletedFullSession;
 
   // Compute all-time best consecutive correct streak across all past sessions
   const allTimeBest = pastSessions.reduce((best, session) => {
@@ -560,6 +568,28 @@ export default function StudySession() {
               </button>
             </div>
 
+            {/* Learning mode toggle */}
+            <div className="flex items-center justify-between px-1 pt-1">
+              <div>
+                <p className="text-sm font-medium">Learning mode</p>
+                <p className="text-xs text-muted-foreground">
+                  Auto-show explanation when you answer incorrectly
+                  {!hasCompletedFullSession && <span className="ml-1 text-amber-600 font-medium">(auto-on until first full session)</span>}
+                </p>
+              </div>
+              <button
+                onClick={() => setLearningModeOverride(!learningMode)}
+                className={cn(
+                  'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer ml-4',
+                  learningMode ? 'bg-primary' : 'bg-muted'
+                )}>
+                <span className={cn(
+                  'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform',
+                  learningMode ? 'translate-x-5' : 'translate-x-0'
+                )} />
+              </button>
+            </div>
+
             {/* Eliminate toggle */}
             <div className="flex items-center justify-between px-1 pt-1">
               <div>
@@ -905,6 +935,7 @@ export default function StudySession() {
           totalCards: activeCards.length,
           cardStats: cardStats.find((s) => s.card_id === current.id) || null,
           eliminateAllowed,
+          learningMode,
           isBookmarked: !!current.bookmarked,
           onToggleBookmark: handleToggleBookmark,
           onFirstWrong: handleFirstWrong,
