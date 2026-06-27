@@ -188,22 +188,17 @@ Return:
               {/* Header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-border">
                 <h2 className="font-semibold text-base">New Card</h2>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleAiSuggest}
-                    disabled={suggestingCard}
-                    className="gap-1.5 text-primary h-8 text-xs"
-                  >
-                    {suggestingCard
-                      ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Thinking…</>
-                      : <><Sparkles className="w-3.5 h-3.5" /> AI Suggest</>}
-                  </Button>
-                  <button onClick={handleClose} className="text-muted-foreground hover:text-foreground">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleAiSuggest}
+                  disabled={suggestingCard}
+                  className="gap-1.5 text-primary h-8 text-xs"
+                >
+                  {suggestingCard
+                    ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Thinking…</>
+                    : <><Sparkles className="w-3.5 h-3.5" /> AI Suggest</>}
+                </Button>
               </div>
 
               {/* Body */}
