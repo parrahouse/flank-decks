@@ -332,15 +332,19 @@ Return:
                     <button type="button" onClick={() => fileRef.current?.click()} className="flex items-center gap-1 text-primary hover:underline">
                       <Upload className="w-3 h-3" /> Upload
                     </button>
-                    <button type="button" onClick={() => setImagePanel(v => v === 'search' ? null : 'search')} className={cn('flex items-center gap-1 hover:underline text-primary', imagePanel === 'search' && 'font-semibold')}>
-                      <Search className="w-3 h-3" /> Search
-                    </button>
                     <button type="button" onClick={() => setImagePanel(v => v === 'pick' ? null : 'pick')} className={cn('flex items-center gap-1 hover:underline text-primary', imagePanel === 'pick' && 'font-semibold')}>
                       <ImageIcon className="w-3 h-3" /> Pick from decks
                     </button>
-                    <button type="button" onClick={() => setImagePanel(v => v === 'ai' ? null : 'ai')} className={cn('flex items-center gap-1 hover:underline text-primary', imagePanel === 'ai' && 'font-semibold')}>
-                      <Sparkles className="w-3 h-3" /> AI Generate
-                    </button>
+                    {answer.trim() && (
+                      <button type="button" onClick={() => setImagePanel(v => v === 'search' ? null : 'search')} className={cn('flex items-center gap-1 hover:underline text-primary', imagePanel === 'search' && 'font-semibold')}>
+                        <Search className="w-3 h-3" /> Search
+                      </button>
+                    )}
+                    {answer.trim() && (
+                      <button type="button" onClick={() => setImagePanel(v => v === 'ai' ? null : 'ai')} className={cn('flex items-center gap-1 hover:underline text-primary', imagePanel === 'ai' && 'font-semibold')}>
+                        <Sparkles className="w-3 h-3" /> AI Generate
+                      </button>
+                    )}
                   </div>
 
                   {imagePanel === 'search' && (
