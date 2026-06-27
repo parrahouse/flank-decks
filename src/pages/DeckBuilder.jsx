@@ -309,11 +309,7 @@ export default function DeckBuilder() {
             <Button variant="outline" size="sm" onClick={exportCsv} className="gap-1.5"><Download className="w-4 h-4" /> Export CSV</Button>
           )}
           <Button onClick={openAdd} size="sm" className="gap-1.5"><Plus className="w-4 h-4" /> Add Card</Button>
-          {activeCards.length > 0 && (
-            <Button variant="outline" size="sm" onClick={() => setShowAiSuggest(true)} className="gap-1.5 text-primary border-primary/40 hover:bg-primary/5">
-              <Sparkles className="w-4 h-4" /> AI Suggest
-            </Button>
-          )}
+
         </div>
       </div>
 
