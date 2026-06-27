@@ -31,8 +31,8 @@ const QTYPE_META = {
   multiple_choice: {
     label: 'Multiple Choice',
     answerLabel: 'Correct Answer',
-    answerHelper: 'Distractor choices can be added in the detail editor.',
-    answerPlaceholder: 'The correct answer',
+    answerHelper: 'One correct answer. Distractor choices can be added in the detail editor.',
+    answerPlaceholder: 'e.g. Jupiter',
   },
   true_false: {
     label: 'True / False',
@@ -42,9 +42,9 @@ const QTYPE_META = {
   },
   select_all: {
     label: 'Select All That Apply',
-    answerLabel: 'Correct Answer(s)',
-    answerHelper: 'Enter the primary correct answer; add more in the detail editor.',
-    answerPlaceholder: 'A correct answer',
+    answerLabel: 'Correct Answers',
+    answerHelper: 'Enter all correct answers separated by "|" — e.g. Mercury|Venus|Earth. At least 2 required.',
+    answerPlaceholder: 'e.g. Mercury|Venus|Earth',
   },
 };
 
@@ -156,15 +156,19 @@ Return:
       finalImageUrl = file_url;
     }
 
+    const correctList = qType === 'select_all'
+      ? answer.split('|').map(s => s.trim()).filter(Boolean)
+      : [answer.trim()];
+
     const choices = qType === 'true_false'
       ? ['True', 'False']
-      : [answer.trim(), '', '', ''];
+      : [...correctList, '', '', ''].slice(0, Math.max(4, correctList.length));
 
     const cardData = {
       deck_id: deckId,
       order: activeCards.length,
-      correct_answers: answer.trim(),
-      correct_answer: answer.trim(),
+      correct_answers: correctList.join('|'),
+      correct_answer: correctList[0],
       choices,
       question_type: qType,
       clue: question.trim(),
@@ -189,7 +193,12 @@ Return:
     onEditDetails(card);
   };
 
-  const canSave = qType === 'true_false' ? !!answer : !!answer.trim();
+  const selectAllAnswers = answer.split('|').map(s => s.trim()).filter(Boolean);
+  const canSave = qType === 'true_false'
+    ? !!answer
+    : qType === 'select_all'
+    ? selectAllAnswers.length >= 2
+    : !!answer.trim();
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
@@ -288,6 +297,9 @@ Return:
                     />
                   )}
                   <p className="text-xs text-muted-foreground">{meta.answerHelper}</p>
+                  {qType === 'select_all' && answer.trim() && selectAllAnswers.length < 2 && (
+                    <p className="text-xs text-amber-600">Add at least one more answer separated by "|".</p>
+                  )}
                 </div>
 
                 {/* Image (optional, at the bottom) */}
