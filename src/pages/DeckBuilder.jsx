@@ -231,10 +231,7 @@ export default function DeckBuilder() {
       <div className="mb-6">
         {/* Top row: back + title + study button */}
         <div className="flex items-start gap-3">
-          <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors mt-1">
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <div className="flex-1 min-w-0">
+<div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold">{deck?.title || 'Loading…'}</h1>
             {/* Description */}
             {editingDesc ? (
