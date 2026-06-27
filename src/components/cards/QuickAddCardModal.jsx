@@ -247,12 +247,11 @@ Return:
                       <SelectItem value="select_all">Select All That Apply</SelectItem>
                     </SelectContent>
                   </Select>
-                  {qType === 'select_all' && (
-                    <p className="text-xs text-muted-foreground">Students must select every correct answer to earn full credit.</p>
-                  )}
-                  {qType === 'true_false' && (
-                    <p className="text-xs text-muted-foreground">Write a statement in the question field — students decide if it's True or False.</p>
-                  )}
+                  <p className="text-xs text-muted-foreground min-h-[1rem]">
+                    {qType === 'multiple_choice' && 'Students pick one correct answer from a list of choices.'}
+                    {qType === 'select_all' && 'Students must select every correct answer to earn full credit.'}
+                    {qType === 'true_false' && 'Write a statement in the question field — students decide if it\'s True or False.'}
+                  </p>
                 </div>
 
                 {/* Question / Clue */}
