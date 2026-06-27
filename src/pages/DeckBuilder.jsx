@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Plus, ArrowLeft, Pencil, Trash2, BookOpen, Image as ImageIcon, Settings2, X, Upload, RotateCcw, BarChart2, Archive, Download, CircleDot, CheckSquare, ToggleRight, Play, Sparkles, Check } from 'lucide-react';
 import AiCardSuggestionsModal from '@/components/cards/AiCardSuggestionsModal';
+import QuickAddCardModal from '@/components/cards/QuickAddCardModal';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -61,6 +62,7 @@ export default function DeckBuilder() {
   const [showDiscardDialog, setShowDiscardDialog] = useState(false);
   const [showBin, setShowBin] = useState(false);
   const [showAiSuggest, setShowAiSuggest] = useState(false);
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [previewCard, setPreviewCard] = useState(null);
   const editorSaveRef = useRef(null);
 
@@ -152,7 +154,8 @@ export default function DeckBuilder() {
     URL.revokeObjectURL(url);
   };
 
-  const openAdd = () => { setEditingCard(null); setEditorDirty(false); setShowEditor(true); };
+  const openAdd = () => { setShowQuickAdd(true); };
+  const openAddLegacy = () => { setEditingCard(null); setEditorDirty(false); setShowEditor(true); };
   const openEdit = (card) => { setEditingCard(card); setEditorDirty(false); setShowEditor(true); };
 
   const requestCloseEditor = () => {
@@ -493,6 +496,23 @@ export default function DeckBuilder() {
       deckId={deckId}
       existingCount={activeCards.length}
       onImported={() => { qc.invalidateQueries(['cards', deckId]); qc.invalidateQueries(['cards-all']); }}
+    />
+
+    <QuickAddCardModal
+      open={showQuickAdd}
+      onClose={() => setShowQuickAdd(false)}
+      deckId={deckId}
+      deck={deck}
+      activeCards={activeCards}
+      onSaved={() => {
+        qc.invalidateQueries(['cards', deckId]);
+        qc.invalidateQueries(['cards-all']);
+      }}
+      onEditDetails={(card) => {
+        setEditingCard(card);
+        setEditorDirty(false);
+        setShowEditor(true);
+      }}
     />
 
     <AiCardSuggestionsModal
