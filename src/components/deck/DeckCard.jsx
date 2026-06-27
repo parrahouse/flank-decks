@@ -123,12 +123,12 @@ function WaterFill({ pct }) {
   );
 }
 
-export default function DeckCard({ deck, cardCount, coverUrl, stats, savedHoursLeft, onEdit, onDelete, onDuplicate, onShare, onSetCover }) {
+export default function DeckCard({ deck, cardCount, coverUrl, stats, masteryPct = 0, savedHoursLeft, onEdit, onDelete, onDuplicate, onShare, onSetCover }) {
   const avgScore = stats && stats.highScore !== null && stats.lowScore !== null
     ? Math.round((stats.highScore + stats.lowScore) / 2)
     : null;
 
-  const waterPct = avgScore !== null ? avgScore : 0;
+  const waterPct = masteryPct;
   const navigate = useNavigate();
 
   return (

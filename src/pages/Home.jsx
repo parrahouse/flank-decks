@@ -45,6 +45,20 @@ export default function Home() {
     enabled: !!currentUser?.id
   });
 
+  const { data: cardStats = [] } = useQuery({
+    queryKey: ['card-stats-home', currentUser?.id],
+    queryFn: () => base44.entities.UserCardStats.filter({ user_id: currentUser.id }),
+    enabled: !!currentUser?.id
+  });
+
+  // Mastery percentage per deck: mastered cards / total active cards
+  const deckMasteryPct = (deckId) => {
+    const total = cards.filter((c) => c.deck_id === deckId && !c.deleted).length;
+    if (!total) return 0;
+    const mastered = cardStats.filter((s) => s.deck_id === deckId && s.mastered).length;
+    return Math.round((mastered / total) * 100);
+  };
+
   const savedHoursLeft = (deckId) => {
     const s = savedSessions.find((x) => x.deck_id === deckId && new Date(x.expires_at).getTime() > Date.now());
     if (!s) return null;
@@ -155,6 +169,7 @@ export default function Home() {
           cardCount={cardCount(deck.id)}
           coverUrl={getCoverUrl(deck)}
           stats={deckStats(deck.id)}
+          masteryPct={deckMasteryPct(deck.id)}
           savedHoursLeft={savedHoursLeft(deck.id)}
           onEdit={openEdit}
           onDelete={(d) => deleteMutation.mutate(d)}
