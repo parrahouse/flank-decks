@@ -43,8 +43,8 @@ const QTYPE_META = {
   select_all: {
     label: 'Select All That Apply',
     answerLabel: 'Correct Answers',
-    answerHelper: 'Enter all correct answers separated by "|" — e.g. Mercury|Venus|Earth. At least 2 required.',
-    answerPlaceholder: 'e.g. Mercury|Venus|Earth',
+    answerHelper: 'Separate each correct answer with "|" — e.g. Mitosis|Meiosis|Binary Fission. At least 2 required.',
+    answerPlaceholder: 'e.g. Mitosis|Meiosis|Binary Fission',
   },
 };
 
