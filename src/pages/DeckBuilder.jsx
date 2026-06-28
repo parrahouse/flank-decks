@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, ArrowLeft, Pencil, Trash2, BookOpen, Image as ImageIcon, Settings2, X, Upload, RotateCcw, BarChart2, Archive, Download, CircleDot, CheckSquare, ToggleRight, Play, Sparkles, Check } from 'lucide-react';
+import { Plus, ArrowLeft, Pencil, Trash2, GalleryVerticalEnd, Image as ImageIcon, Settings2, X, Upload, RotateCcw, BarChart2, Archive, Download, CircleDot, CheckSquare, ToggleRight, Play, Sparkles, Check } from 'lucide-react';
 import AiCardSuggestionsModal from '@/components/cards/AiCardSuggestionsModal';
 import QuickAddCardModal from '@/components/cards/QuickAddCardModal';
 import { Button } from '@/components/ui/button';
@@ -283,7 +283,7 @@ export default function DeckBuilder() {
             <div className="shrink-0 flex flex-col items-stretch gap-1.5">
               <Link to={`/study/${deckId}`}>
                 <Button className="gap-2 rounded-[20px] w-full px-8 h-10 text-sm font-semibold">
-                  <BookOpen className="w-4 h-4" /> Study
+                  <GalleryVerticalEnd className="w-4 h-4" /> Study
                 </Button>
               </Link>
               {/* Stats + Settings as icon + underlined text under Study */}
