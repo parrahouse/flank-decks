@@ -289,7 +289,7 @@ export default function DeckBuilder() {
               <Cog className="w-4 h-4" /> Settings
             </Button>
           </Link>
-          <div className="w-px h-5 bg-border mx-1" />
+
           <Button variant="ghost" size="sm" onClick={openAdd} className="gap-1.5 h-9">
             <Plus className="w-4 h-4" /> Add Card
           </Button>
