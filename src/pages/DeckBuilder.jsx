@@ -280,15 +280,15 @@ export default function DeckBuilder() {
           </div>
           {/* Study button + icon actions — right-aligned */}
           {activeCards.length > 0 && (
-            <div className="shrink-0 flex items-center gap-2">
+            <div className="shrink-0 flex items-center gap-1">
               <Link to={`/stats/${deckId}`}>
                 <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" title="Stats">
-                  <PieChart className="w-4 h-4" />
+                  <PieChart className="w-5 h-5" />
                 </Button>
               </Link>
               <Link to={`/settings/${deckId}`}>
                 <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" title="Settings">
-                  <Cog className="w-4 h-4" />
+                  <Cog className="w-5 h-5" />
                 </Button>
               </Link>
               <Link to={`/study/${deckId}`}>
