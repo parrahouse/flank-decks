@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, ArrowLeft, Pencil, Trash2, GalleryVerticalEnd, Image as ImageIcon, Settings2, X, Upload, RotateCcw, BarChart2, Archive, Download, CircleDot, CheckSquare, ToggleRight, Play, Sparkles, Check } from 'lucide-react';
+import { Plus, ArrowLeft, Pencil, Trash2, GalleryVerticalEnd, Image as ImageIcon, Cog, X, Upload, RotateCcw, PieChart, Archive, Download, CircleDot, CheckSquare, ToggleRight, Play, Sparkles, Check } from 'lucide-react';
 import AiCardSuggestionsModal from '@/components/cards/AiCardSuggestionsModal';
 import QuickAddCardModal from '@/components/cards/QuickAddCardModal';
 import { Button } from '@/components/ui/button';
@@ -278,23 +278,24 @@ export default function DeckBuilder() {
             )}
             <p className="text-muted-foreground text-xs mt-1">{activeCards.length} {activeCards.length === 1 ? 'card' : 'cards'}</p>
           </div>
-          {/* Study button — right-aligned, prominent */}
+          {/* Study button + icon actions — right-aligned */}
           {activeCards.length > 0 && (
-            <div className="shrink-0 flex flex-col items-stretch gap-1.5">
+            <div className="shrink-0 flex items-center gap-2">
+              <Link to={`/stats/${deckId}`}>
+                <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" title="Stats">
+                  <PieChart className="w-4 h-4" />
+                </Button>
+              </Link>
+              <Link to={`/settings/${deckId}`}>
+                <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" title="Settings">
+                  <Cog className="w-4 h-4" />
+                </Button>
+              </Link>
               <Link to={`/study/${deckId}`}>
-                <Button className="gap-2 rounded-[20px] w-full px-8 h-10 text-sm font-semibold">
+                <Button className="gap-2 rounded-[20px] px-8 h-10 text-sm font-semibold">
                   <GalleryVerticalEnd className="w-4 h-4" /> Study
                 </Button>
               </Link>
-              {/* Stats + Settings as icon + underlined text under Study */}
-              <div className="flex items-center justify-center gap-4">
-                <Link to={`/stats/${deckId}`} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors">
-                  <BarChart2 className="w-3.5 h-3.5" /> Stats
-                </Link>
-                <Link to={`/settings/${deckId}`} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors">
-                  <Settings2 className="w-3.5 h-3.5" /> Settings
-                </Link>
-              </div>
             </div>
           )}
         </div>
