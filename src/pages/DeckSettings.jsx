@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, Settings2, Volume2, VolumeX } from 'lucide-react';
+import { ArrowLeft, Settings2, Volume2, VolumeX, Download } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
@@ -18,10 +19,46 @@ export default function DeckSettings() {
     enabled: !!deckId,
   });
 
+  const { data: cards = [] } = useQuery({
+    queryKey: ['cards', deckId],
+    queryFn: () => base44.entities.Card.filter({ deck_id: deckId }, 'order'),
+    enabled: !!deckId,
+  });
+
+  const activeCards = cards.filter(c => !c.deleted);
+
   const updateDeckMutation = useMutation({
     mutationFn: (data) => base44.entities.Deck.update(deckId, data),
     onSuccess: () => { qc.invalidateQueries(['deck', deckId]); toast.success('Settings saved'); },
   });
+
+  const exportCsv = () => {
+    const rows = [
+      ['correct_answers', 'question_type', 'choice_2', 'choice_3', 'choice_4', 'choice_5', 'choice_6', 'clue', 'explanation', 'image_url', 'tags'],
+      ...activeCards.map(c => {
+        const correct = (c.correct_answers || c.correct_answer || '').split('|')[0].trim();
+        const decoys = (c.choices || []).filter(ch => ch !== correct);
+        const choiceCols = [decoys[0] || '', decoys[1] || '', decoys[2] || '', decoys[3] || '', decoys[4] || ''];
+        return [
+          c.correct_answers || c.correct_answer || '',
+          c.question_type || 'multiple_choice',
+          ...choiceCols,
+          c.clue || '',
+          c.explanation || '',
+          c.image_url || '',
+          (c.tags || []).join(';'),
+        ];
+      }),
+    ];
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${deck?.title || 'deck'}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   if (!deck) {
     return (
@@ -91,6 +128,15 @@ export default function DeckSettings() {
               {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
               {soundEnabled ? 'On' : 'Off'}
             </button>
+          </Row>
+        </Section>
+
+        {/* Data */}
+        <Section title="Data">
+          <Row label="Export cards" description="Download all cards in this deck as a CSV file.">
+            <Button variant="outline" size="sm" onClick={exportCsv} disabled={activeCards.length === 0} className="gap-1.5">
+              <Download className="w-4 h-4" /> Export CSV
+            </Button>
           </Row>
         </Section>
 
