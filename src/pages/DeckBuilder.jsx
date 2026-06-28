@@ -296,13 +296,9 @@ export default function DeckBuilder() {
           <Button variant="ghost" size="sm" onClick={() => setShowCsvUpload(true)} className="gap-1.5 h-9 text-muted-foreground hover:text-foreground">
             <Upload className="w-4 h-4" /> Import CSV
           </Button>
-          <div className="ml-auto">
-            <Link to={`/study/${deckId}`}>
-              <Button size="sm" className="gap-1.5 h-9 rounded-[20px] px-5 font-semibold">
-                <GalleryVerticalEnd className="w-4 h-4" /> Study
-              </Button>
-            </Link>
-          </div>
+          <Link to={`/study/${deckId}`} className="ml-auto flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors">
+            <GalleryVerticalEnd className="w-4 h-4" /> Study
+          </Link>
         </div>
       </div>
 
