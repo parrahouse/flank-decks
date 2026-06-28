@@ -282,7 +282,7 @@ export default function DeckBuilder() {
           {activeCards.length > 0 && (
             <div className="shrink-0 flex flex-col items-stretch gap-1.5">
               <Link to={`/study/${deckId}`}>
-                <Button className="gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl w-full px-8 h-10 text-sm font-semibold">
+                <Button className="gap-2 rounded-[20px] w-full px-8 h-10 text-sm font-semibold">
                   <BookOpen className="w-4 h-4" /> Study
                 </Button>
               </Link>
