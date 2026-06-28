@@ -228,84 +228,81 @@ export default function DeckBuilder() {
     <div className="max-w-5xl mx-auto">
 
       {/* Header */}
-      <div className="mb-6">
-        {/* Top row: back + title + study button */}
-        <div className="flex items-start gap-3">
-<div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold">{deck?.title || 'Loading…'}</h1>
-            {/* Description */}
-            {editingDesc ? (
-              <div className="mt-1.5 flex flex-col gap-1.5">
-                <div className="relative">
-                  <textarea
-                    autoFocus
-                    value={descValue}
-                    onChange={e => setDescValue(e.target.value.slice(0, DESC_MAX))}
-                    placeholder="Add a description…"
-                    rows={2}
-                    maxLength={DESC_MAX}
-                    className="w-full text-sm border border-border rounded-md px-2.5 py-1.5 bg-background text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-ring pr-14"
-                  />
-                  <span className={`absolute bottom-2 right-2 text-xs tabular-nums ${descValue.length >= DESC_MAX ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
-                    {descValue.length}/{DESC_MAX}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={saveDesc} className="flex items-center gap-1 text-xs text-primary hover:underline font-medium">
-                    <Check className="w-3.5 h-3.5" /> Save
-                  </button>
-                  <button onClick={cancelEditDesc} className="text-xs text-muted-foreground hover:text-foreground">Cancel</button>
-                  {activeCards.length > 0 && (
-                    <button
-                      onClick={draftDescription}
-                      disabled={draftingDesc}
-                      className="ml-auto flex items-center gap-1 text-xs text-accent-foreground bg-accent hover:bg-accent/80 px-2 py-0.5 rounded-md disabled:opacity-50"
-                    >
-                      <Sparkles className="w-3 h-3" />
-                      {draftingDesc ? 'Drafting…' : 'AI draft'}
-                    </button>
-                  )}
-                </div>
+      <div className="mb-6 bg-card border border-border rounded-md overflow-hidden hover:shadow-md transition-all duration-200">
+        {/* Title + description */}
+        <div className="px-4 pt-4 pb-3">
+          <h1 className="text-xl font-bold">{deck?.title || 'Loading…'}</h1>
+          {editingDesc ? (
+            <div className="mt-1.5 flex flex-col gap-1.5">
+              <div className="relative">
+                <textarea
+                  autoFocus
+                  value={descValue}
+                  onChange={e => setDescValue(e.target.value.slice(0, DESC_MAX))}
+                  placeholder="Add a description…"
+                  rows={2}
+                  maxLength={DESC_MAX}
+                  className="w-full text-sm border border-border rounded-md px-2.5 py-1.5 bg-background text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-ring pr-14"
+                />
+                <span className={`absolute bottom-2 right-2 text-xs tabular-nums ${descValue.length >= DESC_MAX ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
+                  {descValue.length}/{DESC_MAX}
+                </span>
               </div>
-            ) : (
-              <button onClick={startEditDesc} className="group flex items-start gap-1 text-left mt-0.5">
-                {deck?.description
-                  ? <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors line-clamp-2">{deck.description}</span>
-                  : <span className="text-sm text-muted-foreground/50 italic group-hover:text-muted-foreground transition-colors">Add description…</span>
-                }
-                <Pencil className="w-3 h-3 text-muted-foreground/40 group-hover:text-muted-foreground shrink-0 mt-0.5 transition-colors" />
-              </button>
-            )}
-            <p className="text-muted-foreground text-xs mt-1">{activeCards.length} {activeCards.length === 1 ? 'card' : 'cards'}</p>
-          </div>
-          {/* Study button + icon actions — right-aligned */}
-          {activeCards.length > 0 && (
-            <div className="shrink-0 flex items-center gap-1">
-              <Link to={`/stats/${deckId}`}>
-                <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" title="Stats">
-                  <PieChart className="w-5 h-5" />
-                </Button>
-              </Link>
-              <Link to={`/settings/${deckId}`}>
-                <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" title="Settings">
-                  <Cog className="w-5 h-5" />
-                </Button>
-              </Link>
-              <Link to={`/study/${deckId}`}>
-                <Button className="gap-2 rounded-[20px] px-8 h-10 text-sm font-semibold">
-                  <GalleryVerticalEnd className="w-4 h-4" /> Study
-                </Button>
-              </Link>
+              <div className="flex items-center gap-2">
+                <button onClick={saveDesc} className="flex items-center gap-1 text-xs text-primary hover:underline font-medium">
+                  <Check className="w-3.5 h-3.5" /> Save
+                </button>
+                <button onClick={cancelEditDesc} className="text-xs text-muted-foreground hover:text-foreground">Cancel</button>
+                {activeCards.length > 0 && (
+                  <button
+                    onClick={draftDescription}
+                    disabled={draftingDesc}
+                    className="ml-auto flex items-center gap-1 text-xs text-accent-foreground bg-accent hover:bg-accent/80 px-2 py-0.5 rounded-md disabled:opacity-50"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    {draftingDesc ? 'Drafting…' : 'AI draft'}
+                  </button>
+                )}
+              </div>
             </div>
+          ) : (
+            <button onClick={startEditDesc} className="group flex items-start gap-1 text-left mt-0.5">
+              {deck?.description
+                ? <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors line-clamp-2">{deck.description}</span>
+                : <span className="text-sm text-muted-foreground/50 italic group-hover:text-muted-foreground transition-colors">Add description…</span>
+              }
+              <Pencil className="w-3 h-3 text-muted-foreground/40 group-hover:text-muted-foreground shrink-0 mt-0.5 transition-colors" />
+            </button>
           )}
+          <p className="text-muted-foreground text-xs mt-1">{activeCards.length} {activeCards.length === 1 ? 'card' : 'cards'}</p>
         </div>
 
-        {/* Second row: secondary action buttons */}
-        <div className="flex gap-2 flex-wrap mt-3 ml-8">
-          <Button variant="outline" size="sm" onClick={() => setShowCsvUpload(true)} className="gap-1.5"><Upload className="w-4 h-4" /> Import CSV</Button>
-
-          <Button onClick={openAdd} size="sm" className="gap-1.5"><Plus className="w-4 h-4" /> Add Card</Button>
-
+        {/* Action toolbar */}
+        <div className="border-t border-border px-3 py-2 flex items-center gap-1">
+          <Link to={`/stats/${deckId}`}>
+            <Button variant="ghost" size="sm" className="gap-1.5 h-9 text-muted-foreground hover:text-foreground">
+              <PieChart className="w-4 h-4" /> Stats
+            </Button>
+          </Link>
+          <Link to={`/settings/${deckId}`}>
+            <Button variant="ghost" size="sm" className="gap-1.5 h-9 text-muted-foreground hover:text-foreground">
+              <Cog className="w-4 h-4" /> Settings
+            </Button>
+          </Link>
+          <div className="w-px h-5 bg-border mx-1" />
+          <Button variant="ghost" size="sm" onClick={openAdd} className="gap-1.5 h-9">
+            <Plus className="w-4 h-4" /> Add Card
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setShowCsvUpload(true)} className="gap-1.5 h-9 text-muted-foreground hover:text-foreground">
+            <Upload className="w-4 h-4" /> Import CSV
+          </Button>
+          <div className="ml-auto">
+            <Link to={`/study/${deckId}`}>
+              <Button size="sm" className="gap-1.5 h-9 rounded-[20px] px-5 font-semibold">
+                <GalleryVerticalEnd className="w-4 h-4" /> Study
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
 
