@@ -770,7 +770,7 @@ export default function StudySession() {
               localStorage.setItem('flashdeck_sound', next ? '1' : '0');
             }}
             title={soundEnabled ? 'Sound on' : 'Sound off'}
-            className="flex items-center gap-1.5 px-2 py-1.5 rounded-md hover:bg-muted transition-colors">
+            className="flex items-center gap-1.5 px-2 py-1.5 rounded-md transition-colors outline-none">
             <img
               key={soundEnabled ? 'on' : 'off'}
               src={soundEnabled
