@@ -332,7 +332,20 @@ export default function StudySession() {
     saveStats();
   }, [done]);
 
+  const [showRestartWarning, setShowRestartWarning] = useState(false);
+
   const restart = () => {
+    const progress = scores.filter(Boolean).length;
+    const isIncomplete = filterChosen && !done && progress > 0;
+    if (isIncomplete) {
+      setShowRestartWarning(true);
+    } else {
+      doRestart();
+    }
+  };
+
+  const doRestart = () => {
+    setShowRestartWarning(false);
     clearSession();
     setFilterChosen(false);
     setDone(false);
@@ -689,6 +702,27 @@ export default function StudySession() {
 
   }
 
+  // ── Restart warning dialog ────────────────────────────────────────────────
+  const RestartWarningDialog = (
+    <Dialog open={showRestartWarning} onOpenChange={setShowRestartWarning}>
+      <DialogContent className="max-w-sm">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+            <AlertTriangle className="w-5 h-5 text-amber-600" />
+          </div>
+          <h3 className="font-semibold text-base">Restart session?</h3>
+        </div>
+        <p className="text-sm text-muted-foreground mb-4">
+          You've answered <strong>{scores.filter(Boolean).length}</strong> of <strong>{shuffledCards.length}</strong> cards. Your progress will be lost.
+        </p>
+        <div className="flex flex-col gap-2">
+          <Button onClick={doRestart} variant="destructive" className="w-full">Restart anyway</Button>
+          <Button variant="ghost" onClick={() => setShowRestartWarning(false)} className="w-full">Keep studying</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
   // ── Exit warning dialog — rendered inside the active study return ─────────
   const ExitWarningDialog = (
     <Dialog open={showExitWarning} onOpenChange={setShowExitWarning}>
@@ -976,6 +1010,7 @@ export default function StudySession() {
       })()}
 
       {ExitWarningDialog}
+      {RestartWarningDialog}
     </div>);
 
 }
