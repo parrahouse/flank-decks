@@ -772,11 +772,12 @@ export default function StudySession() {
             title={soundEnabled ? 'Sound on' : 'Sound off'}
             className="flex items-center gap-1.5 px-2 py-1.5 rounded-md hover:bg-muted transition-colors">
             <img
+              key={soundEnabled ? 'on' : 'off'}
               src={soundEnabled
                 ? 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/55db65aba_Sound-On.gif'
                 : 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/737afdac2_Sound-Off.gif'}
               alt={soundEnabled ? 'Sound on' : 'Sound off'}
-              style={{ width: 20, height: 20, imageRendering: 'pixelated' }}
+              style={{ width: 24, height: 24, imageRendering: 'pixelated' }}
             />
           </button>
 
