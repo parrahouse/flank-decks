@@ -770,9 +770,14 @@ export default function StudySession() {
               localStorage.setItem('flashdeck_sound', next ? '1' : '0');
             }}
             title={soundEnabled ? 'Sound on' : 'Sound off'}
-            className="flex items-center gap-1.5 px-2 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-            {soundEnabled ? <Volume2 className="w-4 h-4 shrink-0" /> : <VolumeX className="w-4 h-4 shrink-0" />}
-            <span className="pixel-ui" style={{ fontSize: 9 }}>{soundEnabled ? 'SOUND ON' : 'MUTED'}</span>
+            className="flex items-center gap-1.5 px-2 py-1.5 rounded-md hover:bg-muted transition-colors">
+            <img
+              src={soundEnabled
+                ? 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/55db65aba_Sound-On.gif'
+                : 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/737afdac2_Sound-Off.gif'}
+              alt={soundEnabled ? 'Sound on' : 'Sound off'}
+              style={{ width: 20, height: 20, imageRendering: 'pixelated' }}
+            />
           </button>
 
           <button
