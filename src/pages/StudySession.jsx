@@ -783,9 +783,12 @@ export default function StudySession() {
 
           <button
             onClick={restart}
-            className="flex items-center gap-1.5 px-2 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-            <RotateCcw className="w-4 h-4 shrink-0" />
-            <span className="pixel-ui" style={{ fontSize: 9 }}>RESTART</span>
+            className="flex items-center px-2 py-1.5 rounded-md outline-none transition-colors">
+            <img
+              src="https://media.base44.com/images/public/69fd6153088222f7245f34d6/782c7ad79_Reset.gif"
+              alt="Restart"
+              style={{ width: 24, height: 24, imageRendering: 'pixelated' }}
+            />
           </button>
         </div>
 
