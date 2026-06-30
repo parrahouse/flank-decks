@@ -738,34 +738,47 @@ export default function StudySession() {
     </div>
   ) : null;
 
-  // ── Exit warning dialog — rendered inside the active study return ─────────
-  const ExitWarningDialog = (
-    <Dialog open={showExitWarning} onOpenChange={setShowExitWarning}>
-      <DialogContent className="max-w-sm">
-        <div className="flex items-center gap-3 mb-1">
-          <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-            <AlertTriangle className="w-5 h-5 text-amber-600" />
-          </div>
-          <h3 className="font-semibold text-base">Leave this session?</h3>
-        </div>
-        <p className="text-sm text-muted-foreground mb-4">
-          You've answered <strong>{scores.filter(Boolean).length}</strong> of <strong>{shuffledCards.length}</strong> cards.
-          Would you like to save your progress so you can resume within 24 hours?
+  // ── Exit warning — inline overlay inside the game pane ───────────────────
+  const ExitWarningOverlay = showExitWarning ? (
+    <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg">
+      <div className="flex flex-col items-center gap-4 px-6 py-7 text-center max-w-xs">
+        <img
+          src="https://media.base44.com/images/public/69fd6153088222f7245f34d6/06551a213_Interface-Essential-Signin-Login--Streamline-Pixel.png"
+          alt="Exit"
+          style={{ width: 32, height: 32, imageRendering: 'pixelated' }}
+        />
+        <p className="pixel-ui text-foreground leading-snug" style={{ fontSize: 11 }}>
+          LEAVE SESSION?
         </p>
-        <div className="flex flex-col gap-2">
-          <Button onClick={handleExitSave} className="w-full gap-1.5">
-            <Clock className="w-4 h-4" /> Save progress &amp; exit
-          </Button>
-          <Button variant="outline" onClick={handleExitDiscard} className="w-full gap-1.5">
-            <RefreshCw className="w-4 h-4" /> Discard &amp; exit
-          </Button>
-          <Button variant="ghost" onClick={() => setShowExitWarning(false)} className="w-full">
-            Keep studying
-          </Button>
+        <p className="pixel-ui text-muted-foreground" style={{ fontSize: 9 }}>
+          {scores.filter(Boolean).length} / {shuffledCards.length} CARDS DONE.{'\n'}SAVE TO RESUME WITHIN 24H.
+        </p>
+        <div className="flex flex-col gap-2 w-full mt-1">
+          <button
+            onClick={handleExitSave}
+            className="pixel-ui px-4 py-2 bg-primary text-primary-foreground border-2 border-primary hover:opacity-90 transition-opacity w-full"
+            style={{ fontSize: 9 }}
+          >
+            SAVE &amp; EXIT
+          </button>
+          <button
+            onClick={handleExitDiscard}
+            className="pixel-ui px-4 py-2 border-2 border-destructive text-destructive hover:bg-destructive/10 transition-colors w-full"
+            style={{ fontSize: 9 }}
+          >
+            DISCARD &amp; EXIT
+          </button>
+          <button
+            onClick={() => setShowExitWarning(false)}
+            className="pixel-ui px-4 py-2 border-2 border-border text-foreground hover:bg-muted transition-colors w-full"
+            style={{ fontSize: 9 }}
+          >
+            KEEP GOING
+          </button>
         </div>
-      </DialogContent>
-    </Dialog>
-  );
+      </div>
+    </div>
+  ) : null;
 
   const useHorizontal = layoutMode === 'horizontal' || layoutMode === 'auto' && isWide;
 
@@ -1021,6 +1034,7 @@ export default function StudySession() {
             animate="visible"
           >
             {RestartWarningOverlay}
+            {ExitWarningOverlay}
             {useHorizontal
               ? <StudyCardHorizontal {...sharedProps} handedness={handedness} childVariant={childVariant} />
               : <StudyCard {...sharedProps} hintsAllowed={hintsAllowed} childVariant={childVariant} />
@@ -1029,7 +1043,7 @@ export default function StudySession() {
         );
       })()}
 
-      {ExitWarningDialog}
+
     </div>);
 
 }
