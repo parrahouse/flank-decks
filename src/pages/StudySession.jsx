@@ -333,6 +333,7 @@ export default function StudySession() {
   }, [done]);
 
   const [showRestartWarning, setShowRestartWarning] = useState(false);
+  const [restartPressed, setRestartPressed] = useState(false);
 
   const restart = () => {
     const progress = scores.filter(Boolean).length;
@@ -816,10 +817,14 @@ export default function StudySession() {
           </button>
 
           <button
-            onClick={restart}
-            className="flex items-center px-2 py-1.5 rounded-md outline-none transition-colors">
+            onPointerDown={() => setRestartPressed(true)}
+            onPointerUp={() => { setRestartPressed(false); restart(); }}
+            onPointerLeave={() => setRestartPressed(false)}
+            className="flex items-center px-2 py-1.5 rounded-md outline-none transition-colors select-none">
             <img
-              src="https://media.base44.com/images/public/69fd6153088222f7245f34d6/782c7ad79_Reset.gif"
+              src={restartPressed
+                ? 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/3c073a7e4_Reset-Dan.png'
+                : 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/19a696596_Reset-Up.png'}
               alt="Restart"
               style={{ width: 24, height: 24, imageRendering: 'pixelated' }}
             />
