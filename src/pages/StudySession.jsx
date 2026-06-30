@@ -703,26 +703,40 @@ export default function StudySession() {
 
   }
 
-  // ── Restart warning dialog ────────────────────────────────────────────────
-  const RestartWarningDialog = (
-    <Dialog open={showRestartWarning} onOpenChange={setShowRestartWarning}>
-      <DialogContent className="max-w-sm">
-        <div className="flex items-center gap-3 mb-1">
-          <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-            <AlertTriangle className="w-5 h-5 text-amber-600" />
-          </div>
-          <h3 className="font-semibold text-base">Restart session?</h3>
-        </div>
-        <p className="text-sm text-muted-foreground mb-4">
-          You've answered <strong>{scores.filter(Boolean).length}</strong> of <strong>{shuffledCards.length}</strong> cards. Your progress will be lost.
+  // ── Restart warning — inline overlay inside the game pane ────────────────
+  const RestartWarningOverlay = showRestartWarning ? (
+    <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg">
+      <div className="flex flex-col items-center gap-4 px-6 py-7 text-center max-w-xs">
+        <img
+          src="https://media.base44.com/images/public/69fd6153088222f7245f34d6/19a696596_Reset-Up.png"
+          alt="Reset"
+          style={{ width: 32, height: 32, imageRendering: 'pixelated' }}
+        />
+        <p className="pixel-ui text-foreground leading-snug" style={{ fontSize: 11 }}>
+          RESTART SESSION?
         </p>
-        <div className="flex flex-col gap-2">
-          <Button onClick={doRestart} variant="destructive" className="w-full">Restart anyway</Button>
-          <Button variant="ghost" onClick={() => setShowRestartWarning(false)} className="w-full">Keep studying</Button>
+        <p className="pixel-ui text-muted-foreground" style={{ fontSize: 9 }}>
+          {scores.filter(Boolean).length} / {shuffledCards.length} CARDS DONE.{'\n'}PROGRESS WILL BE LOST.
+        </p>
+        <div className="flex gap-3 mt-1">
+          <button
+            onClick={doRestart}
+            className="pixel-ui px-4 py-2 bg-destructive text-destructive-foreground border-2 border-destructive hover:opacity-90 transition-opacity"
+            style={{ fontSize: 9 }}
+          >
+            RESTART
+          </button>
+          <button
+            onClick={() => setShowRestartWarning(false)}
+            className="pixel-ui px-4 py-2 border-2 border-border text-foreground hover:bg-muted transition-colors"
+            style={{ fontSize: 9 }}
+          >
+            KEEP GOING
+          </button>
         </div>
-      </DialogContent>
-    </Dialog>
-  );
+      </div>
+    </div>
+  ) : null;
 
   // ── Exit warning dialog — rendered inside the active study return ─────────
   const ExitWarningDialog = (
@@ -1001,11 +1015,12 @@ export default function StudySession() {
 
         return (
           <motion.div
-            className="bg-card border border-border rounded-lg p-4 mt-4"
+            className="relative bg-card border border-border rounded-lg p-4 mt-4"
             variants={containerVariant}
             initial="hidden"
             animate="visible"
           >
+            {RestartWarningOverlay}
             {useHorizontal
               ? <StudyCardHorizontal {...sharedProps} handedness={handedness} childVariant={childVariant} />
               : <StudyCard {...sharedProps} hintsAllowed={hintsAllowed} childVariant={childVariant} />
@@ -1015,7 +1030,6 @@ export default function StudySession() {
       })()}
 
       {ExitWarningDialog}
-      {RestartWarningDialog}
     </div>);
 
 }
