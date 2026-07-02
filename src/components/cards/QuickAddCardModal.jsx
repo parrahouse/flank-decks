@@ -46,6 +46,12 @@ const QTYPE_META = {
     answerHelper: 'Separate each correct answer with "|" — e.g. Mitosis|Meiosis|Binary Fission. At least 2 required.',
     answerPlaceholder: 'e.g. Mitosis|Meiosis|Binary Fission',
   },
+  short_answer: {
+    label: 'Short Answer',
+    answerLabel: 'Canonical Answer',
+    answerHelper: 'The authoritative correct answer — variants and grading guidance can be added in the detail editor.',
+    answerPlaceholder: 'e.g. Photosynthesis',
+  },
 };
 
 export default function QuickAddCardModal({ open, onClose, deckId, deck, activeCards, onSaved, onEditDetails }) {
@@ -156,18 +162,22 @@ Return:
       finalImageUrl = file_url;
     }
 
+    const isShortAnswer = qType === 'short_answer';
+
     const correctList = qType === 'select_all'
       ? answer.split('|').map(s => s.trim()).filter(Boolean)
       : [answer.trim()];
 
     const choices = qType === 'true_false'
       ? ['True', 'False']
+      : isShortAnswer
+      ? []
       : [...correctList, '', '', ''].slice(0, Math.max(4, correctList.length));
 
     const cardData = {
       deck_id: deckId,
       order: activeCards.length,
-      correct_answers: correctList.join('|'),
+      correct_answers: isShortAnswer ? answer.trim() : correctList.join('|'),
       correct_answer: correctList[0],
       choices,
       question_type: qType,
@@ -175,6 +185,7 @@ Return:
       image_url: finalImageUrl || '',
       image_fit: 'cover',
       image_focal_point: finalImageUrl ? { x: 50, y: 50 } : null,
+      ...(isShortAnswer && { canonical_answer: answer.trim(), accepted_variants: [], grading_guidance: '' }),
     };
 
     const created = await base44.entities.Card.create(cardData);
@@ -245,12 +256,14 @@ Return:
                       <SelectItem value="multiple_choice">Multiple Choice</SelectItem>
                       <SelectItem value="true_false">True / False</SelectItem>
                       <SelectItem value="select_all">Select All That Apply</SelectItem>
+                      <SelectItem value="short_answer">Short Answer</SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground min-h-[1rem]">
                     {qType === 'multiple_choice' && 'Students pick one correct answer from a list of choices.'}
                     {qType === 'select_all' && 'Students must select every correct answer to earn full credit.'}
                     {qType === 'true_false' && 'Write a statement in the question field — students decide if it\'s True or False.'}
+                    {qType === 'short_answer' && 'Students type a free-text response graded by exact match then AI fallback.'}
                   </p>
                 </div>
 
