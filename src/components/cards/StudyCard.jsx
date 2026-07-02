@@ -14,6 +14,7 @@ import {
   Check,
 } from 'lucide-react';
 import CardNoteEditor from './CardNoteEditor';
+import ShortAnswerInput from './ShortAnswerInput';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
@@ -79,6 +80,7 @@ export default function StudyCard({
   isBookmarked = false,
   onToggleBookmark = null,
   eliminateAllowed = true,
+  learningMode = false,
   onFirstWrong = null,
   introReady = true,
   childVariant = null,
@@ -108,6 +110,7 @@ export default function StudyCard({
   const hasExplanation = !!card.explanation;
   const isTrueFalse = card.question_type === 'true_false';
   const isSelectAll = card.question_type === 'select_all';
+  const isShortAnswer = card.question_type === 'short_answer';
   const secondGuessAllowed = true;
 
   const cancelCountdown = () => {
@@ -132,7 +135,7 @@ export default function StudyCard({
   };
 
   useEffect(() => {
-    setShuffledChoices(shuffle(card.choices));
+    setShuffledChoices(shuffle(card.choices || []));
     setFirstWrong(null);
     setFinalAnswer(null);
     setEliminated([]);
@@ -310,7 +313,7 @@ export default function StudyCard({
     ? Math.round((cardStats.correct_attempts / cardStats.total_attempts) * 100)
     : null;
 
-  const qtLabel = isTrueFalse ? 'True or False?' : isSelectAll ? 'Multi-Select' : 'Single Select';
+  const qtLabel = isTrueFalse ? 'True or False?' : isSelectAll ? 'Multi-Select' : isShortAnswer ? 'Short Answer' : 'Single Select';
 
   const choiceBorderColor = (state) => {
     if (state === 'correct' || state === 'reveal-correct') return '#00A842';
@@ -415,7 +418,7 @@ export default function StudyCard({
         {...paneProps}
         style={{
           width: '100%',
-          minHeight: 340,
+          minHeight: isShortAnswer ? 'auto' : 340,
           backgroundColor: '#FAFAFA',
           border: '2px solid #D9D9D9',
           boxSizing: 'border-box',
@@ -435,11 +438,10 @@ export default function StudyCard({
                     <SquareCheck style={{ width: 28, height: 28 }} />
                     <SquareCheck style={{ width: 28, height: 28 }} />
                   </span>
-                : <SquareCheck style={{ width: 28, height: 28 }} />
+                : !isShortAnswer && <SquareCheck style={{ width: 28, height: 28 }} />
             }
           </div>
-
-          {!isTrueFalse && (
+          {!isTrueFalse && !isShortAnswer && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#6b7280', fontSize: 13 }}>
               <CopyCheck style={{ width: 15, height: 15 }} />
               <span>Second Guess: {secondGuessAllowed ? 'ON' : 'OFF'}</span>
@@ -447,169 +449,184 @@ export default function StudyCard({
           )}
         </div>
 
-        {/* Choice buttons */}
-        <div style={{ flex: 1 }}>
-          {isTrueFalse ? (
-            <div style={{ display: 'flex', gap: 10 }}>
-              {shuffledChoices.map((choice, idx) => {
-                const state = getChoiceState(choice);
-                return (
-                  <button
-                    key={choice}
-                    disabled={answered}
-                    onClick={() => handleSelect(choice)}
-                    className={cn('choice-btn', shake && (state === 'first-wrong' || state === 'wrong-final') && 'animate-shake')}
-                    style={{
-                      flex: 1, minHeight: 64,
-                      borderRadius: 12,
-                      border: `2px solid ${choiceBorderColor(state)}`,
-                      backgroundColor: choiceBgColor(state),
-                      display: 'flex', alignItems: 'center', gap: 10,
-                      padding: '10px 16px',
-                      cursor: answered ? 'default' : 'pointer',
-                      fontSize: 16, fontWeight: 500,
-                      textAlign: 'left',
-                      transition: 'border-color 0.4s ease 0.15s, background-color 0.4s ease 0.15s',
-                    }}
-                  >
-                    <span style={{
-                      width: 30, height: 30, borderRadius: 6, flexShrink: 0,
-                      backgroundColor: state === 'correct' ? '#00A842' : '#000',
-                      color: '#fff',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 13, fontWeight: 700,
-                    }}>
-                      {state === 'correct' ? <Check style={{ width: 16, height: 16 }} /> : LETTERS[idx]}
-                    </span>
-                    <MathRenderer text={choice} />
-                    </button>
+        {/* Short answer */}
+        {isShortAnswer && (
+          <ShortAnswerInput
+            card={card}
+            deck={deck}
+            onScore={onScore}
+            onNext={() => { cancelCountdown(); onNext(); }}
+            onFirstWrong={onFirstWrong}
+            isLast={isLast}
+            soundEnabled={soundEnabled}
+            autoAdvance={autoAdvance}
+            clueManuallyRevealed={clueManuallyRevealed}
+            learningMode={learningMode}
+            hasExplanation={hasExplanation}
+            onShowExplanation={() => setFlipped(true)}
+            cardStats={cardStats}
+            introReady={introReady}
+          />
+        )}
+
+        {/* Choice buttons (multiple_choice / true_false / select_all) */}
+        {!isShortAnswer && (
+          <>
+            <div style={{ flex: 1 }}>
+              {isTrueFalse ? (
+                <div style={{ display: 'flex', gap: 10 }}>
+                  {shuffledChoices.map((choice, idx) => {
+                    const state = getChoiceState(choice);
+                    return (
+                      <button
+                        key={choice}
+                        disabled={answered}
+                        onClick={() => handleSelect(choice)}
+                        className={cn('choice-btn', shake && (state === 'first-wrong' || state === 'wrong-final') && 'animate-shake')}
+                        style={{
+                          flex: 1, minHeight: 64,
+                          borderRadius: 12,
+                          border: `2px solid ${choiceBorderColor(state)}`,
+                          backgroundColor: choiceBgColor(state),
+                          display: 'flex', alignItems: 'center', gap: 10,
+                          padding: '10px 16px',
+                          cursor: answered ? 'default' : 'pointer',
+                          fontSize: 16, fontWeight: 500,
+                          textAlign: 'left',
+                          transition: 'border-color 0.4s ease 0.15s, background-color 0.4s ease 0.15s',
+                        }}
+                      >
+                        <span style={{
+                          width: 30, height: 30, borderRadius: 6, flexShrink: 0,
+                          backgroundColor: state === 'correct' ? '#00A842' : '#000',
+                          color: '#fff',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 13, fontWeight: 700,
+                        }}>
+                          {state === 'correct' ? <Check style={{ width: 16, height: 16 }} /> : LETTERS[idx]}
+                        </span>
+                        <MathRenderer text={choice} />
+                      </button>
                     );
-                    })}
-                    </div>
-                    ) : (
-            /* Stack choices vertically — one per row — so long text never overflows horizontally */
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {shuffledChoices.map((choice, idx) => {
-                const state = getChoiceState(choice);
-                return (
+                  })}
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {shuffledChoices.map((choice, idx) => {
+                    const state = getChoiceState(choice);
+                    return (
+                      <button
+                        key={choice}
+                        disabled={state === 'eliminated' || answered}
+                        onClick={() => handleSelect(choice)}
+                        className={cn('choice-btn', shake && (state === 'first-wrong' || state === 'wrong-final') && 'animate-shake')}
+                        style={{
+                          width: '100%',
+                          minHeight: choiceStyle.minHeight,
+                          borderRadius: 10,
+                          border: `2px solid ${choiceBorderColor(state)}`,
+                          backgroundColor: choiceBgColor(state),
+                          opacity: state === 'eliminated' || state === 'dim' ? 0.4 : 1,
+                          display: 'flex', alignItems: 'center', gap: 10,
+                          padding: choiceStyle.padding,
+                          cursor: answered || state === 'eliminated' ? 'default' : 'pointer',
+                          fontSize: choiceStyle.fontSize, fontWeight: 500,
+                          textAlign: 'left',
+                          transition: 'border-color 0.4s ease 0.15s, background-color 0.4s ease 0.15s, opacity 0.4s ease 0.15s, transform 0.12s ease',
+                        }}
+                      >
+                        <span style={{
+                          width: 28, height: 28, borderRadius: 5, flexShrink: 0,
+                          backgroundColor:
+                            state === 'correct' ? '#00A842' :
+                            state === 'missed-correct' ? '#d97706' :
+                            state === 'selected-pending' ? '#0165fc' :
+                            '#000',
+                          color: '#fff',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 12, fontWeight: 700,
+                        }}>
+                          {state === 'correct' || state === 'missed-correct' || state === 'selected-pending'
+                            ? <Check style={{ width: 14, height: 14 }} />
+                            : LETTERS[idx]}
+                        </span>
+                        <MathRenderer text={choice} className="flex-1" style={{ lineHeight: 1.3 }} />
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Bottom row */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 }}>
+              <span />
+              {!answered ? (
+                isSelectAll ? (
+                  selectAllPending.size >= 2 && (
+                    <button
+                      onClick={handleSelectAllDone}
+                      style={{
+                        backgroundColor: '#00A842', color: '#fff',
+                        border: 'none', borderRadius: 8, padding: '8px 20px',
+                        fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        transition: 'background-color 0.2s',
+                      }}
+                    >
+                      <Check style={{ width: 16, height: 16 }} /> Done
+                    </button>
+                  )
+                ) : !isTrueFalse && (
                   <button
-                    key={choice}
-                    disabled={state === 'eliminated' || answered}
-                    onClick={() => handleSelect(choice)}
-                    className={cn('choice-btn', shake && (state === 'first-wrong' || state === 'wrong-final') && 'animate-shake')}
+                    onClick={canEliminate ? handleEliminate : undefined}
+                    disabled={!canEliminate}
+                    title="Eliminate one wrong answer"
+                    className={cn(eliminateShake && 'animate-subtle-shake')}
                     style={{
-                      width: '100%',
-                      minHeight: choiceStyle.minHeight,
-                      borderRadius: 10,
-                      border: `2px solid ${choiceBorderColor(state)}`,
-                      backgroundColor: choiceBgColor(state),
-                      opacity: state === 'eliminated' || state === 'dim' ? 0.4 : 1,
-                      display: 'flex', alignItems: 'center', gap: 10,
-                      padding: choiceStyle.padding,
-                      cursor: answered || state === 'eliminated' ? 'default' : 'pointer',
-                      fontSize: choiceStyle.fontSize, fontWeight: 500,
-                      textAlign: 'left',
-                      transition: 'border-color 0.4s ease 0.15s, background-color 0.4s ease 0.15s, opacity 0.4s ease 0.15s, transform 0.12s ease',
+                      color: eliminateUsed ? '#d1d5db' : canEliminate ? '#0165fc' : '#d1d5db',
+                      opacity: eliminateUsed ? 0.4 : 1,
+                      cursor: canEliminate && !eliminateUsed ? 'pointer' : 'not-allowed',
+                      background: 'none', border: 'none', padding: 0,
+                      transition: 'opacity 0.3s, color 0.3s',
                     }}
                   >
-                    <span style={{
-                      width: 28, height: 28, borderRadius: 5, flexShrink: 0,
-                      backgroundColor:
-                        state === 'correct' ? '#00A842' :
-                        state === 'missed-correct' ? '#d97706' :
-                        state === 'selected-pending' ? '#0165fc' :
-                        '#000',
-                      color: '#fff',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 12, fontWeight: 700,
-                    }}>
-                      {state === 'correct' || state === 'missed-correct' || state === 'selected-pending'
-                        ? <Check style={{ width: 14, height: 14 }} />
-                        : LETTERS[idx]}
-                    </span>
-                    <MathRenderer text={choice} className="flex-1" style={{ lineHeight: 1.3 }} />
+                    <Sparkles style={{ width: 20, height: 20 }} />
                   </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Bottom row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 }}>
-          {/* Left: empty placeholder */}
-          <span />
-
-          {/* Right: Sparkles / Done when not answered, Learn More + Next when answered */}
-          {!answered ? (
-            isSelectAll ? (
-              selectAllPending.size >= 2 && (
-                <button
-                  onClick={handleSelectAllDone}
-                  style={{
-                    backgroundColor: '#00A842',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 8,
-                    padding: '8px 20px',
-                    fontSize: 14,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: 6,
-                    transition: 'background-color 0.2s',
-                  }}
-                >
-                  <Check style={{ width: 16, height: 16 }} /> Done
-                </button>
-              )
-            ) : !isTrueFalse && (
-              <button
-                onClick={canEliminate ? handleEliminate : undefined}
-                disabled={!canEliminate}
-                title="Eliminate one wrong answer"
-                className={cn(eliminateShake && 'animate-subtle-shake')}
-                style={{
-                  color: eliminateUsed ? '#d1d5db' : canEliminate ? '#0165fc' : '#d1d5db',
-                  opacity: eliminateUsed ? 0.4 : 1,
-                  cursor: canEliminate && !eliminateUsed ? 'pointer' : 'not-allowed',
-                  background: 'none', border: 'none', padding: 0,
-                  transition: 'opacity 0.3s, color 0.3s',
-                }}
-              >
-                <Sparkles style={{ width: 20, height: 20 }} />
-              </button>
-            )
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-              {hasExplanation && (
-                <button
-                  onClick={() => { setFlipped(true); cancelCountdown(); }}
-                  style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}
-                >
-                  <GraduationCap style={{ width: 14, height: 14, flexShrink: 0 }} />
-                  <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 1 }}>Learn More</span>
-                </button>
-              )}
-              <button
-                onClick={() => { cancelCountdown(); onNext(); }}
-                style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', position: 'relative' }}
-              >
-                <SkipForward style={{ width: 14, height: 14, flexShrink: 0 }} />
-                <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 1, position: 'relative' }}>
-                  {countdown !== null && (
-                    <span style={{
-                      position: 'absolute', bottom: 0, left: 0,
-                      height: '1.5px', backgroundColor: '#555',
-                      width: `${((COUNTDOWN_SECS - countdown + 1) / COUNTDOWN_SECS) * 100}%`,
-                      transition: 'width 1s linear',
-                    }} />
+                )
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+                  {hasExplanation && (
+                    <button
+                      onClick={() => { setFlipped(true); cancelCountdown(); }}
+                      style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}
+                    >
+                      <GraduationCap style={{ width: 14, height: 14, flexShrink: 0 }} />
+                      <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 1 }}>Learn More</span>
+                    </button>
                   )}
-                  {isLast ? 'Finish' : 'Next'}
-                </span>
-              </button>
+                  <button
+                    onClick={() => { cancelCountdown(); onNext(); }}
+                    style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', position: 'relative' }}
+                  >
+                    <SkipForward style={{ width: 14, height: 14, flexShrink: 0 }} />
+                    <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 1, position: 'relative' }}>
+                      {countdown !== null && (
+                        <span style={{
+                          position: 'absolute', bottom: 0, left: 0,
+                          height: '1.5px', backgroundColor: '#555',
+                          width: `${((COUNTDOWN_SECS - countdown + 1) / COUNTDOWN_SECS) * 100}%`,
+                          transition: 'width 1s linear',
+                        }} />
+                      )}
+                      {isLast ? 'Finish' : 'Next'}
+                    </span>
+                  </button>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </>
+        )}
       </Pane>
 
       {/* ── Card Action Pane ── */}

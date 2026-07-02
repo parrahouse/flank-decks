@@ -33,28 +33,45 @@
         "contain"
       ],
       "default": "cover",
-      "description": "How the image fills its frame: 'cover' crops to fill, 'contain' fits without cropping (letterboxed)"
+      "description": "How the image fills its frame"
     },
     "question_type": {
       "type": "string",
       "enum": [
         "multiple_choice",
         "true_false",
-        "select_all"
+        "select_all",
+        "short_answer"
       ],
       "default": "multiple_choice",
       "description": "How the question should be interpreted and validated"
     },
     "correct_answers": {
       "type": "string",
-      "description": "Pipe-delimited correct answer(s), e.g. Answer1|Answer2. Single answers have no pipe."
+      "description": "Pipe-delimited correct answer(s). Not used for short_answer."
     },
     "choices": {
       "type": "array",
-      "description": "All answer choices (including correct)",
+      "description": "All answer choices (including correct). Not used for short_answer.",
       "items": {
         "type": "string"
       }
+    },
+    "canonical_answer": {
+      "type": "string",
+      "description": "For short_answer: the single authoritative correct answer"
+    },
+    "accepted_variants": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "For short_answer: alternate acceptable answers",
+      "default": []
+    },
+    "grading_guidance": {
+      "type": "string",
+      "description": "For short_answer: rubric notes for AI grading"
     },
     "clue": {
       "type": "string",
@@ -62,7 +79,7 @@
     },
     "explanation": {
       "type": "string",
-      "description": "Long-form explanation shown on the back of the card (supports markdown)"
+      "description": "Long-form explanation shown after answering (supports markdown)"
     },
     "order": {
       "type": "number",
@@ -78,7 +95,7 @@
     },
     "bonus_image_url": {
       "type": "string",
-      "description": "Optional alternate image for the bonus question (falls back to main image)"
+      "description": "Optional alternate image for the bonus question"
     },
     "deleted": {
       "type": "boolean",
@@ -88,13 +105,11 @@
     "bookmarked": {
       "type": "boolean",
       "default": false,
-      "description": "Whether the user has bookmarked this card for focused study"
+      "description": "Whether the user has bookmarked this card"
     }
   },
   "required": [
-    "deck_id",
-    "correct_answers",
-    "choices"
+    "deck_id"
   ],
   "rls": {
     "create": {},

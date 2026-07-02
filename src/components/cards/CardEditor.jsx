@@ -29,6 +29,13 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
   const initCorrectAnswers = parseCorrectAnswers(card?.correct_answers || card?.correct_answer || '');
 
   const [qType, setQType] = useState(initQType);
+  const [canonicalAnswer, setCanonicalAnswer] = useState(card?.canonical_answer || '');
+  const [acceptedVariants, setAcceptedVariants] = useState(card?.accepted_variants || []);
+  const [gradingGuidance, setGradingGuidance] = useState(card?.grading_guidance || '');
+  const [newVariant, setNewVariant] = useState('');
+  const [testResponse, setTestResponse] = useState('');
+  const [testVerdict, setTestVerdict] = useState(null);
+  const [testGrading, setTestGrading] = useState(false);
   const [imageUrl, setImageUrl] = useState(card?.image_url || '');
 
   // All choices (including correct ones)
@@ -224,16 +231,21 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
   };
 
   const handleSave = async () => {
-    const filledChoices = allChoicesList.map(c => c.trim()).filter(Boolean);
-    const correctList = Array.from(correctSet).filter(c => filledChoices.includes(c.trim()));
-
-    if (correctList.length === 0) { toast.error('Mark at least one correct answer'); return; }
-    if (filledChoices.length < 2) { toast.error('Add at least two choices'); return; }
-    if (qType === 'select_all' && correctList.length < 2) {
-      toast.error('Select All requires at least 2 correct answers'); return;
+    if (isShortAnswer) {
+      if (!canonicalAnswer.trim()) { toast.error('Enter the canonical answer'); return; }
+    } else {
+      const filledChoices = allChoicesList.map(c => c.trim()).filter(Boolean);
+      const correctList = Array.from(correctSet).filter(c => filledChoices.includes(c.trim()));
+      if (correctList.length === 0) { toast.error('Mark at least one correct answer'); return; }
+      if (filledChoices.length < 2) { toast.error('Add at least two choices'); return; }
+      if (qType === 'select_all' && correctList.length < 2) {
+        toast.error('Select All requires at least 2 correct answers'); return;
+      }
     }
 
-    const correct_answers = joinCorrectAnswers(correctList);
+    const filledChoices = isShortAnswer ? [] : allChoicesList.map(c => c.trim()).filter(Boolean);
+    const correctList = isShortAnswer ? [] : Array.from(correctSet).filter(c => filledChoices.includes(c.trim()));
+    const correct_answers = isShortAnswer ? canonicalAnswer.trim() : joinCorrectAnswers(correctList);
 
     // If imageUrl is a base64 data URL (from cropping), upload it first
     let finalImageUrl = imageUrl;
@@ -251,12 +263,17 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
       image_focal_point: focalPoint,
       image_fit: imageFit,
       correct_answers,
-      correct_answer: correctList[0], // legacy compat
+      correct_answer: correctList[0] || canonicalAnswer.trim(),
       choices: filledChoices,
       question_type: qType,
       clue,
       explanation,
       tags,
+      ...(isShortAnswer && {
+        canonical_answer: canonicalAnswer.trim(),
+        accepted_variants: acceptedVariants.filter(Boolean),
+        grading_guidance: gradingGuidance.trim(),
+      }),
     });
   };
 
@@ -288,6 +305,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
 
   const isTrueFalse = qType === 'true_false';
   const isSelectAll = qType === 'select_all';
+  const isShortAnswer = qType === 'short_answer';
 
   return (
     <div className="space-y-5">
@@ -353,12 +371,131 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
             <SelectItem value="multiple_choice">Multiple Choice</SelectItem>
             <SelectItem value="true_false">True / False</SelectItem>
             <SelectItem value="select_all">Select All That Apply</SelectItem>
+            <SelectItem value="short_answer">Short Answer</SelectItem>
           </SelectContent>
         </Select>
         {isSelectAll && (
           <p className="text-xs text-muted-foreground">Mark all correct answers — students must select all of them to get full credit.</p>
         )}
+        {isShortAnswer && (
+          <p className="text-xs text-muted-foreground">Students type a free-text response; graded by exact match then AI fallback.</p>
+        )}
       </div>
+
+      {/* Short Answer Fields */}
+      {isShortAnswer && (
+        <div className="space-y-4 border border-border rounded-lg p-4 bg-accent/10">
+          {/* Canonical answer */}
+          <div className="space-y-1.5">
+            <Label>Canonical Answer <span className="text-destructive">*</span></Label>
+            <Input
+              value={canonicalAnswer}
+              onChange={e => setCanonicalAnswer(e.target.value)}
+              placeholder="The single authoritative correct answer"
+            />
+          </div>
+
+          {/* Accepted variants */}
+          <div className="space-y-1.5">
+            <Label>Accepted Variants <span className="text-xs text-muted-foreground font-normal">(optional)</span></Label>
+            <div className="flex gap-2">
+              <Input
+                value={newVariant}
+                onChange={e => setNewVariant(e.target.value)}
+                placeholder="Add alternate acceptable answer…"
+                onKeyDown={e => {
+                  if (e.key === 'Enter') { e.preventDefault(); if (newVariant.trim()) { setAcceptedVariants(prev => [...prev, newVariant.trim()]); setNewVariant(''); } }
+                }}
+              />
+              <Button type="button" variant="outline" size="sm" onClick={() => { if (newVariant.trim()) { setAcceptedVariants(prev => [...prev, newVariant.trim()]); setNewVariant(''); } }}>
+                <Plus className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+            {acceptedVariants.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-1">
+                {acceptedVariants.map((v, i) => (
+                  <span key={i} className="flex items-center gap-1 bg-secondary text-secondary-foreground px-2 py-0.5 rounded text-xs">
+                    {v}
+                    <button type="button" onClick={() => setAcceptedVariants(prev => prev.filter((_, idx) => idx !== i))}>
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Grading guidance */}
+          <div className="space-y-1.5">
+            <Label>Grading Guidance <span className="text-xs text-muted-foreground font-normal">(optional AI rubric)</span></Label>
+            <Textarea
+              value={gradingGuidance}
+              onChange={e => setGradingGuidance(e.target.value)}
+              placeholder='e.g. "Must mention both photosynthesis and chlorophyll for full credit; one alone is partial"'
+              rows={2}
+              className="resize-none text-sm"
+            />
+          </div>
+
+          {/* Test grading preview */}
+          <div className="space-y-1.5 border-t border-border pt-3">
+            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Test Grading Preview</Label>
+            <p className="text-xs text-muted-foreground">Type a sample response to see how the grader would score it.</p>
+            <div className="flex gap-2">
+              <Input
+                value={testResponse}
+                onChange={e => setTestResponse(e.target.value)}
+                placeholder="Sample student response…"
+              />
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={!testResponse.trim() || testGrading || !canonicalAnswer.trim()}
+                onClick={async () => {
+                  setTestGrading(true);
+                  setTestVerdict(null);
+                  // Tier 1
+                  const norm = s => s.toLowerCase().trim().replace(/\s+/g,' ').replace(/[^\w\s]/g,'').replace(/^(a|an|the)\s+/,'');
+                  const t1 = [canonicalAnswer, ...acceptedVariants].map(norm).some(t => t && t === norm(testResponse));
+                  if (t1) {
+                    setTestVerdict({ tier: 1, verdict: 'correct', value: 1, reason: 'Exact normalized match' });
+                    setTestGrading(false);
+                    return;
+                  }
+                  // Tier 2: LLM
+                  try {
+                    const prompt = `You are a strict exam grader. Grade the student's response ONLY against the provided rubric.\n\nQuestion/Clue: ${clue || '(none)'}\nCanonical answer: ${canonicalAnswer}\nAccepted variants: ${acceptedVariants.join(', ') || '(none)'}\nGrading guidance: ${gradingGuidance || '(none)'}\nStudent response: ${testResponse}\n\nRespond ONLY with valid JSON (no markdown, no preamble):\n{"verdict":"correct"|"partial"|"incorrect","value":<number 0-1>,"reason":"<one sentence>"}`;
+                    const raw = await base44.integrations.Core.InvokeLLM({ prompt });
+                    const cleaned = (typeof raw === 'string' ? raw : JSON.stringify(raw)).replace(/\`\`\`[a-z]*\n?/g,'').trim();
+                    const r = JSON.parse(cleaned);
+                    setTestVerdict({ tier: 2, ...r });
+                  } catch {
+                    setTestVerdict({ tier: 2, verdict: 'error', value: 0, reason: 'AI grading unavailable' });
+                  }
+                  setTestGrading(false);
+                }}
+              >
+                {testGrading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Test'}
+              </Button>
+            </div>
+            {testVerdict && (
+              <div className={cn('text-xs px-3 py-2 rounded border mt-1',
+                testVerdict.verdict === 'correct' ? 'bg-green-50 border-green-200 text-green-800' :
+                testVerdict.verdict === 'partial' ? 'bg-amber-50 border-amber-200 text-amber-800' :
+                'bg-red-50 border-red-200 text-red-800'
+              )}>
+                <span className="font-semibold">
+                  {testVerdict.verdict === 'correct' ? '✓ Correct' : testVerdict.verdict === 'partial' ? '~ Partial' : '✗ Incorrect'}
+                </span>
+                {' '}(Tier {testVerdict.tier}
+                {testVerdict.value !== undefined ? `, score: ${testVerdict.value}` : ''})
+                {testVerdict.reason && <span> — {testVerdict.reason}</span>}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Image Upload */}
       <div className="space-y-2">
@@ -493,73 +630,75 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
         />
       </div>
 
-      {/* Answer Choices */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label>Answer Choices</Label>
-          {!isTrueFalse && (
-            <div className="flex gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={generateDecoys} disabled={generatingDecoys} className="h-7 text-xs gap-1">
-                {generatingDecoys ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
-                Decoys
-              </Button>
-              {allChoicesList.length < 6 && (
-                <Button type="button" variant="outline" size="sm" onClick={addChoice} className="h-7 text-xs gap-1">
-                  <Plus className="w-3 h-3" /> Add
-                </Button>
-              )}
-            </div>
-          )}
-        </div>
-
-        <p className="text-xs text-muted-foreground">
-          {isSelectAll
-            ? 'Click ✓ on each correct answer (2+ required).'
-            : 'Click ✓ to mark the single correct answer.'}
-        </p>
-
+      {/* Answer Choices — hidden for short_answer */}
+      {!isShortAnswer && (
         <div className="space-y-2">
-          {allChoicesList.map((c, i) => {
-            const isCorrect = correctSet.has(c.trim());
-            return (
-              <div key={i} className="flex gap-2 items-center">
-                <button
-                  type="button"
-                  onClick={() => toggleCorrect(c)}
-                  disabled={!c.trim()}
-                  className={cn(
-                    'shrink-0 w-7 h-7 rounded border-2 flex items-center justify-center transition-colors text-xs font-bold',
-                    isCorrect ? 'bg-success border-success text-white' : 'border-border text-muted-foreground hover:border-primary',
-                    !c.trim() && 'opacity-30 cursor-not-allowed'
-                  )}
-                  title={isCorrect ? 'Correct answer' : 'Mark as correct'}
-                >
-                  {isCorrect && '✓'}
-                </button>
-                <Input
-                  value={c}
-                  onChange={e => updateChoice(i, e.target.value)}
-                  placeholder={`Choice ${i + 1}`}
-                  readOnly={isTrueFalse}
-                  className={cn(isTrueFalse && 'bg-muted cursor-default', isCorrect && 'border-success/60 bg-success/5')}
-                />
-                {!isTrueFalse && allChoicesList.length > 2 && (
-                  <Button type="button" variant="ghost" size="icon" onClick={() => removeChoice(i)} className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive">
-                    <X className="w-4 h-4" />
+          <div className="flex items-center justify-between">
+            <Label>Answer Choices</Label>
+            {!isTrueFalse && (
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={generateDecoys} disabled={generatingDecoys} className="h-7 text-xs gap-1">
+                  {generatingDecoys ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+                  Decoys
+                </Button>
+                {allChoicesList.length < 6 && (
+                  <Button type="button" variant="outline" size="sm" onClick={addChoice} className="h-7 text-xs gap-1">
+                    <Plus className="w-3 h-3" /> Add
                   </Button>
                 )}
               </div>
-            );
-          })}
-        </div>
+            )}
+          </div>
 
-        {correctSet.size === 0 && (
-          <p className="text-xs text-destructive">Click ✓ next to the correct answer(s).</p>
-        )}
-        {isSelectAll && correctSet.size === 1 && (
-          <p className="text-xs text-amber-600">Select All requires at least 2 correct answers.</p>
-        )}
-      </div>
+          <p className="text-xs text-muted-foreground">
+            {isSelectAll
+              ? 'Click ✓ on each correct answer (2+ required).'
+              : 'Click ✓ to mark the single correct answer.'}
+          </p>
+
+          <div className="space-y-2">
+            {allChoicesList.map((c, i) => {
+              const isCorrect = correctSet.has(c.trim());
+              return (
+                <div key={i} className="flex gap-2 items-center">
+                  <button
+                    type="button"
+                    onClick={() => toggleCorrect(c)}
+                    disabled={!c.trim()}
+                    className={cn(
+                      'shrink-0 w-7 h-7 rounded border-2 flex items-center justify-center transition-colors text-xs font-bold',
+                      isCorrect ? 'bg-success border-success text-white' : 'border-border text-muted-foreground hover:border-primary',
+                      !c.trim() && 'opacity-30 cursor-not-allowed'
+                    )}
+                    title={isCorrect ? 'Correct answer' : 'Mark as correct'}
+                  >
+                    {isCorrect && '✓'}
+                  </button>
+                  <Input
+                    value={c}
+                    onChange={e => updateChoice(i, e.target.value)}
+                    placeholder={`Choice ${i + 1}`}
+                    readOnly={isTrueFalse}
+                    className={cn(isTrueFalse && 'bg-muted cursor-default', isCorrect && 'border-success/60 bg-success/5')}
+                  />
+                  {!isTrueFalse && allChoicesList.length > 2 && (
+                    <Button type="button" variant="ghost" size="icon" onClick={() => removeChoice(i)} className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive">
+                      <X className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {correctSet.size === 0 && (
+            <p className="text-xs text-destructive">Click ✓ next to the correct answer(s).</p>
+          )}
+          {isSelectAll && correctSet.size === 1 && (
+            <p className="text-xs text-amber-600">Select All requires at least 2 correct answers.</p>
+          )}
+        </div>
+      )}
 
       {/* Tags */}
       <div className="space-y-2">

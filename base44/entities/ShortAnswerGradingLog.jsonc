@@ -1,0 +1,42 @@
+{
+  "name": "ShortAnswerGradingLog",
+  "type": "object",
+  "properties": {
+    "card_id": {
+      "type": "string",
+      "description": "ID of the card being graded"
+    },
+    "student_response": {
+      "type": "string",
+      "description": "What the student typed"
+    },
+    "verdict": {
+      "type": "string",
+      "enum": [
+        "correct",
+        "partial",
+        "incorrect"
+      ],
+      "description": "AI grading verdict"
+    },
+    "value": {
+      "type": "number",
+      "description": "Score value 0-1"
+    },
+    "reason": {
+      "type": "string",
+      "description": "One-sentence explanation from the AI"
+    },
+    "graded_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of the grading event"
+    }
+  },
+  "required": [
+    "card_id",
+    "student_response",
+    "verdict",
+    "value"
+  ]
+}
