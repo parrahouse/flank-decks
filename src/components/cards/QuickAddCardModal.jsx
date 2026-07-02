@@ -6,8 +6,9 @@
 import { useState, useRef } from 'react';
 import {
   Upload, Sparkles, Search, Image as ImageIcon, X, Loader2,
-  Plus, Pencil, Check,
+  Plus, Pencil, Check, Zap,
 } from 'lucide-react';
+import { computeCardDifficulty } from '@/lib/computeCardDifficulty';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,6 +58,8 @@ const QTYPE_META = {
 export default function QuickAddCardModal({ open, onClose, deckId, deck, activeCards, onSaved, onEditDetails }) {
   const [step, setStep] = useState('input'); // 'input' | 'saving' | 'done'
   const [savedCard, setSavedCard] = useState(null);
+  const [difficultyResult, setDifficultyResult] = useState(null); // { point_value, difficulty_tier, _reason }
+  const [overrideValue, setOverrideValue] = useState(''); // string while editing override
 
   // Form state
   const [qType, setQType] = useState('multiple_choice');
@@ -87,6 +90,8 @@ export default function QuickAddCardModal({ open, onClose, deckId, deck, activeC
     setImagePanel(null);
     setAiPrompt('');
     setSuggestingCard(false);
+    setDifficultyResult(null);
+    setOverrideValue('');
   };
 
   const handleClose = () => { reset(); onClose(); };
@@ -174,6 +179,17 @@ Return:
       ? []
       : [...correctList, '', '', ''].slice(0, Math.max(4, correctList.length));
 
+    // Compute difficulty (non-blocking — failure defaults to tier 2 / 20 pts)
+    let diffResult = { point_value: 20, difficulty_tier: 2, difficulty_overridden: false, _reason: '' };
+    try {
+      diffResult = await computeCardDifficulty({
+        question_type: qType,
+        clue: question.trim(),
+        correct_answer: correctList[0] || answer.trim(),
+        concept_id: null,
+      });
+    } catch { /* keep defaults */ }
+
     const cardData = {
       deck_id: deckId,
       order: activeCards.length,
@@ -185,12 +201,16 @@ Return:
       image_url: finalImageUrl || '',
       image_fit: 'cover',
       image_focal_point: finalImageUrl ? { x: 50, y: 50 } : null,
+      point_value: diffResult.point_value,
+      difficulty_tier: diffResult.difficulty_tier,
+      difficulty_overridden: false,
       ...(isShortAnswer && { canonical_answer: answer.trim(), accepted_variants: [], grading_guidance: '' }),
     };
 
     const created = await base44.entities.Card.create(cardData);
     setSavedCard(created);
-    await new Promise(r => setTimeout(r, 900));
+    setDifficultyResult(diffResult);
+    setOverrideValue(String(diffResult.point_value));
     setStep('done');
     onSaved();
   };
@@ -445,7 +465,7 @@ Return:
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.22 }}
-              className="flex flex-col items-center justify-center py-20 px-8 gap-5 text-center"
+              className="flex flex-col items-center justify-center py-12 px-8 gap-5 text-center"
             >
               <div className="w-14 h-14 rounded-full bg-success/15 flex items-center justify-center">
                 <Check className="w-7 h-7 text-success" />
@@ -459,6 +479,49 @@ Return:
                   }
                 </p>
               </div>
+
+              {/* Difficulty result */}
+              {difficultyResult && (
+                <div className="w-full max-w-xs border border-border rounded-lg p-3 bg-accent/20 text-left space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-amber-500 shrink-0" />
+                    <span className="text-sm font-medium">Point Value: Tier {difficultyResult.difficulty_tier}</span>
+                  </div>
+                  {difficultyResult._reason && (
+                    <p className="text-xs text-muted-foreground">{difficultyResult._reason}</p>
+                  )}
+                  <div className="flex items-center gap-2 pt-1">
+                    <label className="text-xs font-medium shrink-0">Override points:</label>
+                    <input
+                      type="number"
+                      min={10}
+                      max={50}
+                      step={10}
+                      value={overrideValue}
+                      onChange={e => setOverrideValue(e.target.value)}
+                      className="w-20 border border-input rounded px-2 py-1 text-sm text-center"
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs"
+                      onClick={async () => {
+                        const v = parseInt(overrideValue, 10);
+                        if (!isNaN(v) && v > 0 && savedCard?.id) {
+                          await base44.entities.Card.update(savedCard.id, {
+                            point_value: v,
+                            difficulty_overridden: true,
+                          });
+                          toast.success(`Point value set to ${v}`);
+                        }
+                      }}
+                    >
+                      Set
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               <div className="flex flex-col gap-2 w-full max-w-xs">
                 <Button onClick={handleAddAnother} className="gap-2 w-full">
                   <Plus className="w-4 h-4" /> Add another card

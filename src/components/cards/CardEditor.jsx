@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Plus, X, Wand2, Image as ImageIcon, Loader2, Pencil, Search, Sparkles, Tags } from 'lucide-react';
+import { Plus, X, Wand2, Image as ImageIcon, Loader2, Pencil, Search, Sparkles, Tags, Zap, RotateCcw } from 'lucide-react';
+import { computeCardDifficulty } from '@/lib/computeCardDifficulty';
 import InfoTooltip from './InfoTooltip';
 import ImageEditor from './ImageEditor';
 import ImageSearchPanel from './ImageSearchPanel';
@@ -56,6 +57,12 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [generatingDecoys, setGeneratingDecoys] = useState(false);
+  // Difficulty fields
+  const [pointValue, setPointValue] = useState(card?.point_value ?? 20);
+  const [difficultyTier, setDifficultyTier] = useState(card?.difficulty_tier ?? null);
+  const [difficultyOverridden, setDifficultyOverridden] = useState(card?.difficulty_overridden ?? false);
+  const [recomputingDifficulty, setRecomputingDifficulty] = useState(false);
+  const [difficultyReason, setDifficultyReason] = useState('');
   const [suggestingTags, setSuggestingTags] = useState(false);
   const [generatingExplanation, setGeneratingExplanation] = useState(false);
   const [showImageEditor, setShowImageEditor] = useState(false);
@@ -112,6 +119,24 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
     setUploading(false);
   };
 
+  // ── Difficulty recompute (called when qType changes, if not overridden) ──
+  const recomputeDifficulty = async (qt, currentClue, currentCorrect) => {
+    if (difficultyOverridden) return;
+    setRecomputingDifficulty(true);
+    try {
+      const result = await computeCardDifficulty({
+        question_type: qt,
+        clue: currentClue,
+        correct_answer: currentCorrect,
+        concept_id: card?.concept_id || null,
+      });
+      setPointValue(result.point_value);
+      setDifficultyTier(result.difficulty_tier);
+      setDifficultyReason(result._reason);
+    } catch { /* keep existing values */ }
+    setRecomputingDifficulty(false);
+  };
+
   // ── Question type change ──────────────────────────────────────────────────
   const handleQTypeChange = (val) => {
     setQType(val);
@@ -120,6 +145,11 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
       setAllChoicesList(['True', 'False']);
     } else if (allChoicesList[0] === 'True' && allChoicesList[1] === 'False') {
       setAllChoicesList(['', '', '', '']);
+    }
+    // Recompute difficulty if not manually overridden
+    if (!difficultyOverridden) {
+      const firstCorrect = Array.from(correctSet)[0] || '';
+      recomputeDifficulty(val, clue, firstCorrect);
     }
   };
 
@@ -269,6 +299,9 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
       clue,
       explanation,
       tags,
+      point_value: pointValue,
+      difficulty_tier: difficultyTier,
+      difficulty_overridden: difficultyOverridden,
       ...(isShortAnswer && {
         canonical_answer: canonicalAnswer.trim(),
         accepted_variants: acceptedVariants.filter(Boolean),
@@ -699,6 +732,61 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
           )}
         </div>
       )}
+
+      {/* Difficulty / Point Value */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label className="flex items-center gap-1.5">
+            <Zap className="w-3.5 h-3.5 text-amber-500" /> Point Value
+            <InfoTooltip text="Points awarded for a correct answer. Computed once at creation from question type and graph depth. Override to lock." />
+          </Label>
+          {!difficultyOverridden && (
+            <button
+              type="button"
+              onClick={() => recomputeDifficulty(qType, clue, Array.from(correctSet)[0] || '')}
+              disabled={recomputingDifficulty}
+              className="flex items-center gap-1 text-xs text-primary hover:underline disabled:opacity-50"
+            >
+              {recomputingDifficulty ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
+              Recompute
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          <input
+            type="number"
+            min={10}
+            max={50}
+            step={10}
+            value={pointValue}
+            onChange={e => {
+              setPointValue(parseInt(e.target.value, 10) || 20);
+              setDifficultyOverridden(true);
+            }}
+            className="w-24 border border-input rounded px-2 py-1.5 text-sm text-center"
+          />
+          {difficultyTier && (
+            <span className="text-xs text-muted-foreground">Tier {difficultyTier} / 5</span>
+          )}
+          {difficultyOverridden ? (
+            <button
+              type="button"
+              onClick={() => {
+                setDifficultyOverridden(false);
+                recomputeDifficulty(qType, clue, Array.from(correctSet)[0] || '');
+              }}
+              className="text-xs text-amber-600 hover:underline flex items-center gap-1"
+            >
+              <RotateCcw className="w-3 h-3" /> Reset to computed
+            </button>
+          ) : (
+            <span className="text-xs text-muted-foreground italic">auto-computed</span>
+          )}
+        </div>
+        {difficultyReason && !difficultyOverridden && (
+          <p className="text-xs text-muted-foreground">{difficultyReason}</p>
+        )}
+      </div>
 
       {/* Tags */}
       <div className="space-y-2">

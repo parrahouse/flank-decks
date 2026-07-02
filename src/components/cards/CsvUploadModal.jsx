@@ -33,9 +33,10 @@ function parseCSV(text) {
 
   const headers = parseLine(lines[0]).map(h => h.toLowerCase().replace(/\s+/g, '_'));
 
-  // Must have at least correct_answers and one choice column
-  if (!headers.includes('correct_answers')) {
-    return { rows: [], error: 'Missing required column: correct_answers' };
+  // Backfill mode: id + point_value only (no correct_answers required)
+  const isBackfillMode = headers.includes('id') && headers.includes('point_value') && !headers.includes('correct_answers');
+  if (!isBackfillMode && !headers.includes('correct_answers')) {
+    return { rows: [], error: 'Missing required column: correct_answers (or use id+point_value for difficulty backfill)' };
   }
 
   const rows = [];
@@ -47,7 +48,7 @@ function parseCSV(text) {
     rows.push(row);
   }
 
-  return { rows, error: null };
+  return { rows, error: null, isBackfillMode: headers.includes('id') && headers.includes('point_value') && !headers.includes('correct_answers') };
 }
 
 function rowToCard(row, deckId, order) {
@@ -66,6 +67,9 @@ function rowToCard(row, deckId, order) {
 
   const canonicalAnswer = row.canonical_answer?.trim() || (isShortAnswer ? firstCorrect : '');
 
+  const explicitPointValue = row.point_value ? parseInt(row.point_value, 10) : null;
+  const explicitTier = row.difficulty_tier ? parseInt(row.difficulty_tier, 10) : null;
+
   return {
     deck_id: deckId,
     order,
@@ -77,6 +81,9 @@ function rowToCard(row, deckId, order) {
     explanation: row.explanation?.trim() || '',
     image_url: row.image_url?.trim() || '',
     tags: row.tags ? row.tags.split(';').map(t => t.trim().toLowerCase()).filter(Boolean) : [],
+    point_value: !isNaN(explicitPointValue) && explicitPointValue > 0 ? explicitPointValue : 20,
+    ...(explicitTier && !isNaN(explicitTier) && { difficulty_tier: explicitTier }),
+    difficulty_overridden: !!(explicitPointValue && !isNaN(explicitPointValue)),
     ...(isShortAnswer && {
       canonical_answer: canonicalAnswer,
       accepted_variants: [],
@@ -95,24 +102,38 @@ Photosynthesis,short_answer,,,,,,Photosynthesis,What process do plants use to co
 export default function CsvUploadModal({ open, onClose, deckId, existingCount, onImported }) {
   const fileRef = useRef();
   const [dragging, setDragging] = useState(false);
-  const [preview, setPreview] = useState(null); // { cards, errors }
+  const [preview, setPreview] = useState(null); // { cards, errors, isBackfill }
   const [importing, setImporting] = useState(false);
 
   const handleFile = (file) => {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (e) => {
-      const { rows, error } = parseCSV(e.target.result);
-      if (error) { setPreview({ cards: [], errors: [error] }); return; }
+      const { rows, error, isBackfillMode } = parseCSV(e.target.result);
+      if (error) { setPreview({ cards: [], errors: [error], isBackfill: false }); return; }
 
       const errors = [];
       const cards = [];
-      rows.forEach((row, i) => {
-        const card = rowToCard(row, deckId, existingCount + i);
-        if (!card) errors.push(`Row ${i + 2}: missing correct_answers, or missing decoy choices (required for non-short_answer types).`);
-        else cards.push(card);
-      });
-      setPreview({ cards, errors });
+
+      if (isBackfillMode) {
+        // Backfill mode: rows are {id, point_value, difficulty_tier?}
+        rows.forEach((row, i) => {
+          const id = row.id?.trim();
+          const pv = parseInt(row.point_value, 10);
+          if (!id || isNaN(pv)) { errors.push(`Row ${i + 2}: id and point_value required for backfill.`); return; }
+          const update = { id, point_value: pv, difficulty_overridden: true };
+          if (row.difficulty_tier) { const t = parseInt(row.difficulty_tier, 10); if (!isNaN(t)) update.difficulty_tier = t; }
+          cards.push(update);
+        });
+      } else {
+        rows.forEach((row, i) => {
+          const card = rowToCard(row, deckId, existingCount + i);
+          if (!card) errors.push(`Row ${i + 2}: missing correct_answers, or missing decoy choices (required for non-short_answer types).`);
+          else cards.push(card);
+        });
+      }
+
+      setPreview({ cards, errors, isBackfill: isBackfillMode });
     };
     reader.readAsText(file);
   };
@@ -128,11 +149,20 @@ export default function CsvUploadModal({ open, onClose, deckId, existingCount, o
   const handleImport = async () => {
     if (!preview?.cards?.length) return;
     setImporting(true);
-    await base44.entities.Card.bulkCreate(preview.cards);
-    setImporting(false);
-    onImported();
-    onClose();
-    toast.success(`${preview.cards.length} cards imported!`);
+    if (preview.isBackfill) {
+      // Backfill: update existing cards by id (no AI)
+      await base44.entities.Card.bulkUpdate(preview.cards);
+      setImporting(false);
+      onImported();
+      onClose();
+      toast.success(`${preview.cards.length} cards updated with new point values!`);
+    } else {
+      await base44.entities.Card.bulkCreate(preview.cards);
+      setImporting(false);
+      onImported();
+      onClose();
+      toast.success(`${preview.cards.length} cards imported!`);
+    }
   };
 
   const downloadSample = () => {
@@ -187,8 +217,14 @@ export default function CsvUploadModal({ open, onClose, deckId, existingCount, o
                   <code className="bg-background px-1 rounded">written_question</code> — question prompt ·{' '}
                   <code className="bg-background px-1 rounded">explanation</code> — shown after answering ·{' '}
                   <code className="bg-background px-1 rounded">image_url</code> — direct image URL ·{' '}
-                  <code className="bg-background px-1 rounded">tags</code> — semicolon-separated, e.g. <code className="bg-background px-1 rounded">vocabulary;places</code>
+                  <code className="bg-background px-1 rounded">tags</code> — semicolon-separated ·{' '}
+                  <code className="bg-background px-1 rounded">point_value</code> — overrides computed points
                 </p>
+              </div>
+
+              <div className="space-y-1 border-t border-border pt-2 mt-1">
+                <p className="font-medium text-foreground">Difficulty Backfill Mode</p>
+                <p>To update point values on existing cards without reimporting content, create a CSV with only <code className="bg-background px-1 rounded">id</code>, <code className="bg-background px-1 rounded">point_value</code>, and optionally <code className="bg-background px-1 rounded">difficulty_tier</code>. Omit <code className="bg-background px-1 rounded">correct_answers</code> to activate this mode. No AI is called.</p>
               </div>
             </div>
 
