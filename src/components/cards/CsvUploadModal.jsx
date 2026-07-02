@@ -54,35 +54,43 @@ function rowToCard(row, deckId, order) {
   const correctAnswers = row.correct_answers?.trim();
   if (!correctAnswers) return null;
 
-  // Collect choice columns: choice_2, choice_3, choice_4, choice_5, choice_6
-  // The first correct answer is always included as choice_1
+  const questionType = row.question_type?.trim() || 'multiple_choice';
+  const isShortAnswer = questionType === 'short_answer';
+
   const firstCorrect = correctAnswers.split('|')[0].trim();
   const decoys = [2, 3, 4, 5, 6]
     .map(n => row[`choice_${n}`]?.trim())
     .filter(Boolean);
 
-  if (decoys.length === 0) return null; // need at least one decoy
+  if (!isShortAnswer && decoys.length === 0) return null; // need at least one decoy for choice-based types
 
-  const questionType = row.question_type?.trim() || 'multiple_choice';
+  const canonicalAnswer = row.canonical_answer?.trim() || (isShortAnswer ? firstCorrect : '');
 
   return {
     deck_id: deckId,
     order,
     correct_answers: correctAnswers,
+    correct_answer: firstCorrect,
     question_type: questionType,
-    choices: [firstCorrect, ...decoys],
+    choices: isShortAnswer ? [] : [firstCorrect, ...decoys],
     clue: (row.written_question ?? row.clue)?.trim() || '',
     explanation: row.explanation?.trim() || '',
     image_url: row.image_url?.trim() || '',
     tags: row.tags ? row.tags.split(';').map(t => t.trim().toLowerCase()).filter(Boolean) : [],
+    ...(isShortAnswer && {
+      canonical_answer: canonicalAnswer,
+      accepted_variants: [],
+      grading_guidance: '',
+    }),
   };
 }
 
-const SAMPLE_CSV = `correct_answers,question_type,choice_2,choice_3,choice_4,choice_5,choice_6,written_question,explanation,image_url,tags
-Elephant,multiple_choice,Lion,Giraffe,Zebra,Hippopotamus,Rhinoceros,Which is the largest land animal?,Elephants are the largest land mammals on Earth reaching up to 13 feet tall.,,animals;vocabulary
-Sahara,multiple_choice,Gobi,Kalahari,Atacama,Arabian,Mojave,What is the world's largest hot desert?,The Sahara covers about 9.2 million square kilometers across North Africa.,,geography;places
-True,true_false,False,,,,,,Does the Earth orbit the Sun?,,science
-Mitosis|Meiosis,select_all,Photosynthesis,Osmosis,Respiration,Fermentation,,Which of the following are types of cell division?,Mitosis produces two identical daughter cells; meiosis produces four genetically unique cells.,,vocabulary`;
+const SAMPLE_CSV = `correct_answers,question_type,choice_2,choice_3,choice_4,choice_5,choice_6,canonical_answer,written_question,explanation,image_url,tags
+Elephant,multiple_choice,Lion,Giraffe,Zebra,Hippopotamus,Rhinoceros,,Which is the largest land animal?,Elephants are the largest land mammals on Earth reaching up to 13 feet tall.,,animals;vocabulary
+Sahara,multiple_choice,Gobi,Kalahari,Atacama,Arabian,Mojave,,What is the world's largest hot desert?,The Sahara covers about 9.2 million square kilometers across North Africa.,,geography;places
+True,true_false,False,,,,,,,Does the Earth orbit the Sun?,,science
+Mitosis|Meiosis,select_all,Photosynthesis,Osmosis,Respiration,Fermentation,,,Which of the following are types of cell division?,Mitosis produces two identical daughter cells; meiosis produces four genetically unique cells.,,vocabulary
+Photosynthesis,short_answer,,,,,,Photosynthesis,What process do plants use to convert sunlight into food?,Plants use chlorophyll to absorb sunlight and convert CO2 and water into glucose and oxygen.,,science`;
 
 export default function CsvUploadModal({ open, onClose, deckId, existingCount, onImported }) {
   const fileRef = useRef();
@@ -101,7 +109,7 @@ export default function CsvUploadModal({ open, onClose, deckId, existingCount, o
       const cards = [];
       rows.forEach((row, i) => {
         const card = rowToCard(row, deckId, existingCount + i);
-        if (!card) errors.push(`Row ${i + 2}: missing correct_answers or at least one decoy choice.`);
+        if (!card) errors.push(`Row ${i + 2}: missing correct_answers, or missing decoy choices (required for non-short_answer types).`);
         else cards.push(card);
       });
       setPreview({ cards, errors });
@@ -160,20 +168,25 @@ export default function CsvUploadModal({ open, onClose, deckId, existingCount, o
 
               <div className="space-y-1">
                 <p className="font-medium text-foreground">2. question_type</p>
-                <p>One of: <code className="bg-background px-1 rounded">multiple_choice</code> (default), <code className="bg-background px-1 rounded">true_false</code>, or <code className="bg-background px-1 rounded">select_all</code></p>
+                <p>One of: <code className="bg-background px-1 rounded">multiple_choice</code> (default), <code className="bg-background px-1 rounded">true_false</code>, <code className="bg-background px-1 rounded">select_all</code>, or <code className="bg-background px-1 rounded">short_answer</code></p>
               </div>
 
               <div className="space-y-1">
-                <p className="font-medium text-foreground">3. choice_2 <span className="text-destructive">*required</span> … choice_6</p>
-                <p>The wrong answer choices (decoys). <code className="bg-background px-1 rounded">choice_2</code> is required; <code className="bg-background px-1 rounded">choice_3</code> through <code className="bg-background px-1 rounded">choice_6</code> are optional. Up to <strong>6 total choices</strong> per card (correct answer counts as choice_1).</p>
+                <p className="font-medium text-foreground">3. choice_2 … choice_6</p>
+                <p>Wrong answer choices (decoys). Required for <code className="bg-background px-1 rounded">multiple_choice</code>, <code className="bg-background px-1 rounded">true_false</code>, and <code className="bg-background px-1 rounded">select_all</code>. Leave blank for <code className="bg-background px-1 rounded">short_answer</code>.</p>
               </div>
 
               <div className="space-y-1">
-                <p className="font-medium text-foreground">4. Optional columns</p>
+                <p className="font-medium text-foreground">4. canonical_answer</p>
+                <p>For <code className="bg-background px-1 rounded">short_answer</code> only — the authoritative answer used for AI grading. Falls back to <code className="bg-background px-1 rounded">correct_answers</code> if omitted.</p>
+              </div>
+
+              <div className="space-y-1">
+                <p className="font-medium text-foreground">5. Optional columns</p>
                 <p>
-                  <code className="bg-background px-1 rounded">written_question</code> — a question prompt shown before answering ·{' '}
-                  <code className="bg-background px-1 rounded">explanation</code> — shown on the card back ·{' '}
-                  <code className="bg-background px-1 rounded">image_url</code> — direct URL to an image ·{' '}
+                  <code className="bg-background px-1 rounded">written_question</code> — question prompt ·{' '}
+                  <code className="bg-background px-1 rounded">explanation</code> — shown after answering ·{' '}
+                  <code className="bg-background px-1 rounded">image_url</code> — direct image URL ·{' '}
                   <code className="bg-background px-1 rounded">tags</code> — semicolon-separated, e.g. <code className="bg-background px-1 rounded">vocabulary;places</code>
                 </p>
               </div>
