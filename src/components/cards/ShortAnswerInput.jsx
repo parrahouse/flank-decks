@@ -16,23 +16,23 @@ const SCORE = {
   correct_after_clue: 0.5,
   second_guess: 0.75,
   second_guess_after_clue: 0.35,
-  wrong: 0,
+  wrong: 0
 };
 
 // Normalise a string for tier-1 comparison
 function normalise(str) {
-  return str
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, ' ')
-    .replace(/[^\w\s]/g, '')
-    .replace(/^(a|an|the)\s+/, '');
+  return str.
+  toLowerCase().
+  trim().
+  replace(/\s+/g, ' ').
+  replace(/[^\w\s]/g, '').
+  replace(/^(a|an|the)\s+/, '');
 }
 
 function tier1Match(response, canonical, variants = []) {
   const n = normalise(response);
   const targets = [canonical, ...(variants || [])].map(normalise);
-  return targets.some(t => t && t === n);
+  return targets.some((t) => t && t === n);
 }
 
 async function tier2Grade(card, studentResponse) {
@@ -49,9 +49,9 @@ Respond ONLY with valid JSON (no markdown, no preamble):
 
   const raw = await base44.integrations.Core.InvokeLLM({ prompt });
   // Strip code fences defensively
-  const cleaned = (typeof raw === 'string' ? raw : JSON.stringify(raw))
-    .replace(/```[a-z]*\n?/g, '')
-    .trim();
+  const cleaned = (typeof raw === 'string' ? raw : JSON.stringify(raw)).
+  replace(/```[a-z]*\n?/g, '').
+  trim();
   return JSON.parse(cleaned);
 }
 
@@ -70,7 +70,7 @@ export default function ShortAnswerInput({
   onShowExplanation,
   cardStats = null,
   // For the action bar
-  introReady = true,
+  introReady = true
 }) {
   const [response, setResponse] = useState('');
   const [grading, setGrading] = useState(false);
@@ -81,9 +81,9 @@ export default function ShortAnswerInput({
   const textareaRef = useRef(null);
 
   const minSessions = deck?.mastery_min_sessions ?? 3;
-  const masteryPct = cardStats && cardStats.sessions_completed >= minSessions
-    ? Math.round((cardStats.correct_attempts / cardStats.total_attempts) * 100)
-    : null;
+  const masteryPct = cardStats && cardStats.sessions_completed >= minSessions ?
+  Math.round(cardStats.correct_attempts / cardStats.total_attempts * 100) :
+  null;
   const timesStudied = cardStats?.sessions_completed ?? null;
 
   // Auto-grow textarea
@@ -122,7 +122,7 @@ export default function ShortAnswerInput({
           verdict: result.verdict,
           value: result.value,
           reason: result.reason,
-          graded_at: new Date().toISOString(),
+          graded_at: new Date().toISOString()
         }).catch(() => {}); // fire-and-forget, don't block UI
       } catch {
         result = { verdict: 'incorrect', value: 0, reason: 'AI grading unavailable' };
@@ -134,9 +134,9 @@ export default function ShortAnswerInput({
     const v = result.verdict;
 
     if (v === 'correct') {
-      const scoreKey = clueManuallyRevealed
-        ? (firstWrongText ? 'second_guess_after_clue' : 'correct_after_clue')
-        : (firstWrongText ? 'second_guess' : 'correct');
+      const scoreKey = clueManuallyRevealed ?
+      firstWrongText ? 'second_guess_after_clue' : 'correct_after_clue' :
+      firstWrongText ? 'second_guess' : 'correct';
       setVerdict(result);
       setCommitted(true);
       onScore && onScore(SCORE[scoreKey], scoreKey);
@@ -172,10 +172,10 @@ export default function ShortAnswerInput({
     // Enter alone = newline (default textarea behaviour — do nothing)
   };
 
-  const verdictColor = !verdict ? '#6b7280'
-    : verdict.verdict === 'correct' ? '#00A842'
-    : verdict.verdict === 'partial' ? '#d97706'
-    : '#dc2626';
+  const verdictColor = !verdict ? '#6b7280' :
+  verdict.verdict === 'correct' ? '#00A842' :
+  verdict.verdict === 'partial' ? '#d97706' :
+  '#dc2626';
 
   const isRetry = firstWrongText !== null && !committed;
 
@@ -187,7 +187,7 @@ export default function ShortAnswerInput({
         <textarea
           ref={textareaRef}
           value={response}
-          onChange={e => setResponse(e.target.value)}
+          onChange={(e) => setResponse(e.target.value)}
           onKeyDown={handleKeyDown}
           disabled={committed || grading}
           placeholder={isRetry ? 'Try again…' : 'Type your answer…'}
@@ -203,76 +203,76 @@ export default function ShortAnswerInput({
             border: `2px solid ${isRetry ? '#f97316' : committed && verdict ? verdictColor : '#000'}`,
             borderRadius: 8,
             outline: 'none',
-            backgroundColor: committed && verdict
-              ? verdict.verdict === 'correct' ? '#f0fdf4'
-              : verdict.verdict === 'partial' ? '#fffbeb'
-              : '#fef2f2'
-              : '#fff',
+            backgroundColor: committed && verdict ?
+            verdict.verdict === 'correct' ? '#f0fdf4' :
+            verdict.verdict === 'partial' ? '#fffbeb' :
+            '#fef2f2' :
+            '#fff',
             transition: 'border-color 0.3s, background-color 0.3s',
             fontFamily: 'inherit',
-            opacity: committed ? 0.85 : 1,
-          }}
-        />
+            opacity: committed ? 0.85 : 1
+          }} />
+        
         {/* Submit button inside textarea */}
-        {!committed && (
-          <button
-            onClick={submit}
-            disabled={!response.trim() || grading}
-            title="Submit (Ctrl+Enter)"
-            style={{
-              position: 'absolute', right: 8, bottom: 8,
-              width: 28, height: 28,
-              background: response.trim() && !grading ? '#000' : '#d1d5db',
-              border: 'none', borderRadius: 6,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: response.trim() && !grading ? 'pointer' : 'not-allowed',
-              transition: 'background 0.2s',
-            }}
-          >
-            {grading
-              ? <Loader2 style={{ width: 14, height: 14, color: '#fff' }} className="animate-spin" />
-              : <SendHorizonal style={{ width: 14, height: 14, color: '#fff' }} />
-            }
+        {!committed &&
+        <button
+          onClick={submit}
+          disabled={!response.trim() || grading}
+          title="Submit (Ctrl+Enter)"
+          style={{
+            position: 'absolute', right: 8, bottom: 8,
+            width: 28, height: 28,
+            background: response.trim() && !grading ? '#000' : '#d1d5db',
+            border: 'none', borderRadius: 6,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: response.trim() && !grading ? 'pointer' : 'not-allowed',
+            transition: 'background 0.2s'
+          }}>
+          
+            {grading ?
+          <Loader2 style={{ width: 14, height: 14, color: '#fff' }} className="animate-spin" /> :
+          <SendHorizonal style={{ width: 14, height: 14, color: '#fff' }} className="" />
+          }
           </button>
-        )}
+        }
       </div>
 
       {/* Status / feedback */}
-      {grading && (
-        <p style={{ fontSize: 12, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 4 }}>
+      {grading &&
+      <p style={{ fontSize: 12, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 4 }}>
           <Loader2 style={{ width: 12, height: 12 }} className="animate-spin" /> Checking…
         </p>
-      )}
+      }
 
-      {aiUnavailable && (
-        <p style={{ fontSize: 12, color: '#d97706' }}>
+      {aiUnavailable &&
+      <p style={{ fontSize: 12, color: '#d97706' }}>
           ⚠ AI grading was unavailable — answer marked incorrect.
         </p>
-      )}
+      }
 
-      {verdict && (
-        <div style={{ padding: '8px 12px', borderRadius: 7, backgroundColor: verdictColor + '18', border: `1.5px solid ${verdictColor}22` }}>
+      {verdict &&
+      <div style={{ padding: '8px 12px', borderRadius: 7, backgroundColor: verdictColor + '18', border: `1.5px solid ${verdictColor}22` }}>
           <p style={{ fontSize: 14, fontWeight: 600, color: verdictColor, margin: 0 }}>
             {verdict.verdict === 'correct' ? '✓ Correct' : verdict.verdict === 'partial' ? '~ Partial credit' : isRetry ? '✗ Try again' : '✗ Incorrect'}
           </p>
-          {verdict.reason && verdict.verdict !== 'correct' && (
-            <p style={{ fontSize: 12, color: '#374151', margin: '3px 0 0' }}>{verdict.reason}</p>
-          )}
-          {(committed && verdict.verdict !== 'correct') && (
-            <p style={{ fontSize: 12, color: '#374151', marginTop: 4 }}>
+          {verdict.reason && verdict.verdict !== 'correct' &&
+        <p style={{ fontSize: 12, color: '#374151', margin: '3px 0 0' }}>{verdict.reason}</p>
+        }
+          {committed && verdict.verdict !== 'correct' &&
+        <p style={{ fontSize: 12, color: '#374151', marginTop: 4 }}>
               Correct answer: <strong>{card.canonical_answer}</strong>
               {card.accepted_variants?.length ? ` (also: ${card.accepted_variants.join(', ')})` : ''}
             </p>
-          )}
+        }
         </div>
-      )}
+      }
 
-      {isRetry && (
-        <p style={{ fontSize: 12, color: '#f97316' }}>
+      {isRetry &&
+      <p style={{ fontSize: 12, color: '#f97316' }}>
           <RotateCcw style={{ width: 12, height: 12, display: 'inline', marginRight: 4 }} />
           One more try.
         </p>
-      )}
+      }
 
       {/* Action row */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, paddingTop: 8, borderTop: '1px solid #E5E5E5' }}>
@@ -280,12 +280,12 @@ export default function ShortAnswerInput({
           {!committed ? 'Cmd/Ctrl+Enter to submit' : ''}
         </p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          {committed && hasExplanation && (
-            <button onClick={onShowExplanation} style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
+          {committed && hasExplanation &&
+          <button onClick={onShowExplanation} style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
               <GraduationCap style={{ width: 14, height: 14 }} />
               <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 1 }}>Learn More</span>
             </button>
-          )}
+          }
           <button
             onClick={() => {
               if (!committed) {
@@ -293,15 +293,15 @@ export default function ShortAnswerInput({
               }
               onNext && onNext();
             }}
-            style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer' }}
-          >
+            style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer' }}>
+            
             <SkipForward style={{ width: 14, height: 14 }} />
             <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 1 }}>
-              {committed ? (isLast ? 'Finish' : 'Next') : 'Skip'}
+              {committed ? isLast ? 'Finish' : 'Next' : 'Skip'}
             </span>
           </button>
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }
