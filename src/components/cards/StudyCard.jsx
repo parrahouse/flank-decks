@@ -199,7 +199,7 @@ export default function StudyCard({
       playWrong();
       setShake(true);
       setTimeout(() => setShake(false), 400);
-      if (!firstWrong && !eliminated.length) {
+      if (!firstWrong && !eliminated.length && !isTrueFalse) {
         setFirstWrong(choice);
         onFirstWrong && onFirstWrong(choice, { retry: true });
       } else {
