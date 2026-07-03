@@ -92,8 +92,9 @@ export default function ShortAnswerInput({
     if (!ta) return;
     ta.style.height = 'auto';
     const lineH = 24;
+    const minH = lineH * 2 + 20; // 2 rows + padding
     const maxH = lineH * 6 + 16; // 6 rows + padding
-    ta.style.height = Math.min(ta.scrollHeight, maxH) + 'px';
+    ta.style.height = Math.max(minH, Math.min(ta.scrollHeight, maxH)) + 'px';
     ta.style.overflowY = ta.scrollHeight > maxH ? 'auto' : 'hidden';
   }, [response]);
 
@@ -191,7 +192,7 @@ export default function ShortAnswerInput({
           onKeyDown={handleKeyDown}
           disabled={committed || grading}
           placeholder={isRetry ? 'Try again…' : 'Type your answer…'}
-          rows={1}
+          rows={2}
           style={{
             width: '100%',
             resize: 'none',
