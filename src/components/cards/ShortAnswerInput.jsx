@@ -220,7 +220,7 @@ export default function ShortAnswerInput({
             disabled={!response.trim() || grading}
             title="Submit (Ctrl+Enter)"
             style={{
-              position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
+              position: 'absolute', right: 8, bottom: 8,
               width: 28, height: 28,
               background: response.trim() && !grading ? '#000' : '#d1d5db',
               border: 'none', borderRadius: 6,
