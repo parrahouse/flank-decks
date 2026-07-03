@@ -171,6 +171,8 @@ export default function StudyCard({
 
   const handleSelect = (choice) => {
     if (finalAnswer) return;
+    // Prevent re-selecting a choice already tried (first wrong)
+    if (firstWrong && choice === firstWrong) return;
 
     // Select-all: just toggle the pending set, grading happens on "Done"
     if (isSelectAll) {
