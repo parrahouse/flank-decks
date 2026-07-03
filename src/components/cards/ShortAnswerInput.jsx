@@ -197,7 +197,7 @@ export default function ShortAnswerInput({
             resize: 'none',
             overflowY: 'hidden',
             boxSizing: 'border-box',
-            padding: '10px 44px 10px 14px',
+            padding: '10px 44px 8px 14px',
             fontSize: 16,
             lineHeight: '24px',
             border: `2px solid ${isRetry ? '#f97316' : committed && verdict ? verdictColor : '#000'}`,
