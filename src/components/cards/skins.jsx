@@ -8,7 +8,15 @@
  *   cell      number   source sprite grid size (px, square)
  *   baseline  number   row inside the cell the character's feet rest on
  *   scale     integer  display multiplier — INTEGER ONLY (no fractional scaling)
- *   sprites   { idle, walk, wrong }  each { src, frames }   frames = strip width ÷ cell
+ *   sprites   nested per-state, per-variant:
+ *             {
+ *               idle:  { happy: {src, frames}, sad?: {src, frames} },
+ *               walk:  { happy: {src, frames}, sad?: {src, frames} },
+ *               react: { right?: {src, frames}, wrong?: {src, frames} },
+ *             }
+ *             - `sad` missing → falls back to `happy`
+ *             - `react.*` missing → no reaction (skip)
+ *             - any resolved sprite with empty `src` or `frames: 0` → treat as absent
  *   flag?     optional per-skin flag set; omit to inherit DEFAULT_FLAG
  *             { cell, baseline, inactive:{src}, activate:{src,frames}, wave:{src,frames} }
  *   ground?   optional per-skin ground; omit to inherit DEFAULT_GROUND
@@ -37,9 +45,9 @@ const CAT = {
   baseline: 29,
   scale:    1,
   sprites: {
-    idle:  { src: 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/f2e415cfd_catidle.png', frames: 4 },
-    walk:  { src: 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/6ede5faf0_catwalk.png', frames: 4 },
-    wrong: { src: '', frames: 4 }, // placeholder — no wrong sprite uploaded yet
+    idle:  { happy: { src: 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/f2e415cfd_catidle.png', frames: 4 } },
+    walk:  { happy: { src: 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/6ede5faf0_catwalk.png', frames: 4 } },
+    react: { wrong: { src: '', frames: 4 } }, // placeholder — no wrong sprite uploaded yet
   },
   // no flag/ground → inherits DEFAULT_FLAG and DEFAULT_GROUND
 };
@@ -51,9 +59,9 @@ const EGG = {
   baseline: 47,
   scale:    1,
   sprites: {
-    idle:  { src: 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/facafef11_EggIdle.png',  frames: 6 },
-    walk:  { src: 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/48422f385_EggWalk.png',  frames: 6 },
-    wrong: { src: 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/61e0a8336_EggWrong.png', frames: 6 },
+    idle:  { happy: { src: 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/facafef11_EggIdle.png',  frames: 6 } },
+    walk:  { happy: { src: 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/48422f385_EggWalk.png',  frames: 6 } },
+    react: { wrong: { src: 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/61e0a8336_EggWrong.png', frames: 6 } },
   },
   flag: {   // egg ships 48px flags so they match its grid
     cell:     48,
@@ -65,10 +73,44 @@ const EGG = {
   // no ground → inherits DEFAULT_GROUND
 };
 
-export const SKINS = [CAT, EGG];
-export const DEFAULT_SKIN_ID = 'egg';
+const SWAB = {
+  id:       'swab',
+  name:     'Swab',
+  cell:     32,
+  baseline: 31,
+  scale:    2,
+  sprites: {
+    idle: { happy: { src: 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/02953bbd9_Swab-Idle-Happy.png', frames: 10 } },
+    walk: { happy: { src: 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/d607b43cb_Swab-Walk-Happy.png', frames: 8 } },
+  },
+  ground: {
+    src:   'https://media.base44.com/images/public/69fd6153088222f7245f34d6/8c86d6208_Ground-1.png',
+    tileW: 64,
+    tileH: 7,
+  },
+  // no flag → inherits DEFAULT_FLAG (32px)
+};
+
+export const SKINS = [SWAB, CAT, EGG];
+export const DEFAULT_SKIN_ID = 'swab';
 
 // Lookup with a safety fallback: an unknown/retired id resolves to the default
 // rather than rendering a broken scene.
 export const getSkin = (id) =>
   SKINS.find((s) => s.id === id) || SKINS.find((s) => s.id === DEFAULT_SKIN_ID);
+
+/**
+ * resolveSprite(skin, state, variant) — resolve a sprite through the fallback rules.
+ * Returns the { src, frames } object or null when absent.
+ *   - `sad` missing → falls back to `happy`
+ *   - any resolved sprite with empty `src` or `frames: 0` → treated as absent (null)
+ */
+export function resolveSprite(skin, state, variant) {
+  const stateObj = skin?.sprites?.[state];
+  if (!stateObj) return null;
+  let s = stateObj[variant];
+  if (!s && variant === 'sad') s = stateObj.happy; // sad → happy fallback
+  if (!s) return null;
+  if (!s.src || !s.frames || s.frames <= 0) return null;
+  return s;
+}
