@@ -28,8 +28,12 @@ const WALK_CYCLE_MS   = Math.round(STEP_MS * STRIDE_PER_CYCLE_PX / STEP_PX);
 
 const FLAG_EVERY          = 10;
 const MIN_CARDS_FOR_FLAGS = 20;
-const FLAG_ACT_MS         = 600;
-const FLAG_WAVE_MS        = 700;
+const FLAG_ACT_MS        = 600;
+const FLAG_WAVE_MS       = 700;
+
+// Pause between the answer being submitted and the character reacting —
+// lets the answer feedback (sound/colour) land before the sprite moves.
+const ANSWER_DELAY_MS   = 450;
 
 const AVATAR_ENTRY_MS   = 1000;
 const AVATAR_ENTRY_EASE = 'linear';
@@ -196,16 +200,16 @@ export default function ProgressGameBand({
     if (wrongTick === prevWrongTick.current || !wrongSprite?.src) return;
     prevWrongTick.current = wrongTick;
     if (WRONG_FRAMES === 0) return;
-    setWronging(true);
-    const t = setTimeout(() => setWronging(false), WRONG_DURATION);
-    return () => clearTimeout(t);
+    const t1 = setTimeout(() => setWronging(true), ANSWER_DELAY_MS);
+    const t2 = setTimeout(() => setWronging(false), ANSWER_DELAY_MS + WRONG_DURATION);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [wrongTick]);
 
   // ── Walk trigger ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (completed === prevCompleted.current) return;
-    const t1 = setTimeout(() => { setWalking(true); playWalking(); setShownCompleted(completed); }, 300);
-    const t2 = setTimeout(() => { setWalking(false); stopWalking(); }, 300 + STEP_MS);
+    const t1 = setTimeout(() => { setWalking(true); playWalking(); setShownCompleted(completed); }, ANSWER_DELAY_MS);
+    const t2 = setTimeout(() => { setWalking(false); stopWalking(); }, ANSWER_DELAY_MS + STEP_MS);
     prevCompleted.current = completed;
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [completed]);
