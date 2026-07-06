@@ -206,6 +206,12 @@ export default function ProgressGameBand({
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [wrongTick]);
 
+  // ── Preload character sprites so the first reveal has no paint gap ────────
+  useEffect(() => {
+    const urls = [idleSprite?.src, walkSprite?.src, wrongSprite?.src].filter(Boolean);
+    urls.forEach((u) => { const img = new Image(); img.src = u; });
+  }, [idleSprite?.src, walkSprite?.src, wrongSprite?.src]);
+
   // ── Walk trigger ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (completed === prevCompleted.current) return;
@@ -252,24 +258,42 @@ export default function ProgressGameBand({
   const isWalking = entering || walking;
   const isWrong = wronging && !isWalking && wrongSprite?.src && WRONG_FRAMES > 0;
 
-  // Sprite sources for the current character state
-  const charBg = isWalking
-    ? {
-        backgroundImage: `url(${walkSprite?.src})`,
-        backgroundSize: `${WALK_FRAMES * W}px ${W}px`,
-        animation: `${KF_WALK} ${WALK_CYCLE_MS}ms steps(${WALK_FRAMES}) infinite`,
-      }
-    : isWrong
-    ? {
-        backgroundImage: `url(${wrongSprite?.src})`,
-        backgroundSize: `${WRONG_FRAMES * W}px ${W}px`,
-        animation: `${KF_WRONG} ${WRONG_CYCLE_MS}ms steps(${WRONG_FRAMES}) ${Math.ceil(WRONG_DURATION / WRONG_CYCLE_MS)}`,
-      }
-    : {
+  // ── Character layers — stacked, always animating, revealed via opacity ───
+  // Both run continuously; we never swap the sprite on an element or restart
+  // an animation on reveal (restart is itself a flicker source).
+  const layers = (
+    <>
+      {/* IDLE layer — always animating underneath */}
+      <div style={{
+        position: 'absolute', inset: 0, width: W, height: W,
+        backgroundRepeat: 'no-repeat', imageRendering: 'pixelated',
         backgroundImage: `url(${idleSprite?.src})`,
         backgroundSize: `${IDLE_FRAMES * W}px ${W}px`,
         animation: `${KF_IDLE} ${IDLE_CYCLE_MS}ms steps(${IDLE_FRAMES}) infinite`,
-      };
+        opacity: isWalking ? 0 : 1,
+      }} />
+      {/* WALK layer — always animating, on top of idle */}
+      <div style={{
+        position: 'absolute', inset: 0, width: W, height: W,
+        backgroundRepeat: 'no-repeat', imageRendering: 'pixelated',
+        backgroundImage: `url(${walkSprite?.src})`,
+        backgroundSize: `${WALK_FRAMES * W}px ${W}px`,
+        animation: `${KF_WALK} ${WALK_CYCLE_MS}ms steps(${WALK_FRAMES}) infinite`,
+        opacity: isWalking ? 1 : 0,
+      }} />
+      {/* WRONG layer — one-shot reaction on top, visible ~2 cycles via isWrong */}
+      {WRONG_FRAMES > 0 && wrongSprite?.src && (
+        <div style={{
+          position: 'absolute', inset: 0, width: W, height: W,
+          backgroundRepeat: 'no-repeat', imageRendering: 'pixelated',
+          backgroundImage: `url(${wrongSprite?.src})`,
+          backgroundSize: `${WRONG_FRAMES * W}px ${W}px`,
+          animation: `${KF_WRONG} ${WRONG_CYCLE_MS}ms steps(${WRONG_FRAMES}) infinite`,
+          opacity: isWrong ? 1 : 0,
+        }} />
+      )}
+    </>
+  );
 
   return (
     <div
@@ -336,14 +360,7 @@ export default function ProgressGameBand({
               willChange: 'transform',
             }}
           >
-            <div style={{
-              width: W, height: W,
-              backgroundRepeat: 'no-repeat',
-              imageRendering: 'pixelated',
-              backgroundImage: `url(${walkSprite?.src})`,
-              backgroundSize: `${WALK_FRAMES * W}px ${W}px`,
-              animation: `${KF_WALK} ${WALK_CYCLE_MS}ms steps(${WALK_FRAMES}) infinite`,
-            }} />
+            {layers}
           </motion.div>
         ) : (
           <div style={{
@@ -356,12 +373,7 @@ export default function ProgressGameBand({
             transition: `transform ${STEP_MS}ms linear`,
             willChange: 'transform',
           }}>
-            <div style={{
-              width: W, height: W,
-              backgroundRepeat: 'no-repeat',
-              imageRendering: 'pixelated',
-              ...charBg,
-            }} />
+            {layers}
           </div>
         )}
       </div>
