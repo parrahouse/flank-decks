@@ -17,8 +17,8 @@ const STRIDE_PER_CYCLE_PX = 48; // on-screen ground travel per one full walk cyc
                                 // FORWARD, lower this; if they drag BACK, raise it.
 
 // CAMERA
-const LEFT_MARGIN_FRAC = 0.06; // card 0 sits near the left edge
-const PAN_TRIGGER_FRAC = 0.8;  // character reaches this screen fraction before the camera scrolls
+const LEFT_MARGIN_FRAC  = 0.06;
+const RIGHT_MARGIN_FRAC = 0.10; // flip a bit before the true right edge
 
 const IDLE_CYCLE_MS = 800;
 // Walk cycle is DERIVED so foot speed matches ground speed (no skating):
@@ -217,13 +217,17 @@ export default function ProgressGameBand({
 
   // ── Fixed-world camera math ───────────────────────────────────────────────
   // World is fixed pixels; the viewport scrolls a follow camera under the character.
-  const LEFT_MARGIN = bandW * LEFT_MARGIN_FRAC;
-  const PAN_TRIGGER = bandW * PAN_TRIGGER_FRAC;
-  const LEAD_IN     = LEFT_MARGIN;              // was DEADZONE — this is the fix for "starts in the middle"
-  const RUN_OUT     = bandW - PAN_TRIGGER;
-  const worldWidth  = LEAD_IN + STEP_PX * total + RUN_OUT;
-  const charWorldX  = LEAD_IN + shownCompleted * STEP_PX;
-  const cameraX     = Math.max(0, Math.min(charWorldX - PAN_TRIGGER, Math.max(0, worldWidth - bandW)));
+  const LEFT_MARGIN  = bandW * LEFT_MARGIN_FRAC;
+  const RIGHT_MARGIN = bandW * RIGHT_MARGIN_FRAC;
+  const LEAD_IN      = LEFT_MARGIN;
+  const usableW      = Math.max(STEP_PX, bandW - LEFT_MARGIN - RIGHT_MARGIN);
+  const cardsPerPage = Math.max(1, Math.floor(usableW / STEP_PX));
+  const PAGE_STRIDE  = cardsPerPage * STEP_PX;
+  const page         = Math.floor(shownCompleted / cardsPerPage);
+  const lastPage     = Math.floor(total / cardsPerPage);
+  const worldWidth   = LEAD_IN + (lastPage + 1) * PAGE_STRIDE + RIGHT_MARGIN;
+  const cameraX      = page * PAGE_STRIDE;                  // changes ONLY at flips
+  const charWorldX   = LEAD_IN + shownCompleted * STEP_PX;  // continuous, never resets
 
   // ── Entry walk-in animation (retargeted to world coords) ───────────────────
   // Camera is pinned at 0 during entry; character walks from off-left to LEAD_IN.
@@ -284,7 +288,6 @@ export default function ProgressGameBand({
         width: worldWidth,
         height: '100%',
         transform: `translateX(${-cameraX}px)`,
-        transition: `transform ${STEP_MS}ms linear`,
         willChange: 'transform',
       }}>
         {/* Ground strip — tiled across the whole world */}
