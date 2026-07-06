@@ -17,7 +17,8 @@ const STRIDE_PER_CYCLE_PX = 48; // on-screen ground travel per one full walk cyc
                                 // FORWARD, lower this; if they drag BACK, raise it.
 
 // CAMERA
-const DEADZONE_FRAC = 0.4; // character holds at 40% from left edge during follow
+const LEFT_MARGIN_FRAC = 0.06; // card 0 sits near the left edge
+const PAN_TRIGGER_FRAC = 0.8;  // character reaches this screen fraction before the camera scrolls
 
 const IDLE_CYCLE_MS = 800;
 // Walk cycle is DERIVED so foot speed matches ground speed (no skating):
@@ -216,13 +217,13 @@ export default function ProgressGameBand({
 
   // ── Fixed-world camera math ───────────────────────────────────────────────
   // World is fixed pixels; the viewport scrolls a follow camera under the character.
-  const DEADZONE   = bandW * DEADZONE_FRAC;
-  const LEAD_IN    = DEADZONE;                    // world space before card 0
-  const RUN_OUT    = Math.max(0, bandW - DEADZONE); // world space after last card
-  const worldWidth = LEAD_IN + STEP_PX * total + RUN_OUT;
-
-  const charWorldX = LEAD_IN + shownCompleted * STEP_PX; // completion-driven, as today
-  const cameraX    = Math.max(0, Math.min(charWorldX - DEADZONE, Math.max(0, worldWidth - bandW)));
+  const LEFT_MARGIN = bandW * LEFT_MARGIN_FRAC;
+  const PAN_TRIGGER = bandW * PAN_TRIGGER_FRAC;
+  const LEAD_IN     = LEFT_MARGIN;              // was DEADZONE — this is the fix for "starts in the middle"
+  const RUN_OUT     = bandW - PAN_TRIGGER;
+  const worldWidth  = LEAD_IN + STEP_PX * total + RUN_OUT;
+  const charWorldX  = LEAD_IN + shownCompleted * STEP_PX;
+  const cameraX     = Math.max(0, Math.min(charWorldX - PAN_TRIGGER, Math.max(0, worldWidth - bandW)));
 
   // ── Entry walk-in animation (retargeted to world coords) ───────────────────
   // Camera is pinned at 0 during entry; character walks from off-left to LEAD_IN.
