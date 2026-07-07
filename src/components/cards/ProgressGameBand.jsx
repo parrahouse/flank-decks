@@ -121,7 +121,6 @@ export default function ProgressGameBand({
   const KF_WALK_HAPPY  = `pgb-walk-happy-${skin.id}`;
   const KF_WALK_SAD    = `pgb-walk-sad-${skin.id}`;
   const KF_RIGHT_SHOT  = `pgb-react-right-shot-${skin.id}`;
-  const KF_RIGHT_LOOP  = `pgb-react-right-loop-${skin.id}`;
   const KF_WRONG_SHOT  = `pgb-react-wrong-shot-${skin.id}`;
   const KF_FLAG_ACT    = `pgb-flag-activate-${skin.id}`;
   const KF_FLAG_WAVE   = `pgb-flag-wave-${skin.id}`;
@@ -132,7 +131,6 @@ export default function ProgressGameBand({
 @keyframes ${KF_WALK_HAPPY} { from { background-position-x: 0 } to { background-position-x: -${WALK_HAPPY_FRAMES * W}px } }
 @keyframes ${KF_WALK_SAD} { from { background-position-x: 0 } to { background-position-x: -${WALK_SAD_FRAMES * W}px } }
 @keyframes ${KF_RIGHT_SHOT} { from { background-position-x: 0 } to { background-position-x: -${Math.max(0, RIGHT_FRAMES - 1) * W}px } }
-@keyframes ${KF_RIGHT_LOOP} { from { background-position-x: 0 } to { background-position-x: -${RIGHT_FRAMES * W}px } }
 @keyframes ${KF_WRONG_SHOT} { from { background-position-x: 0 } to { background-position-x: -${Math.max(0, WRONG_FRAMES - 1) * W}px } }
 @keyframes ${KF_FLAG_ACT} { from { background-position-x: 0 } to { background-position-x: -${FLAG_ACT_FRAMES * FW}px } }
 @keyframes ${KF_FLAG_WAVE} { from { background-position-x: 0 } to { background-position-x: -${FLAG_WAVE_FRAMES * FW}px } }
@@ -150,6 +148,7 @@ export default function ProgressGameBand({
   const [walkVariant, setWalkVariant] = useState('happy'); // 'happy' | 'sad'
   const [idleVariant, setIdleVariant] = useState('happy'); // idle shown after a walk
   const [reactKey, setReactKey] = useState(0);              // re-arm one-shot layers
+  const [celebSub, setCelebSub] = useState('idle');         // 'idle' | 'react' during celebrate
   const phaseRef = useRef('idle');
   const reactEndRef = useRef(0); // wall-clock ms when the in-flight reaction ends
 
@@ -272,8 +271,11 @@ export default function ProgressGameBand({
       if (cancelled) return;
       stopWalking();
       setReactKey((k) => k + 1);
-      if (isLast && canCelebrate && isCorrect) {
+      if (isLast && canCelebrate) {
         phaseRef.current = 'celebrate'; setPhase('celebrate');
+      } else if (isLast) {
+        setIdleVariant('happy');                 // ends happy even with no reaction sprite
+        phaseRef.current = 'idle'; setPhase('idle');
       } else {
         setIdleVariant(variant);
         phaseRef.current = 'idle'; setPhase('idle');
@@ -304,6 +306,27 @@ export default function ProgressGameBand({
 
     return () => { cancelled = true; clearTimeout(tStart); clearTimeout(tWalk); };
   }, [completed]);
+
+  // ── Celebration cycle: happy idle ×2, then right reaction ×1, looping ──────
+  useEffect(() => {
+    if (phase !== 'celebrate') return;
+    let cancelled = false;
+    let tReact, tIdle;
+    const IDLE_DUR = 2 * IDLE_CYCLE_MS;
+    const runIdle = () => {
+      if (cancelled) return;
+      setCelebSub('idle');
+      tReact = setTimeout(runReact, IDLE_DUR);
+    };
+    const runReact = () => {
+      if (cancelled) return;
+      setReactKey((k) => k + 1); // re-arm one-shot from frame 0
+      setCelebSub('react');
+      tIdle = setTimeout(runIdle, RIGHT_DUR);
+    };
+    runIdle();
+    return () => { cancelled = true; clearTimeout(tReact); clearTimeout(tIdle); };
+  }, [phase]);
 
   // ── Preload character sprites so the first reveal has no paint gap ────────
   useEffect(() => {
@@ -347,11 +370,11 @@ export default function ProgressGameBand({
   }, [entering, bandW]);
 
   // ── Layer visibility — exactly one layer lit at a time ─────────────────────
-  const showIdleHappy  = !entering && phase === 'idle' && idleVariant === 'happy';
+  const showIdleHappy  = !entering && ((phase === 'idle' && idleVariant === 'happy') || (phase === 'celebrate' && celebSub === 'idle'));
   const showIdleSad    = !entering && phase === 'idle' && idleVariant === 'sad';
   const showWalkHappy  = entering || (phase === 'walk' && walkVariant === 'happy');
   const showWalkSad    = !entering && phase === 'walk' && walkVariant === 'sad';
-  const showReactRight = !entering && (phase === 'reactRight' || phase === 'celebrate');
+  const showReactRight = !entering && (phase === 'reactRight' || (phase === 'celebrate' && celebSub === 'react'));
   const showReactWrong = !entering && phase === 'reactWrong';
 
   // ── Character layers — stacked, opacity-toggled (never swap backgroundImage) ─
@@ -413,9 +436,7 @@ export default function ProgressGameBand({
             backgroundRepeat: 'no-repeat', imageRendering: 'pixelated',
             backgroundImage: `url(${rightSprite.src})`,
             backgroundSize: `${RIGHT_FRAMES * W}px ${W}px`,
-            animation: phase === 'celebrate'
-              ? `${KF_RIGHT_LOOP} ${RIGHT_DUR}ms steps(${RIGHT_FRAMES}) infinite`
-              : `${KF_RIGHT_SHOT} ${RIGHT_DUR}ms steps(${Math.max(1, RIGHT_FRAMES - 1)}) forwards`,
+            animation: `${KF_RIGHT_SHOT} ${RIGHT_DUR}ms steps(${Math.max(1, RIGHT_FRAMES - 1)}) forwards`,
             opacity: showReactRight ? 1 : 0,
           }}
         />
