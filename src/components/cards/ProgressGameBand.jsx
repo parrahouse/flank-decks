@@ -272,7 +272,7 @@ export default function ProgressGameBand({
       if (cancelled) return;
       stopWalking();
       setReactKey((k) => k + 1);
-      if (isLast && canCelebrate) {
+      if (isLast && canCelebrate && isCorrect) {
         phaseRef.current = 'celebrate'; setPhase('celebrate');
       } else {
         setIdleVariant(variant);
