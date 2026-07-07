@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, ArrowLeft, Pencil, Trash2, GalleryVerticalEnd, Image as ImageIcon, Cog, X, Upload, RotateCcw, PieChart, Archive, CircleDot, CheckSquare, ToggleRight, Play, Sparkles, Check } from 'lucide-react';
+import { Plus, ArrowLeft, Pencil, Trash2, GalleryVerticalEnd, Image as ImageIcon, Cog, X, Upload, RotateCcw, PieChart, Archive, CircleDot, CheckSquare, ToggleRight, Play, Sparkles, Check, FolderOpen } from 'lucide-react';
 import AiCardSuggestionsModal from '@/components/cards/AiCardSuggestionsModal';
 import QuickAddCardModal from '@/components/cards/QuickAddCardModal';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import CardEditor from '@/components/cards/CardEditor';
 import CsvUploadModal from '@/components/cards/CsvUploadModal';
+import DeckCollectionsDialog from '@/components/collections/DeckCollectionsDialog';
 import CardFilterBar from '@/components/cards/CardFilterBar';
 import BinPanel from '@/components/cards/BinPanel';
 import CardPreviewModal from '@/components/cards/CardPreviewModal';
@@ -63,6 +64,7 @@ export default function DeckBuilder() {
   const [showBin, setShowBin] = useState(false);
   const [showAiSuggest, setShowAiSuggest] = useState(false);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [showCollections, setShowCollections] = useState(false);
   const [previewCard, setPreviewCard] = useState(null);
   const editorSaveRef = useRef(null);
 
@@ -296,6 +298,9 @@ export default function DeckBuilder() {
           <Button variant="ghost" size="sm" onClick={() => setShowCsvUpload(true)} className="gap-1.5 h-9 text-muted-foreground hover:text-foreground">
             <Upload className="w-4 h-4" /> Import CSV
           </Button>
+          <Button variant="ghost" size="sm" onClick={() => setShowCollections(true)} className="gap-1.5 h-9 text-muted-foreground hover:text-foreground">
+            <FolderOpen className="w-4 h-4" /> Collections
+          </Button>
           <Link to={`/study/${deckId}`} className="ml-auto flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors">
             <GalleryVerticalEnd className="w-4 h-4" /> Study
           </Link>
@@ -498,6 +503,13 @@ export default function DeckBuilder() {
         setEditorDirty(false);
         setShowEditor(true);
       }}
+    />
+
+    <DeckCollectionsDialog
+      open={showCollections}
+      onClose={() => setShowCollections(false)}
+      deckId={deckId}
+      deckTitle={deck?.title}
     />
 
     <AiCardSuggestionsModal

@@ -1,0 +1,65 @@
+{
+  "name": "Collection",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Display name of the collection"
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional description of the collection"
+    },
+    "accent_color": {
+      "type": "string",
+      "description": "Hex accent color used to visually distinguish the collection"
+    },
+    "sort_order": {
+      "type": "number",
+      "default": 0,
+      "description": "Order of the collection in the collections list (ascending)"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "rls": {
+    "create": {},
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

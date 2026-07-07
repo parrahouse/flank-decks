@@ -8,6 +8,8 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import { Toaster as SonnerToaster } from 'sonner';
 import Layout from '@/components/Layout';
 import Home from '@/pages/Home';
+import Collections from '@/pages/Collections';
+import CollectionDetail from '@/pages/CollectionDetail';
 import DeckBuilder from '@/pages/DeckBuilder';
 import StudySession from '@/pages/StudySession';
 import SharedDeck from '@/pages/SharedDeck';
@@ -37,6 +39,8 @@ const AuthenticatedApp = () => {
     <Routes>
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
+        <Route path="/collections" element={<Collections />} />
+        <Route path="/collections/:collectionId" element={<CollectionDetail />} />
         <Route path="/deck/:deckId" element={<DeckBuilder />} />
         <Route path="/study/:deckId" element={<StudySession />} />
         <Route path="/quiz" element={<QuizMaster />} />

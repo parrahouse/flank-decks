@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { LayoutGrid, Trophy, Puzzle, UserCircle } from 'lucide-react';
+import { LayoutGrid, Trophy, Puzzle, UserCircle, FolderOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -9,6 +9,7 @@ export default function Layout() {
 
   const nav = [
     { label: 'My Decks', path: '/', icon: LayoutGrid },
+    { label: 'Collections', path: '/collections', icon: FolderOpen },
     { label: 'QuizMaster', path: '/quiz', icon: Trophy },
     ...(user?.role === 'admin' ? [{ label: 'Extras', path: '/admin/extras', icon: Puzzle }] : []),
   ];
