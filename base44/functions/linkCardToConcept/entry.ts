@@ -12,6 +12,17 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'No card ID in payload' }, { status: 400 });
     }
 
+    // SAFETY: this automation is restricted to card CREATION only.
+    // If it is ever triggered for any other event type (update/delete) or
+    // invoked manually, refuse to run and warn instead of mutating data.
+    if (event?.type && event.type !== 'create') {
+      console.warn(`[linkCardToConcept] BLOCKED — triggered for event "${event.type}" on card ${cardId}, but this automation is restricted to card creation only. No action taken.`);
+      return Response.json({
+        skipped: true,
+        warning: `linkCardToConcept is restricted to card creation; ignored "${event.type}" event for card ${cardId}.`,
+      });
+    }
+
     // Fetch full card data if not provided (e.g. payload_too_large)
     let card = data;
     if (!card) {
