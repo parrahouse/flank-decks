@@ -83,7 +83,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
   // Dirty tracking — compare current state to original card values
   const prevDirtyRef = useRef(false);
   const isDirty = (() => {
-    const origChoices = card?.choices || (initQType === 'true_false' ? ['True', 'False'] : ['', '', '', '']);
+    const origChoices = card?.choices?.length ? card.choices : (initQType === 'true_false' ? ['True', 'False'] : ['', '', '', '']);
     const origCorrect = new Set(parseCorrectAnswers(card?.correct_answers || card?.correct_answer || ''));
     if (imageUrl !== (card?.image_url || '')) return true;
     if (JSON.stringify(focalPoint) !== JSON.stringify(card?.image_focal_point || (card?.image_url ? { x: 50, y: 50 } : null))) return true;
