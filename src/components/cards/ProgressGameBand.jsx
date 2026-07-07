@@ -91,12 +91,14 @@ export default function ProgressGameBand({
   // ── Resolve sprites through the nested fallback rules ───────────────────────
   // idle has no `sad` variant → resolveSprite falls back to `happy`.
   const idleSprite     = resolveSprite(skin, 'idle', 'happy');
+  const idleSadSprite  = resolveSprite(skin, 'idle', 'sad');   // falls back to happy
   const walkHappySprite = resolveSprite(skin, 'walk', 'happy');
   const walkSadSprite   = resolveSprite(skin, 'walk', 'sad');   // falls back to happy
   const rightSprite    = resolveSprite(skin, 'react', 'right');
   const wrongSprite    = resolveSprite(skin, 'react', 'wrong');
 
   const IDLE_FRAMES       = idleSprite?.frames || 0;
+  const IDLE_SAD_FRAMES   = idleSadSprite?.frames || 0;
   const WALK_HAPPY_FRAMES = walkHappySprite?.frames || 0;
   const WALK_SAD_FRAMES   = walkSadSprite?.frames || 0;
   const RIGHT_FRAMES      = rightSprite?.frames || 0;
@@ -115,6 +117,7 @@ export default function ProgressGameBand({
   // at the loop point is instantaneous). One-shots use steps(FRAMES-1) over the
   // last frame's offset with `forwards` so the final frame holds cleanly.
   const KF_IDLE        = `pgb-idle-${skin.id}`;
+  const KF_IDLE_SAD    = `pgb-idle-sad-${skin.id}`;
   const KF_WALK_HAPPY  = `pgb-walk-happy-${skin.id}`;
   const KF_WALK_SAD    = `pgb-walk-sad-${skin.id}`;
   const KF_RIGHT_SHOT  = `pgb-react-right-shot-${skin.id}`;
@@ -125,6 +128,7 @@ export default function ProgressGameBand({
 
   const KEYFRAMES = `
 @keyframes ${KF_IDLE} { from { background-position-x: 0 } to { background-position-x: -${IDLE_FRAMES * W}px } }
+@keyframes ${KF_IDLE_SAD} { from { background-position-x: 0 } to { background-position-x: -${IDLE_SAD_FRAMES * W}px } }
 @keyframes ${KF_WALK_HAPPY} { from { background-position-x: 0 } to { background-position-x: -${WALK_HAPPY_FRAMES * W}px } }
 @keyframes ${KF_WALK_SAD} { from { background-position-x: 0 } to { background-position-x: -${WALK_SAD_FRAMES * W}px } }
 @keyframes ${KF_RIGHT_SHOT} { from { background-position-x: 0 } to { background-position-x: -${Math.max(0, RIGHT_FRAMES - 1) * W}px } }
@@ -144,6 +148,7 @@ export default function ProgressGameBand({
   // Exactly one character layer is visible at a time (opacity 1); the rest 0.
   const [phase, setPhase] = useState('idle');
   const [walkVariant, setWalkVariant] = useState('happy'); // 'happy' | 'sad'
+  const [idleVariant, setIdleVariant] = useState('happy'); // idle shown after a walk
   const [reactKey, setReactKey] = useState(0);              // re-arm one-shot layers
   const phaseRef = useRef('idle');
   const reactEndRef = useRef(0); // wall-clock ms when the in-flight reaction ends
@@ -270,6 +275,7 @@ export default function ProgressGameBand({
       if (isLast && canCelebrate) {
         phaseRef.current = 'celebrate'; setPhase('celebrate');
       } else {
+        setIdleVariant(variant);
         phaseRef.current = 'idle'; setPhase('idle');
       }
     };
@@ -302,11 +308,11 @@ export default function ProgressGameBand({
   // ── Preload character sprites so the first reveal has no paint gap ────────
   useEffect(() => {
     const urls = [
-      idleSprite?.src, walkHappySprite?.src, walkSadSprite?.src,
+      idleSprite?.src, idleSadSprite?.src, walkHappySprite?.src, walkSadSprite?.src,
       rightSprite?.src, wrongSprite?.src,
     ].filter(Boolean);
     urls.forEach((u) => { const img = new Image(); img.src = u; });
-  }, [idleSprite?.src, walkHappySprite?.src, walkSadSprite?.src, rightSprite?.src, wrongSprite?.src]);
+  }, [idleSprite?.src, idleSadSprite?.src, walkHappySprite?.src, walkSadSprite?.src, rightSprite?.src, wrongSprite?.src]);
 
   // ── Fixed-world camera math ───────────────────────────────────────────────
   const LEFT_MARGIN  = bandW * LEFT_MARGIN_FRAC;
@@ -341,7 +347,8 @@ export default function ProgressGameBand({
   }, [entering, bandW]);
 
   // ── Layer visibility — exactly one layer lit at a time ─────────────────────
-  const showIdle       = !entering && phase === 'idle';
+  const showIdleHappy  = !entering && phase === 'idle' && idleVariant === 'happy';
+  const showIdleSad    = !entering && phase === 'idle' && idleVariant === 'sad';
   const showWalkHappy  = entering || (phase === 'walk' && walkVariant === 'happy');
   const showWalkSad    = !entering && phase === 'walk' && walkVariant === 'sad';
   const showReactRight = !entering && (phase === 'reactRight' || phase === 'celebrate');
@@ -350,7 +357,7 @@ export default function ProgressGameBand({
   // ── Character layers — stacked, opacity-toggled (never swap backgroundImage) ─
   const layers = (
     <>
-      {/* IDLE (happy) — loop, always running underneath */}
+      {/* IDLE happy — loop, always running underneath */}
       {idleSprite?.src && IDLE_FRAMES > 0 && (
         <div style={{
           position: 'absolute', inset: 0, width: W, height: W,
@@ -358,7 +365,18 @@ export default function ProgressGameBand({
           backgroundImage: `url(${idleSprite.src})`,
           backgroundSize: `${IDLE_FRAMES * W}px ${W}px`,
           animation: `${KF_IDLE} ${IDLE_CYCLE_MS}ms steps(${IDLE_FRAMES}) infinite`,
-          opacity: showIdle ? 1 : 0,
+          opacity: showIdleHappy ? 1 : 0,
+        }} />
+      )}
+      {/* IDLE sad — loop (shown after a fully failed card's sad walk) */}
+      {idleSadSprite?.src && IDLE_SAD_FRAMES > 0 && (
+        <div style={{
+          position: 'absolute', inset: 0, width: W, height: W,
+          backgroundRepeat: 'no-repeat', imageRendering: 'pixelated',
+          backgroundImage: `url(${idleSadSprite.src})`,
+          backgroundSize: `${IDLE_SAD_FRAMES * W}px ${W}px`,
+          animation: `${KF_IDLE_SAD} ${IDLE_CYCLE_MS}ms steps(${IDLE_SAD_FRAMES}) infinite`,
+          opacity: showIdleSad ? 1 : 0,
         }} />
       )}
 
