@@ -81,7 +81,15 @@ const SWAB = {
   scale:    2,
   sprites: {
     idle: { happy: { src: 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/02953bbd9_Swab-Idle-Happy.png', frames: 10 } },
-    walk: { happy: { src: 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/d607b43cb_Swab-Walk-Happy.png', frames: 8 } },
+    // idle.sad omitted → resolveSprite falls back to idle.happy
+    walk: {
+      happy: { src: 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/d607b43cb_Swab-Walk-Happy.png', frames: 8 },
+      sad:   { src: 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/3a67e6caf_Swab-Walk-Sad.png', frames: 8 },
+    },
+    react: {
+      right: { src: 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/6221bf3b9_Swab-Right.png', frames: 11 },
+      wrong: { src: 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/f0f4305d8_Swab-Wrong.png', frames: 8 },
+    },
   },
   ground: {
     src:   'https://media.base44.com/images/public/69fd6153088222f7245f34d6/8c86d6208_Ground-1.png',

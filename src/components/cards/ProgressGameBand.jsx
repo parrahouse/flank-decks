@@ -13,17 +13,13 @@ const STEP_MS  = 600;  // time to walk one card's distance
 
 // ART-ANCHORED — only change if the walk artwork's stride changes
 const STRIDE_PER_CYCLE_PX = 48; // on-screen ground travel per one full walk cycle
-                                // ≈ 2 steps × ~12px sprite stride × scale(2). If feet skate
-                                // FORWARD, lower this; if they drag BACK, raise it.
 
 // CAMERA
 const LEFT_MARGIN_FRAC  = 0.06;
-const RIGHT_MARGIN_FRAC = 0.10; // flip a bit before the true right edge
+const RIGHT_MARGIN_FRAC = 0.10;
 
 const IDLE_CYCLE_MS = 800;
 // Walk cycle is DERIVED so foot speed matches ground speed (no skating):
-//   cyclesPerCard = STEP_PX / STRIDE_PER_CYCLE_PX
-//   WALK_CYCLE_MS = STEP_MS / cyclesPerCard = STEP_MS * STRIDE_PER_CYCLE_PX / STEP_PX
 const CYCLES_PER_CARD = STEP_PX / STRIDE_PER_CYCLE_PX;
 const WALK_CYCLE_MS   = Math.round(STEP_MS * STRIDE_PER_CYCLE_PX / STEP_PX);
 
@@ -32,12 +28,17 @@ const MIN_CARDS_FOR_FLAGS = 20;
 const FLAG_ACT_MS        = 600;
 const FLAG_WAVE_MS       = 700;
 
-// Pause between the answer being submitted and the character reacting —
-// lets the answer feedback (sound/colour) land before the sprite moves.
-const ANSWER_DELAY_MS   = 450;
+// Reaction cadence — one-shot reactions; duration = frames * REACT_FRAME_MS
+const REACT_FRAME_MS = 45;
 
 const AVATAR_ENTRY_MS   = 1000;
 const AVATAR_ENTRY_EASE = 'linear';
+
+// Outcome classification — mirrors StudySession's CORRECT_KEYS so the band
+// stays a pure consumer (no new props).
+const CORRECT_KEYS = new Set([
+  'correct', 'second_guess', 'correct_after_clue', 'second_guess_after_clue', 'partial',
+]);
 
 /**
  * ProgressGameBand — pixel-art walking-character progress HUD.
@@ -52,7 +53,7 @@ const AVATAR_ENTRY_EASE = 'linear';
  *   soundEnabled  — whether sound effects are enabled
  *   entering      — true while the entry walk-in animation is playing
  *   onEntryComplete — callback fired when entry animation finishes
- *   wrongTick     — increments on a wrong answer to trigger the flinch reaction
+ *   wrongTick     — increments on the first wrong answer of a card → react.wrong
  */
 export default function ProgressGameBand({
   skin = getSkin(DEFAULT_SKIN_ID),
@@ -87,64 +88,81 @@ export default function ProgressGameBand({
   const FLAG_FOOT_TO_BOTTOM = (FLAG_CELL - FLAG_BASELINE) * SCALE;
   const FLAG_BOTTOM       = GROUND_DISP - FLAG_FOOT_TO_BOTTOM;
 
-  // ── Resolve sprites (happy variant for idle/walk this pass) ─────────────────
-  const idleSprite  = resolveSprite(skin, 'idle', 'happy');
-  const walkSprite  = resolveSprite(skin, 'walk', 'happy');
-  const wrongSprite = resolveSprite(skin, 'react', 'wrong');
+  // ── Resolve sprites through the nested fallback rules ───────────────────────
+  // idle has no `sad` variant → resolveSprite falls back to `happy`.
+  const idleSprite     = resolveSprite(skin, 'idle', 'happy');
+  const walkHappySprite = resolveSprite(skin, 'walk', 'happy');
+  const walkSadSprite   = resolveSprite(skin, 'walk', 'sad');   // falls back to happy
+  const rightSprite    = resolveSprite(skin, 'react', 'right');
+  const wrongSprite    = resolveSprite(skin, 'react', 'wrong');
 
   const IDLE_FRAMES       = idleSprite?.frames || 0;
-  const WALK_FRAMES       = walkSprite?.frames || 0;
+  const WALK_HAPPY_FRAMES = walkHappySprite?.frames || 0;
+  const WALK_SAD_FRAMES   = walkSadSprite?.frames || 0;
+  const RIGHT_FRAMES      = rightSprite?.frames || 0;
   const WRONG_FRAMES      = wrongSprite?.frames || 0;
   const FLAG_ACT_FRAMES   = flag.activate.frames;
   const FLAG_WAVE_FRAMES  = flag.wave.frames;
 
+  // One-shot reaction durations (frames × per-frame cadence)
+  const RIGHT_DUR = RIGHT_FRAMES * REACT_FRAME_MS;
+  const WRONG_DUR = WRONG_FRAMES * REACT_FRAME_MS;
+
   const AVATAR_ENTRY_OFFSET = W * 4;
 
-  // ── CSS keyframes — names are skin-scoped so the browser never reuses stale values ──
-  const KF_IDLE         = `pgb-idle-${skin.id}`;
-  const KF_WALK         = `pgb-walk-${skin.id}`;
-  const KF_WRONG        = `pgb-wrong-${skin.id}`;
-  const KF_FLAG_ACT     = `pgb-flag-activate-${skin.id}`;
-  const KF_FLAG_WAVE    = `pgb-flag-wave-${skin.id}`;
-
-  const WRONG_CYCLE_MS  = WRONG_FRAMES > 0 ? Math.round((WRONG_FRAMES / Math.max(1, IDLE_FRAMES)) * IDLE_CYCLE_MS) : 600;
-  const WRONG_DURATION  = WRONG_CYCLE_MS * 2; // play twice then return to idle
+  // ── CSS keyframes — skin-scoped so the browser never reuses stale values ──
+  // Loops use steps(FRAMES) over the full sheet width (frame 0..FRAMES-1, blank
+  // at the loop point is instantaneous). One-shots use steps(FRAMES-1) over the
+  // last frame's offset with `forwards` so the final frame holds cleanly.
+  const KF_IDLE        = `pgb-idle-${skin.id}`;
+  const KF_WALK_HAPPY  = `pgb-walk-happy-${skin.id}`;
+  const KF_WALK_SAD    = `pgb-walk-sad-${skin.id}`;
+  const KF_RIGHT_SHOT  = `pgb-react-right-shot-${skin.id}`;
+  const KF_RIGHT_LOOP  = `pgb-react-right-loop-${skin.id}`;
+  const KF_WRONG_SHOT  = `pgb-react-wrong-shot-${skin.id}`;
+  const KF_FLAG_ACT    = `pgb-flag-activate-${skin.id}`;
+  const KF_FLAG_WAVE   = `pgb-flag-wave-${skin.id}`;
 
   const KEYFRAMES = `
-@keyframes ${KF_IDLE} {
-  from { background-position-x: 0 }
-  to   { background-position-x: -${IDLE_FRAMES * W}px }
-}
-@keyframes ${KF_WALK} {
-  from { background-position-x: 0 }
-  to   { background-position-x: -${WALK_FRAMES * W}px }
-}
-@keyframes ${KF_WRONG} {
-  from { background-position-x: 0 }
-  to   { background-position-x: -${WRONG_FRAMES * W}px }
-}
-@keyframes ${KF_FLAG_ACT} {
-  from { background-position-x: 0 }
-  to   { background-position-x: -${FLAG_ACT_FRAMES * FW}px }
-}
-@keyframes ${KF_FLAG_WAVE} {
-  from { background-position-x: 0 }
-  to   { background-position-x: -${FLAG_WAVE_FRAMES * FW}px }
-}
+@keyframes ${KF_IDLE} { from { background-position-x: 0 } to { background-position-x: -${IDLE_FRAMES * W}px } }
+@keyframes ${KF_WALK_HAPPY} { from { background-position-x: 0 } to { background-position-x: -${WALK_HAPPY_FRAMES * W}px } }
+@keyframes ${KF_WALK_SAD} { from { background-position-x: 0 } to { background-position-x: -${WALK_SAD_FRAMES * W}px } }
+@keyframes ${KF_RIGHT_SHOT} { from { background-position-x: 0 } to { background-position-x: -${Math.max(0, RIGHT_FRAMES - 1) * W}px } }
+@keyframes ${KF_RIGHT_LOOP} { from { background-position-x: 0 } to { background-position-x: -${RIGHT_FRAMES * W}px } }
+@keyframes ${KF_WRONG_SHOT} { from { background-position-x: 0 } to { background-position-x: -${Math.max(0, WRONG_FRAMES - 1) * W}px } }
+@keyframes ${KF_FLAG_ACT} { from { background-position-x: 0 } to { background-position-x: -${FLAG_ACT_FRAMES * FW}px } }
+@keyframes ${KF_FLAG_WAVE} { from { background-position-x: 0 } to { background-position-x: -${FLAG_WAVE_FRAMES * FW}px } }
 `;
 
   const { playWalking, stopWalking } = useSound(soundEnabled);
 
   const bandRef  = useRef(null);
   const [bandW, setBandW] = useState(0);
-  const [walking, setWalking] = useState(false);
-  const [wronging, setWronging] = useState(false);
+
+  // ── Phase machine ──────────────────────────────────────────────────────────
+  // phase: 'idle' | 'reactRight' | 'reactWrong' | 'walk' | 'celebrate'
+  // Exactly one character layer is visible at a time (opacity 1); the rest 0.
+  const [phase, setPhase] = useState('idle');
+  const [walkVariant, setWalkVariant] = useState('happy'); // 'happy' | 'sad'
+  const [reactKey, setReactKey] = useState(0);              // re-arm one-shot layers
+  const phaseRef = useRef('idle');
+  const reactEndRef = useRef(0); // wall-clock ms when the in-flight reaction ends
+
   const catControls = useAnimation();
   const entryFiredRef = useRef(false);
 
   const completed = scores.filter(Boolean).length;
   const [shownCompleted, setShownCompleted] = useState(() => scores.filter(Boolean).length);
   const prevCompleted = useRef(shownCompleted);
+
+  // Snapshot of which score indices are committed (index → key) so we can read
+  // the JUST-committed key without owning any progress state.
+  const prevNonEmptyRef = useRef(null);
+  if (prevNonEmptyRef.current === null) {
+    const ne = {};
+    scores.forEach((s, i) => { if (s) ne[i] = s.key; });
+    prevNonEmptyRef.current = ne;
+  }
 
   // ── Flag state ────────────────────────────────────────────────────────────
   const [activating, setActivating] = useState(null);
@@ -195,34 +213,102 @@ export default function ProgressGameBand({
     return () => ro.disconnect();
   }, []);
 
-  // ── Wrong trigger (reads react.wrong via resolved sprite) ──────────────────
+  // ── Wrong reaction: fires on the first wrong answer of a card (wrongTick) ──
+  // One-shot; returns to idle when it finishes (the retry keeps the character
+  // in place — no walk until a score is committed).
   const prevWrongTick = useRef(wrongTick);
   useEffect(() => {
-    if (wrongTick === prevWrongTick.current || !wrongSprite?.src) return;
+    if (wrongTick === prevWrongTick.current) return;
     prevWrongTick.current = wrongTick;
-    if (WRONG_FRAMES === 0) return;
-    const t1 = setTimeout(() => setWronging(true), ANSWER_DELAY_MS);
-    const t2 = setTimeout(() => setWronging(false), ANSWER_DELAY_MS + WRONG_DURATION);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    if (WRONG_FRAMES === 0 || !wrongSprite?.src) return;
+
+    setReactKey((k) => k + 1);
+    phaseRef.current = 'reactWrong'; setPhase('reactWrong');
+    reactEndRef.current = Date.now() + WRONG_DUR;
+
+    const t = setTimeout(() => {
+      // Only drop to idle if no commit started a walk in the meantime.
+      if (phaseRef.current === 'reactWrong') { phaseRef.current = 'idle'; setPhase('idle'); }
+    }, WRONG_DUR);
+    return () => clearTimeout(t);
   }, [wrongTick]);
+
+  // ── Commit reaction + walk: fires when a card score is committed ───────────
+  //   correct key  → react.right one-shot → happy walk
+  //   wrong key    → no reaction (the wrong reaction already fired on wrongTick)
+  //                 → sad walk, chained to the end of any in-flight reaction
+  //   last card    → after the walk, switch to react.right looping (celebrate)
+  useEffect(() => {
+    if (completed === prevCompleted.current) return;
+    prevCompleted.current = completed;
+
+    // Read the just-committed key by diffing the committed-index map.
+    const nonEmpty = {};
+    scores.forEach((s, i) => { if (s) nonEmpty[i] = s.key; });
+    let commitKey = null;
+    for (const k in nonEmpty) {
+      if (prevNonEmptyRef.current[k] !== nonEmpty[k]) { commitKey = nonEmpty[k]; break; }
+    }
+    prevNonEmptyRef.current = nonEmpty;
+    if (commitKey === null) {
+      const vals = Object.values(nonEmpty);
+      commitKey = vals[vals.length - 1];
+    }
+
+    const isCorrect = !!commitKey && CORRECT_KEYS.has(commitKey);
+    const variant = isCorrect ? 'happy' : 'sad';
+    const isLast = completed >= total;
+    const canCelebrate = RIGHT_FRAMES > 0 && !!rightSprite?.src;
+
+    let cancelled = false;
+    let tStart, tWalk;
+
+    const finishWalk = () => {
+      if (cancelled) return;
+      stopWalking();
+      setReactKey((k) => k + 1);
+      if (isLast && canCelebrate) {
+        phaseRef.current = 'celebrate'; setPhase('celebrate');
+      } else {
+        phaseRef.current = 'idle'; setPhase('idle');
+      }
+    };
+
+    const startWalk = () => {
+      if (cancelled) return;
+      setWalkVariant(variant);
+      phaseRef.current = 'walk'; setPhase('walk');
+      playWalking();
+      setShownCompleted(completed); // advances world position (CSS transition = walk)
+      tWalk = setTimeout(finishWalk, STEP_MS);
+    };
+
+    if (isCorrect && canCelebrate) {
+      // Play the right reaction one-shot, then chain the walk off its completion.
+      setReactKey((k) => k + 1);
+      phaseRef.current = 'reactRight'; setPhase('reactRight');
+      reactEndRef.current = Date.now() + RIGHT_DUR;
+      tStart = setTimeout(startWalk, RIGHT_DUR);
+    } else {
+      // Wrong key (no right reaction): walk after any in-flight reaction ends,
+      // so a simultaneous wrongTick reaction (e.g. true/false) plays first.
+      const remaining = Math.max(0, reactEndRef.current - Date.now());
+      tStart = setTimeout(startWalk, remaining);
+    }
+
+    return () => { cancelled = true; clearTimeout(tStart); clearTimeout(tWalk); };
+  }, [completed]);
 
   // ── Preload character sprites so the first reveal has no paint gap ────────
   useEffect(() => {
-    const urls = [idleSprite?.src, walkSprite?.src, wrongSprite?.src].filter(Boolean);
+    const urls = [
+      idleSprite?.src, walkHappySprite?.src, walkSadSprite?.src,
+      rightSprite?.src, wrongSprite?.src,
+    ].filter(Boolean);
     urls.forEach((u) => { const img = new Image(); img.src = u; });
-  }, [idleSprite?.src, walkSprite?.src, wrongSprite?.src]);
-
-  // ── Walk trigger ──────────────────────────────────────────────────────────
-  useEffect(() => {
-    if (completed === prevCompleted.current) return;
-    const t1 = setTimeout(() => { setWalking(true); playWalking(); setShownCompleted(completed); }, ANSWER_DELAY_MS);
-    const t2 = setTimeout(() => { setWalking(false); stopWalking(); }, ANSWER_DELAY_MS + STEP_MS);
-    prevCompleted.current = completed;
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, [completed]);
+  }, [idleSprite?.src, walkHappySprite?.src, walkSadSprite?.src, rightSprite?.src, wrongSprite?.src]);
 
   // ── Fixed-world camera math ───────────────────────────────────────────────
-  // World is fixed pixels; the viewport scrolls a follow camera under the character.
   const LEFT_MARGIN  = bandW * LEFT_MARGIN_FRAC;
   const RIGHT_MARGIN = bandW * RIGHT_MARGIN_FRAC;
   const LEAD_IN      = LEFT_MARGIN;
@@ -232,11 +318,10 @@ export default function ProgressGameBand({
   const page         = Math.floor(shownCompleted / cardsPerPage);
   const lastPage     = Math.floor(total / cardsPerPage);
   const worldWidth   = LEAD_IN + (lastPage + 1) * PAGE_STRIDE + RIGHT_MARGIN;
-  const cameraX      = page * PAGE_STRIDE;                  // changes ONLY at flips
-  const charWorldX   = LEAD_IN + shownCompleted * STEP_PX;  // continuous, never resets
+  const cameraX      = page * PAGE_STRIDE;
+  const charWorldX   = LEAD_IN + shownCompleted * STEP_PX;
 
   // ── Entry walk-in animation (retargeted to world coords) ───────────────────
-  // Camera is pinned at 0 during entry; character walks from off-left to LEAD_IN.
   useEffect(() => {
     if (!entering) {
       entryFiredRef.current = false;
@@ -255,42 +340,82 @@ export default function ProgressGameBand({
     });
   }, [entering, bandW]);
 
-  const isWalking = entering || walking;
-  const isWrong = wronging && !isWalking && wrongSprite?.src && WRONG_FRAMES > 0;
+  // ── Layer visibility — exactly one layer lit at a time ─────────────────────
+  const showIdle       = !entering && phase === 'idle';
+  const showWalkHappy  = entering || (phase === 'walk' && walkVariant === 'happy');
+  const showWalkSad    = !entering && phase === 'walk' && walkVariant === 'sad';
+  const showReactRight = !entering && (phase === 'reactRight' || phase === 'celebrate');
+  const showReactWrong = !entering && phase === 'reactWrong';
 
-  // ── Character layers — stacked, always animating, revealed via opacity ───
-  // Both run continuously; we never swap the sprite on an element or restart
-  // an animation on reveal (restart is itself a flicker source).
+  // ── Character layers — stacked, opacity-toggled (never swap backgroundImage) ─
   const layers = (
     <>
-      {/* IDLE layer — always animating underneath */}
-      <div style={{
-        position: 'absolute', inset: 0, width: W, height: W,
-        backgroundRepeat: 'no-repeat', imageRendering: 'pixelated',
-        backgroundImage: `url(${idleSprite?.src})`,
-        backgroundSize: `${IDLE_FRAMES * W}px ${W}px`,
-        animation: `${KF_IDLE} ${IDLE_CYCLE_MS}ms steps(${IDLE_FRAMES}) infinite`,
-        opacity: isWalking ? 0 : 1,
-      }} />
-      {/* WALK layer — always animating, on top of idle */}
-      <div style={{
-        position: 'absolute', inset: 0, width: W, height: W,
-        backgroundRepeat: 'no-repeat', imageRendering: 'pixelated',
-        backgroundImage: `url(${walkSprite?.src})`,
-        backgroundSize: `${WALK_FRAMES * W}px ${W}px`,
-        animation: `${KF_WALK} ${WALK_CYCLE_MS}ms steps(${WALK_FRAMES}) infinite`,
-        opacity: isWalking ? 1 : 0,
-      }} />
-      {/* WRONG layer — one-shot reaction on top, visible ~2 cycles via isWrong */}
-      {WRONG_FRAMES > 0 && wrongSprite?.src && (
+      {/* IDLE (happy) — loop, always running underneath */}
+      {idleSprite?.src && IDLE_FRAMES > 0 && (
         <div style={{
           position: 'absolute', inset: 0, width: W, height: W,
           backgroundRepeat: 'no-repeat', imageRendering: 'pixelated',
-          backgroundImage: `url(${wrongSprite?.src})`,
-          backgroundSize: `${WRONG_FRAMES * W}px ${W}px`,
-          animation: `${KF_WRONG} ${WRONG_CYCLE_MS}ms steps(${WRONG_FRAMES}) infinite`,
-          opacity: isWrong ? 1 : 0,
+          backgroundImage: `url(${idleSprite.src})`,
+          backgroundSize: `${IDLE_FRAMES * W}px ${W}px`,
+          animation: `${KF_IDLE} ${IDLE_CYCLE_MS}ms steps(${IDLE_FRAMES}) infinite`,
+          opacity: showIdle ? 1 : 0,
         }} />
+      )}
+
+      {/* WALK happy — loop */}
+      {walkHappySprite?.src && WALK_HAPPY_FRAMES > 0 && (
+        <div style={{
+          position: 'absolute', inset: 0, width: W, height: W,
+          backgroundRepeat: 'no-repeat', imageRendering: 'pixelated',
+          backgroundImage: `url(${walkHappySprite.src})`,
+          backgroundSize: `${WALK_HAPPY_FRAMES * W}px ${W}px`,
+          animation: `${KF_WALK_HAPPY} ${WALK_CYCLE_MS}ms steps(${WALK_HAPPY_FRAMES}) infinite`,
+          opacity: showWalkHappy ? 1 : 0,
+        }} />
+      )}
+
+      {/* WALK sad — loop (falls back to happy sprite when no sad art) */}
+      {walkSadSprite?.src && WALK_SAD_FRAMES > 0 && (
+        <div style={{
+          position: 'absolute', inset: 0, width: W, height: W,
+          backgroundRepeat: 'no-repeat', imageRendering: 'pixelated',
+          backgroundImage: `url(${walkSadSprite.src})`,
+          backgroundSize: `${WALK_SAD_FRAMES * W}px ${W}px`,
+          animation: `${KF_WALK_SAD} ${WALK_CYCLE_MS}ms steps(${WALK_SAD_FRAMES}) infinite`,
+          opacity: showWalkSad ? 1 : 0,
+        }} />
+      )}
+
+      {/* REACT right — one-shot during play; loops as the deck-completion celebration */}
+      {rightSprite?.src && RIGHT_FRAMES > 0 && (
+        <div
+          key={`right-${reactKey}`}
+          style={{
+            position: 'absolute', inset: 0, width: W, height: W,
+            backgroundRepeat: 'no-repeat', imageRendering: 'pixelated',
+            backgroundImage: `url(${rightSprite.src})`,
+            backgroundSize: `${RIGHT_FRAMES * W}px ${W}px`,
+            animation: phase === 'celebrate'
+              ? `${KF_RIGHT_LOOP} ${RIGHT_DUR}ms steps(${RIGHT_FRAMES}) infinite`
+              : `${KF_RIGHT_SHOT} ${RIGHT_DUR}ms steps(${Math.max(1, RIGHT_FRAMES - 1)}) forwards`,
+            opacity: showReactRight ? 1 : 0,
+          }}
+        />
+      )}
+
+      {/* REACT wrong — one-shot */}
+      {wrongSprite?.src && WRONG_FRAMES > 0 && (
+        <div
+          key={`wrong-${reactKey}`}
+          style={{
+            position: 'absolute', inset: 0, width: W, height: W,
+            backgroundRepeat: 'no-repeat', imageRendering: 'pixelated',
+            backgroundImage: `url(${wrongSprite.src})`,
+            backgroundSize: `${WRONG_FRAMES * W}px ${W}px`,
+            animation: `${KF_WRONG_SHOT} ${WRONG_DUR}ms steps(${Math.max(1, WRONG_FRAMES - 1)}) forwards`,
+            opacity: showReactWrong ? 1 : 0,
+          }}
+        />
       )}
     </>
   );
@@ -330,11 +455,11 @@ export default function ProgressGameBand({
         {/* Milestone flags — positioned in world space */}
         {milestones.map((m) => {
           const fx    = LEAD_IN + m * STEP_PX + FLAG_OFFSET;
-          const phase = flagPhase(m);
+          const phaseF = flagPhase(m);
           const sprite =
-            phase === 'activation'
+            phaseF === 'activation'
               ? { backgroundImage: `url(${flag.activate.src})`, backgroundSize: `${FLAG_ACT_FRAMES * FW}px ${FW}px`, animation: `${KF_FLAG_ACT} ${FLAG_ACT_MS}ms steps(${FLAG_ACT_FRAMES}) 1` }
-              : phase === 'waving'
+              : phaseF === 'waving'
               ? { backgroundImage: `url(${flag.wave.src})`,     backgroundSize: `${FLAG_WAVE_FRAMES * FW}px ${FW}px`, animation: `${KF_FLAG_WAVE} ${FLAG_WAVE_MS}ms steps(${FLAG_WAVE_FRAMES}) infinite` }
               : { backgroundImage: `url(${flag.inactive.src})`, backgroundSize: `${FW}px ${FW}px`, animation: 'none' };
           return (
