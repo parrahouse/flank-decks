@@ -168,7 +168,7 @@ export default function ProgressGameBand({
   const W        = CELL * SCALE;
 
   // Reveal nudge — forward step past a freshly laid egg so it sits visible behind Swab
-  const REVEAL_NUDGE_PX = 0.75 * CELL;
+  const REVEAL_NUDGE_PX = 1.00 * CELL;
 
   const TILE_W            = ground.tileW;
   const TILE_H            = ground.tileH;
