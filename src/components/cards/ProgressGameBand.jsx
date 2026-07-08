@@ -14,7 +14,7 @@ const STEP_MS  = 600;  // time to walk one card's distance
 const STRIDE_PER_CYCLE_PX = 48; // on-screen ground travel per one full walk cycle
 
 // CAMERA — waypoint-anchored
-const ANCHOR_FRAC = 0.58;  // waypoints sit just right of center
+const ANCHOR_FRAC = 0.52;  // waypoints sit just right of center
 const ENTRY_FRAC  = 0.08;  // where a segment starts, from the left
 
 const IDLE_CYCLE_MS = 800;
