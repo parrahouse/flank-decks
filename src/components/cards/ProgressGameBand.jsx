@@ -657,24 +657,28 @@ export default function ProgressGameBand({
           );
         })}
 
-        {/* Waypoint markers — native scale (never multiplied by SCALE) */}
+        {/* Waypoint markers — planted flag/pole; scales with SCALE */}
         {markerAsset?.src && MARKER_FRAMES > 0 && waypoints.map((m) => {
           // Pre-reveal spot: accumulated earlier-waypoint reveal, but NOT m's own nudge.
           const fx = LEAD_IN + m * STEP_PX + REVEAL_NUDGE_PX * waypoints.filter((k) => k < m).length + WAYPOINT_OFFSET;
           const isPlanted = shownCompleted > m;
           const wasSeeded = seededPlantedRef.current?.has(m);
-          const markerState = !isPlanted ? 'pending' : wasSeeded ? 'seeded' : 'planting';
+          // Stable key (no remount flash). Re-arm the plant one-shot by toggling the
+          // `animation` property when isPlanted flips — never by changing the key.
+          //   seeded  (passed before mount) → hold final frame, no animation
+          //   planted (live)                → play plant one-shot once, holds via `forwards`
+          //   pending                       → frame 0, no animation
           return (
             <div
-              key={`marker-${m}-${markerState}`}
+              key={`marker-${m}`}
               style={{
                 position: 'absolute', bottom: MARKER_BOTTOM, left: 0, width: MW, height: MH,
                 transform: `translateX(${fx}px)`,
                 backgroundRepeat: 'no-repeat', imageRendering: 'pixelated',
                 backgroundImage: `url(${markerAsset.src})`,
                 backgroundSize: `${MARKER_FRAMES * MW}px ${MH}px`,
-                backgroundPositionX: markerState === 'seeded' ? `-${(MARKER_FRAMES - 1) * MW}px` : '0',
-                animation: markerState === 'planting'
+                backgroundPositionX: wasSeeded ? `-${(MARKER_FRAMES - 1) * MW}px` : '0',
+                animation: (isPlanted && !wasSeeded)
                   ? `${KF_MARKER} ${MARKER_PLANT_MS}ms steps(${Math.max(1, MARKER_FRAMES - 1)}) forwards`
                   : 'none',
               }}
