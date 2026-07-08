@@ -8,7 +8,7 @@ const BAND_H = 100;
 const SKY    = '#e5e7eb';
 
 // FEEL DIALS — tune by eye
-const STEP_MS  = 600;  // time to walk one card's distance
+const STEP_MS  = 1200;  // time to walk one card's distance
 
 // ART-ANCHORED — only change if the walk artwork's stride changes
 const STRIDE_PER_CYCLE_PX = 48; // on-screen ground travel per one full walk cycle
