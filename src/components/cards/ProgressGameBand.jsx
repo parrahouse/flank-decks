@@ -8,20 +8,19 @@ const BAND_H = 100;
 const SKY    = '#e5e7eb';
 
 // FEEL DIALS — tune by eye
-const STEP_PX  = 96;   // fixed world px advanced per completed card (walk distance)
 const STEP_MS  = 600;  // time to walk one card's distance
 
 // ART-ANCHORED — only change if the walk artwork's stride changes
 const STRIDE_PER_CYCLE_PX = 48; // on-screen ground travel per one full walk cycle
 
-// CAMERA
-const LEFT_MARGIN_FRAC  = 0.06;
-const RIGHT_MARGIN_FRAC = 0.10;
+// CAMERA — waypoint-anchored
+const ANCHOR_FRAC = 0.58;  // waypoints sit just right of center
+const ENTRY_FRAC  = 0.08;  // where a segment starts, from the left
 
 const IDLE_CYCLE_MS = 800;
 // Walk cycle is DERIVED so foot speed matches ground speed (no skating):
-const CYCLES_PER_CARD = STEP_PX / STRIDE_PER_CYCLE_PX;
-const WALK_CYCLE_MS   = Math.round(STEP_MS * STRIDE_PER_CYCLE_PX / STEP_PX);
+//   WALK_CYCLE_MS = STEP_MS * STRIDE_PER_CYCLE_PX / STEP_PX
+// (computed in-component now that STEP_PX is width-relative)
 
 // Reaction cadence — one-shot reactions; duration = frames * REACT_FRAME_MS
 const REACT_FRAME_MS = 45;
@@ -353,18 +352,21 @@ export default function ProgressGameBand({
     urls.forEach((u) => { const img = new Image(); img.src = u; });
   }, [idleSprite?.src, idleSadSprite?.src, walkHappySprite?.src, walkSadSprite?.src, rightSprite?.src, wrongSprite?.src, eggLaySprite?.src, eggAsset?.src, markerAsset?.src]);
 
-  // ── Fixed-world camera math ───────────────────────────────────────────────
-  const LEFT_MARGIN  = bandW * LEFT_MARGIN_FRAC;
-  const RIGHT_MARGIN = bandW * RIGHT_MARGIN_FRAC;
-  const LEAD_IN      = LEFT_MARGIN;
-  const usableW      = Math.max(STEP_PX, bandW - LEFT_MARGIN - RIGHT_MARGIN);
-  const cardsPerPage = Math.max(1, Math.floor(usableW / STEP_PX));
-  const PAGE_STRIDE  = cardsPerPage * STEP_PX;
-  const page         = Math.floor(shownCompleted / cardsPerPage);
-  const lastPage     = Math.floor(total / cardsPerPage);
-  const worldWidth   = LEAD_IN + (lastPage + 1) * PAGE_STRIDE + RIGHT_MARGIN;
-  const cameraX      = page * PAGE_STRIDE;
-  const charWorldX   = LEAD_IN + shownCompleted * STEP_PX;
+  // ── Waypoint-anchored camera (instant cut for now) ─────────────────────────
+  const ANCHOR_X = bandW * ANCHOR_FRAC;
+  const LEAD_IN  = bandW * ENTRY_FRAC;
+  const STEP_PX  = (ANCHOR_X - LEAD_IN) / WAYPOINT_EVERY || 1; // width-relative per-card distance
+  // Walk cycle derived so foot speed matches ground speed (no skating):
+  const WALK_CYCLE_MS = Math.round(STEP_MS * STRIDE_PER_CYCLE_PX / STEP_PX);
+
+  const activeWp = waypoints.find((m) => m >= shownCompleted);
+  const cameraX = waypoints.length === 0
+    ? 0
+    : Math.max(0, LEAD_IN + (activeWp ?? waypoints[waypoints.length - 1]) * STEP_PX - ANCHOR_X);
+
+  const charWorldX = LEAD_IN + shownCompleted * STEP_PX;
+  // World must hold every card + buffer so content never clips at the last cards:
+  const worldWidth = LEAD_IN + total * STEP_PX + bandW;
 
   // ── Entry walk-in animation (retargeted to world coords) ───────────────────
   useEffect(() => {
