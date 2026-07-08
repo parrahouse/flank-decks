@@ -57,6 +57,97 @@ const CORRECT_KEYS = new Set([
  *   onEntryComplete — callback fired when entry animation finishes
  *   wrongTick     — increments on the first wrong answer of a card → react.wrong
  */
+function GroundCanvas({ src, tileW, tileH, scale, dispH, cameraX, stepMs }) {
+  const canvasRef  = useRef(null);
+  const imgRef     = useRef(null);
+  const readyRef   = useRef(false);
+
+  const drawnXRef  = useRef(cameraX);   // currently-drawn offset
+  const fromXRef   = useRef(cameraX);   // tween start
+  const targetXRef = useRef(cameraX);   // tween end
+  const startTRef  = useRef(0);
+  const rafRef     = useRef(0);
+  const runningRef = useRef(false);
+
+  const draw = () => {
+    const canvas = canvasRef.current;
+    const img    = imgRef.current;
+    if (!canvas || !img || !readyRef.current) return;
+
+    const dpr   = window.devicePixelRatio || 1;
+    const needW = Math.max(1, Math.round(canvas.clientWidth * dpr));
+    const needH = Math.max(1, Math.round(dispH * dpr));
+    if (canvas.width  !== needW) canvas.width  = needW;   // assigning size also clears
+    if (canvas.height !== needH) canvas.height = needH;
+
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;                    // <-- the crispness switch
+
+    const tileDevW = Math.round(tileW * scale * dpr);     // integer => uniform pixels
+    const tileDevH = needH;
+
+    const offsetDev = Math.round(drawnXRef.current * dpr); // snap to device grid
+    const startX = -(((offsetDev % tileDevW) + tileDevW) % tileDevW); // in [-tileDevW, 0]
+
+    ctx.clearRect(0, 0, needW, needH);
+    for (let x = startX; x < needW; x += tileDevW) {
+      ctx.drawImage(img, 0, 0, tileW, tileH, x, 0, tileDevW, tileDevH);
+    }
+  };
+
+  // linear tween over stepMs, matching the removed `transition: ... linear`
+  const tick = () => {
+    const span = Math.max(1, stepMs);
+    const t = Math.min(1, (performance.now() - startTRef.current) / span);
+    drawnXRef.current = fromXRef.current + (targetXRef.current - fromXRef.current) * t;
+    draw();
+    if (t < 1) {
+      rafRef.current = requestAnimationFrame(tick);
+    } else {
+      runningRef.current = false;
+    }
+  };
+
+  // load the tile once
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => { readyRef.current = true; draw(); };
+    img.src = src;
+    imgRef.current = img;
+  }, [src]);
+
+  // retarget whenever the camera moves
+  useEffect(() => {
+    fromXRef.current   = drawnXRef.current;
+    targetXRef.current = cameraX;
+    startTRef.current  = performance.now();
+    if (!runningRef.current) {
+      runningRef.current = true;
+      rafRef.current = requestAnimationFrame(tick);
+    }
+  }, [cameraX]);
+
+  // redraw on band resize / DPR change
+  useEffect(() => {
+    const ro = new ResizeObserver(() => draw());
+    if (canvasRef.current) ro.observe(canvasRef.current);
+    return () => { ro.disconnect(); cancelAnimationFrame(rafRef.current); };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{
+        position: 'absolute',
+        bottom: 0, left: 0,
+        width: '100%', height: dispH,
+        display: 'block',
+        imageRendering: 'pixelated', // harmless belt-and-suspenders
+      }}
+    />
+  );
+}
+
 export default function ProgressGameBand({
   skin = getSkin(DEFAULT_SKIN_ID),
   cardIndex = 0,
@@ -524,20 +615,16 @@ export default function ProgressGameBand({
     >
       <style>{KEYFRAMES}</style>
 
-      {/* Ground — full-band layer; texture scrolls with the camera */}
-      <div style={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        width: '100%',
-        height: GROUND_DISP,
-        backgroundImage: `url(${ground.src})`,
-        backgroundRepeat: 'repeat-x',
-        backgroundSize: `${TILE_W * SCALE}px ${GROUND_DISP}px`,
-        backgroundPositionX: `${-cameraXSnapped}px`,
-        imageRendering: 'pixelated',
-        transition: `background-position-x ${STEP_MS}ms linear`,
-      }} />
+      {/* Ground — canvas layer; tiles drawn crisp (nearest-neighbor) on WebKit */}
+      <GroundCanvas
+        src={ground.src}
+        tileW={TILE_W}
+        tileH={TILE_H}
+        scale={SCALE}
+        dispH={GROUND_DISP}
+        cameraX={cameraXSnapped}
+        stepMs={STEP_MS}
+      />
 
       {/* World container — eggs + markers, scrolled by the camera */}
       <div style={{
