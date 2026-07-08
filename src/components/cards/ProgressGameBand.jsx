@@ -375,11 +375,15 @@ export default function ProgressGameBand({
   // Walk cycle derived so foot speed matches ground speed (no skating):
   const WALK_CYCLE_MS = Math.round(STEP_MS * STRIDE_PER_CYCLE_PX / STEP_PX);
 
-  const charWorldX = LEAD_IN + shownCompleted * STEP_PX;
+  // Each waypoint Swab has passed adds one REVEAL_NUDGE_PX forward; carry it into
+  // charWorldX so the first walk after a waypoint is a full STEP_PX (the nudge that
+  // uncovered the egg retracts at the same time the world advances by STEP_PX+nudge).
+  const revealOffset = REVEAL_NUDGE_PX * waypoints.filter((m) => m < shownCompleted).length;
+  const charWorldX = LEAD_IN + shownCompleted * STEP_PX + revealOffset;
   // Deadzone: camera stays 0 while Swab is left of ANCHOR_X, then pushes so he holds center.
   const cameraX = Math.max(0, charWorldX - ANCHOR_X);
-  // World must hold every card + buffer so content never clips at the last cards:
-  const worldWidth = LEAD_IN + total * STEP_PX + bandW;
+  // World must hold every card + buffer (incl. accumulated reveal) so nothing clips:
+  const worldWidth = LEAD_IN + total * STEP_PX + REVEAL_NUDGE_PX * waypoints.length + bandW;
 
   // ── Entry walk-in animation (retargeted to world coords) ───────────────────
   useEffect(() => {
@@ -544,7 +548,8 @@ export default function ProgressGameBand({
         {/* Waypoint eggs — rendered BEFORE the character so Swab covers them at m */}
         {eggAsset?.src && EGG_FRAMES > 0 && waypoints.map((m) => {
           if (shownCompleted < m) return null; // not yet laid
-          const fx = LEAD_IN + m * STEP_PX + WAYPOINT_OFFSET;
+          // Pre-reveal spot: accumulated earlier-waypoint reveal, but NOT m's own nudge.
+          const fx = LEAD_IN + m * STEP_PX + REVEAL_NUDGE_PX * waypoints.filter((k) => k < m).length + WAYPOINT_OFFSET;
           return (
             <div
               key={`egg-${m}`}
@@ -562,7 +567,8 @@ export default function ProgressGameBand({
 
         {/* Waypoint markers — native scale (never multiplied by SCALE) */}
         {markerAsset?.src && MARKER_FRAMES > 0 && waypoints.map((m) => {
-          const fx = LEAD_IN + m * STEP_PX + WAYPOINT_OFFSET;
+          // Pre-reveal spot: accumulated earlier-waypoint reveal, but NOT m's own nudge.
+          const fx = LEAD_IN + m * STEP_PX + REVEAL_NUDGE_PX * waypoints.filter((k) => k < m).length + WAYPOINT_OFFSET;
           const isPlanted = shownCompleted > m;
           const wasSeeded = seededPlantedRef.current?.has(m);
           const markerState = !isPlanted ? 'pending' : wasSeeded ? 'seeded' : 'planting';
