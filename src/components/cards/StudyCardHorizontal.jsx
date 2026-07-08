@@ -272,7 +272,7 @@ export default function StudyCardHorizontal({
     <Pane {...paneProps} style={{ display: 'flex', flexDirection: 'column', flex: '0 0 48%', minWidth: 0, gap: 8 }}>
       {/* Image — only when present */}
       {hasImage && (
-        <div style={{ width: '100%', aspectRatio: '4/3', overflow: 'hidden', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: '100%', flex: 1, minHeight: 0, overflow: 'hidden', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <img src={card.image_url} alt="card" style={{ width: '100%', height: '100%', objectFit: card.image_fit || 'cover', objectPosition: (card.image_fit !== 'contain' && card.image_focal_point) ? `${card.image_focal_point.x}% ${card.image_focal_point.y}%` : 'center' }} />
         </div>
       )}
@@ -280,10 +280,10 @@ export default function StudyCardHorizontal({
       {/* Question pane — fills the image space when there's no image */}
       <div style={{
         width: '100%',
-        ...(hasImage ? { minHeight: 110, padding: '16px 16px 36px 16px' } : { flex: 1, display: 'flex', alignItems: 'center', padding: '20px 20px 40px 20px' }),
+        ...(hasImage ? { height: 110, flexShrink: 0, padding: '16px 16px 36px 16px' } : { flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', padding: '20px 20px 40px 20px' }),
         backgroundColor: hintVisible ? '#EEFF41' : '#DFEDF5',
         position: 'relative',
-        boxSizing: 'border-box', transition: 'background-color 0.2s',
+        boxSizing: 'border-box', overflow: 'hidden', transition: 'background-color 0.2s',
       }}>
         <p style={{ color: '#113656', fontSize: hasImage ? 'clamp(13px, 1.8vw, 20px)' : 'clamp(20px, 3vw, 36px)', fontWeight: 500, lineHeight: 1.35, margin: 0, visibility: hintVisible ? 'hidden' : 'visible' }}>
           {card.clue || ''}
@@ -324,14 +324,14 @@ export default function StudyCardHorizontal({
 
   // ── Right column: progress bar + answers + actions ─────────────────────────
   const AnswerCol = (
-    <Pane {...paneProps} style={{ display: 'flex', flexDirection: 'column', flex: '1 1 0', minWidth: 0, alignSelf: 'stretch', gap: 8, pointerEvents: introReady ? 'auto' : 'none' }}>
+    <Pane {...paneProps} style={{ display: 'flex', flexDirection: 'column', flex: '1 1 0', minWidth: 0, minHeight: 0, alignSelf: 'stretch', gap: 8, pointerEvents: introReady ? 'auto' : 'none' }}>
       {/* Answer pane */}
       <div style={{
-        flex: 1, boxSizing: 'border-box', padding: '10px 14px',
-        display: 'flex', flexDirection: 'column',
+        flex: 1, minHeight: 0, boxSizing: 'border-box', padding: '10px 14px',
+        display: 'flex', flexDirection: 'column', overflow: 'hidden',
       }}>
         {/* Top row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#00A842', fontSize: 20, fontWeight: 500 }}>
             <span>{qtLabel}</span>
             {isTrueFalse ? <ToggleLeft style={{ width: 24, height: 24 }} />
@@ -357,30 +357,32 @@ export default function StudyCardHorizontal({
           </div>
         </div>
 
-        {/* Short answer */}
+        {/* Short answer — fixed pane; content fills a reserved flex slot, scrolls if tall */}
         {isShortAnswer && (
-          <ShortAnswerInput
-            card={card}
-            deck={deck}
-            onScore={onScore}
-            onNext={() => { cancelCountdown(); onNext(); }}
-            onFirstWrong={onFirstWrong}
-            isLast={isLast}
-            soundEnabled={soundEnabled}
-            autoAdvance={autoAdvance}
-            clueManuallyRevealed={clueManuallyRevealed}
-            learningMode={learningMode}
-            hasExplanation={hasExplanation}
-            onShowExplanation={() => setFlipped(true)}
-            cardStats={cardStats}
-            introReady={introReady}
-          />
+          <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+            <ShortAnswerInput
+              card={card}
+              deck={deck}
+              onScore={onScore}
+              onNext={() => { cancelCountdown(); onNext(); }}
+              onFirstWrong={onFirstWrong}
+              isLast={isLast}
+              soundEnabled={soundEnabled}
+              autoAdvance={autoAdvance}
+              clueManuallyRevealed={clueManuallyRevealed}
+              learningMode={learningMode}
+              hasExplanation={hasExplanation}
+              onShowExplanation={() => setFlipped(true)}
+              cardStats={cardStats}
+              introReady={introReady}
+            />
+          </div>
         )}
 
         {/* Choices (non-short-answer) */}
         {!isShortAnswer && (
           <>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
               {isTrueFalse ? (
                 <div style={{ display: 'flex', gap: 8 }}>
                   {shuffledChoices.map((choice, idx) => {
@@ -418,10 +420,10 @@ export default function StudyCardHorizontal({
               )}
             </div>
 
-            {/* Bottom row — eliminate / select-all done (unanswered only) */}
-            {!answered && (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: 10 }}>
-                {isSelectAll ? (
+            {/* Secondary actions — reserved fixed slot; contents toggle (empty after answer) */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: 10, height: 36, flexShrink: 0 }}>
+              {!answered && (
+                isSelectAll ? (
                   selectAllPending.size >= 2 && (
                     <button onClick={handleSelectAllDone} style={{ backgroundColor: '#00A842', color: '#fff', border: 'none', borderRadius: 7, padding: '7px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
                       <Check style={{ width: 14, height: 14 }} /> Done
@@ -434,23 +436,25 @@ export default function StudyCardHorizontal({
                   >
                     <Sparkles style={{ width: 18, height: 18 }} />
                   </button>
-                )}
-              </div>
-            )}
+                )
+              )}
+            </div>
 
-            {/* Action row */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 10, paddingTop: 10, borderTop: '1px solid #E5E5E5', flexWrap: 'wrap' }}>
+            {/* Action row — reserved fixed slot; Learn More space reserved via visibility */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 10, paddingTop: 10, borderTop: '1px solid #E5E5E5', height: 44, flexShrink: 0, boxSizing: 'border-box', overflow: 'hidden' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, backgroundColor: '#F5F5F0', borderRadius: 18, padding: '5px 12px', fontSize: 12, flexShrink: 0 }}>
                 <Glasses style={{ width: 17, height: 17, flexShrink: 0 }} />
                 <span>Mastery: <strong>{masteryPct !== null ? `${masteryPct}%` : '--'}</strong></span>
                 <span>Studied: <strong>{timesStudied !== null ? timesStudied : '--'}</strong></span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                {answered && hasExplanation && (
-                  <button onClick={() => { setFlipped(true); cancelCountdown(); }} style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
-                    <GraduationCap style={{ width: 14, height: 14, flexShrink: 0 }} />
-                    <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2 }}>Learn More</span>
-                  </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
+                {hasExplanation && (
+                  <div style={{ visibility: answered ? 'visible' : 'hidden', display: 'flex', alignItems: 'center' }}>
+                    <button onClick={() => { setFlipped(true); cancelCountdown(); }} style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
+                      <GraduationCap style={{ width: 14, height: 14, flexShrink: 0 }} />
+                      <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2 }}>Learn More</span>
+                    </button>
+                  </div>
                 )}
                 <button
                   onClick={() => {
@@ -480,7 +484,7 @@ export default function StudyCardHorizontal({
   const rightCol = handedness === 'right' ? ImageQuestionCol : AnswerCol;
 
   return (
-    <div style={{ display: 'flex', gap: 16, width: '100%', alignItems: 'stretch' }}>
+    <div style={{ display: 'flex', gap: 16, width: '100%', alignItems: 'stretch', height: 'clamp(400px, 56vh, 560px)' }}>
       {leftCol}
       {rightCol}
 
