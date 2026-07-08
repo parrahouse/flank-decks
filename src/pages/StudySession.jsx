@@ -829,10 +829,14 @@ export default function StudySession() {
               {filterMode === 'bookmarked' && <span className="text-amber-600">Bookmarked only</span>}
             </p>
           </div>
-          <div className="flex items-baseline gap-1.5 select-none px-1" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
-            <span className="text-foreground" style={{ fontSize: 20, lineHeight: 1 }}>{totalPoints.toFixed(2)}</span>
+          <div className="flex items-baseline gap-3 select-none px-1" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
+            <span className="text-foreground" style={{ fontSize: 20, lineHeight: 1 }}>
+              <span style={{ fontSize: 13 }}>Score:</span> {totalPoints.toFixed(2)}
+            </span>
             {highScore > 0 && (
-              <span className="text-muted-foreground" style={{ fontSize: 12, lineHeight: 1 }}>HI {highScore.toFixed(2)}</span>
+              <span className="text-muted-foreground" style={{ fontSize: 20, lineHeight: 1 }}>
+                <span style={{ fontSize: 13 }}>Top Score:</span> {highScore.toFixed(2)}
+              </span>
             )}
           </div>
           <button
