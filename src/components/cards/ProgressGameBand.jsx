@@ -382,6 +382,11 @@ export default function ProgressGameBand({
   const charWorldX = LEAD_IN + shownCompleted * STEP_PX + revealOffset;
   // Deadzone: camera stays 0 while Swab is left of ANCHOR_X, then pushes so he holds center.
   const cameraX = Math.max(0, charWorldX - ANCHOR_X);
+  // Land the camera on a whole physical pixel so WebKit doesn't resample the
+  // tiled ground at a fractional offset (the iPad-at-rest blur). Pure derivation.
+  const dpr = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
+  const snapPx = (v) => Math.round(v * dpr) / dpr;
+  const cameraXSnapped = snapPx(cameraX);
   // World must hold every card + buffer (incl. accumulated reveal) so nothing clips:
   const worldWidth = LEAD_IN + total * STEP_PX + REVEAL_NUDGE_PX * waypoints.length + bandW;
 
@@ -529,7 +534,7 @@ export default function ProgressGameBand({
         backgroundImage: `url(${ground.src})`,
         backgroundRepeat: 'repeat-x',
         backgroundSize: `${TILE_W * SCALE}px ${GROUND_DISP}px`,
-        backgroundPositionX: `${-cameraX}px`,
+        backgroundPositionX: `${-cameraXSnapped}px`,
         imageRendering: 'pixelated',
         transition: `background-position-x ${STEP_MS}ms linear`,
       }} />
@@ -541,7 +546,7 @@ export default function ProgressGameBand({
         bottom: 0,
         width: worldWidth,
         height: '100%',
-        transform: `translateX(${-cameraX}px)`,
+        transform: `translateX(${-cameraXSnapped}px)`,
         willChange: 'transform',
         transition: `transform ${STEP_MS}ms linear`,
       }}>
@@ -614,7 +619,7 @@ export default function ProgressGameBand({
           left: 0,
           width: W,
           height: W,
-          transform: `translateX(${charWorldX - cameraX}px)`,
+          transform: `translateX(${snapPx(charWorldX - cameraX)}px)`,
           transition: `transform ${STEP_MS}ms linear`,
           willChange: 'transform',
         }}>
