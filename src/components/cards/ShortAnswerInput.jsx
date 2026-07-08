@@ -85,6 +85,7 @@ export default function ShortAnswerInput({
   Math.round(cardStats.correct_attempts / cardStats.total_attempts * 100) :
   null;
   const timesStudied = cardStats?.sessions_completed ?? null;
+  const cardPoints = card.point_value ?? 20;
 
   // Auto-grow textarea
   useEffect(() => {
@@ -140,11 +141,11 @@ export default function ShortAnswerInput({
       firstWrongText ? 'second_guess' : 'correct';
       setVerdict(result);
       setCommitted(true);
-      onScore && onScore(SCORE[scoreKey], scoreKey);
+      onScore && onScore(cardPoints * SCORE[scoreKey], scoreKey);
     } else if (v === 'partial') {
       setVerdict(result);
       setCommitted(true);
-      onScore && onScore(result.value, 'partial');
+      onScore && onScore(cardPoints * result.value, 'partial');
     } else {
       // incorrect
       if (firstWrongText === null) {

@@ -237,7 +237,7 @@ export default function StudySession() {
       }));
 
       const total = cardResults.reduce((s, r) => s + r.points, 0);
-      const max = shuffledCards.length;
+      const max = shuffledCards.reduce((s, c) => s + (c.point_value ?? 20), 0);
 
       // Save study session
       await base44.entities.StudySession.create({
@@ -426,7 +426,7 @@ export default function StudySession() {
   }
 
   const totalPoints = scores.reduce((s, r) => s + (r?.points || 0), 0);
-  const maxPoints = shuffledCards.length;
+  const maxPoints = shuffledCards.reduce((s, c) => s + (c.point_value ?? 20), 0);
   const pct = maxPoints > 0 ? Math.round(totalPoints / maxPoints * 100) : 0;
   const highScore = pastSessions.length > 0
     ? Math.max(...pastSessions.map((s) => s.total_points || 0))

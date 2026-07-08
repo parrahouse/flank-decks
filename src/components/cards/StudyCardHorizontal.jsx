@@ -91,6 +91,7 @@ export default function StudyCardHorizontal({
   const isShortAnswer = card.question_type === 'short_answer';
   const hasImage = !!card.image_url;
   const secondGuessAllowed = true;
+  const cardPoints = card.point_value ?? 20;
 
   const correctAnswers = (card.correct_answers || card.correct_answer || '')
     .split('|').map(s => s.trim()).filter(Boolean);
@@ -145,7 +146,7 @@ export default function StudyCardHorizontal({
         ? penaliseClue ? 'second_guess_after_clue' : 'second_guess'
         : penaliseClue ? 'correct_after_clue' : 'correct';
       setFinalAnswer(choice); playCorrect();
-      onScore && onScore(SCORE[scoreKey], scoreKey);
+      onScore && onScore(cardPoints * SCORE[scoreKey], scoreKey);
       if (autoAdvance && !isLast) startCountdown();
     } else {
       playWrong(); setShake(true); setTimeout(() => setShake(false), 400);
@@ -170,13 +171,13 @@ export default function StudyCardHorizontal({
       playCorrect();
       const scoreKey = clueManuallyRevealed ? 'correct_after_clue' : 'correct';
       setFinalAnswer('__select_all_correct__');
-      onScore && onScore(SCORE[scoreKey], scoreKey);
+      onScore && onScore(cardPoints * SCORE[scoreKey], scoreKey);
       if (autoAdvance && !isLast) startCountdown();
     } else {
       const partialScore = Math.max(0, (numCorrect - numWrong) / total);
       partialScore > 0 ? playCorrect() : playWrong();
       setFinalAnswer('__select_all_partial__');
-      onScore && onScore(partialScore, 'partial');
+      onScore && onScore(cardPoints * partialScore, 'partial');
     }
   };
 
