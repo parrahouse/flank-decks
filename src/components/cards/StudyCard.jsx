@@ -346,75 +346,77 @@ export default function StudyCard({
   return (
     <div className="mx-auto flex flex-col gap-3 w-full max-w-[700px]">
 
-      {/* ── Card Pane: 4:3 aspect ratio (only when image present) ── */}
-      {hasImage && (
+      {/* ── Top section — constant height whether or not an image is present ── */}
+      <div style={{ width: '100%', aspectRatio: '700 / 526', display: 'flex', flexDirection: 'column', gap: 12, boxSizing: 'border-box' }}>
+        {hasImage && (
+          <Pane
+            {...paneProps}
+            style={{
+              flex: 1,
+              width: '100%',
+              overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              backgroundColor: '#f3f4f6',
+            }}
+          >
+            <img src={card.image_url} alt="card" style={{ width: '100%', height: '100%', objectFit: card.image_fit || 'cover', objectPosition: (card.image_fit !== 'contain' && card.image_focal_point) ? `${card.image_focal_point.x}% ${card.image_focal_point.y}%` : 'center' }} />
+          </Pane>
+        )}
+
+        {/* Question pane (fills the image space when there's no image) */}
         <Pane
           {...paneProps}
           style={{
             width: '100%',
-            aspectRatio: '700 / 394',
-            overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            backgroundColor: '#f3f4f6',
+            ...(hasImage
+              ? { height: 120, flexShrink: 0, padding: '20px 20px 40px 20px' }
+              : { flex: 1, display: 'flex', alignItems: 'center', padding: '24px 28px 48px 28px' }),
+            backgroundColor: hintVisible ? '#EEFF41' : '#DFEDF5',
+            position: 'relative',
+            boxSizing: 'border-box',
+            overflow: 'hidden',
+            transition: 'background-color 0.2s',
           }}
         >
-          <img src={card.image_url} alt="card" style={{ width: '100%', height: '100%', objectFit: card.image_fit || 'cover', objectPosition: (card.image_fit !== 'contain' && card.image_focal_point) ? `${card.image_focal_point.x}% ${card.image_focal_point.y}%` : 'center' }} />
+          <MathRenderer text={card.clue || ''} className="block" style={{ color: '#113656', fontSize: hasImage ? 'clamp(14px, 2.2vw, 22px)' : 'clamp(22px, 4.5vw, 44px)', fontWeight: 500, lineHeight: 1.3, visibility: hintVisible ? 'hidden' : 'visible' }} />
+
+          {/* Hint overlay — absolutely positioned so it doesn't affect pane height */}
+          {hintVisible && note && (
+            <div style={{ position: 'absolute', inset: 0, padding: '20px 20px 40px 20px', display: 'flex', alignItems: 'flex-start' }}>
+              <p style={{ color: '#1a237e', fontSize: 'clamp(14px, 2vw, 20px)', fontWeight: 500, lineHeight: 1.3, margin: 0 }}>
+                {note}
+              </p>
+            </div>
+          )}
+
+          {/* Bottom left: card counter or "Hint" label */}
+          <span style={{ position: 'absolute', bottom: 10, left: 20, color: hintVisible ? '#1a237e' : '#113656', fontSize: 14, fontWeight: hintVisible ? 400 : 700, opacity: hintVisible ? 0.7 : 1 }}>
+            {hintVisible ? 'Hint' : `${cardIndex + 1}/${total}`}
+          </span>
+
+          {/* Bottom right: hint icon or back arrow */}
+          {note && (
+            hintVisible ? (
+              <button
+                onClick={() => setHintVisible(false)}
+                style={{ position: 'absolute', bottom: 8, right: 14, background: 'none', border: 'none', cursor: 'pointer', color: '#1a237e', padding: 0, lineHeight: 0 }}
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 14L4 9l5-5"/>
+                  <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>
+                </svg>
+              </button>
+            ) : (
+              <button
+                onClick={() => setHintVisible(true)}
+                title="View your hint"
+                style={{ position: 'absolute', bottom: 8, right: 14, background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#113656', opacity: 0.6, lineHeight: 0 }}
+              >
+                <MessageCircleQuestion style={{ width: 20, height: 20 }} />
+              </button>
+            )
+          )}
         </Pane>
-      )}
-
-      {/* ── Question Pane (fills the image space when there's no image) ── */}
-      <Pane
-        {...paneProps}
-        style={{
-          width: '100%',
-          ...(hasImage
-            ? { height: 120, padding: '20px 20px 40px 20px' }
-            : { aspectRatio: '700 / 394', display: 'flex', alignItems: 'center', padding: '24px 28px 48px 28px' }),
-          backgroundColor: hintVisible ? '#EEFF41' : '#DFEDF5',
-          position: 'relative',
-          boxSizing: 'border-box',
-          overflow: 'hidden',
-          transition: 'background-color 0.2s',
-        }}
-      >
-        <MathRenderer text={card.clue || ''} className="block" style={{ color: '#113656', fontSize: hasImage ? 'clamp(14px, 2.2vw, 22px)' : 'clamp(22px, 4.5vw, 44px)', fontWeight: 500, lineHeight: 1.3, visibility: hintVisible ? 'hidden' : 'visible' }} />
-
-        {/* Hint overlay — absolutely positioned so it doesn't affect pane height */}
-        {hintVisible && note && (
-          <div style={{ position: 'absolute', inset: 0, padding: '20px 20px 40px 20px', display: 'flex', alignItems: 'flex-start' }}>
-            <p style={{ color: '#1a237e', fontSize: 'clamp(14px, 2vw, 20px)', fontWeight: 500, lineHeight: 1.3, margin: 0 }}>
-              {note}
-            </p>
-          </div>
-        )}
-
-        {/* Bottom left: card counter or "Hint" label */}
-        <span style={{ position: 'absolute', bottom: 10, left: 20, color: hintVisible ? '#1a237e' : '#113656', fontSize: 14, fontWeight: hintVisible ? 400 : 700, opacity: hintVisible ? 0.7 : 1 }}>
-          {hintVisible ? 'Hint' : `${cardIndex + 1}/${total}`}
-        </span>
-
-        {/* Bottom right: hint icon or back arrow */}
-        {note && (
-          hintVisible ? (
-            <button
-              onClick={() => setHintVisible(false)}
-              style={{ position: 'absolute', bottom: 8, right: 14, background: 'none', border: 'none', cursor: 'pointer', color: '#1a237e', padding: 0, lineHeight: 0 }}
-            >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 14L4 9l5-5"/>
-                <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>
-              </svg>
-            </button>
-          ) : (
-            <button
-              onClick={() => setHintVisible(true)}
-              title="View your hint"
-              style={{ position: 'absolute', bottom: 8, right: 14, background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#113656', opacity: 0.6, lineHeight: 0 }}
-            >
-              <MessageCircleQuestion style={{ width: 20, height: 20 }} />
-            </button>
-          )
-        )}
-      </Pane>
+      </div>
 
       {/* ── Answer Pane ── */}
       <Pane
@@ -562,7 +564,7 @@ export default function StudyCard({
             </div>
 
             {/* Bottom row */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, minHeight: 24 }}>
               <span />
               {!answered ? (
                 isSelectAll ? (
