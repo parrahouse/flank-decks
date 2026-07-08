@@ -619,7 +619,7 @@ export default function ProgressGameBand({
           left: 0,
           width: W,
           height: W,
-          transform: `translateX(${snapPx(charWorldX - cameraXSnapped)}px)`,
+          transform: `translateX(${snapPx(charWorldX - cameraX)}px)`,
           transition: `transform ${STEP_MS}ms linear`,
           willChange: 'transform',
         }}>
