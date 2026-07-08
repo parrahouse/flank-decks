@@ -296,6 +296,14 @@ export default function ProgressGameBand({
     seededPlantedRef.current = new Set(waypoints.filter((m) => shownCompleted > m));
   }
 
+  // Eggs are laid at ARRIVAL, not at walk-start. shownCompleted flips to m the
+  // instant the walk toward m begins, so gating egg visibility on it pops the egg
+  // in before Swab reaches the marker. Track laid eggs explicitly; the live "laid"
+  // event fires in finishWalk. Seed already-laid waypoints for resumed sessions
+  // (egg is laid at arrival ⇒ present when shownCompleted >= m; note this is >=,
+  // whereas marker seeding is > m because the marker plants on departure).
+  const [laidEggs, setLaidEggs] = useState(() => new Set(waypoints.filter((m) => shownCompleted >= m)));
+
   // ── Measure band width (ResizeObserver catches non-window resizes too) ─────
   useLayoutEffect(() => {
     if (!bandRef.current) return;
@@ -345,6 +353,11 @@ export default function ProgressGameBand({
     const finishWalk = () => {
       if (cancelled) return;
       setReactKey((k) => k + 1);
+      // Arrival at a waypoint = egg is laid now (behind Swab; the nudge reveals it).
+      // Covers both the lay-animation path and any no-lay-sprite fallback below.
+      if (waypoints.includes(completedVal)) {
+        setLaidEggs((prev) => prev.has(completedVal) ? prev : new Set(prev).add(completedVal));
+      }
       if (isLast && canCelebrate) {
         stopWalking();
         phaseRef.current = 'celebrate'; setPhase('celebrate');
@@ -639,7 +652,7 @@ export default function ProgressGameBand({
       }}>
         {/* Waypoint eggs — rendered BEFORE the character so Swab covers them at m */}
         {eggAsset?.src && EGG_FRAMES > 0 && waypoints.map((m) => {
-          if (shownCompleted < m) return null; // not yet laid
+          if (!laidEggs.has(m)) return null; // not laid until Swab arrives (see finishWalk)
           // Pre-reveal spot: accumulated earlier-waypoint reveal, but NOT m's own nudge.
           const fx = LEAD_IN + m * STEP_PX + REVEAL_NUDGE_PX * waypoints.filter((k) => k < m).length + WAYPOINT_OFFSET;
           return (
