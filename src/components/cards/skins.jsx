@@ -96,7 +96,7 @@ const SWAB = {
     baseline:  74,
   },
   ground: {
-    src:   'https://media.base44.com/images/public/69fd6153088222f7245f34d6/b3187bc04_Ground-1.png',
+    src:   'https://media.base44.com/images/public/69fd6153088222f7245f34d6/463335540_Ground-1.png',
     tileW: 64,
     tileH: 7,
   },
