@@ -181,10 +181,10 @@ export default function ShortAnswerInput({
   const isRetry = firstWrongText !== null && !committed;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, pointerEvents: introReady ? 'auto' : 'none' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, minHeight: 0, pointerEvents: introReady ? 'auto' : 'none' }}>
 
       {/* Textarea */}
-      <div style={{ position: 'relative' }}>
+      <div style={{ position: 'relative', flexShrink: 0 }}>
         <textarea
           ref={textareaRef}
           value={response}
@@ -238,6 +238,8 @@ export default function ShortAnswerInput({
         }
       </div>
 
+      {/* Feedback / status — reserved middle slot; scrolls if tall */}
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
       {/* Status / feedback */}
       {grading &&
       <p style={{ fontSize: 12, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -275,8 +277,10 @@ export default function ShortAnswerInput({
         </p>
       }
 
-      {/* Action row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, paddingTop: 8, borderTop: '1px solid #E5E5E5' }}>
+      </div>
+
+      {/* Action row — pinned to the bottom of the fixed pane */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, paddingTop: 8, borderTop: '1px solid #E5E5E5', flexShrink: 0 }}>
         <p style={{ fontSize: 12, color: '#6b7280', margin: 0 }}>
           {!committed ? 'Cmd/Ctrl+Enter to submit' : ''}
         </p>

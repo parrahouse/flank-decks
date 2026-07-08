@@ -423,7 +423,7 @@ export default function StudyCard({
         {...paneProps}
         style={{
           width: '100%',
-          height: isShortAnswer ? 'auto' : 360,
+          height: 360,
           backgroundColor: '#FAFAFA',
           border: '2px solid #D9D9D9',
           boxSizing: 'border-box',
@@ -434,7 +434,7 @@ export default function StudyCard({
         }}
       >
         {/* Top row: question type + second guess */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#00A842', fontSize: 24, fontWeight: 500 }}>
             <span>{qtLabel}</span>
             {isTrueFalse
@@ -455,24 +455,26 @@ export default function StudyCard({
           )}
         </div>
 
-        {/* Short answer */}
+        {/* Short answer — fixed pane; content fills a reserved flex slot, scrolls if tall */}
         {isShortAnswer && (
-          <ShortAnswerInput
-            card={card}
-            deck={deck}
-            onScore={onScore}
-            onNext={() => { cancelCountdown(); onNext(); }}
-            onFirstWrong={onFirstWrong}
-            isLast={isLast}
-            soundEnabled={soundEnabled}
-            autoAdvance={autoAdvance}
-            clueManuallyRevealed={clueManuallyRevealed}
-            learningMode={learningMode}
-            hasExplanation={hasExplanation}
-            onShowExplanation={() => setFlipped(true)}
-            cardStats={cardStats}
-            introReady={introReady}
-          />
+          <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+            <ShortAnswerInput
+              card={card}
+              deck={deck}
+              onScore={onScore}
+              onNext={() => { cancelCountdown(); onNext(); }}
+              onFirstWrong={onFirstWrong}
+              isLast={isLast}
+              soundEnabled={soundEnabled}
+              autoAdvance={autoAdvance}
+              clueManuallyRevealed={clueManuallyRevealed}
+              learningMode={learningMode}
+              hasExplanation={hasExplanation}
+              onShowExplanation={() => setFlipped(true)}
+              cardStats={cardStats}
+              introReady={introReady}
+            />
+          </div>
         )}
 
         {/* Choice buttons (multiple_choice / true_false / select_all) */}
@@ -565,7 +567,7 @@ export default function StudyCard({
             </div>
 
             {/* Bottom row */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, minHeight: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, height: 40, flexShrink: 0 }}>
               <span />
               {!answered ? (
                 isSelectAll ? (
