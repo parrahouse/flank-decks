@@ -27,7 +27,7 @@ const REACT_FRAME_MS = 90;
 
 // Waypoint system — egg-laying choreography at every-10 intervals
 const WAYPOINT_EVERY   = 10;
-const MARKER_SCALE     = 1;   // markers are decoupled from the character SCALE — never multiply by SCALE
+// markers now follow the same SCALE as the character
 const EGGLAY_MS       = 15 * REACT_FRAME_MS;  // egg-laying one-shot duration
 const EGG_REVEAL_MS   = 6  * REACT_FRAME_MS;  // egg settle one-shot
 const MARKER_PLANT_MS = 19 * REACT_FRAME_MS;  // pole+flag plant one-shot
@@ -188,11 +188,11 @@ export default function ProgressGameBand({
   const EGG_FOOT_TO_BOTTOM = (EGG_CELL - EGG_BASELINE) * SCALE;
   const EGG_BOTTOM   = GROUND_DISP - EGG_FOOT_TO_BOTTOM;
 
-  // Marker — native scale, decoupled from SCALE
-  const MW           = (markerAsset?.tileW ?? 0) * MARKER_SCALE;
-  const MH           = (markerAsset?.tileH ?? 0) * MARKER_SCALE;
+  // Marker — follows the same SCALE as the character
+  const MW           = (markerAsset?.tileW ?? 0) * SCALE;
+  const MH           = (markerAsset?.tileH ?? 0) * SCALE;
   const MARKER_BASE  = markerAsset?.baseline ?? 0;
-  const MARKER_FOOT_TO_BOTTOM = ((markerAsset?.tileH ?? 0) - MARKER_BASE) * MARKER_SCALE;
+  const MARKER_FOOT_TO_BOTTOM = ((markerAsset?.tileH ?? 0) - MARKER_BASE) * SCALE;
   const MARKER_BOTTOM = GROUND_DISP - MARKER_FOOT_TO_BOTTOM;
 
   // ── Resolve sprites through the nested fallback rules ───────────────────────
