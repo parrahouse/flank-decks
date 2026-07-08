@@ -8,7 +8,7 @@ const BAND_H = 100;
 const SKY    = '#e5e7eb';
 
 // FEEL DIALS — tune by eye
-const STEP_MS  = 1200;  // time to walk one card's distance
+const STEP_MS  = 1000;  // time to walk one card's distance
 
 // ART-ANCHORED — only change if the walk artwork's stride changes
 const STRIDE_PER_CYCLE_PX = 48; // on-screen ground travel per one full walk cycle
@@ -23,7 +23,7 @@ const IDLE_CYCLE_MS = 800;
 // (computed in-component now that STEP_PX is width-relative)
 
 // Reaction cadence — one-shot reactions; duration = frames * REACT_FRAME_MS
-const REACT_FRAME_MS = 45;
+const REACT_FRAME_MS = 90;
 
 // Waypoint system — egg-laying choreography at every-10 intervals
 const WAYPOINT_EVERY   = 10;
