@@ -137,7 +137,7 @@ export default function StudySession() {
     enabled: !!deckId && !!currentUser?.id
   });
 
-  const { data: pastSessions = [] } = useQuery({
+  const { data: pastSessions = [], refetch: refetchSessions } = useQuery({
     queryKey: ['study-sessions', deckId],
     queryFn: () => base44.entities.StudySession.filter({ deck_id: deckId }),
     enabled: !!deckId
@@ -327,6 +327,7 @@ export default function StudySession() {
       }
 
       refetchStats();
+      refetchSessions();
     };
 
     saveStats();
@@ -427,6 +428,9 @@ export default function StudySession() {
   const totalPoints = scores.reduce((s, r) => s + (r?.points || 0), 0);
   const maxPoints = shuffledCards.length;
   const pct = maxPoints > 0 ? Math.round(totalPoints / maxPoints * 100) : 0;
+  const highScore = pastSessions.length > 0
+    ? Math.max(...pastSessions.map((s) => s.total_points || 0))
+    : 0;
   const current = shuffledCards[cardIndex];
 
   // Filter selection screen
@@ -824,6 +828,12 @@ export default function StudySession() {
               {filterMode === 'unmastered' && <span className="text-amber-600">Unmastered only</span>}
               {filterMode === 'bookmarked' && <span className="text-amber-600">Bookmarked only</span>}
             </p>
+          </div>
+          <div className="flex items-baseline gap-1.5 select-none px-1" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
+            <span className="text-foreground" style={{ fontSize: 20, lineHeight: 1 }}>{totalPoints.toFixed(2)}</span>
+            {highScore > 0 && (
+              <span className="text-muted-foreground" style={{ fontSize: 12, lineHeight: 1 }}>HI {highScore.toFixed(2)}</span>
+            )}
           </div>
           <button
             onClick={() => {
