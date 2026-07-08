@@ -17,8 +17,9 @@
  *             - `sad` missing → falls back to `happy`
  *             - `react.*` missing → no reaction (skip)
  *             - any resolved sprite with empty `src` or `frames: 0` → treat as absent
- *   flag?     optional per-skin flag set; omit to inherit DEFAULT_FLAG
- *             { cell, baseline, inactive:{src}, activate:{src,frames}, wave:{src,frames} }
+ *   eggLay?   optional character one-shot sprite: { src, frames } (character grid, uses SCALE)
+ *   egg?      optional world element: { src, frames, cell, baseline } (scales with SCALE)
+ *   marker?   optional world element: { src, frames, tileW, tileH, baseline } (NEVER scales)
  *   ground?   optional per-skin ground; omit to inherit DEFAULT_GROUND
  *             { src, tileW, tileH }
  */
@@ -30,13 +31,7 @@ export const DEFAULT_GROUND = {
   tileH: 16,
 };
 
-export const DEFAULT_FLAG = {
-  cell:     32,
-  baseline: 29,
-  inactive: { src:    'https://media.base44.com/images/public/69fd6153088222f7245f34d6/6cec62a7e_flaginactive.png' },
-  activate: { src:    'https://media.base44.com/images/public/69fd6153088222f7245f34d6/7ebf67c3a_flagactivation.png', frames: 4 },
-  wave:     { src:    'https://media.base44.com/images/public/69fd6153088222f7245f34d6/c6323ddf5_flagwaving.png',     frames: 3 },
-};
+// Flag system retired — replaced by the egg-laying waypoint system.
 
 const CAT = {
   id:       'cat',
@@ -49,7 +44,7 @@ const CAT = {
     walk:  { happy: { src: 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/6ede5faf0_catwalk.png', frames: 4 } },
     react: { wrong: { src: '', frames: 4 } }, // placeholder — no wrong sprite uploaded yet
   },
-  // no flag/ground → inherits DEFAULT_FLAG and DEFAULT_GROUND
+  // no ground → inherits DEFAULT_GROUND
 };
 
 const EGG = {
@@ -62,13 +57,6 @@ const EGG = {
     idle:  { happy: { src: 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/facafef11_EggIdle.png',  frames: 6 } },
     walk:  { happy: { src: 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/48422f385_EggWalk.png',  frames: 6 } },
     react: { wrong: { src: 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/61e0a8336_EggWrong.png', frames: 6 } },
-  },
-  flag: {   // egg ships 48px flags so they match its grid
-    cell:     48,
-    baseline: 47,
-    inactive: { src: '', },
-    activate: { src: '', frames: 4 },
-    wave:     { src: '', frames: 3 },
   },
   // no ground → inherits DEFAULT_GROUND
 };
@@ -92,13 +80,26 @@ const SWAB = {
       right: { src: 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/6221bf3b9_Swab-Right.png', frames: 11 },
       wrong: { src: 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/f0f4305d8_Swab-Wrong.png', frames: 8 },
     },
+    eggLay: { src: 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/5cdfc4db7_Swab-Waypoint.png', frames: 15 },
+  },
+  egg: {
+    src:      'https://media.base44.com/images/public/69fd6153088222f7245f34d6/9d9672e00_Swab-Waypoint-Ready.png',
+    frames:    6,
+    cell:      32,
+    baseline:  31,
+  },
+  marker: {
+    src:      'https://media.base44.com/images/public/69fd6153088222f7245f34d6/2fef2a03d_Swab-Waypoint-Marker.png',
+    frames:   19,
+    tileW:     32,
+    tileH:     100,
+    baseline:  99,
   },
   ground: {
     src:   'https://media.base44.com/images/public/69fd6153088222f7245f34d6/8c86d6208_Ground-1.png',
     tileW: 64,
     tileH: 7,
   },
-  // no flag → inherits DEFAULT_FLAG (32px)
 };
 
 export const SKINS = [SWAB, CAT, EGG];

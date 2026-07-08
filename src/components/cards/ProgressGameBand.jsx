@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect, useLayoutEffect, useMemo } from 'react';
 import { motion, useAnimation } from 'framer-motion';
 import { useSound } from '@/hooks/useSound';
-import { DEFAULT_GROUND, DEFAULT_FLAG, getSkin, DEFAULT_SKIN_ID, resolveSprite } from './skins';
+import { DEFAULT_GROUND, getSkin, DEFAULT_SKIN_ID, resolveSprite } from './skins';
 
 // ── ART-INDEPENDENT CONSTANTS ─────────────────────────────────────────────────
 const BAND_H = 100;
@@ -23,13 +23,16 @@ const IDLE_CYCLE_MS = 800;
 const CYCLES_PER_CARD = STEP_PX / STRIDE_PER_CYCLE_PX;
 const WALK_CYCLE_MS   = Math.round(STEP_MS * STRIDE_PER_CYCLE_PX / STEP_PX);
 
-const FLAG_EVERY          = 10;
-const MIN_CARDS_FOR_FLAGS = 20;
-const FLAG_ACT_MS        = 600;
-const FLAG_WAVE_MS       = 700;
-
 // Reaction cadence — one-shot reactions; duration = frames * REACT_FRAME_MS
 const REACT_FRAME_MS = 45;
+
+// Waypoint system — egg-laying choreography at every-10 intervals
+const WAYPOINT_EVERY   = 10;
+const MARKER_SCALE     = 1;   // markers are decoupled from the character SCALE — never multiply by SCALE
+const EGGLAY_MS       = 15 * REACT_FRAME_MS;  // egg-laying one-shot duration
+const EGG_REVEAL_MS   = 6  * REACT_FRAME_MS;  // egg settle one-shot
+const MARKER_PLANT_MS = 19 * REACT_FRAME_MS;  // pole+flag plant one-shot
+const WAYPOINT_OFFSET = 0;   // world-x offset from Swab's stand point at m — tune by eye
 
 const AVATAR_ENTRY_MS   = 1000;
 const AVATAR_ENTRY_EASE = 'linear';
@@ -68,7 +71,6 @@ export default function ProgressGameBand({
 }) {
   // ── Derive per-render from skin ─────────────────────────────────────────────
   const ground  = skin.ground || DEFAULT_GROUND;
-  const flag    = skin.flag   || DEFAULT_FLAG;
 
   const CELL     = skin.cell;
   const BASELINE = skin.baseline;
@@ -80,13 +82,25 @@ export default function ProgressGameBand({
   const GROUND_DISP       = TILE_H * SCALE;
   const FOOT_TO_BOTTOM    = (CELL - BASELINE) * SCALE;
   const CHAR_BOTTOM       = GROUND_DISP - FOOT_TO_BOTTOM;
-  const FLAG_OFFSET       = Math.round(W * 0.6);
 
-  const FLAG_CELL         = flag.cell;
-  const FLAG_BASELINE     = flag.baseline;
-  const FW                = FLAG_CELL * SCALE;
-  const FLAG_FOOT_TO_BOTTOM = (FLAG_CELL - FLAG_BASELINE) * SCALE;
-  const FLAG_BOTTOM       = GROUND_DISP - FLAG_FOOT_TO_BOTTOM;
+  // ── Waypoint assets (egg-laying system) ────────────────────────────────────
+  const eggLaySprite = skin.sprites?.eggLay;    // character one-shot (uses SCALE)
+  const eggAsset     = skin.egg;                 // world element — scales with SCALE
+  const markerAsset  = skin.marker;              // world element — NEVER scales (MARKER_SCALE only)
+
+  // Egg — scales with the character
+  const EGG_CELL      = eggAsset?.cell      ?? CELL;
+  const EGG_BASELINE  = eggAsset?.baseline  ?? BASELINE;
+  const EW            = EGG_CELL * SCALE;
+  const EGG_FOOT_TO_BOTTOM = (EGG_CELL - EGG_BASELINE) * SCALE;
+  const EGG_BOTTOM   = GROUND_DISP - EGG_FOOT_TO_BOTTOM;
+
+  // Marker — native scale, decoupled from SCALE
+  const MW           = (markerAsset?.tileW ?? 0) * MARKER_SCALE;
+  const MH           = (markerAsset?.tileH ?? 0) * MARKER_SCALE;
+  const MARKER_BASE  = markerAsset?.baseline ?? 0;
+  const MARKER_FOOT_TO_BOTTOM = ((markerAsset?.tileH ?? 0) - MARKER_BASE) * MARKER_SCALE;
+  const MARKER_BOTTOM = GROUND_DISP - MARKER_FOOT_TO_BOTTOM;
 
   // ── Resolve sprites through the nested fallback rules ───────────────────────
   // idle has no `sad` variant → resolveSprite falls back to `happy`.
@@ -103,8 +117,9 @@ export default function ProgressGameBand({
   const WALK_SAD_FRAMES   = walkSadSprite?.frames || 0;
   const RIGHT_FRAMES      = rightSprite?.frames || 0;
   const WRONG_FRAMES      = wrongSprite?.frames || 0;
-  const FLAG_ACT_FRAMES   = flag.activate.frames;
-  const FLAG_WAVE_FRAMES  = flag.wave.frames;
+  const EGGLAY_FRAMES    = eggLaySprite?.frames || 0;
+  const EGG_FRAMES       = eggAsset?.frames || 0;
+  const MARKER_FRAMES    = markerAsset?.frames || 0;
 
   // One-shot reaction durations (frames × per-frame cadence)
   const RIGHT_DUR = RIGHT_FRAMES * REACT_FRAME_MS;
@@ -122,8 +137,9 @@ export default function ProgressGameBand({
   const KF_WALK_SAD    = `pgb-walk-sad-${skin.id}`;
   const KF_RIGHT_SHOT  = `pgb-react-right-shot-${skin.id}`;
   const KF_WRONG_SHOT  = `pgb-react-wrong-shot-${skin.id}`;
-  const KF_FLAG_ACT    = `pgb-flag-activate-${skin.id}`;
-  const KF_FLAG_WAVE   = `pgb-flag-wave-${skin.id}`;
+  const KF_EGGLAY     = `pgb-egglay-${skin.id}`;
+  const KF_EGG        = `pgb-egg-${skin.id}`;
+  const KF_MARKER     = `pgb-marker-${skin.id}`;
 
   const KEYFRAMES = `
 @keyframes ${KF_IDLE} { from { background-position-x: 0 } to { background-position-x: -${IDLE_FRAMES * W}px } }
@@ -132,8 +148,9 @@ export default function ProgressGameBand({
 @keyframes ${KF_WALK_SAD} { from { background-position-x: 0 } to { background-position-x: -${WALK_SAD_FRAMES * W}px } }
 @keyframes ${KF_RIGHT_SHOT} { from { background-position-x: 0 } to { background-position-x: -${Math.max(0, RIGHT_FRAMES - 1) * W}px } }
 @keyframes ${KF_WRONG_SHOT} { from { background-position-x: 0 } to { background-position-x: -${Math.max(0, WRONG_FRAMES - 1) * W}px } }
-@keyframes ${KF_FLAG_ACT} { from { background-position-x: 0 } to { background-position-x: -${FLAG_ACT_FRAMES * FW}px } }
-@keyframes ${KF_FLAG_WAVE} { from { background-position-x: 0 } to { background-position-x: -${FLAG_WAVE_FRAMES * FW}px } }
+@keyframes ${KF_EGGLAY} { from { background-position-x: 0 } to { background-position-x: -${Math.max(0, EGGLAY_FRAMES - 1) * W}px } }
+@keyframes ${KF_EGG} { from { background-position-x: 0 } to { background-position-x: -${Math.max(0, EGG_FRAMES - 1) * EW}px } }
+@keyframes ${KF_MARKER} { from { background-position-x: 0 } to { background-position-x: -${Math.max(0, MARKER_FRAMES - 1) * MW}px } }
 `;
 
   const { playWalking, stopWalking } = useSound(soundEnabled);
@@ -142,7 +159,7 @@ export default function ProgressGameBand({
   const [bandW, setBandW] = useState(0);
 
   // ── Phase machine ──────────────────────────────────────────────────────────
-  // phase: 'idle' | 'reactRight' | 'reactWrong' | 'walk' | 'celebrate'
+  // phase: 'idle' | 'reactRight' | 'reactWrong' | 'walk' | 'eggLay' | 'celebrate'
   // Exactly one character layer is visible at a time (opacity 1); the rest 0.
   const [phase, setPhase] = useState('idle');
   const [walkVariant, setWalkVariant] = useState('happy'); // 'happy' | 'sad'
@@ -168,43 +185,18 @@ export default function ProgressGameBand({
     prevNonEmptyRef.current = ne;
   }
 
-  // ── Flag state ────────────────────────────────────────────────────────────
-  const [activating, setActivating] = useState(null);
-  const [activated, setActivated]   = useState(() => new Set());
-
-  const milestones = useMemo(() => {
-    if (total < MIN_CARDS_FOR_FLAGS) return [];
+  // ── Waypoint positions — every 10 cards, excluding the finish ──────────────
+  const waypoints = useMemo(() => {
     const arr = [];
-    for (let m = FLAG_EVERY; m < total; m += FLAG_EVERY) arr.push(m);
-    return arr;
+    for (let m = WAYPOINT_EVERY; m < total; m += WAYPOINT_EVERY) arr.push(m);
+    return arr; // finish (m === total) is handled by the separate finish prompt
   }, [total]);
 
-  // Seed flags already passed on mount → straight to waving
-  const flagSeeded = useRef(false);
-  useEffect(() => {
-    if (flagSeeded.current || !milestones.length) return;
-    flagSeeded.current = true;
-    setActivated(new Set(milestones.filter((m) => m <= shownCompleted)));
-  }, [milestones, shownCompleted]);
-
-  // Fire activation when displayed progress crosses a milestone
-  const prevFlagShown = useRef(shownCompleted);
-  useEffect(() => {
-    const prev = prevFlagShown.current;
-    prevFlagShown.current = shownCompleted;
-    if (shownCompleted <= prev) return;
-    const hit = milestones.find((m) => m > prev && m <= shownCompleted);
-    if (hit == null) return;
-    setActivating(hit);
-    const t = setTimeout(() => {
-      setActivating(null);
-      setActivated((s) => new Set(s).add(hit));
-    }, FLAG_ACT_MS);
-    return () => clearTimeout(t);
-  }, [shownCompleted, milestones]);
-
-  const flagPhase = (m) =>
-    activating === m ? 'activation' : activated.has(m) ? 'waving' : 'inactive';
+  // Snapshot waypoints already passed on mount → seeded (marker planted, egg present, no animation)
+  const seededPlantedRef = useRef(null);
+  if (seededPlantedRef.current === null && waypoints.length) {
+    seededPlantedRef.current = new Set(waypoints.filter((m) => shownCompleted > m));
+  }
 
   // ── Measure band width (ResizeObserver catches non-window resizes too) ─────
   useLayoutEffect(() => {
@@ -265,7 +257,7 @@ export default function ProgressGameBand({
     const canCelebrate = RIGHT_FRAMES > 0 && !!rightSprite?.src;
 
     let cancelled = false;
-    let tStart, tWalk;
+    let tStart, tWalk, tEggLay;
 
     const finishWalk = () => {
       if (cancelled) return;
@@ -276,6 +268,14 @@ export default function ProgressGameBand({
       } else if (isLast) {
         setIdleVariant('happy');                 // ends happy even with no reaction sprite
         phaseRef.current = 'idle'; setPhase('idle');
+      } else if (waypoints.includes(completed) && EGGLAY_FRAMES > 0 && eggLaySprite?.src) {
+        // Arrived at a waypoint → lay an egg, then return to idle (happy)
+        phaseRef.current = 'eggLay'; setPhase('eggLay');
+        tEggLay = setTimeout(() => {
+          if (cancelled) return;
+          setIdleVariant('happy');
+          phaseRef.current = 'idle'; setPhase('idle');
+        }, EGGLAY_MS);
       } else {
         setIdleVariant(variant);
         phaseRef.current = 'idle'; setPhase('idle');
@@ -304,7 +304,7 @@ export default function ProgressGameBand({
       tStart = setTimeout(startWalk, remaining);
     }
 
-    return () => { cancelled = true; clearTimeout(tStart); clearTimeout(tWalk); };
+    return () => { cancelled = true; clearTimeout(tStart); clearTimeout(tWalk); clearTimeout(tEggLay); };
   }, [completed]);
 
   // ── Celebration cycle: happy idle ×2, then right reaction ×1, looping ──────
@@ -332,10 +332,10 @@ export default function ProgressGameBand({
   useEffect(() => {
     const urls = [
       idleSprite?.src, idleSadSprite?.src, walkHappySprite?.src, walkSadSprite?.src,
-      rightSprite?.src, wrongSprite?.src,
+      rightSprite?.src, wrongSprite?.src, eggLaySprite?.src, eggAsset?.src, markerAsset?.src,
     ].filter(Boolean);
     urls.forEach((u) => { const img = new Image(); img.src = u; });
-  }, [idleSprite?.src, idleSadSprite?.src, walkHappySprite?.src, walkSadSprite?.src, rightSprite?.src, wrongSprite?.src]);
+  }, [idleSprite?.src, idleSadSprite?.src, walkHappySprite?.src, walkSadSprite?.src, rightSprite?.src, wrongSprite?.src, eggLaySprite?.src, eggAsset?.src, markerAsset?.src]);
 
   // ── Fixed-world camera math ───────────────────────────────────────────────
   const LEFT_MARGIN  = bandW * LEFT_MARGIN_FRAC;
@@ -376,6 +376,7 @@ export default function ProgressGameBand({
   const showWalkSad    = !entering && phase === 'walk' && walkVariant === 'sad';
   const showReactRight = !entering && (phase === 'reactRight' || (phase === 'celebrate' && celebSub === 'react'));
   const showReactWrong = !entering && phase === 'reactWrong';
+  const showEggLay     = !entering && phase === 'eggLay';
 
   // ── Character layers — stacked, opacity-toggled (never swap backgroundImage) ─
   const layers = (
@@ -456,6 +457,21 @@ export default function ProgressGameBand({
           }}
         />
       )}
+
+      {/* EGG LAY — one-shot character pose (arrived at a waypoint) */}
+      {eggLaySprite?.src && EGGLAY_FRAMES > 0 && (
+        <div
+          key={`egglay-${reactKey}`}
+          style={{
+            position: 'absolute', inset: 0, width: W, height: W,
+            backgroundRepeat: 'no-repeat', imageRendering: 'pixelated',
+            backgroundImage: `url(${eggLaySprite.src})`,
+            backgroundSize: `${EGGLAY_FRAMES * W}px ${W}px`,
+            animation: `${KF_EGGLAY} ${EGGLAY_MS}ms steps(${Math.max(1, EGGLAY_FRAMES - 1)}) forwards`,
+            opacity: showEggLay ? 1 : 0,
+          }}
+        />
+      )}
     </>
   );
 
@@ -491,23 +507,48 @@ export default function ProgressGameBand({
           imageRendering: 'pixelated',
         }} />
 
-        {/* Milestone flags — positioned in world space */}
-        {milestones.map((m) => {
-          const fx    = LEAD_IN + m * STEP_PX + FLAG_OFFSET;
-          const phaseF = flagPhase(m);
-          const sprite =
-            phaseF === 'activation'
-              ? { backgroundImage: `url(${flag.activate.src})`, backgroundSize: `${FLAG_ACT_FRAMES * FW}px ${FW}px`, animation: `${KF_FLAG_ACT} ${FLAG_ACT_MS}ms steps(${FLAG_ACT_FRAMES}) 1` }
-              : phaseF === 'waving'
-              ? { backgroundImage: `url(${flag.wave.src})`,     backgroundSize: `${FLAG_WAVE_FRAMES * FW}px ${FW}px`, animation: `${KF_FLAG_WAVE} ${FLAG_WAVE_MS}ms steps(${FLAG_WAVE_FRAMES}) infinite` }
-              : { backgroundImage: `url(${flag.inactive.src})`, backgroundSize: `${FW}px ${FW}px`, animation: 'none' };
+        {/* Waypoint eggs — rendered BEFORE the character so Swab covers them at m */}
+        {eggAsset?.src && EGG_FRAMES > 0 && waypoints.map((m) => {
+          if (shownCompleted < m) return null; // not yet laid
+          const fx = LEAD_IN + m * STEP_PX + WAYPOINT_OFFSET;
+          const seeded = shownCompleted > m; // already past → no settle animation
           return (
-            <div key={m} style={{
-              position: 'absolute', bottom: FLAG_BOTTOM, left: 0, width: FW, height: FW,
-              transform: `translateX(${fx}px)`,
-              backgroundRepeat: 'no-repeat', imageRendering: 'pixelated',
-              ...sprite,
-            }} />
+            <div
+              key={`egg-${m}`}
+              style={{
+                position: 'absolute', bottom: EGG_BOTTOM, left: 0, width: EW, height: EW,
+                transform: `translateX(${fx}px)`,
+                backgroundRepeat: 'no-repeat', imageRendering: 'pixelated',
+                backgroundImage: `url(${eggAsset.src})`,
+                backgroundSize: `${EGG_FRAMES * EW}px ${EW}px`,
+                backgroundPositionX: seeded ? `-${(EGG_FRAMES - 1) * EW}px` : '0',
+                animation: seeded ? 'none' : `${KF_EGG} ${EGG_REVEAL_MS}ms steps(${Math.max(1, EGG_FRAMES - 1)}) forwards`,
+              }}
+            />
+          );
+        })}
+
+        {/* Waypoint markers — native scale (never multiplied by SCALE) */}
+        {markerAsset?.src && MARKER_FRAMES > 0 && waypoints.map((m) => {
+          const fx = LEAD_IN + m * STEP_PX + WAYPOINT_OFFSET;
+          const isPlanted = shownCompleted > m;
+          const wasSeeded = seededPlantedRef.current?.has(m);
+          const markerState = !isPlanted ? 'pending' : wasSeeded ? 'seeded' : 'planting';
+          return (
+            <div
+              key={`marker-${m}-${markerState}`}
+              style={{
+                position: 'absolute', bottom: MARKER_BOTTOM, left: 0, width: MW, height: MH,
+                transform: `translateX(${fx}px)`,
+                backgroundRepeat: 'no-repeat', imageRendering: 'pixelated',
+                backgroundImage: `url(${markerAsset.src})`,
+                backgroundSize: `${MARKER_FRAMES * MW}px ${MH}px`,
+                backgroundPositionX: markerState === 'seeded' ? `-${(MARKER_FRAMES - 1) * MW}px` : '0',
+                animation: markerState === 'planting'
+                  ? `${KF_MARKER} ${MARKER_PLANT_MS}ms steps(${Math.max(1, MARKER_FRAMES - 1)}) forwards`
+                  : 'none',
+              }}
+            />
           );
         })}
 
