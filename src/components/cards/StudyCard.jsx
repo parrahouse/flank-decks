@@ -423,12 +423,13 @@ export default function StudyCard({
         {...paneProps}
         style={{
           width: '100%',
-          minHeight: isShortAnswer ? 'auto' : 340,
+          height: isShortAnswer ? 'auto' : 360,
           backgroundColor: '#FAFAFA',
           border: '2px solid #D9D9D9',
           boxSizing: 'border-box',
           padding: '12px 16px',
           display: 'flex', flexDirection: 'column',
+          overflow: 'hidden',
           pointerEvents: introReady ? 'auto' : 'none',
         }}
       >
@@ -477,7 +478,7 @@ export default function StudyCard({
         {/* Choice buttons (multiple_choice / true_false / select_all) */}
         {!isShortAnswer && (
           <>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, overflow: 'hidden' }}>
               {isTrueFalse ? (
                 <div style={{ display: 'flex', gap: 10 }}>
                   {shuffledChoices.map((choice, idx) => {
