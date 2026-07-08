@@ -500,6 +500,20 @@ export default function ProgressGameBand({
     >
       <style>{KEYFRAMES}</style>
 
+      {/* Ground — full-band layer; texture scrolls with the camera (always fills the window) */}
+      <div style={{
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        width: '100%',
+        height: GROUND_DISP,
+        backgroundImage: `url(${ground.src})`,
+        backgroundRepeat: 'repeat-x',
+        backgroundSize: `${TILE_W * SCALE}px ${GROUND_DISP}px`,
+        backgroundPositionX: `${-cameraX}px`,
+        imageRendering: 'pixelated',
+      }} />
+
       {/* World container — fixed-pixel width, scrolled by the follow camera (LINEAR easing) */}
       <div style={{
         position: 'absolute',
@@ -510,19 +524,6 @@ export default function ProgressGameBand({
         transform: `translateX(${-cameraX}px)`,
         willChange: 'transform',
       }}>
-        {/* Ground strip — tiled across the whole world */}
-        <div style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          width: worldWidth,
-          height: GROUND_DISP,
-          backgroundImage: `url(${ground.src})`,
-          backgroundRepeat: 'repeat-x',
-          backgroundSize: `${TILE_W * SCALE}px ${GROUND_DISP}px`,
-          imageRendering: 'pixelated',
-        }} />
-
         {/* Waypoint eggs — rendered BEFORE the character so Swab covers them at m */}
         {eggAsset?.src && EGG_FRAMES > 0 && waypoints.map((m) => {
           if (shownCompleted < m) return null; // not yet laid
