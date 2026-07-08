@@ -539,6 +539,10 @@ export default function ProgressGameBand({
         transition: `background-position-x ${STEP_MS}ms linear`,
       }} />
 
+      <div style={{position:'fixed', top:0, left:0, zIndex:9999, background:'#fff', color:'#000', font:'12px monospace'}}>
+  {`TILE_W=${TILE_W} SCALE=${SCALE} product=${TILE_W*SCALE} DPR=${window.devicePixelRatio}`}
+</div>
+
       {/* World container — eggs + markers, scrolled by the camera */}
       <div style={{
         position: 'absolute',
