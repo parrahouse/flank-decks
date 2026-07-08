@@ -176,6 +176,16 @@ export default function ProgressGameBand({
   const catControls = useAnimation();
   const entryFiredRef = useRef(false);
 
+  // ── segAdvance: scripted camera+character transition between waypoint frames ─
+  const [segCam, setSegCam] = useState(null);   // null | 'hold' | 'walkOff' | 'pan' | 'enterLeft'
+  const [segCamX, setSegCamX] = useState(0);    // camera x while segCam !== null
+  const segCamRef = useRef(null); segCamRef.current = segCam;
+  const deferredRef = useRef(null);             // { completed, commitKey } answered mid-transition
+  const commitCancelRef = useRef(null);         // cleanup of the in-flight processCommit
+  const segCancelRef = useRef(null);             // cleanup of the in-flight segAdvance beats
+  const processCommitRef = useRef(null);
+  const camRef = useRef({});                     // fresh camera math for imperative use
+
   const completed = scores.filter(Boolean).length;
   const [shownCompleted, setShownCompleted] = useState(() => scores.filter(Boolean).length);
   const prevCompleted = useRef(shownCompleted);
@@ -235,45 +245,49 @@ export default function ProgressGameBand({
 
   // ── Commit reaction + walk: fires when a card score is committed ───────────
   //   correct key  → react.right one-shot → happy walk
-  //   wrong key    → no reaction (the wrong reaction already fired on wrongTick)
-  //                 → sad walk, chained to the end of any in-flight reaction
+  //   wrong key    → no reaction (wrong reaction already fired on wrongTick)
+  //                  → sad walk, chained to the end of any in-flight reaction
+  //   waypoint cross → hold OLD camera through the follow-up card's walk, then
+  //                    run a scripted segAdvance (walk-off / pan / enter-left)
   //   last card    → after the walk, switch to react.right looping (celebrate)
-  useEffect(() => {
-    if (completed === prevCompleted.current) return;
-    prevCompleted.current = completed;
-
-    // Read the just-committed key by diffing the committed-index map.
-    const nonEmpty = {};
-    scores.forEach((s, i) => { if (s) nonEmpty[i] = s.key; });
-    let commitKey = null;
-    for (const k in nonEmpty) {
-      if (prevNonEmptyRef.current[k] !== nonEmpty[k]) { commitKey = nonEmpty[k]; break; }
-    }
-    prevNonEmptyRef.current = nonEmpty;
-    if (commitKey === null) {
-      const vals = Object.values(nonEmpty);
-      commitKey = vals[vals.length - 1];
-    }
-
+  function processCommit(completedVal, commitKey) {
     const isCorrect = !!commitKey && CORRECT_KEYS.has(commitKey);
     const variant = isCorrect ? 'happy' : 'sad';
-    const isLast = completed >= total;
+    const isLast = completedVal >= total;
     const canCelebrate = RIGHT_FRAMES > 0 && !!rightSprite?.src;
+    const { LEAD_IN, STEP_PX, waypoints } = camRef.current;
+    const oldCameraX = cameraXFor(completedVal - 1);
+    const newCameraX = cameraXFor(completedVal);
+    // A crossing occurs exactly when the active waypoint frame advances (activeWp
+    // increments). The last waypoint's follow-up has no next frame → no crossing.
+    const crossedWaypoint = newCameraX !== oldCameraX;
+    const charWorldXNow = LEAD_IN + completedVal * STEP_PX;
+    const ctx = {
+      startScreenX: charWorldXNow - oldCameraX,
+      oldCameraX, newCameraX,
+      restingX: charWorldXNow - newCameraX,
+      endVariant: variant, // preserve the card's happy/sad outcome through the transition
+    };
 
     let cancelled = false;
     let tStart, tWalk, tEggLay, tNudge;
 
     const finishWalk = () => {
       if (cancelled) return;
-      stopWalking();
       setReactKey((k) => k + 1);
       if (isLast && canCelebrate) {
+        stopWalking();
         phaseRef.current = 'celebrate'; setPhase('celebrate');
       } else if (isLast) {
+        stopWalking();
         setIdleVariant('happy');                 // ends happy even with no reaction sprite
         phaseRef.current = 'idle'; setPhase('idle');
-      } else if (waypoints.includes(completed) && EGGLAY_FRAMES > 0 && eggLaySprite?.src) {
+      } else if (crossedWaypoint) {
+        // Scripted segAdvance — keep walking through the beats (do not stopWalking)
+        runSegAdvance(ctx);
+      } else if (waypoints.includes(completedVal) && EGGLAY_FRAMES > 0 && eggLaySprite?.src) {
         // Arrived at a waypoint → lay an egg, then nudge forward to reveal it
+        stopWalking();
         phaseRef.current = 'eggLay'; setPhase('eggLay');
         tEggLay = setTimeout(() => {
           if (cancelled) return;
@@ -290,6 +304,7 @@ export default function ProgressGameBand({
           }, STEP_MS / 2);
         }, EGGLAY_MS);
       } else {
+        stopWalking();
         setIdleVariant(variant);
         phaseRef.current = 'idle'; setPhase('idle');
       }
@@ -302,7 +317,12 @@ export default function ProgressGameBand({
       setWalkVariant(variant);
       phaseRef.current = 'walk'; setPhase('walk');
       playWalking();
-      setShownCompleted(completed); // advances world position (CSS transition = walk)
+      if (crossedWaypoint && !isLast) {
+        // Hold the OLD camera frame through this follow-up card's walk
+        setSegCam('hold');
+        setSegCamX(oldCameraX);
+      }
+      setShownCompleted(completedVal); // advances world position (CSS transition = walk)
       tWalk = setTimeout(finishWalk, STEP_MS);
     };
 
@@ -320,7 +340,79 @@ export default function ProgressGameBand({
     }
 
     return () => { cancelled = true; clearTimeout(tStart); clearTimeout(tWalk); clearTimeout(tEggLay); clearTimeout(tNudge); };
+  }
+
+  // ── segAdvance: scripted 3-beat transition to the next waypoint frame ────────
+  //   1. walk-off: camera static (old); Swab walks off the right edge.
+  //   2. pan: Swab off-screen; camera animates old→new (ground + world slide left);
+  //          at the end, snap Swab to off-left while he's off-screen.
+  //   3. enter-left: Swab walks from off-left to his resting x on the new frame.
+  function runSegAdvance(ctx) {
+    const { startScreenX, newCameraX, restingX, endVariant } = ctx;
+    const { bandW, W } = camRef.current;
+
+    // Beat 1 — walk-off (camera held at the old frame)
+    setSegCam('walkOff');
+    catControls.set({ x: startScreenX });
+    catControls.start({ x: bandW + W, transition: { duration: STEP_MS / 1000, ease: 'linear' } });
+
+    let t1 = setTimeout(() => {
+      // Beat 2 — pan camera old→new (character stays off-right, screen space)
+      setSegCam('pan');
+      requestAnimationFrame(() => setSegCamX(newCameraX));
+      let t2 = setTimeout(() => {
+        // snap to off-left while off-screen
+        catControls.set({ x: -W });
+        setSegCam('enterLeft');
+        catControls.start({ x: restingX, transition: { duration: STEP_MS / 1000, ease: 'linear' } });
+        let t3 = setTimeout(() => {
+          stopWalking();
+          setSegCam(null);
+          setIdleVariant(endVariant);
+          phaseRef.current = 'idle'; setPhase('idle');
+          // Process any card answered mid-transition
+          if (deferredRef.current) {
+            const d = deferredRef.current; deferredRef.current = null;
+            commitCancelRef.current?.();
+            commitCancelRef.current = processCommitRef.current(d.completed, d.commitKey);
+          }
+        }, STEP_MS);
+        segCancelRef.current = () => clearTimeout(t3);
+      }, STEP_MS);
+      segCancelRef.current = () => clearTimeout(t2);
+    }, STEP_MS);
+    segCancelRef.current = () => clearTimeout(t1);
+  }
+
+  processCommitRef.current = processCommit;
+
+  useEffect(() => {
+    if (completed === prevCompleted.current) return;
+    prevCompleted.current = completed;
+
+    // Read the just-committed key by diffing the committed-index map.
+    const nonEmpty = {};
+    scores.forEach((s, i) => { if (s) nonEmpty[i] = s.key; });
+    let commitKey = null;
+    for (const k in nonEmpty) {
+      if (prevNonEmptyRef.current[k] !== nonEmpty[k]) { commitKey = nonEmpty[k]; break; }
+    }
+    prevNonEmptyRef.current = nonEmpty;
+    if (commitKey === null) {
+      const vals = Object.values(nonEmpty);
+      commitKey = vals[vals.length - 1];
+    }
+
+    // If a segAdvance (or its hold-walk) is in flight, defer until it finishes.
+    if (segCamRef.current !== null) {
+      deferredRef.current = { completed, commitKey };
+      return;
+    }
+    commitCancelRef.current?.();
+    commitCancelRef.current = processCommitRef.current(completed, commitKey);
   }, [completed]);
+
+  useEffect(() => () => { commitCancelRef.current?.(); segCancelRef.current?.(); }, []);
 
   // ── Celebration cycle: happy idle ×2, then right reaction ×1, looping ──────
   useEffect(() => {
@@ -352,7 +444,7 @@ export default function ProgressGameBand({
     urls.forEach((u) => { const img = new Image(); img.src = u; });
   }, [idleSprite?.src, idleSadSprite?.src, walkHappySprite?.src, walkSadSprite?.src, rightSprite?.src, wrongSprite?.src, eggLaySprite?.src, eggAsset?.src, markerAsset?.src]);
 
-  // ── Waypoint-anchored camera (instant cut for now) ─────────────────────────
+  // ── Waypoint-anchored camera (smooth segAdvance between frames) ────────────
   const ANCHOR_X = bandW * ANCHOR_FRAC;
   const LEAD_IN  = bandW * ENTRY_FRAC;
   const STEP_PX  = (ANCHOR_X - LEAD_IN) / WAYPOINT_EVERY || 1; // width-relative per-card distance
@@ -367,6 +459,18 @@ export default function ProgressGameBand({
   const charWorldX = LEAD_IN + shownCompleted * STEP_PX;
   // World must hold every card + buffer so content never clips at the last cards:
   const worldWidth = LEAD_IN + total * STEP_PX + bandW;
+
+  // Fresh camera math for imperative use (commit / segAdvance run from timeouts)
+  camRef.current = { LEAD_IN, ANCHOR_X, STEP_PX, waypoints, bandW, W };
+  const cameraXFor = (sc) => {
+    const { LEAD_IN, ANCHOR_X, STEP_PX, waypoints } = camRef.current;
+    if (waypoints.length === 0) return 0;
+    const wp = waypoints.find((m) => m >= sc) ?? waypoints[waypoints.length - 1];
+    return Math.max(0, LEAD_IN + wp * STEP_PX - ANCHOR_X);
+  };
+  // segAdvance beats drive the character via catControls; otherwise it's world-placed.
+  const segBeat = segCam === 'walkOff' || segCam === 'pan' || segCam === 'enterLeft';
+  const camX = segCam === null ? cameraX : segCamX; // camera used by world + ground + character
 
   // ── Entry walk-in animation (retargeted to world coords) ───────────────────
   useEffect(() => {
@@ -502,7 +606,7 @@ export default function ProgressGameBand({
     >
       <style>{KEYFRAMES}</style>
 
-      {/* Ground — full-band layer; texture scrolls with the camera (always fills the window) */}
+      {/* Ground — full-band layer; texture scrolls with the camera (pan animates during segAdvance) */}
       <div style={{
         position: 'absolute',
         bottom: 0,
@@ -512,19 +616,21 @@ export default function ProgressGameBand({
         backgroundImage: `url(${ground.src})`,
         backgroundRepeat: 'repeat-x',
         backgroundSize: `${TILE_W * SCALE}px ${GROUND_DISP}px`,
-        backgroundPositionX: `${-cameraX}px`,
+        backgroundPositionX: `${-camX}px`,
         imageRendering: 'pixelated',
+        transition: segCam === 'pan' ? `background-position-x ${STEP_MS}ms linear` : 'none',
       }} />
 
-      {/* World container — fixed-pixel width, scrolled by the follow camera (LINEAR easing) */}
+      {/* World container — eggs + markers, scrolled by the camera (pan animates during segAdvance) */}
       <div style={{
         position: 'absolute',
         left: 0,
         bottom: 0,
         width: worldWidth,
         height: '100%',
-        transform: `translateX(${-cameraX}px)`,
+        transform: `translateX(${-camX}px)`,
         willChange: 'transform',
+        transition: segCam === 'pan' ? `transform ${STEP_MS}ms linear` : 'none',
       }}>
         {/* Waypoint eggs — rendered BEFORE the character so Swab covers them at m */}
         {eggAsset?.src && EGG_FRAMES > 0 && waypoints.map((m) => {
@@ -569,42 +675,43 @@ export default function ProgressGameBand({
           );
         })}
 
-        {/* Character — positioned in world space (LINEAR easing matches camera) */}
-        {entering ? (
-          <motion.div
-            animate={catControls}
-            style={{
-              position: 'absolute',
-              bottom: CHAR_BOTTOM,
-              left: 0,
-              width: W,
-              height: W,
-              willChange: 'transform',
-            }}
-          >
-            {layers}
-          </motion.div>
-        ) : (
-          <div style={{
+      </div>
+
+      {/* Character — screen space (sibling of the world container) */}
+      {entering || segBeat ? (
+        <motion.div
+          animate={catControls}
+          style={{
             position: 'absolute',
             bottom: CHAR_BOTTOM,
             left: 0,
             width: W,
             height: W,
-            transform: `translateX(${charWorldX}px)`,
-            transition: `transform ${STEP_MS}ms linear`,
             willChange: 'transform',
-          }}>
-            <motion.div
-              animate={{ x: nudgeOffset }}
-              transition={{ duration: nudgeDurMs / 1000, ease: 'linear' }}
-              style={{ position: 'absolute', inset: 0, willChange: 'transform' }}
-            >
-              {layers}
-            </motion.div>
-          </div>
-        )}
-      </div>
+          }}
+        >
+          {layers}
+        </motion.div>
+      ) : (
+        <div style={{
+          position: 'absolute',
+          bottom: CHAR_BOTTOM,
+          left: 0,
+          width: W,
+          height: W,
+          transform: `translateX(${charWorldX - camX}px)`,
+          transition: `transform ${STEP_MS}ms linear`,
+          willChange: 'transform',
+        }}>
+          <motion.div
+            animate={{ x: nudgeOffset }}
+            transition={{ duration: nudgeDurMs / 1000, ease: 'linear' }}
+            style={{ position: 'absolute', inset: 0, willChange: 'transform' }}
+          >
+            {layers}
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
