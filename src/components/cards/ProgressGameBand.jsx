@@ -77,6 +77,9 @@ export default function ProgressGameBand({
   const SCALE    = skin.scale;
   const W        = CELL * SCALE;
 
+  // Reveal nudge — forward step past a freshly laid egg so it sits visible behind Swab
+  const REVEAL_NUDGE_PX = 0.75 * CELL;
+
   const TILE_W            = ground.tileW;
   const TILE_H            = ground.tileH;
   const GROUND_DISP       = TILE_H * SCALE;
@@ -149,7 +152,7 @@ export default function ProgressGameBand({
 @keyframes ${KF_RIGHT_SHOT} { from { background-position-x: 0 } to { background-position-x: -${Math.max(0, RIGHT_FRAMES - 1) * W}px } }
 @keyframes ${KF_WRONG_SHOT} { from { background-position-x: 0 } to { background-position-x: -${Math.max(0, WRONG_FRAMES - 1) * W}px } }
 @keyframes ${KF_EGGLAY} { from { background-position-x: 0 } to { background-position-x: -${Math.max(0, EGGLAY_FRAMES - 1) * W}px } }
-@keyframes ${KF_EGG} { from { background-position-x: 0 } to { background-position-x: -${Math.max(0, EGG_FRAMES - 1) * EW}px } }
+@keyframes ${KF_EGG} { from { background-position-x: 0 } to { background-position-x: -${EGG_FRAMES * EW}px } }
 @keyframes ${KF_MARKER} { from { background-position-x: 0 } to { background-position-x: -${Math.max(0, MARKER_FRAMES - 1) * MW}px } }
 `;
 
@@ -166,6 +169,8 @@ export default function ProgressGameBand({
   const [idleVariant, setIdleVariant] = useState('happy'); // idle shown after a walk
   const [reactKey, setReactKey] = useState(0);              // re-arm one-shot layers
   const [celebSub, setCelebSub] = useState('idle');         // 'idle' | 'react' during celebrate
+  const [nudgeOffset, setNudgeOffset] = useState(0);        // forward reveal-nudge offset (px)
+  const [nudgeDurMs, setNudgeDurMs] = useState(STEP_MS);    // duration of the current nudge animation
   const phaseRef = useRef('idle');
   const reactEndRef = useRef(0); // wall-clock ms when the in-flight reaction ends
 
@@ -257,7 +262,7 @@ export default function ProgressGameBand({
     const canCelebrate = RIGHT_FRAMES > 0 && !!rightSprite?.src;
 
     let cancelled = false;
-    let tStart, tWalk, tEggLay;
+    let tStart, tWalk, tEggLay, tNudge;
 
     const finishWalk = () => {
       if (cancelled) return;
@@ -269,12 +274,21 @@ export default function ProgressGameBand({
         setIdleVariant('happy');                 // ends happy even with no reaction sprite
         phaseRef.current = 'idle'; setPhase('idle');
       } else if (waypoints.includes(completed) && EGGLAY_FRAMES > 0 && eggLaySprite?.src) {
-        // Arrived at a waypoint → lay an egg, then return to idle (happy)
+        // Arrived at a waypoint → lay an egg, then nudge forward to reveal it
         phaseRef.current = 'eggLay'; setPhase('eggLay');
         tEggLay = setTimeout(() => {
           if (cancelled) return;
-          setIdleVariant('happy');
-          phaseRef.current = 'idle'; setPhase('idle');
+          setNudgeDurMs(STEP_MS / 2);
+          setWalkVariant('happy');
+          phaseRef.current = 'walk'; setPhase('walk');
+          setNudgeOffset(REVEAL_NUDGE_PX);
+          playWalking();
+          tNudge = setTimeout(() => {
+            if (cancelled) return;
+            stopWalking();
+            setIdleVariant('happy');
+            phaseRef.current = 'idle'; setPhase('idle');
+          }, STEP_MS / 2);
         }, EGGLAY_MS);
       } else {
         setIdleVariant(variant);
@@ -284,6 +298,8 @@ export default function ProgressGameBand({
 
     const startWalk = () => {
       if (cancelled) return;
+      setNudgeOffset(0);
+      setNudgeDurMs(STEP_MS);
       setWalkVariant(variant);
       phaseRef.current = 'walk'; setPhase('walk');
       playWalking();
@@ -304,7 +320,7 @@ export default function ProgressGameBand({
       tStart = setTimeout(startWalk, remaining);
     }
 
-    return () => { cancelled = true; clearTimeout(tStart); clearTimeout(tWalk); clearTimeout(tEggLay); };
+    return () => { cancelled = true; clearTimeout(tStart); clearTimeout(tWalk); clearTimeout(tEggLay); clearTimeout(tNudge); };
   }, [completed]);
 
   // ── Celebration cycle: happy idle ×2, then right reaction ×1, looping ──────
@@ -511,7 +527,6 @@ export default function ProgressGameBand({
         {eggAsset?.src && EGG_FRAMES > 0 && waypoints.map((m) => {
           if (shownCompleted < m) return null; // not yet laid
           const fx = LEAD_IN + m * STEP_PX + WAYPOINT_OFFSET;
-          const seeded = shownCompleted > m; // already past → no settle animation
           return (
             <div
               key={`egg-${m}`}
@@ -521,8 +536,7 @@ export default function ProgressGameBand({
                 backgroundRepeat: 'no-repeat', imageRendering: 'pixelated',
                 backgroundImage: `url(${eggAsset.src})`,
                 backgroundSize: `${EGG_FRAMES * EW}px ${EW}px`,
-                backgroundPositionX: seeded ? `-${(EGG_FRAMES - 1) * EW}px` : '0',
-                animation: seeded ? 'none' : `${KF_EGG} ${EGG_REVEAL_MS}ms steps(${Math.max(1, EGG_FRAMES - 1)}) forwards`,
+                animation: EGG_FRAMES > 1 ? `${KF_EGG} ${EGG_REVEAL_MS}ms steps(${EGG_FRAMES}) infinite` : 'none',
               }}
             />
           );
@@ -578,7 +592,13 @@ export default function ProgressGameBand({
             transition: `transform ${STEP_MS}ms linear`,
             willChange: 'transform',
           }}>
-            {layers}
+            <motion.div
+              animate={{ x: nudgeOffset }}
+              transition={{ duration: nudgeDurMs / 1000, ease: 'linear' }}
+              style={{ position: 'absolute', inset: 0, willChange: 'transform' }}
+            >
+              {layers}
+            </motion.div>
           </div>
         )}
       </div>
