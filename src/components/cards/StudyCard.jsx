@@ -346,8 +346,8 @@ export default function StudyCard({
   return (
     <div className="mx-auto flex flex-col gap-3 w-full max-w-[700px]">
 
-      {/* ── Top section — constant height whether or not an image is present ── */}
-      <div style={{ width: '100%', aspectRatio: '700 / 526', display: 'flex', flexDirection: 'column', gap: 12, boxSizing: 'border-box' }}>
+      {/* ── Top section — fixed height whether or not an image is present ── */}
+      <div style={{ width: '100%', height: 'clamp(380px, 50vw, 520px)', display: 'flex', flexDirection: 'column', gap: 12, boxSizing: 'border-box', overflow: 'hidden' }}>
         {hasImage && (
           <Pane
             {...paneProps}
