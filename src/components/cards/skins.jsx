@@ -66,7 +66,7 @@ const SWAB = {
   name:     'Swab',
   cell:     32,
   baseline: 31,
-  scale:    1,
+  scale:    2,
   sprites: {
     idle: {
       happy: { src: 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/02953bbd9_Swab-Idle-Happy.png', frames: 10 },
