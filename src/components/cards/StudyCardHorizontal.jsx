@@ -89,6 +89,7 @@ export default function StudyCardHorizontal({
   const isTrueFalse = card.question_type === 'true_false';
   const isSelectAll = card.question_type === 'select_all';
   const isShortAnswer = card.question_type === 'short_answer';
+  const hasImage = !!card.image_url;
   const secondGuessAllowed = true;
 
   const correctAnswers = (card.correct_answers || card.correct_answer || '')
@@ -269,22 +270,22 @@ export default function StudyCardHorizontal({
   // ── Left column: image + question ──────────────────────────────────────────
   const ImageQuestionCol = (
     <Pane {...paneProps} style={{ display: 'flex', flexDirection: 'column', flex: '0 0 48%', minWidth: 0, gap: 8 }}>
-      {/* Image */}
-      <div style={{ width: '100%', aspectRatio: '4/3', overflow: 'hidden', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {card.image_url
-          ? <img src={card.image_url} alt="card" style={{ width: '100%', height: '100%', objectFit: card.image_fit || 'cover', objectPosition: (card.image_fit !== 'contain' && card.image_focal_point) ? `${card.image_focal_point.x}% ${card.image_focal_point.y}%` : 'center' }} />
-          : <span style={{ color: '#9ca3af', fontSize: 13 }}>No image</span>
-        }
-      </div>
+      {/* Image — only when present */}
+      {hasImage && (
+        <div style={{ width: '100%', aspectRatio: '4/3', overflow: 'hidden', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <img src={card.image_url} alt="card" style={{ width: '100%', height: '100%', objectFit: card.image_fit || 'cover', objectPosition: (card.image_fit !== 'contain' && card.image_focal_point) ? `${card.image_focal_point.x}% ${card.image_focal_point.y}%` : 'center' }} />
+        </div>
+      )}
 
-      {/* Question pane */}
+      {/* Question pane — fills the image space when there's no image */}
       <div style={{
-        width: '100%', minHeight: 110,
+        width: '100%',
+        ...(hasImage ? { minHeight: 110, padding: '16px 16px 36px 16px' } : { flex: 1, display: 'flex', alignItems: 'center', padding: '20px 20px 40px 20px' }),
         backgroundColor: hintVisible ? '#EEFF41' : '#DFEDF5',
-        position: 'relative', padding: '16px 16px 36px 16px',
+        position: 'relative',
         boxSizing: 'border-box', transition: 'background-color 0.2s',
       }}>
-        <p style={{ color: '#113656', fontSize: 'clamp(13px, 1.8vw, 20px)', fontWeight: 500, lineHeight: 1.35, margin: 0, visibility: hintVisible ? 'hidden' : 'visible' }}>
+        <p style={{ color: '#113656', fontSize: hasImage ? 'clamp(13px, 1.8vw, 20px)' : 'clamp(20px, 3vw, 36px)', fontWeight: 500, lineHeight: 1.35, margin: 0, visibility: hintVisible ? 'hidden' : 'visible' }}>
           {card.clue || ''}
         </p>
         {hintVisible && note && (

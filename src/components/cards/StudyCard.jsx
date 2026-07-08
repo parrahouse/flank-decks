@@ -111,6 +111,7 @@ export default function StudyCard({
   const isTrueFalse = card.question_type === 'true_false';
   const isSelectAll = card.question_type === 'select_all';
   const isShortAnswer = card.question_type === 'short_answer';
+  const hasImage = !!card.image_url;
   const secondGuessAllowed = true;
 
   const cancelCountdown = () => {
@@ -345,37 +346,37 @@ export default function StudyCard({
   return (
     <div className="mx-auto flex flex-col gap-3 w-full max-w-[700px]">
 
-      {/* ── Card Pane: 4:3 aspect ratio ── */}
-      <Pane
-        {...paneProps}
-        style={{
-          width: '100%',
-          aspectRatio: '700 / 394',
-          overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          backgroundColor: '#f3f4f6',
-        }}
-      >
-        {card.image_url
-          ? <img src={card.image_url} alt="card" style={{ width: '100%', height: '100%', objectFit: card.image_fit || 'cover', objectPosition: (card.image_fit !== 'contain' && card.image_focal_point) ? `${card.image_focal_point.x}% ${card.image_focal_point.y}%` : 'center' }} />
-          : <span style={{ color: '#9ca3af', fontSize: 14 }}>No image</span>
-        }
-      </Pane>
+      {/* ── Card Pane: 4:3 aspect ratio (only when image present) ── */}
+      {hasImage && (
+        <Pane
+          {...paneProps}
+          style={{
+            width: '100%',
+            aspectRatio: '700 / 394',
+            overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            backgroundColor: '#f3f4f6',
+          }}
+        >
+          <img src={card.image_url} alt="card" style={{ width: '100%', height: '100%', objectFit: card.image_fit || 'cover', objectPosition: (card.image_fit !== 'contain' && card.image_focal_point) ? `${card.image_focal_point.x}% ${card.image_focal_point.y}%` : 'center' }} />
+        </Pane>
+      )}
 
-      {/* ── Question Pane ── */}
+      {/* ── Question Pane (fills the image space when there's no image) ── */}
       <Pane
         {...paneProps}
         style={{
           width: '100%',
-          height: 120,
+          ...(hasImage
+            ? { height: 120, padding: '20px 20px 40px 20px' }
+            : { aspectRatio: '700 / 394', display: 'flex', alignItems: 'center', padding: '24px 28px 48px 28px' }),
           backgroundColor: hintVisible ? '#EEFF41' : '#DFEDF5',
           position: 'relative',
-          padding: '20px 20px 40px 20px',
           boxSizing: 'border-box',
           overflow: 'hidden',
           transition: 'background-color 0.2s',
         }}
       >
-        <MathRenderer text={card.clue || ''} className="block" style={{ color: '#113656', fontSize: 'clamp(14px, 2.2vw, 22px)', fontWeight: 500, lineHeight: 1.3, visibility: hintVisible ? 'hidden' : 'visible' }} />
+        <MathRenderer text={card.clue || ''} className="block" style={{ color: '#113656', fontSize: hasImage ? 'clamp(14px, 2.2vw, 22px)' : 'clamp(22px, 4.5vw, 44px)', fontWeight: 500, lineHeight: 1.3, visibility: hintVisible ? 'hidden' : 'visible' }} />
 
         {/* Hint overlay — absolutely positioned so it doesn't affect pane height */}
         {hintVisible && note && (
