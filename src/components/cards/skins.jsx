@@ -90,7 +90,7 @@ const SWAB = {
   },
   marker: {
     src:      'https://media.base44.com/images/public/69fd6153088222f7245f34d6/affd7b4c9_Swab-Waypoint-Marker.png',
-    frames:   18,
+    frames:   19,
     tileW:     32,
     tileH:     75,
     baseline:  74,
