@@ -659,7 +659,7 @@ export default function ProgressGameBand({
             <div
               key={`egg-${m}`}
               style={{
-                position: 'absolute', bottom: EGG_BOTTOM, left: 0, width: EW, height: EW,
+                position: 'absolute', zIndex: 1, bottom: EGG_BOTTOM, left: 0, width: EW, height: EW,
                 transform: `translateX(${fx}px)`,
                 backgroundRepeat: 'no-repeat', imageRendering: 'pixelated',
                 backgroundImage: `url(${eggAsset.src})`,
