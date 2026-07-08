@@ -86,14 +86,14 @@ const SWAB = {
     src:      'https://media.base44.com/images/public/69fd6153088222f7245f34d6/9d9672e00_Swab-Waypoint-Ready.png',
     frames:    6,
     cell:      32,
-    baseline:  31,
+    baseline:  32,
   },
   marker: {
     src:      'https://media.base44.com/images/public/69fd6153088222f7245f34d6/affd7b4c9_Swab-Waypoint-Marker.png',
     frames:   19,
     tileW:     32,
     tileH:     75,
-    baseline:  74,
+    baseline:  75,
   },
   ground: {
     src:   'https://media.base44.com/images/public/69fd6153088222f7245f34d6/463335540_Ground-1.png',
