@@ -246,7 +246,7 @@ export default function ProgressGameBand({
 @keyframes ${KF_MARKER} { from { background-position-x: 0 } to { background-position-x: -${Math.max(0, MARKER_FRAMES - 1) * MW}px } }
 `;
 
-  const { playWalking, stopWalking } = useSound(soundEnabled);
+  const { playWalking, stopWalking, playEggLay } = useSound(soundEnabled);
 
   const bandRef  = useRef(null);
   const [bandW, setBandW] = useState(0);
@@ -369,6 +369,7 @@ export default function ProgressGameBand({
         // Arrived at a waypoint → lay an egg, then nudge forward to reveal it
         stopWalking();
         phaseRef.current = 'eggLay'; setPhase('eggLay');
+        playEggLay();   // one of three lay sounds, at random
         tEggLay = setTimeout(() => {
           if (cancelled) return;
           setNudgeDurMs(STEP_MS / 2);

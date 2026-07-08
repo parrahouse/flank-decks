@@ -2,6 +2,13 @@ import { useCallback, useRef } from 'react';
 
 const FOOTSTEP_URL = 'https://media.base44.com/files/public/69fd6153088222f7245f34d6/a36755b43_digital_footstep_grass_1.wav';
 
+// Egg-laying sound pool — one clip is chosen at random each time an egg is laid.
+const EGGLAY_SOUND_URLS = [
+  'https://media.base44.com/files/public/69fd6153088222f7245f34d6/c1d6fcd0c_goo3.wav',
+  'https://media.base44.com/files/public/69fd6153088222f7245f34d6/cc8375b42_goo6.wav',
+  'https://media.base44.com/files/public/69fd6153088222f7245f34d6/79d51455e_squelching_4.wav',
+];
+
 function createAudioContext() {
   return new (window.AudioContext || window.webkitAudioContext)();
 }
@@ -22,6 +29,7 @@ function playTone(frequency, type, gainVal, duration) {
 
 export function useSound(enabled = true) {
   const footstepRef = useRef(null);
+  const eggLayPoolRef = useRef(null);
 
   const playCorrect = useCallback(() => {
     if (!enabled) return;
@@ -54,5 +62,23 @@ export function useSound(enabled = true) {
     }
   }, []);
 
-  return { playCorrect, playWrong, playWalking, stopWalking };
+  const playEggLay = useCallback(() => {
+    if (!enabled) return;
+    // Lazily build & cache the three Audio clips on first use.
+    if (!eggLayPoolRef.current) {
+      eggLayPoolRef.current = EGGLAY_SOUND_URLS
+        .map((url) => {
+          const a = new Audio(url);
+          a.volume = 0.6;
+          return a;
+        });
+    }
+    const pool = eggLayPoolRef.current;
+    if (!pool.length) return;
+    const clip = pool[Math.floor(Math.random() * pool.length)];
+    try { clip.currentTime = 0; } catch (e) {}   // rewind so it can re-trigger
+    clip.play().catch(() => {});
+  }, [enabled]);
+
+  return { playCorrect, playWrong, playWalking, stopWalking, playEggLay };
 }
