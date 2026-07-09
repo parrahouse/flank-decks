@@ -12,6 +12,7 @@ import ProgressGameBand from '@/components/cards/ProgressGameBand';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { useSavedSession } from '@/hooks/useSavedSession';
+import { useSound } from '@/hooks/useSound';
 
 const INTRO_REVEAL_MS = 700;
 const INTRO_STAGGER_MS = 0.18; // seconds, for framer-motion staggerChildren
@@ -89,12 +90,24 @@ export default function StudySession() {
   const [wrongTick, setWrongTick] = useState(0); // increments each time a wrong answer is picked
   const [showExitWarning, setShowExitWarning] = useState(false);
   const pendingExitRef = useRef(null); // stores the path to navigate to after exit decision
+  const { playLevelStart } = useSound(soundEnabled);
+  const [questionReady, setQuestionReady] = useState(false);
+  const levelStartTimerRef = useRef(null);
+  // Play the level-start fanfare and hold the first question inactive for 3s so the track can finish
+  const beginIntro = () => {
+    setQuestionReady(false);
+    playLevelStart();
+    clearTimeout(levelStartTimerRef.current);
+    levelStartTimerRef.current = setTimeout(() => setQuestionReady(true), 3000);
+  };
 
   useEffect(() => {
     const onResize = () => setIsWide(window.innerWidth >= 900);
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
+
+  useEffect(() => () => clearTimeout(levelStartTimerRef.current), []);
 
   const { data: deck } = useQuery({
     queryKey: ['deck', deckId],
@@ -182,6 +195,7 @@ export default function StudySession() {
 
   const startSession = (mode) => {
     clearSession(); // discard any saved session on fresh start
+    beginIntro();
     const pool = mode === 'unmastered' ? unmasteredCards : mode === 'bookmarked' ? bookmarkedCards : activeCards;
     setShuffledCards(shuffle(pool));
     setCardIndex(0);
@@ -203,6 +217,7 @@ export default function StudySession() {
     const cardMap = Object.fromEntries(activeCards.map((c) => [c.id, c]));
     const ordered = savedSession.card_ids.map((id) => cardMap[id]).filter(Boolean);
     if (!ordered.length) return;
+    beginIntro();
     setShuffledCards(ordered);
     setCardIndex(savedSession.card_index || 0);
     setScores(savedSession.scores || []);
@@ -1010,7 +1025,7 @@ export default function StudySession() {
 
       (() => {
         const useHorizontal = layoutMode === 'horizontal' || layoutMode === 'auto' && isWide;
-        const introReady = introPhase === 'ready';
+        const introReady = questionReady;
         const sharedProps = {
           key: `${current.id}-${cardIndex}`,
           card: current, deck,

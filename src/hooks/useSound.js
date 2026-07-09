@@ -2,6 +2,9 @@ import { useCallback, useRef } from 'react';
 
 const FOOTSTEP_URL = 'https://media.base44.com/files/public/69fd6153088222f7245f34d6/a36755b43_digital_footstep_grass_1.wav';
 
+// Level-start fanfare — plays once when a study session begins
+const LEVEL_START_URL = 'https://media.base44.com/files/public/69fd6153088222f7245f34d6/f04826f84_xylophone_level_start.wav';
+
 // Egg-laying sound pool — one clip is chosen at random each time an egg is laid.
 const EGGLAY_SOUND_URLS = [
   'https://media.base44.com/files/public/69fd6153088222f7245f34d6/c1d6fcd0c_goo3.wav',
@@ -30,6 +33,7 @@ function playTone(frequency, type, gainVal, duration) {
 export function useSound(enabled = true) {
   const footstepRef = useRef(null);
   const eggLayPoolRef = useRef(null);
+  const levelStartRef = useRef(null);
 
   const playCorrect = useCallback(() => {
     if (!enabled) return;
@@ -80,5 +84,15 @@ export function useSound(enabled = true) {
     clip.play().catch(() => {});
   }, [enabled]);
 
-  return { playCorrect, playWrong, playWalking, stopWalking, playEggLay };
+  const playLevelStart = useCallback(() => {
+    if (!enabled) return;
+    if (!levelStartRef.current) {
+      levelStartRef.current = new Audio(LEVEL_START_URL);
+      levelStartRef.current.volume = 0.7;
+    }
+    try { levelStartRef.current.currentTime = 0; } catch (e) {}
+    levelStartRef.current.play().catch(() => {});
+  }, [enabled]);
+
+  return { playCorrect, playWrong, playWalking, stopWalking, playEggLay, playLevelStart };
 }
