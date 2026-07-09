@@ -13,8 +13,8 @@ import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { useSavedSession } from '@/hooks/useSavedSession';
 
-const INTRO_REVEAL_MS     = 700;
-const INTRO_STAGGER_MS    = 0.18; // seconds, for framer-motion staggerChildren
+const INTRO_REVEAL_MS = 700;
+const INTRO_STAGGER_MS = 0.18; // seconds, for framer-motion staggerChildren
 const AVATAR_ENTRY_DELAY_MS = 300; // wait for band container to appear before walking in
 
 function shuffle(arr) {
@@ -153,8 +153,8 @@ export default function StudySession() {
 
   // Learning mode: auto-enabled until the deck has been completed fully (no skips) at least once
   const hasCompletedFullSession = pastSessions.some((s) =>
-    (s.card_results || []).length > 0 &&
-    (s.card_results || []).every((r) => r.key && r.key !== 'skipped')
+  (s.card_results || []).length > 0 &&
+  (s.card_results || []).every((r) => r.key && r.key !== 'skipped')
   );
   const learningMode = learningModeOverride !== null ? learningModeOverride : !hasCompletedFullSession;
 
@@ -200,8 +200,8 @@ export default function StudySession() {
   const resumeSession = () => {
     if (!savedSession || !activeCards.length) return;
     // Reconstruct card order from saved card_ids
-    const cardMap = Object.fromEntries(activeCards.map(c => [c.id, c]));
-    const ordered = savedSession.card_ids.map(id => cardMap[id]).filter(Boolean);
+    const cardMap = Object.fromEntries(activeCards.map((c) => [c.id, c]));
+    const ordered = savedSession.card_ids.map((id) => cardMap[id]).filter(Boolean);
     if (!ordered.length) return;
     setShuffledCards(ordered);
     setCardIndex(savedSession.card_index || 0);
@@ -259,9 +259,9 @@ export default function StudySession() {
 
 
 
+
           // already studied today, no change
-        } else if (last === yesterday) {newStreak = streak.current_streak + 1;} else {newStreak = 1;
-        }
+        } else if (last === yesterday) {newStreak = streak.current_streak + 1;} else {newStreak = 1;}
         const newLongest = Math.max(streak.longest_streak || 0, newStreak);
         const newMilestone = [3, 7, 14, 30, 60, 100].filter((m) => newStreak >= m).pop() || 0;
         await base44.entities.Streak.update(streak.id, {
@@ -372,11 +372,11 @@ export default function StudySession() {
 
   const handleExitSave = async () => {
     await saveSession({
-      cardIds: shuffledCards.map(c => c.id),
+      cardIds: shuffledCards.map((c) => c.id),
       cardIndex,
       scores,
       firstWrongChoices,
-      filterMode,
+      filterMode
     });
     setShowExitWarning(false);
     navigate(pendingExitRef.current || `/deck/${deckId}`);
@@ -428,9 +428,9 @@ export default function StudySession() {
   const totalPoints = scores.reduce((s, r) => s + (r?.points || 0), 0);
   const maxPoints = shuffledCards.reduce((s, c) => s + (c.point_value ?? 20), 0);
   const pct = maxPoints > 0 ? Math.round(totalPoints / maxPoints * 100) : 0;
-  const highScore = pastSessions.length > 0
-    ? Math.max(...pastSessions.map((s) => s.total_points || 0))
-    : 0;
+  const highScore = pastSessions.length > 0 ?
+  Math.max(...pastSessions.map((s) => s.total_points || 0)) :
+  0;
   const current = shuffledCards[cardIndex];
 
   // Filter selection screen
@@ -448,8 +448,8 @@ export default function StudySession() {
         </div>
 
         {/* Resume banner */}
-        {savedSession && (
-          <div className="mb-6 border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 rounded-xl p-4 flex items-start gap-3">
+        {savedSession &&
+        <div className="mb-6 border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 rounded-xl p-4 flex items-start gap-3">
             <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">You have a saved session</p>
@@ -463,7 +463,7 @@ export default function StudySession() {
               </Button>
             </div>
           </div>
-        )}
+        }
 
         <div className="flex flex-col items-center gap-6 py-8">
           <div className="w-14 h-14 rounded-2xl bg-accent flex items-center justify-center">
@@ -643,21 +643,21 @@ export default function StudySession() {
                 <p className="text-xs text-muted-foreground">How cards are displayed during study</p>
               </div>
               <div className="flex gap-1 ml-4">
-                {['auto', 'vertical', 'horizontal'].map((mode) => (
-                  <button
-                    key={mode}
-                    onClick={() => {
-                      setLayoutMode(mode);
-                      localStorage.setItem('flashdeck_layout', mode);
-                    }}
-                    className={cn(
-                      'px-2.5 py-1 rounded text-xs font-medium border transition-colors',
-                      layoutMode === mode ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground'
-                    )}
-                  >
+                {['auto', 'vertical', 'horizontal'].map((mode) =>
+                <button
+                  key={mode}
+                  onClick={() => {
+                    setLayoutMode(mode);
+                    localStorage.setItem('flashdeck_layout', mode);
+                  }}
+                  className={cn(
+                    'px-2.5 py-1 rounded text-xs font-medium border transition-colors',
+                    layoutMode === mode ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground'
+                  )}>
+                  
                     {mode.charAt(0).toUpperCase() + mode.slice(1)}
                   </button>
-                ))}
+                )}
               </div>
             </div>
 
@@ -668,21 +668,21 @@ export default function StudySession() {
                 <p className="text-xs text-muted-foreground">Which side the image appears on (horizontal layout only)</p>
               </div>
               <div className="flex gap-1 ml-4">
-                {[{ value: 'left', label: 'Left' }, { value: 'right', label: 'Right' }].map(({ value, label }) => (
-                  <button
-                    key={value}
-                    onClick={() => {
-                      setHandedness(value);
-                      localStorage.setItem('flashdeck_handedness', value);
-                    }}
-                    className={cn(
-                      'px-2.5 py-1 rounded text-xs font-medium border transition-colors',
-                      handedness === value ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground'
-                    )}
-                  >
+                {[{ value: 'left', label: 'Left' }, { value: 'right', label: 'Right' }].map(({ value, label }) =>
+                <button
+                  key={value}
+                  onClick={() => {
+                    setHandedness(value);
+                    localStorage.setItem('flashdeck_handedness', value);
+                  }}
+                  className={cn(
+                    'px-2.5 py-1 rounded text-xs font-medium border transition-colors',
+                    handedness === value ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground'
+                  )}>
+                  
                     {label}
                   </button>
-                ))}
+                )}
               </div>
             </div>
 
@@ -696,8 +696,8 @@ export default function StudySession() {
                   setSavingDefaults(false);
                 }}
                 className="text-xs text-primary hover:underline disabled:opacity-50"
-                disabled={savingDefaults}
-              >
+                disabled={savingDefaults}>
+                
                 {savingDefaults ? 'Saving…' : 'Save as my default'}
               </button>
             </div>
@@ -708,14 +708,14 @@ export default function StudySession() {
   }
 
   // ── Restart warning — inline overlay inside the game pane ────────────────
-  const RestartWarningOverlay = showRestartWarning ? (
-    <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg">
+  const RestartWarningOverlay = showRestartWarning ?
+  <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg">
       <div className="flex flex-col items-center gap-4 px-6 py-7 text-center max-w-xs">
         <img
-          src="https://media.base44.com/images/public/69fd6153088222f7245f34d6/19a696596_Reset-Up.png"
-          alt="Reset"
-          style={{ width: 32, height: 32, imageRendering: 'pixelated' }}
-        />
+        src="https://media.base44.com/images/public/69fd6153088222f7245f34d6/19a696596_Reset-Up.png"
+        alt="Reset"
+        style={{ width: 32, height: 32, imageRendering: 'pixelated' }} />
+      
         <p className="pixel-ui text-foreground leading-snug" style={{ fontSize: 11 }}>
           RESTART SESSION?
         </p>
@@ -724,33 +724,33 @@ export default function StudySession() {
         </p>
         <div className="flex gap-3 mt-1">
           <button
-            onClick={doRestart}
-            className="pixel-ui px-4 py-2 bg-destructive text-destructive-foreground border-2 border-destructive hover:opacity-90 transition-opacity"
-            style={{ fontSize: 9 }}
-          >
+          onClick={doRestart}
+          className="pixel-ui px-4 py-2 bg-destructive text-destructive-foreground border-2 border-destructive hover:opacity-90 transition-opacity"
+          style={{ fontSize: 9 }}>
+          
             RESTART
           </button>
           <button
-            onClick={() => setShowRestartWarning(false)}
-            className="pixel-ui px-4 py-2 border-2 border-border text-foreground hover:bg-muted transition-colors"
-            style={{ fontSize: 9 }}
-          >
+          onClick={() => setShowRestartWarning(false)}
+          className="pixel-ui px-4 py-2 border-2 border-border text-foreground hover:bg-muted transition-colors"
+          style={{ fontSize: 9 }}>
+          
             KEEP GOING
           </button>
         </div>
       </div>
-    </div>
-  ) : null;
+    </div> :
+  null;
 
   // ── Exit warning — inline overlay inside the game pane ───────────────────
-  const ExitWarningOverlay = showExitWarning ? (
-    <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg">
+  const ExitWarningOverlay = showExitWarning ?
+  <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg">
       <div className="flex flex-col items-center gap-4 px-6 py-7 text-center max-w-xs">
         <img
-          src="https://media.base44.com/images/public/69fd6153088222f7245f34d6/06551a213_Interface-Essential-Signin-Login--Streamline-Pixel.png"
-          alt="Exit"
-          style={{ width: 32, height: 32, imageRendering: 'pixelated' }}
-        />
+        src="https://media.base44.com/images/public/69fd6153088222f7245f34d6/06551a213_Interface-Essential-Signin-Login--Streamline-Pixel.png"
+        alt="Exit"
+        style={{ width: 32, height: 32, imageRendering: 'pixelated' }} />
+      
         <p className="pixel-ui text-foreground leading-snug" style={{ fontSize: 11 }}>
           LEAVE SESSION?
         </p>
@@ -759,30 +759,30 @@ export default function StudySession() {
         </p>
         <div className="flex flex-col gap-2 w-full mt-1">
           <button
-            onClick={handleExitSave}
-            className="pixel-ui px-4 py-2 bg-primary text-primary-foreground border-2 border-primary hover:opacity-90 transition-opacity w-full"
-            style={{ fontSize: 9 }}
-          >
+          onClick={handleExitSave}
+          className="pixel-ui px-4 py-2 bg-primary text-primary-foreground border-2 border-primary hover:opacity-90 transition-opacity w-full"
+          style={{ fontSize: 9 }}>
+          
             SAVE &amp; EXIT
           </button>
           <button
-            onClick={handleExitDiscard}
-            className="pixel-ui px-4 py-2 border-2 border-destructive text-destructive hover:bg-destructive/10 transition-colors w-full"
-            style={{ fontSize: 9 }}
-          >
+          onClick={handleExitDiscard}
+          className="pixel-ui px-4 py-2 border-2 border-destructive text-destructive hover:bg-destructive/10 transition-colors w-full"
+          style={{ fontSize: 9 }}>
+          
             DISCARD &amp; EXIT
           </button>
           <button
-            onClick={() => setShowExitWarning(false)}
-            className="pixel-ui px-4 py-2 border-2 border-border text-foreground hover:bg-muted transition-colors w-full"
-            style={{ fontSize: 9 }}
-          >
+          onClick={() => setShowExitWarning(false)}
+          className="pixel-ui px-4 py-2 border-2 border-border text-foreground hover:bg-muted transition-colors w-full"
+          style={{ fontSize: 9 }}>
+          
             KEEP GOING
           </button>
         </div>
       </div>
-    </div>
-  ) : null;
+    </div> :
+  null;
 
   const useHorizontal = layoutMode === 'horizontal' || layoutMode === 'auto' && isWide;
 
@@ -793,34 +793,34 @@ export default function StudySession() {
         className="relative mb-1"
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25, ease: 'easeOut' }}
-      >
+        transition={{ duration: 0.25, ease: 'easeOut' }}>
+        
         {/* Background scene — only during active study */}
-        {!done && filterChosen && (
-          <ProgressGameBand
-            cardIndex={cardIndex}
-            total={shuffledCards.length}
-            scores={scores}
-            correctStreak={correctStreak}
-            soundEnabled={soundEnabled}
-            entering={introPhase === 'intro'}
-            wrongTick={wrongTick}
-            onEntryComplete={() => setTimeout(() => setIntroPhase('ready'), 0)}
-          />
-        )}
+        {!done && filterChosen &&
+        <ProgressGameBand
+          cardIndex={cardIndex}
+          total={shuffledCards.length}
+          scores={scores}
+          correctStreak={correctStreak}
+          soundEnabled={soundEnabled}
+          entering={introPhase === 'intro'}
+          wrongTick={wrongTick}
+          onEntryComplete={() => setTimeout(() => setIntroPhase('ready'), 0)} />
+
+        }
 
         {/* Controls layer — paints on top of the scene */}
-        <div className="relative z-10 flex items-center gap-1 px-3 py-2">
+        <div className="relative z-10 flex items-center gap-1 px-3 py-5">
           <button
             onClick={() => requestExit(`/deck/${deckId}`)}
             className="text-muted-foreground hover:text-foreground transition-colors"
-            title="Quit"
-          >
+            title="Quit">
+            
             <img
               src="https://media.base44.com/images/public/69fd6153088222f7245f34d6/06551a213_Interface-Essential-Signin-Login--Streamline-Pixel.png"
               alt="Quit"
-              style={{ width: 16, height: 16, imageRendering: 'pixelated' }}
-            />
+              style={{ width: 16, height: 16, imageRendering: 'pixelated' }} />
+            
           </button>
           <div className="flex-1">
             <h1 style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: 26, lineHeight: 1 }}>{deck?.title}</h1>
@@ -833,11 +833,11 @@ export default function StudySession() {
             <span className="text-foreground" style={{ fontSize: 20, lineHeight: 1 }}>
               <span style={{ fontSize: 13 }}>Score:</span> {totalPoints.toFixed(2)}
             </span>
-            {highScore > 0 && (
-              <span className="text-muted-foreground" style={{ fontSize: 20, lineHeight: 1 }}>
+            {highScore > 0 &&
+            <span className="text-muted-foreground" style={{ fontSize: 20, lineHeight: 1 }}>
                 <span style={{ fontSize: 13 }}>Top Score:</span> {highScore.toFixed(2)}
               </span>
-            )}
+            }
           </div>
           <button
             onClick={() => {
@@ -849,26 +849,26 @@ export default function StudySession() {
             className="flex items-center gap-1.5 px-2 py-1.5 rounded-md transition-colors outline-none">
             <img
               key={soundEnabled ? 'on' : 'off'}
-              src={soundEnabled
-                ? 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/55db65aba_Sound-On.gif'
-                : 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/737afdac2_Sound-Off.gif'}
+              src={soundEnabled ?
+              'https://media.base44.com/images/public/69fd6153088222f7245f34d6/55db65aba_Sound-On.gif' :
+              'https://media.base44.com/images/public/69fd6153088222f7245f34d6/737afdac2_Sound-Off.gif'}
               alt={soundEnabled ? 'Sound on' : 'Sound off'}
-              style={{ width: 24, height: 24, imageRendering: 'pixelated' }}
-            />
+              style={{ width: 24, height: 24, imageRendering: 'pixelated' }} />
+            
           </button>
 
           <button
             onPointerDown={() => setRestartPressed(true)}
-            onPointerUp={() => { setRestartPressed(false); restart(); }}
+            onPointerUp={() => {setRestartPressed(false);restart();}}
             onPointerLeave={() => setRestartPressed(false)}
             className="flex items-center px-2 py-1.5 rounded-md outline-none transition-colors select-none">
             <img
-              src={restartPressed
-                ? 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/3c073a7e4_Reset-Dan.png'
-                : 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/19a696596_Reset-Up.png'}
+              src={restartPressed ?
+              'https://media.base44.com/images/public/69fd6153088222f7245f34d6/3c073a7e4_Reset-Dan.png' :
+              'https://media.base44.com/images/public/69fd6153088222f7245f34d6/19a696596_Reset-Up.png'}
               alt="Restart"
-              style={{ width: 24, height: 24, imageRendering: 'pixelated' }}
-            />
+              style={{ width: 24, height: 24, imageRendering: 'pixelated' }} />
+            
           </button>
         </div>
 
@@ -1003,10 +1003,10 @@ export default function StudySession() {
         </div> :
       contactSheetOpen ?
       <div className="mt-4"><ContactSheet
-        cards={shuffledCards}
-        scores={scores}
-        cardIndex={cardIndex}
-        onJump={(i) => {setCardIndex(i);setContactSheetOpen(false);}} /></div> :
+          cards={shuffledCards}
+          scores={scores}
+          cardIndex={cardIndex}
+          onJump={(i) => {setCardIndex(i);setContactSheetOpen(false);}} /></div> :
 
       (() => {
         const useHorizontal = layoutMode === 'horizontal' || layoutMode === 'auto' && isWide;
@@ -1028,16 +1028,16 @@ export default function StudySession() {
           isBookmarked: !!current.bookmarked,
           onToggleBookmark: handleToggleBookmark,
           onFirstWrong: handleFirstWrong,
-          introReady,
+          introReady
         };
 
         const childVariant = {
           hidden: { opacity: 0, y: 14 },
-          visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: 'easeOut' } },
+          visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: 'easeOut' } }
         };
         const containerVariant = {
           hidden: {},
-          visible: { transition: { staggerChildren: INTRO_STAGGER_MS } },
+          visible: { transition: { staggerChildren: INTRO_STAGGER_MS } }
         };
 
         return (
@@ -1045,16 +1045,16 @@ export default function StudySession() {
             className="relative bg-card border border-border rounded-lg p-4 mt-4"
             variants={containerVariant}
             initial="hidden"
-            animate="visible"
-          >
+            animate="visible">
+            
             {RestartWarningOverlay}
             {ExitWarningOverlay}
-            {useHorizontal
-              ? <StudyCardHorizontal {...sharedProps} handedness={handedness} childVariant={childVariant} />
-              : <StudyCard {...sharedProps} hintsAllowed={hintsAllowed} childVariant={childVariant} />
+            {useHorizontal ?
+            <StudyCardHorizontal {...sharedProps} handedness={handedness} childVariant={childVariant} /> :
+            <StudyCard {...sharedProps} hintsAllowed={hintsAllowed} childVariant={childVariant} />
             }
-          </motion.div>
-        );
+          </motion.div>);
+
       })()}
 
 
