@@ -838,13 +838,13 @@ export default function StudySession() {
             
           </button>
           <div className="flex-1">
-            <h1 style={{ fontFamily: "'Jersey 15', sans-serif", fontSize: 26, lineHeight: 1 }}>{deck?.title}</h1>
+            <h1 style={{ fontFamily: "'Geist Pixel', sans-serif", fontSize: 26, lineHeight: 1 }}>{deck?.title}</h1>
             <p className="text-xs text-muted-foreground mt-1">
               {filterMode === 'unmastered' && <span className="text-amber-600">Unmastered only</span>}
               {filterMode === 'bookmarked' && <span className="text-amber-600">Bookmarked only</span>}
             </p>
           </div>
-          <div className="flex items-baseline gap-3 select-none px-1" style={{ fontFamily: "'Jersey 15', sans-serif" }}>
+          <div className="flex items-baseline gap-3 select-none px-1" style={{ fontFamily: "'Geist Pixel', sans-serif" }}>
             <span className="text-foreground" style={{ fontSize: 20, lineHeight: 1 }}>
               <span style={{ fontSize: 13 }}>Score:</span> {totalPoints.toFixed(2)}
             </span>
