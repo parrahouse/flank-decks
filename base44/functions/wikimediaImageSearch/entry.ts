@@ -21,8 +21,17 @@ Deno.serve(async (req) => {
     origin: '*',
   });
 
-  const response = await fetch(`https://commons.wikimedia.org/w/api.php?${params}`);
-  const data = await response.json();
+  const response = await fetch(`https://commons.wikimedia.org/w/api.php?${params}`, {
+    headers: {
+      'User-Agent': 'SwabbieStudyApp/1.0 (educational flashcard app; contact: support@example.com)',
+      'Accept': 'application/json',
+    },
+  });
+  if (!response.ok) return Response.json({ images: [] });
+  const text = await response.text();
+  let data;
+  try { data = JSON.parse(text); }
+  catch { return Response.json({ images: [] }); }
 
   const pages = data?.query?.pages || {};
   const images = Object.values(pages)
