@@ -810,7 +810,7 @@ export default function StudySession() {
         }
 
         {/* Controls layer — paints on top of the scene */}
-        <div className="relative z-10 flex items-center gap-1 px-3 py-5">
+        <div className="relative z-10 flex items-center gap-1 px-3">
           <button
             onClick={() => requestExit(`/deck/${deckId}`)}
             className="text-muted-foreground hover:text-foreground transition-colors"
