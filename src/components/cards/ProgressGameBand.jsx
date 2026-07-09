@@ -409,10 +409,22 @@ export default function ProgressGameBand({
       reactEndRef.current = Date.now() + RIGHT_DUR;
       tStart = setTimeout(startWalk, RIGHT_DUR);
     } else {
-      // Wrong key (no right reaction): walk after any in-flight reaction ends,
-      // so a simultaneous wrongTick reaction (e.g. true/false) plays first.
+      // Wrong commit. Two cases:
+      //  • A wrong reaction is already in flight (flinch + commit on the same tick,
+      //    e.g. eliminate-path or true/false first wrong) → chain the sad walk after
+      //    it, exactly as before. Don't fire a second reaction.
+      //  • Nothing in flight → this is a wrong SECOND GUESS, whose first-wrong flinch
+      //    already finished. Fire a fresh wrong reaction now, then sad-walk after it.
       const remaining = Math.max(0, reactEndRef.current - Date.now());
-      tStart = setTimeout(startWalk, remaining);
+      const canReactWrong = WRONG_FRAMES > 0 && !!wrongSprite?.src;
+      if (remaining > 0 || !canReactWrong) {
+        tStart = setTimeout(startWalk, remaining);
+      } else {
+        setReactKey((k) => k + 1);
+        phaseRef.current = 'reactWrong'; setPhase('reactWrong');
+        reactEndRef.current = Date.now() + WRONG_DUR;
+        tStart = setTimeout(startWalk, WRONG_DUR);
+      }
     }
 
     return () => { cancelled = true; clearTimeout(tStart); clearTimeout(tWalk); clearTimeout(tEggLay); clearTimeout(tNudge); };
