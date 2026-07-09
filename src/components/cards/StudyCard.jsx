@@ -12,6 +12,7 @@ import {
   GraduationCap,
   MessageCircleQuestion,
   Check,
+  X,
 } from 'lucide-react';
 import CardNoteEditor from './CardNoteEditor';
 import ShortAnswerInput from './ShortAnswerInput';
@@ -323,7 +324,7 @@ export default function StudyCard({
     if (state === 'correct' || state === 'reveal-correct') return '#00A842';
     if (state === 'wrong-final') return '#dc2626';
     if (state === 'first-wrong') return '#f97316';
-    if (state === 'missed-correct') return '#d97706';
+    if (state === 'missed-correct') return '#0165fc';
     if (state === 'eliminated') return '#ccc';
     if (state === 'selected-pending') return '#0165fc';
     return '#000';
@@ -333,7 +334,7 @@ export default function StudyCard({
     if (state === 'correct' || state === 'reveal-correct') return '#f0fdf4';
     if (state === 'wrong-final') return '#fef2f2';
     if (state === 'first-wrong') return '#fff7ed';
-    if (state === 'missed-correct') return '#fffbeb';
+    if (state === 'missed-correct') return '#eff6ff';
     if (state === 'eliminated') return '#f5f5f5';
     if (state === 'selected-pending') return '#eff6ff';
     return '#fff';
@@ -548,7 +549,7 @@ export default function StudyCard({
                           width: 28, height: 28, borderRadius: 5, flexShrink: 0,
                           backgroundColor:
                             state === 'correct' ? '#00A842' :
-                            state === 'missed-correct' ? '#d97706' :
+                            state === 'missed-correct' ? '#0165fc' :
                             state === 'selected-pending' ? '#0165fc' :
                             '#000',
                           color: '#fff',
@@ -557,7 +558,9 @@ export default function StudyCard({
                         }}>
                           {state === 'correct' || state === 'missed-correct' || state === 'selected-pending'
                             ? <Check style={{ width: 14, height: 14 }} />
-                            : LETTERS[idx]}
+                            : (isSelectAll && state === 'first-wrong')
+                              ? <X style={{ width: 14, height: 14 }} />
+                              : LETTERS[idx]}
                         </span>
                         <MathRenderer text={choice} className="flex-1" style={{ lineHeight: 1.3 }} />
                       </button>
