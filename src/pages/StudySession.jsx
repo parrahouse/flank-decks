@@ -845,14 +845,8 @@ export default function StudySession() {
             </p>
           </div>
           <div className="flex items-baseline gap-3 select-none px-1" style={{ fontFamily: "'VT323', monospace" }}>
-            <span className="text-foreground" style={{ fontSize: 20, lineHeight: 1 }}>
-              <span style={{ fontSize: 13 }}>Score:</span> {totalPoints.toFixed(2)}
-            </span>
-            {highScore > 0 &&
-            <span className="text-muted-foreground" style={{ fontSize: 20, lineHeight: 1 }}>
-                <span style={{ fontSize: 13 }}>Top Score:</span> {highScore.toFixed(2)}
-              </span>
-            }
+            <span className="text-foreground uppercase" style={{ fontSize: 20, lineHeight: 1 }}>Score: {totalPoints.toFixed(2)}</span>
+            <span className="text-muted-foreground uppercase" style={{ fontSize: 20, lineHeight: 1 }}>Top Score: {highScore > 0 ? highScore.toFixed(2) : '--'}</span>
           </div>
           <button
             onClick={() => {
