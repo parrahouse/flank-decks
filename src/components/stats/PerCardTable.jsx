@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { ChevronUp, ChevronDown } from 'lucide-react';
+import { cardLabel } from '@/lib/utils';
 import { formatClockMs, formatSpan } from '@/lib/statsUtils';
 
 const COLUMNS = [
@@ -18,7 +19,7 @@ const COLUMNS = [
 
 function sortValue(row, key) {
   switch (key) {
-    case 'card': return (row.card.correct_answer || row.card.canonical_answer || '').toLowerCase();
+    case 'card': return cardLabel(row.card).toLowerCase();
     case 'type': return row.card.question_type || '';
     case 'accuracy': return row.accuracy == null ? Infinity : row.accuracy;
     case 'attempts': return row.attempts || 0;
@@ -90,7 +91,7 @@ export default function PerCardTable({ cardRows }) {
                   <td className="px-3 py-2">
                     <div className="flex items-center gap-2">
                       {r.card.image_url && <img src={r.card.image_url} alt="" className="w-8 h-8 rounded object-cover shrink-0" />}
-                      <span className="font-medium truncate max-w-[180px]">{r.card.correct_answer || r.card.canonical_answer || 'Untitled'}</span>
+                      <span className="font-medium truncate max-w-[180px]">{cardLabel(r.card)}</span>
                     </div>
                   </td>
                   <td className="px-3 py-2 text-muted-foreground capitalize">{(r.card.question_type || 'multiple_choice').replace('_', ' ')}</td>

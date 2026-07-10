@@ -194,7 +194,7 @@ Return:
       deck_id: deckId,
       order: activeCards.length,
       correct_answers: isShortAnswer ? answer.trim() : correctList.join('|'),
-      correct_answer: correctList[0],
+      correct_answer: correctList[0] || answer.trim(),
       choices,
       question_type: qType,
       clue: question.trim(),

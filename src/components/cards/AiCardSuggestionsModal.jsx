@@ -77,6 +77,7 @@ Do NOT duplicate any concept already in the list above.`,
       .filter((_, i) => selected.has(i))
       .map(s => ({
         correct_answers: s.correct_answer,
+        correct_answer: s.correct_answer,
         question_type: 'multiple_choice',
         choices: [s.correct_answer, ...(s.distractors || []).slice(0, 3)].sort(() => Math.random() - 0.5),
         clue: s.clue || '',

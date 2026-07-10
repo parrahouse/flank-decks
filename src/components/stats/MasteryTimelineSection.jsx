@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { cardLabel } from '@/lib/utils';
 import { formatShortDate, formatSpan, formatDuration } from '@/lib/statsUtils';
 
 const AXIS = { fontSize: 10, fill: 'hsl(var(--muted-foreground))' };
@@ -12,7 +13,7 @@ function MasteryTile({ label, card, spanMs, attempts, studyMs }) {
       {card ? (
         <div className="mt-1 space-y-1">
           {card.image_url && <img src={card.image_url} alt="" className="w-8 h-8 rounded object-cover" />}
-          <div className="text-sm font-semibold truncate">{card.correct_answer || card.canonical_answer || 'Untitled'}</div>
+          <div className="text-sm font-semibold truncate">{cardLabel(card)}</div>
           <div className="text-sm font-bold text-success">{formatSpan(spanMs)}</div>
           <div className="text-[11px] text-muted-foreground space-y-0.5">
             <div>{attempts != null ? `${attempts} attempts` : '—'}</div>

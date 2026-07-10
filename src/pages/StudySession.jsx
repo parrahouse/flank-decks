@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Brain, Volume2, VolumeX, Info, Trophy, PlayCircle, RefreshCw, Clock, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { cardLabel } from '@/lib/utils';
 import StudyCard from '@/components/cards/StudyCard';
 import StudyCardHorizontal from '@/components/cards/StudyCardHorizontal';
 import ContactSheet from '@/components/cards/ContactSheet';
@@ -262,7 +263,7 @@ export default function StudySession() {
     const saveStats = async () => {
       const cardResults = shuffledCards.map((card, i) => ({
         card_id: card.id,
-        correct_answer: card.correct_answer,
+        correct_answer: cardLabel(card),
         image_url: card.image_url || '',
         points: scores[i]?.points ?? 0,
         key: scores[i]?.key ?? 'skipped',

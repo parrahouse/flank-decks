@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { BarChart2, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { cn, cardLabel } from '@/lib/utils';
 
 const SCORE_LABELS = {
   correct: { label: 'Correct', color: 'text-success' },
@@ -50,7 +50,7 @@ function TimeRow({ card, time, label }) {
       {card.image_url
         ? <img src={card.image_url} alt="" className="w-7 h-7 rounded object-cover shrink-0" />
         : <div className="w-7 h-7 rounded bg-muted shrink-0" />}
-      <span className="truncate font-medium flex-1 min-w-0">{card.correct_answer}</span>
+      <span className="truncate font-medium flex-1 min-w-0">{cardLabel(card)}</span>
       <span className={cn('font-semibold shrink-0', label === 'Fastest' ? 'text-success' : 'text-orange-500')}>{fmtMs(time)}</span>
     </div>
   );
@@ -123,7 +123,7 @@ export default function SessionStatsPanel({
             <div key={card.id} className={cn('flex items-center justify-between px-4 py-2.5 text-sm', i > 0 && 'border-t border-border')}>
               <div className="flex items-center gap-3 min-w-0">
                 {card.image_url && <img src={card.image_url} alt="" className="w-8 h-8 rounded object-cover shrink-0" />}
-                <span className="truncate font-medium">{card.correct_answer}</span>
+                <span className="truncate font-medium">{cardLabel(card)}</span>
               </div>
               <div className="flex items-center gap-3 shrink-0 ml-3">
                 {stat?.mastered && <span className="text-xs bg-success/10 text-success px-1.5 py-0.5 rounded font-medium">Mastered</span>}
