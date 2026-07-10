@@ -169,9 +169,6 @@ export default function ProgressGameBand({
   const SCALE    = skin.scale;
   const W        = CELL * SCALE;
 
-  // Reveal nudge — forward step past a freshly laid egg so it sits visible behind Swab
-  const REVEAL_NUDGE_PX = 1.00 * CELL;
-
   const TILE_W            = ground.tileW;
   const TILE_H            = ground.tileH;
   const GROUND_DISP       = TILE_H * SCALE;
@@ -282,6 +279,7 @@ export default function ProgressGameBand({
   const [nudgeDurMs, setNudgeDurMs] = useState(STEP_MS);    // duration of the current nudge animation
   const phaseRef = useRef('idle');
   const reactEndRef = useRef(0); // wall-clock ms when the in-flight reaction ends
+  const prevStreakRef = useRef(correctStreak); // streak before the latest commit
 
   const catControls = useAnimation();
   const entryFiredRef = useRef(false);
@@ -315,13 +313,6 @@ export default function ProgressGameBand({
     seededPlantedRef.current = new Set(waypoints.filter((m) => shownCompleted > m));
   }
 
-  // Eggs are laid at ARRIVAL, not at walk-start. shownCompleted flips to m the
-  // instant the walk toward m begins, so gating egg visibility on it pops the egg
-  // in before Swab reaches the marker. Track laid eggs explicitly; the live "laid"
-  // event fires in finishWalk. Seed already-laid waypoints for resumed sessions
-  // (egg is laid at arrival ⇒ present when shownCompleted >= m; note this is >=,
-  // whereas marker seeding is > m because the marker plants on departure).
-  const [laidEggs, setLaidEggs] = useState(() => new Set(waypoints.filter((m) => shownCompleted >= m)));
 
   // Finish line lights up when Swab clears it (final walk completes). Seed lit
   // for resumed already-complete sessions so it mounts mid-loop, not re-triggered.
@@ -364,11 +355,12 @@ export default function ProgressGameBand({
   //                  → sad walk, chained to the end of any in-flight reaction
   //   waypoint m  → lay an egg, then nudge forward to reveal it
   //   last card    → after the walk, switch to react.right looping (celebrate)
-  function processCommit(completedVal, commitKey) {
+  function processCommit(completedVal, commitKey, isMilestone = false) {
     const isCorrect = !!commitKey && CORRECT_KEYS.has(commitKey);
     const variant = isCorrect ? 'happy' : 'sad';
     const isLast = completedVal >= total;
     const canCelebrate = RIGHT_FRAMES > 0 && !!rightSprite?.src;
+    const canLay = EGGLAY_FRAMES > 0 && !!eggLaySprite?.src;
 
     let cancelled = false;
     let tStart, tWalk, tEggLay, tNudge, tPush;
@@ -376,11 +368,6 @@ export default function ProgressGameBand({
     const finishWalk = () => {
       if (cancelled) return;
       setReactKey((k) => k + 1);
-      // Arrival at a waypoint = egg is laid now (behind Swab; the nudge reveals it).
-      // Covers both the lay-animation path and any no-lay-sprite fallback below.
-      if (waypoints.includes(completedVal)) {
-        setLaidEggs((prev) => prev.has(completedVal) ? prev : new Set(prev).add(completedVal));
-      }
       if (isLast) {
         // Finish push: keep walking past the pole. Don't stop or change phase —
         // the walk animation continues seamlessly from the final step into the push.
@@ -399,25 +386,6 @@ export default function ProgressGameBand({
             phaseRef.current = 'idle'; setPhase('idle');
           }
         }, FINISH_PUSH_MS);
-      } else if (waypoints.includes(completedVal) && EGGLAY_FRAMES > 0 && eggLaySprite?.src) {
-        // Arrived at a waypoint → lay an egg, then nudge forward to reveal it
-        stopWalking();
-        phaseRef.current = 'eggLay'; setPhase('eggLay');
-        playEggLay();   // one of three lay sounds, at random
-        tEggLay = setTimeout(() => {
-          if (cancelled) return;
-          setNudgeDurMs(STEP_MS / 2);
-          setWalkVariant('happy');
-          phaseRef.current = 'walk'; setPhase('walk');
-          setNudgeOffset(REVEAL_NUDGE_PX);
-          playWalking();
-          tNudge = setTimeout(() => {
-            if (cancelled) return;
-            stopWalking();
-            setIdleVariant('happy');
-            phaseRef.current = 'idle'; setPhase('idle');
-          }, STEP_MS / 2);
-        }, EGGLAY_MS);
       } else {
         stopWalking();
         setIdleVariant(variant);
@@ -436,12 +404,26 @@ export default function ProgressGameBand({
       tWalk = setTimeout(finishWalk, STEP_MS);
     };
 
+    // Milestone egg-lay fires BEFORE the walk: react → lay in place → walk.
+    const proceedToWalk = () => {
+      if (cancelled) return;
+      if (isMilestone && canLay) {
+        setReactKey((k) => k + 1);      // re-arm the egg-lay one-shot from frame 0
+        stopWalking();
+        phaseRef.current = 'eggLay'; setPhase('eggLay');
+        playEggLay();                   // one of three lay sounds, at random
+        tEggLay = setTimeout(startWalk, EGGLAY_MS);
+      } else {
+        startWalk();
+      }
+    };
+
     if (isCorrect && canCelebrate) {
       // Play the right reaction one-shot, then chain the walk off its completion.
       setReactKey((k) => k + 1);
       phaseRef.current = 'reactRight'; setPhase('reactRight');
       reactEndRef.current = Date.now() + RIGHT_DUR;
-      tStart = setTimeout(startWalk, RIGHT_DUR);
+      tStart = setTimeout(proceedToWalk, RIGHT_DUR);
     } else {
       // Wrong commit. Two cases:
       //  • A wrong reaction is already in flight (flinch + commit on the same tick,
@@ -483,8 +465,15 @@ export default function ProgressGameBand({
       commitKey = vals[vals.length - 1];
     }
 
+    // Milestone = the strict streak just landed on a positive multiple of 5.
+    // correctStreak (parent-owned, strict) updates in the same commit as scores,
+    // so it already reflects this answer here.
+    const streakNow = correctStreak;
+    const isMilestone = streakNow > 0 && streakNow % 5 === 0 && streakNow > prevStreakRef.current;
+    prevStreakRef.current = streakNow;
+
     commitCancelRef.current?.();
-    commitCancelRef.current = processCommitRef.current(completed, commitKey);
+    commitCancelRef.current = processCommitRef.current(completed, commitKey, isMilestone);
   }, [completed]);
 
   useEffect(() => () => { commitCancelRef.current?.(); }, []);
@@ -532,8 +521,7 @@ export default function ProgressGameBand({
   // Each waypoint Swab has passed adds one REVEAL_NUDGE_PX forward; carry it into
   // charWorldX so the first walk after a waypoint is a full STEP_PX (the nudge that
   // uncovered the egg retracts at the same time the world advances by STEP_PX+nudge).
-  const revealOffset = REVEAL_NUDGE_PX * waypoints.filter((m) => m < shownCompleted).length;
-  const charWorldX = LEAD_IN + shownCompleted * STEP_PX + revealOffset;
+  const charWorldX = LEAD_IN + shownCompleted * STEP_PX;
   // Deadzone: camera stays 0 while Swab is left of ANCHOR_X, then pushes so he holds center.
   const cameraX = Math.max(0, charWorldX - ANCHOR_X);
   // Land the camera on a whole physical pixel so WebKit doesn't resample the
@@ -542,7 +530,7 @@ export default function ProgressGameBand({
   const snapPx = (v) => Math.round(v * dpr) / dpr;
   const cameraXSnapped = snapPx(cameraX);
   // World must hold every card + buffer (incl. accumulated reveal) so nothing clips:
-  const worldWidth = LEAD_IN + total * STEP_PX + REVEAL_NUDGE_PX * waypoints.length + bandW;
+  const worldWidth = LEAD_IN + total * STEP_PX + bandW;
 
   // ── Entry walk-in animation (retargeted to world coords) ───────────────────
   useEffect(() => {
@@ -700,30 +688,9 @@ export default function ProgressGameBand({
         willChange: 'transform',
         transition: `transform ${STEP_MS}ms linear`,
       }}>
-        {/* Waypoint eggs — rendered BEFORE the character so Swab covers them at m */}
-        {eggAsset?.src && EGG_FRAMES > 0 && waypoints.map((m) => {
-          if (!laidEggs.has(m)) return null; // not laid until Swab arrives (see finishWalk)
-          // Pre-reveal spot: accumulated earlier-waypoint reveal, but NOT m's own nudge.
-          const fx = LEAD_IN + m * STEP_PX + REVEAL_NUDGE_PX * waypoints.filter((k) => k < m).length + WAYPOINT_OFFSET;
-          return (
-            <div
-              key={`egg-${m}`}
-              style={{
-                position: 'absolute', zIndex: 1, bottom: EGG_BOTTOM, left: 0, width: EW, height: EW,
-                transform: `translateX(${fx}px)`,
-                backgroundRepeat: 'no-repeat', imageRendering: 'pixelated',
-                backgroundImage: `url(${eggAsset.src})`,
-                backgroundSize: `${EGG_FRAMES * EW}px ${EW}px`,
-                animation: EGG_FRAMES > 1 ? `${KF_EGG} ${EGG_REVEAL_MS}ms steps(${EGG_FRAMES}) infinite` : 'none',
-              }}
-            />
-          );
-        })}
-
         {/* Waypoint markers — planted flag/pole; scales with SCALE */}
         {markerAsset?.src && MARKER_FRAMES > 0 && waypoints.map((m) => {
-          // Pre-reveal spot: accumulated earlier-waypoint reveal, but NOT m's own nudge.
-          const fx = LEAD_IN + m * STEP_PX + REVEAL_NUDGE_PX * waypoints.filter((k) => k < m).length + WAYPOINT_OFFSET;
+          const fx = LEAD_IN + m * STEP_PX + WAYPOINT_OFFSET;
           const isPlanted = shownCompleted > m;
           const wasSeeded = seededPlantedRef.current?.has(m);
           // Stable key (no remount flash). Re-arm the plant one-shot by toggling the
@@ -752,7 +719,6 @@ export default function ProgressGameBand({
         {/* Finish line — world element at m === total; holds frame 0, loops once Swab clears it */}
         {finishAsset?.src && FINISH_FRAMES > 0 && (() => {
           const fx = LEAD_IN + total * STEP_PX
-                   + REVEAL_NUDGE_PX * waypoints.length
                    + FINISH_GAP_PX;
           return (
             <div
