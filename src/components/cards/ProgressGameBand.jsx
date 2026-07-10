@@ -32,6 +32,7 @@ const EGGLAY_MS       = 15 * REACT_FRAME_MS;  // egg-laying one-shot duration
 const EGG_REVEAL_MS   = 6  * REACT_FRAME_MS;  // egg settle one-shot
 const MARKER_PLANT_MS = 19 * REACT_FRAME_MS;  // pole+flag plant one-shot
 const WAYPOINT_OFFSET = 0;   // world-x offset from Swab's stand point at m — tune by eye
+const EGG_OFFSET      = 0;   // world-x offset for milestone eggs under Swab — tune by eye
 const FINISH_GAP_FACTOR   = 0.5;  // × W — pole sits this far AHEAD of the final stand point; tune by eye
 const FINISH_CLEAR_FACTOR = 0.5;  // × W — extra margin past the pole at the end of the push; tune by eye
 
@@ -318,6 +319,12 @@ export default function ProgressGameBand({
   // for resumed already-complete sessions so it mounts mid-loop, not re-triggered.
   const [finishLit, setFinishLit] = useState(() => total > 0 && shownCompleted >= total);
 
+  // Milestone eggs — one persistent egg per streak milestone, keyed by Swab's
+  // stand index at lay time (completedVal - 1). Revealed by the walk itself, so
+  // no reveal-nudge. Not seeded on resume (past positions aren't recoverable from
+  // slot-indexed scores) — a resumed session simply starts its trail fresh.
+  const [milestoneEggs, setMilestoneEggs] = useState(() => new Set());
+
   // ── Measure band width (ResizeObserver catches non-window resizes too) ─────
   useLayoutEffect(() => {
     if (!bandRef.current) return;
@@ -412,6 +419,9 @@ export default function ProgressGameBand({
         stopWalking();
         phaseRef.current = 'eggLay'; setPhase('eggLay');
         playEggLay();                   // one of three lay sounds, at random
+        setMilestoneEggs((prev) => {    // persist an egg at Swab's stand point
+          const next = new Set(prev); next.add(completedVal - 1); return next;
+        });
         tEggLay = setTimeout(startWalk, EGGLAY_MS);
       } else {
         startWalk();
@@ -688,6 +698,24 @@ export default function ProgressGameBand({
         willChange: 'transform',
         transition: `transform ${STEP_MS}ms linear`,
       }}>
+        {/* Milestone eggs — laid at each streak milestone, revealed as Swab walks on */}
+        {eggAsset?.src && EGG_FRAMES > 0 && [...milestoneEggs].map((idx) => {
+          const fx = LEAD_IN + idx * STEP_PX + EGG_OFFSET;
+          return (
+            <div
+              key={`egg-${idx}`}
+              style={{
+                position: 'absolute', zIndex: 1, bottom: EGG_BOTTOM, left: 0, width: EW, height: EW,
+                transform: `translateX(${fx}px)`,
+                backgroundRepeat: 'no-repeat', imageRendering: 'pixelated',
+                backgroundImage: `url(${eggAsset.src})`,
+                backgroundSize: `${EGG_FRAMES * EW}px ${EW}px`,
+                animation: EGG_FRAMES > 1 ? `${KF_EGG} ${EGG_REVEAL_MS}ms steps(${EGG_FRAMES}) infinite` : 'none',
+              }}
+            />
+          );
+        })}
+
         {/* Waypoint markers — planted flag/pole; scales with SCALE */}
         {markerAsset?.src && MARKER_FRAMES > 0 && waypoints.map((m) => {
           const fx = LEAD_IN + m * STEP_PX + WAYPOINT_OFFSET;
