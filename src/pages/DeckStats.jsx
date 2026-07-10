@@ -2,9 +2,17 @@ import { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, BarChart2, Trophy, TrendingDown, TrendingUp, Target, BookOpen } from 'lucide-react';
+import { ArrowLeft, BarChart2, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { CORRECT_KEYS, capped, mean, median } from '@/lib/statsUtils';
+import OverviewTiles from '@/components/stats/OverviewTiles';
+import TrendCharts from '@/components/stats/TrendCharts';
+import MasteryTimelineSection from '@/components/stats/MasteryTimelineSection';
+import PerCardTable from '@/components/stats/PerCardTable';
+import QuestionTypeBreakdown from '@/components/stats/QuestionTypeBreakdown';
+import HabitsSection from '@/components/stats/HabitsSection';
+import SessionLog from '@/components/stats/SessionLog';
 
 function ReadinessBar({ pct }) {
   const level =
@@ -28,6 +36,10 @@ function ReadinessBar({ pct }) {
       <p className="text-xs text-muted-foreground text-right">{Math.round(pct)}% average score</p>
     </div>
   );
+}
+
+function SectionHeading({ children }) {
+  return <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">{children}</h2>;
 }
 
 export default function DeckStats() {
@@ -62,34 +74,113 @@ export default function DeckStats() {
     enabled: !!deckId && !!currentUser?.id,
   });
 
-  const stats = useMemo(() => {
-    if (!sessions.length) return null;
+  const sessionsAsc = useMemo(
+    () => [...sessions].sort((a, b) => new Date(a.created_date) - new Date(b.created_date)),
+    [sessions]
+  );
 
-    const scores = sessions.map(s => s.score_pct);
-    const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-    const best = Math.max(...scores);
-    const worst = Math.min(...scores);
-
-    // Per-card average score across all sessions
-    const cardScores = {}; // card_id -> {total, count, correct_answer}
-    sessions.forEach(s => {
-      (s.card_results || []).forEach(r => {
-        if (!cardScores[r.card_id]) cardScores[r.card_id] = { total: 0, count: 0, correct_answer: r.correct_answer, image_url: r.image_url };
-        cardScores[r.card_id].total += r.points;
-        cardScores[r.card_id].count += 1;
+  const perCard = useMemo(() => {
+    const acc = {};
+    sessions.forEach((s) => {
+      (s.card_results || []).forEach((r) => {
+        if (!r.card_id) return;
+        (acc[r.card_id] ||= { results: [] }).results.push({
+          key: r.key,
+          points: r.points,
+          first_wrong: r.first_wrong,
+          time_to_answer_ms: r.time_to_answer_ms,
+          session_created: s.created_date,
+        });
       });
     });
-
-    const cardAvgs = Object.entries(cardScores)
-      .map(([id, v]) => ({ card_id: id, avg: v.total / v.count, correct_answer: v.correct_answer, image_url: v.image_url }))
-      .filter(c => c.correct_answer);
-
-    cardAvgs.sort((a, b) => a.avg - b.avg);
-    const weakest = cardAvgs.slice(0, 3);
-    const strongest = cardAvgs.slice(-3).reverse();
-
-    return { avg, best, worst, weakest, strongest, count: sessions.length };
+    return acc;
   }, [sessions]);
+
+  const cardRows = useMemo(() => {
+    const statByCard = Object.fromEntries(cardStats.map((s) => [s.card_id, s]));
+    return cards.map((c) => {
+      const stat = statByCard[c.id];
+      const results = perCard[c.id]?.results || [];
+      const correctResults = results.filter((r) => CORRECT_KEYS.has(r.key));
+      const firstTryCorrect = results.filter((r) => CORRECT_KEYS.has(r.key) && r.first_wrong == null);
+      const firstTryPct = results.length ? firstTryCorrect.length / results.length : null;
+      const timesCapped = results.map((r) => capped(r.time_to_answer_ms)).filter((t) => t != null);
+      const avgTime = timesCapped.length ? mean(timesCapped) : null;
+      const accuracy = stat && stat.total_attempts > 0 ? stat.correct_attempts / stat.total_attempts : null;
+      const attempts = stat?.total_attempts ?? 0;
+      const fastest = stat?.fastest_answer_ms ?? null;
+
+      const ordered = [...results].sort((a, b) => new Date(a.session_created) - new Date(b.session_created));
+      const last5 = ordered.slice(-5);
+      const last5Acc = last5.length ? last5.filter((r) => CORRECT_KEYS.has(r.key)).length / last5.length : null;
+      const overallAcc = results.length ? correctResults.length / results.length : null;
+      let trend = 'flat';
+      if (last5Acc != null && overallAcc != null) {
+        if (last5Acc > overallAcc + 0.1) trend = 'up';
+        else if (last5Acc < overallAcc - 0.1) trend = 'down';
+      }
+
+      const mastered = !!stat?.mastered;
+      const timeToMasterMs = (stat?.mastered_at && stat?.first_studied_date)
+        ? new Date(stat.mastered_at) - new Date(stat.first_studied_date)
+        : null;
+
+      const missCounts = {};
+      results.forEach((r) => { if (r.first_wrong) missCounts[r.first_wrong] = (missCounts[r.first_wrong] || 0) + 1; });
+      let commonMiss = null;
+      Object.entries(missCounts).forEach(([t, n]) => { if (!commonMiss || n > commonMiss.count) commonMiss = { text: t, count: n }; });
+
+      return { card: c, stat, results, accuracy, attempts, firstTryPct, avgTime, fastest, trend, mastered, timeToMasterMs, commonMiss };
+    });
+  }, [cards, cardStats, perCard]);
+
+  const overview = useMemo(() => {
+    const count = sessions.length;
+    const durations = sessions.map((s) => s.duration_ms).filter((d) => d != null);
+    const totalStudy = durations.reduce((a, b) => a + b, 0);
+    const avgSession = durations.length ? totalStudy / durations.length : null;
+    const scores = sessions.map((s) => s.score_pct);
+    const avgScore = scores.length ? mean(scores) : null;
+    const best = scores.length ? Math.max(...scores) : null;
+    const worst = scores.length ? Math.min(...scores) : null;
+
+    const allTimes = [];
+    sessions.forEach((s) => {
+      (s.card_results || []).forEach((r) => { if (r.time_to_answer_ms != null) allTimes.push(capped(r.time_to_answer_ms)); });
+    });
+    const avgTimePerCard = allTimes.length ? mean(allTimes) : null;
+
+    const activeIds = new Set(cards.map((c) => c.id));
+    const masteredActive = cardStats.filter((s) => s.mastered && activeIds.has(s.card_id));
+    const ttm = masteredActive
+      .map((s) => (s.mastered_at && s.first_studied_date) ? new Date(s.mastered_at) - new Date(s.first_studied_date) : null)
+      .filter((x) => x != null && isFinite(x));
+    const medianTtm = ttm.length ? median(ttm) : null;
+    const atm = cardStats.map((s) => s.attempts_to_master).filter((x) => x != null);
+    const avgAttemptsMaster = atm.length ? mean(atm) : null;
+    const streaks = sessions.map((s) => s.best_streak).filter((x) => x != null);
+    const longestStreak = streaks.length ? Math.max(...streaks) : null;
+
+    let ftTotal = 0, ftFirst = 0;
+    sessions.forEach((s) => {
+      (s.card_results || []).forEach((r) => {
+        ftTotal++;
+        if (CORRECT_KEYS.has(r.key) && r.first_wrong == null) ftFirst++;
+      });
+    });
+    const firstTryAcc = ftTotal ? ftFirst / ftTotal : null;
+
+    return {
+      count, totalStudy, avgSession, durationsCount: durations.length,
+      avgScore, best, worst,
+      avgTimePerCard, timeBasisCount: allTimes.length,
+      masteredCount: masteredActive.length, totalCards: cards.length,
+      medianTtm, ttmCount: ttm.length,
+      avgAttemptsMaster, atmCount: atm.length,
+      longestStreak,
+      firstTryAcc, ftTotal,
+    };
+  }, [sessions, cardStats, cards]);
 
   if (isLoading) {
     return (
@@ -100,7 +191,7 @@ export default function DeckStats() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
+    <div className="max-w-5xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
         <Link to={`/deck/${deckId}`} className="text-muted-foreground hover:text-foreground transition-colors">
@@ -117,7 +208,7 @@ export default function DeckStats() {
         </Link>
       </div>
 
-      {!stats ? (
+      {!sessions.length ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
           <div className="w-14 h-14 rounded-2xl bg-accent flex items-center justify-center">
             <BarChart2 className="w-7 h-7 text-accent-foreground" />
@@ -127,103 +218,55 @@ export default function DeckStats() {
           <Link to={`/study/${deckId}`}><Button className="mt-1 gap-1.5"><BookOpen className="w-4 h-4" /> Start Studying</Button></Link>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-8">
           {/* Readiness */}
           <div className="bg-card border border-border rounded-xl p-5">
-            <ReadinessBar pct={stats.avg} />
+            <ReadinessBar pct={overview.avgScore ?? 0} />
           </div>
 
-          {/* Summary stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <StatCard icon={<BarChart2 className="w-4 h-4" />} label="Sessions" value={stats.count} />
-            <StatCard icon={<Target className="w-4 h-4" />} label="Avg Score" value={`${Math.round(stats.avg)}%`} />
-            <StatCard icon={<Trophy className="w-4 h-4" />} label="Best" value={`${Math.round(stats.best)}%`} valueClass="text-success" />
-            <StatCard icon={<TrendingDown className="w-4 h-4" />} label="Worst" value={`${Math.round(stats.worst)}%`} valueClass="text-destructive" />
-          </div>
+          {/* 1. Overview tiles */}
+          <section className="space-y-3">
+            <SectionHeading>Overview</SectionHeading>
+            <OverviewTiles overview={overview} />
+          </section>
 
-          {/* Recent sessions */}
-          <div className="bg-card border border-border rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-border bg-muted/40 text-sm font-medium text-muted-foreground">
-              Recent Sessions
-            </div>
-            {sessions.slice(0, 8).map((s, i) => (
-              <div key={s.id} className={cn('flex items-center justify-between px-4 py-2.5 text-sm', i > 0 && 'border-t border-border')}>
-                <span className="text-muted-foreground text-xs">
-                  {new Date(s.created_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                </span>
-                <div className="flex items-center gap-2">
-                  <div className="w-20 bg-muted rounded-full h-1.5 overflow-hidden">
-                    <div
-                      className={cn('h-1.5 rounded-full', s.score_pct >= 75 ? 'bg-success' : s.score_pct >= 50 ? 'bg-amber-400' : 'bg-destructive')}
-                      style={{ width: `${s.score_pct}%` }}
-                    />
-                  </div>
-                  <span className="font-semibold w-10 text-right">{Math.round(s.score_pct)}%</span>
-                </div>
-              </div>
-            ))}
-          </div>
+          {/* 2. Score & pace over time */}
+          <section className="space-y-3">
+            <SectionHeading>Score & pace over time</SectionHeading>
+            <TrendCharts sessionsAsc={sessionsAsc} />
+          </section>
 
-          {/* Mastery overview */}
-          {cardStats.length > 0 && (() => {
-            const minSessions = deck?.mastery_min_sessions ?? 3;
-            const masteryPct = deck?.mastery_pct ?? 90;
-            const activeCardIds = new Set(cards.map(c => c.id));
-            const masteredCount = cardStats.filter(s => s.mastered && activeCardIds.has(s.card_id)).length;
-            const totalCards = cards.length;
-            const eligible = cardStats.filter(s => (s.sessions_completed ?? 0) >= minSessions);
-            return (
-              <div className="bg-card border border-border rounded-xl p-5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium flex items-center gap-1.5"><Trophy className="w-4 h-4 text-amber-500" /> Mastery</span>
-                  <span className="text-xs text-muted-foreground">Requires {minSessions} session{minSessions !== 1 ? 's' : ''} · ≥{masteryPct}% correct</span>
-                </div>
-                <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-                  <div className="bg-success h-2 rounded-full transition-all duration-700" style={{ width: `${totalCards > 0 ? (masteredCount / totalCards) * 100 : 0}%` }} />
-                </div>
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{masteredCount} of {totalCards} cards mastered</span>
-                  <span>{eligible.length} card{eligible.length !== 1 ? 's' : ''} eligible for mastery</span>
-                </div>
-              </div>
-            );
-          })()}
+          {/* 3. Mastery timeline */}
+          <section className="space-y-3">
+            <SectionHeading>Mastery timeline</SectionHeading>
+            <MasteryTimelineSection cardStats={cardStats} cards={cards} />
+          </section>
 
-          {/* Weakest & Strongest cards */}
-          {stats.weakest.length > 0 && (
-            <div className="grid sm:grid-cols-2 gap-4">
-              <CardList title="Weakest Cards" icon={<TrendingDown className="w-4 h-4 text-destructive" />} cards={stats.weakest} colorClass="text-destructive" />
-              <CardList title="Strongest Cards" icon={<TrendingUp className="w-4 h-4 text-success" />} cards={stats.strongest} colorClass="text-success" />
-            </div>
-          )}
+          {/* 4. Per-card table */}
+          <section className="space-y-3">
+            <SectionHeading>Per-card breakdown</SectionHeading>
+            <PerCardTable cardRows={cardRows} />
+          </section>
+
+          {/* 5. Question-type breakdown */}
+          <section className="space-y-3">
+            <SectionHeading>Question types</SectionHeading>
+            <QuestionTypeBreakdown cardRows={cardRows} />
+          </section>
+
+          {/* 6. Habits */}
+          <section className="space-y-3">
+            <SectionHeading>Habits</SectionHeading>
+            <HabitsSection sessions={sessions} />
+          </section>
+
+          {/* 7. Session log */}
+          <section className="space-y-3">
+            <SectionHeading>Session log</SectionHeading>
+            <SessionLog sessions={sessions} />
+          </section>
         </div>
       )}
-    </div>
-  );
-}
-
-function StatCard({ icon, label, value, valueClass }) {
-  return (
-    <div className="bg-card border border-border rounded-xl p-4 flex flex-col gap-1.5">
-      <div className="text-muted-foreground flex items-center gap-1.5 text-xs">{icon}{label}</div>
-      <div className={cn('text-2xl font-bold', valueClass)}>{value}</div>
-    </div>
-  );
-}
-
-function CardList({ title, icon, cards, colorClass }) {
-  return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden">
-      <div className="px-4 py-3 border-b border-border bg-muted/40 text-sm font-medium flex items-center gap-1.5">
-        {icon} {title}
-      </div>
-      {cards.map((c, i) => (
-        <div key={c.card_id} className={cn('flex items-center gap-3 px-4 py-2.5', i > 0 && 'border-t border-border')}>
-          {c.image_url && <img src={c.image_url} alt="" className="w-8 h-8 rounded object-cover shrink-0" />}
-          <span className="flex-1 text-sm font-medium truncate">{c.correct_answer}</span>
-          <span className={cn('text-xs font-semibold shrink-0', colorClass)}>{Math.round(c.avg * 100)}%</span>
-        </div>
-      ))}
     </div>
   );
 }
