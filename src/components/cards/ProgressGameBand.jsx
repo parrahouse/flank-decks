@@ -32,6 +32,7 @@ const EGGLAY_MS       = 15 * REACT_FRAME_MS;  // egg-laying one-shot duration
 const EGG_REVEAL_MS   = 6  * REACT_FRAME_MS;  // egg settle one-shot
 const MARKER_PLANT_MS = 19 * REACT_FRAME_MS;  // pole+flag plant one-shot
 const WAYPOINT_OFFSET = 0;   // world-x offset from Swab's stand point at m — tune by eye
+const FINISH_OFFSET_PX_FACTOR = -1.0; // × character width W; pole sits behind Swab's final stand point — tune by eye
 
 const AVATAR_ENTRY_MS   = 1000;
 const AVATAR_ENTRY_EASE = 'linear';
@@ -195,6 +196,16 @@ export default function ProgressGameBand({
   const MARKER_FOOT_TO_BOTTOM = ((markerAsset?.tileH ?? 0) - MARKER_BASE) * SCALE;
   const MARKER_BOTTOM = GROUND_DISP - MARKER_FOOT_TO_BOTTOM;
 
+  // Finish line — world element at m === total; scales with SCALE like the marker
+  const finishAsset  = skin.finish;
+  const FW           = (finishAsset?.tileW ?? 0) * SCALE;
+  const FH           = (finishAsset?.tileH ?? 0) * SCALE;
+  const FINISH_BASE  = finishAsset?.baseline ?? 0;
+  const FINISH_FOOT_TO_BOTTOM = ((finishAsset?.tileH ?? 0) - FINISH_BASE) * SCALE;
+  const FINISH_BOTTOM = GROUND_DISP - FINISH_FOOT_TO_BOTTOM;
+  const FINISH_FRAMES = finishAsset?.frames || 0;
+  const FINISH_LOOP_MS = FINISH_FRAMES * REACT_FRAME_MS; // loop cadence, matches reaction frame rate
+
   // ── Resolve sprites through the nested fallback rules ───────────────────────
   // idle has no `sad` variant → resolveSprite falls back to `happy`.
   const idleSprite     = resolveSprite(skin, 'idle', 'happy');
@@ -233,6 +244,7 @@ export default function ProgressGameBand({
   const KF_EGGLAY     = `pgb-egglay-${skin.id}`;
   const KF_EGG        = `pgb-egg-${skin.id}`;
   const KF_MARKER     = `pgb-marker-${skin.id}`;
+  const KF_FINISH     = `pgb-finish-${skin.id}`;
 
   const KEYFRAMES = `
 @keyframes ${KF_IDLE} { from { background-position-x: 0 } to { background-position-x: -${IDLE_FRAMES * W}px } }
@@ -244,6 +256,7 @@ export default function ProgressGameBand({
 @keyframes ${KF_EGGLAY} { from { background-position-x: 0 } to { background-position-x: -${Math.max(0, EGGLAY_FRAMES - 1) * W}px } }
 @keyframes ${KF_EGG} { from { background-position-x: 0 } to { background-position-x: -${EGG_FRAMES * EW}px } }
 @keyframes ${KF_MARKER} { from { background-position-x: 0 } to { background-position-x: -${Math.max(0, MARKER_FRAMES - 1) * MW}px } }
+@keyframes ${KF_FINISH} { from { background-position-x: 0 } to { background-position-x: -${FINISH_FRAMES * FW}px } }
 `;
 
   const { playWalking, stopWalking, playEggLay } = useSound(soundEnabled);
@@ -304,6 +317,10 @@ export default function ProgressGameBand({
   // whereas marker seeding is > m because the marker plants on departure).
   const [laidEggs, setLaidEggs] = useState(() => new Set(waypoints.filter((m) => shownCompleted >= m)));
 
+  // Finish line lights up when Swab clears it (final walk completes). Seed lit
+  // for resumed already-complete sessions so it mounts mid-loop, not re-triggered.
+  const [finishLit, setFinishLit] = useState(() => total > 0 && shownCompleted >= total);
+
   // ── Measure band width (ResizeObserver catches non-window resizes too) ─────
   useLayoutEffect(() => {
     if (!bandRef.current) return;
@@ -355,6 +372,9 @@ export default function ProgressGameBand({
       setReactKey((k) => k + 1);
       // Arrival at a waypoint = egg is laid now (behind Swab; the nudge reveals it).
       // Covers both the lay-animation path and any no-lay-sprite fallback below.
+      if (isLast) {
+        setFinishLit(true);
+      }
       if (waypoints.includes(completedVal)) {
         setLaidEggs((prev) => prev.has(completedVal) ? prev : new Set(prev).add(completedVal));
       }
@@ -481,9 +501,10 @@ export default function ProgressGameBand({
     const urls = [
       idleSprite?.src, idleSadSprite?.src, walkHappySprite?.src, walkSadSprite?.src,
       rightSprite?.src, wrongSprite?.src, eggLaySprite?.src, eggAsset?.src, markerAsset?.src,
+      finishAsset?.src,
     ].filter(Boolean);
     urls.forEach((u) => { const img = new Image(); img.src = u; });
-  }, [idleSprite?.src, idleSadSprite?.src, walkHappySprite?.src, walkSadSprite?.src, rightSprite?.src, wrongSprite?.src, eggLaySprite?.src, eggAsset?.src, markerAsset?.src]);
+  }, [idleSprite?.src, idleSadSprite?.src, walkHappySprite?.src, walkSadSprite?.src, rightSprite?.src, wrongSprite?.src, eggLaySprite?.src, eggAsset?.src, markerAsset?.src, finishAsset?.src]);
 
   // ── Deadzone/push camera — Swab walks to center, then the world scrolls ────
   const ANCHOR_X = bandW * ANCHOR_FRAC;
@@ -711,6 +732,28 @@ export default function ProgressGameBand({
             />
           );
         })}
+
+        {/* Finish line — world element at m === total; holds frame 0, loops once Swab clears it */}
+        {finishAsset?.src && FINISH_FRAMES > 0 && (() => {
+          const fx = LEAD_IN + total * STEP_PX
+                   + REVEAL_NUDGE_PX * waypoints.length
+                   + FINISH_OFFSET_PX_FACTOR * W;
+          return (
+            <div
+              key="finish-line"
+              style={{
+                position: 'absolute', bottom: FINISH_BOTTOM, left: 0, width: FW, height: FH,
+                transform: `translateX(${fx}px)`,
+                backgroundRepeat: 'no-repeat', imageRendering: 'pixelated',
+                backgroundImage: `url(${finishAsset.src})`,
+                backgroundSize: `${FINISH_FRAMES * FW}px ${FH}px`,
+                animation: finishLit
+                  ? `${KF_FINISH} ${FINISH_LOOP_MS}ms steps(${FINISH_FRAMES}) infinite`
+                  : 'none',
+              }}
+            />
+          );
+        })()}
 
       </div>
 

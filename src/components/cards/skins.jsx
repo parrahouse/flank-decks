@@ -20,6 +20,7 @@
  *   eggLay?   optional character one-shot sprite: { src, frames } (character grid, uses SCALE)
  *   egg?      optional world element: { src, frames, cell, baseline } (scales with SCALE)
  *   marker?   optional world element: { src, frames, tileW, tileH, baseline } (NEVER scales)
+ *   finish?   optional world element at m === total: { src, frames, tileW, tileH, baseline } (scales with SCALE)
  *   ground?   optional per-skin ground; omit to inherit DEFAULT_GROUND
  *             { src, tileW, tileH }
  */
@@ -94,6 +95,13 @@ const SWAB = {
     tileW:     32,
     tileH:     75,
     baseline:  75,
+  },
+  finish: {
+    src:      'https://media.base44.com/images/public/69fd6153088222f7245f34d6/04c51513e_Swab-Marker-Finish.png',
+    frames:    9,
+    tileW:     32,
+    tileH:     60,
+    baseline:  60,
   },
   ground: {
     src:   'https://media.base44.com/images/public/69fd6153088222f7245f34d6/463335540_Ground-1.png',
