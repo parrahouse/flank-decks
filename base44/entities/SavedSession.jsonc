@@ -33,6 +33,20 @@
       "items": {},
       "description": "First wrong choices array up to the saved point"
     },
+    "answer_times": {
+      "type": "array",
+      "items": {},
+      "description": "Per-card answer times (ms) up to the saved point, parallel to scores"
+    },
+    "elapsed_ms": {
+      "type": "number",
+      "description": "Active study time accumulated before saving"
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Original session start timestamp"
+    },
     "filter_mode": {
       "type": "string",
       "description": "all | unmastered | bookmarked"

@@ -18,6 +18,32 @@
       "type": "number",
       "description": "Maximum possible points"
     },
+    "started_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the session began (first card shown; original start for resumed sessions)"
+    },
+    "ended_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the session completed"
+    },
+    "duration_ms": {
+      "type": "number",
+      "description": "Active study duration in ms. For resumed sessions this is accumulated active time, NOT ended_at - started_at."
+    },
+    "filter_mode": {
+      "type": "string",
+      "description": "all | unmastered | bookmarked \u2014 which pool this session studied"
+    },
+    "card_count": {
+      "type": "number",
+      "description": "Number of cards in the session"
+    },
+    "best_streak": {
+      "type": "number",
+      "description": "Longest run of consecutive correct answers within this session"
+    },
     "card_results": {
       "type": "array",
       "description": "Per-card results: [{card_id, correct_answer, image_url, points, key, first_wrong}]",
@@ -43,6 +69,19 @@
             "type": "string",
             "description": "Text of the first wrong answer chosen by the user, or null if they answered correctly on their first pick",
             "default": null
+          },
+          "time_to_answer_ms": {
+            "type": "number",
+            "description": "Ms from the question becoming interactive to the first committed answer. Null if untimed (revisit, resume gap, legacy).",
+            "default": null
+          },
+          "question_type": {
+            "type": "string",
+            "description": "Card's question_type at time of study"
+          },
+          "max_points": {
+            "type": "number",
+            "description": "Card's point_value at time of study (point values can change later)"
           }
         }
       }

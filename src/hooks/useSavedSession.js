@@ -47,9 +47,9 @@ export function useSavedSession(deckId, userId) {
     ? Math.max(0, Math.ceil((new Date(savedSession.expires_at).getTime() - Date.now()) / 3600000))
     : null;
 
-  const saveSession = async ({ cardIds, cardIndex, scores, firstWrongChoices, filterMode }) => {
+  const saveSession = async ({ cardIds, cardIndex, scores, firstWrongChoices, filterMode, answerTimes, elapsedMs, startedAt }) => {
     const expiresAt = new Date(Date.now() + TTL_MS).toISOString();
-    const payload = { deck_id: deckId, user_id: userId, card_ids: cardIds, card_index: cardIndex, scores, first_wrong_choices: firstWrongChoices, filter_mode: filterMode, expires_at: expiresAt };
+    const payload = { deck_id: deckId, user_id: userId, card_ids: cardIds, card_index: cardIndex, scores, first_wrong_choices: firstWrongChoices, filter_mode: filterMode, expires_at: expiresAt, answer_times: answerTimes, elapsed_ms: elapsedMs, started_at: startedAt };
 
     if (savedSession) {
       const updated = await base44.entities.SavedSession.update(savedSession.id, payload);

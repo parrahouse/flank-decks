@@ -38,6 +38,37 @@
       "type": "string",
       "format": "date-time",
       "description": "Timestamp of the last study attempt for this card by the user"
+    },
+    "first_studied_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of the first ever attempt on this card. Set once, never updated."
+    },
+    "total_time_ms": {
+      "type": "number",
+      "default": 0,
+      "description": "Cumulative answer time across all attempts (untimed attempts contribute 0)"
+    },
+    "fastest_answer_ms": {
+      "type": "number",
+      "description": "Fastest recorded time_to_answer_ms for this card"
+    },
+    "mastered_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When mastery FIRST flipped true. Set once; preserved even if mastered later flips false."
+    },
+    "attempts_to_master": {
+      "type": "number",
+      "description": "total_attempts at the moment mastery first flipped true"
+    },
+    "sessions_to_master": {
+      "type": "number",
+      "description": "sessions_completed at the moment mastery first flipped true"
+    },
+    "study_time_to_master_ms": {
+      "type": "number",
+      "description": "total_time_ms at the moment mastery first flipped true"
     }
   },
   "required": [

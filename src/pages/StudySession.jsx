@@ -73,6 +73,7 @@ export default function StudySession() {
   const [done, setDone] = useState(false);
   const [scores, setScores] = useState([]);
   const [firstWrongChoices, setFirstWrongChoices] = useState([]);
+  const [answerTimes, setAnswerTimes] = useState([]);  // ms per card, parallel to scores
   const [correctStreak, setCorrectStreak] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
   const [sessionStartTime, setSessionStartTime] = useState(null);
@@ -93,6 +94,9 @@ export default function StudySession() {
   const { playLevelStart } = useSound(soundEnabled);
   const [questionReady, setQuestionReady] = useState(false);
   const levelStartTimerRef = useRef(null);
+  // Timing capture — per-card answer time + session origin (preserved across resume)
+  const cardShownAtRef = useRef(null);                  // when the current card became interactive
+  const sessionStartedAtRef = useRef(null);             // ISO string of the original session start
   // Play the level-start fanfare and hold the first question inactive for 3s so the track can finish
   const beginIntro = () => {
     setQuestionReady(false);
@@ -108,6 +112,13 @@ export default function StudySession() {
   }, []);
 
   useEffect(() => () => clearTimeout(levelStartTimerRef.current), []);
+
+  // Timing origin: the moment the current question becomes answerable.
+  useEffect(() => {
+    if (filterChosen && questionReady && !done) {
+      cardShownAtRef.current = Date.now();
+    }
+  }, [cardIndex, questionReady, filterChosen, done]);
 
   const { data: deck } = useQuery({
     queryKey: ['deck', deckId],
@@ -202,11 +213,13 @@ export default function StudySession() {
     setDone(false);
     setScores([]);
     setFirstWrongChoices([]);
+    setAnswerTimes([]);
     setFilterMode(mode);
     setFilterChosen(true);
     setCorrectStreak(0);
     setBestStreak(0);
     setSessionStartTime(new Date());
+    sessionStartedAtRef.current = new Date().toISOString();
     sessionSaved.current = false;
     setIntroPhase('intro');
   };
@@ -222,11 +235,15 @@ export default function StudySession() {
     setCardIndex(savedSession.card_index || 0);
     setScores(savedSession.scores || []);
     setFirstWrongChoices(savedSession.first_wrong_choices || []);
+    setAnswerTimes(savedSession.answer_times || []);
     setFilterMode(savedSession.filter_mode || 'all');
     setFilterChosen(true);
     setCorrectStreak(0);
     setBestStreak(0);
-    setSessionStartTime(new Date());
+    // Reconstruct the timing origin: back-date so (now - sessionStartTime)
+    // equals previously accumulated active time. started_at is preserved separately.
+    setSessionStartTime(new Date(Date.now() - (savedSession.elapsed_ms || 0)));
+    sessionStartedAtRef.current = savedSession.started_at || new Date().toISOString();
     sessionSaved.current = false;
     setIntroPhase('intro');
   };
@@ -248,19 +265,31 @@ export default function StudySession() {
         image_url: card.image_url || '',
         points: scores[i]?.points ?? 0,
         key: scores[i]?.key ?? 'skipped',
-        first_wrong: firstWrongChoices[i] ?? null
+        first_wrong: firstWrongChoices[i] ?? null,
+        time_to_answer_ms: answerTimes[i] ?? null,
+        question_type: card.question_type || 'multiple_choice',
+        max_points: card.point_value ?? 20
       }));
 
       const total = cardResults.reduce((s, r) => s + r.points, 0);
       const max = shuffledCards.reduce((s, c) => s + (c.point_value ?? 20), 0);
 
       // Save study session
+      const endedAt = new Date();
+      const durationMs = sessionStartTime ? endedAt.getTime() - sessionStartTime.getTime() : null;
+
       await base44.entities.StudySession.create({
         deck_id: deckId,
         score_pct: max > 0 ? total / max * 100 : 0,
         total_points: total,
         max_points: max,
-        card_results: cardResults
+        card_results: cardResults,
+        started_at: sessionStartedAtRef.current,
+        ended_at: endedAt.toISOString(),
+        duration_ms: durationMs,
+        filter_mode: filterMode,
+        card_count: shuffledCards.length,
+        best_streak: bestStreak
       });
 
       // Update streak
@@ -319,13 +348,32 @@ export default function StudySession() {
         // Mastery only evaluated once min sessions reached; requires >= masteryPct% correct
         const nowMastered = newSessions >= minSessions && newCorrect / newSessions * 100 >= masteryPct;
 
+        const answerMs = result.time_to_answer_ms;
+        const newTotalTime = (existing?.total_time_ms ?? 0) + (answerMs ?? 0);
+        const newFastest = answerMs != null
+          ? Math.min(existing?.fastest_answer_ms ?? Infinity, answerMs)
+          : (existing?.fastest_answer_ms ?? null);
+        const nowIso = new Date().toISOString();
+
+        // Mastery-moment snapshot: only on the FIRST flip to true, never overwritten.
+        const firstMastery = nowMastered && !existing?.mastered_at && !(existing?.mastered);
+        const masteryFields = firstMastery ? {
+          mastered_at: nowIso,
+          attempts_to_master: newTotal,
+          sessions_to_master: newSessions,
+          study_time_to_master_ms: newTotalTime
+        } : {};
+
         if (existing) {
           await base44.entities.UserCardStats.update(existing.id, {
             correct_attempts: newCorrect,
             total_attempts: newTotal,
             sessions_completed: newSessions,
             mastered: nowMastered,
-            last_studied_date: new Date().toISOString()
+            last_studied_date: nowIso,
+            total_time_ms: newTotalTime,
+            ...(newFastest != null && { fastest_answer_ms: newFastest }),
+            ...masteryFields
           });
         } else {
           await base44.entities.UserCardStats.create({
@@ -336,7 +384,11 @@ export default function StudySession() {
             total_attempts: newTotal,
             sessions_completed: newSessions,
             mastered: nowMastered,
-            last_studied_date: new Date().toISOString()
+            last_studied_date: nowIso,
+            first_studied_date: nowIso,
+            total_time_ms: newTotalTime,
+            ...(newFastest != null && { fastest_answer_ms: newFastest }),
+            ...masteryFields
           });
         }
       }
@@ -391,7 +443,10 @@ export default function StudySession() {
       cardIndex,
       scores,
       firstWrongChoices,
-      filterMode
+      filterMode,
+      answerTimes,
+      elapsedMs: sessionStartTime ? Date.now() - sessionStartTime.getTime() : 0,
+      startedAt: sessionStartedAtRef.current
     });
     setShowExitWarning(false);
     navigate(pendingExitRef.current || `/deck/${deckId}`);
@@ -419,6 +474,14 @@ export default function StudySession() {
   };
 
   const handleScore = (points, key) => {
+    // Time-to-answer: recorded once per card, on the first commit. Revisits
+    // (navigating back and re-answering) do not overwrite the original timing.
+    setAnswerTimes((prev) => {
+      if (prev[cardIndex] != null) return prev;
+      const next = [...prev];
+      next[cardIndex] = cardShownAtRef.current ? Date.now() - cardShownAtRef.current : null;
+      return next;
+    });
     setScores((prev) => {
       const next = [...prev];
       next[cardIndex] = { points, key };
