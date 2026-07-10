@@ -190,7 +190,7 @@ export default function StudySession() {
     let cur = 0;
     let sessionBest = 0;
     for (const r of results) {
-      if (CORRECT_KEYS.has(r.key)) {cur++;sessionBest = Math.max(sessionBest, cur);} else
+      if (r.key === 'correct') {cur++;sessionBest = Math.max(sessionBest, cur);} else
       cur = 0;
     }
     return Math.max(best, sessionBest);
@@ -476,6 +476,10 @@ export default function StudySession() {
   };
 
   const handleScore = (points, key) => {
+    // First commit of this card? scores[cardIndex] is only set once answered,
+    // so a revisit/re-answer reads as already-committed and won't move the streak.
+    const firstCommit = scores[cardIndex] == null;
+
     // Time-to-answer: recorded once per card, on the first commit. Revisits
     // (navigating back and re-answering) do not overwrite the original timing.
     setAnswerTimes((prev) => {
@@ -489,12 +493,18 @@ export default function StudySession() {
       next[cardIndex] = { points, key };
       return next;
     });
-    const wasCorrect = CORRECT_KEYS.has(key);
-    setCorrectStreak((prev) => {
-      const next = wasCorrect ? prev + 1 : 0;
-      if (wasCorrect) setBestStreak((b) => Math.max(b, next));
-      return next;
-    });
+
+    // Streak = consecutive STRICTLY-correct first answers. No helpers: a clue,
+    // a second guess, or a partial does NOT build it, and anything but a clean
+    // 'correct' resets it to 0. Only the first commit of a card counts.
+    if (firstCommit) {
+      const streakWorthy = key === 'correct';
+      setCorrectStreak((prev) => {
+        const next = streakWorthy ? prev + 1 : 0;
+        if (streakWorthy) setBestStreak((b) => Math.max(b, next));
+        return next;
+      });
+    }
   };
 
   // Duration is frozen at the moment `done` flips so the panel doesn't tick on re-render.
