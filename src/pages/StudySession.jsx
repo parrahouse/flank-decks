@@ -11,6 +11,7 @@ import StudyCardHorizontal from '@/components/cards/StudyCardHorizontal';
 import ContactSheet from '@/components/cards/ContactSheet';
 import ProgressGameBand from '@/components/cards/ProgressGameBand';
 import SessionStatsPanel from '@/components/cards/SessionStatsPanel';
+import StreakCounter from '@/components/cards/StreakCounter';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSavedSession } from '@/hooks/useSavedSession';
@@ -930,6 +931,7 @@ export default function StudySession() {
             <span className="text-foreground uppercase" style={{ fontSize: 20, lineHeight: 1 }}>Score: {totalPoints.toFixed(2)}</span>
             <span className="text-muted-foreground uppercase" style={{ fontSize: 20, lineHeight: 1 }}>Top Score: {highScore > 0 ? highScore.toFixed(2) : '--'}</span>
           </div>
+          <StreakCounter streak={correctStreak} record={Math.max(allTimeBest, bestStreak)} />
           <button
             onClick={() => {
               const next = !soundEnabled;
