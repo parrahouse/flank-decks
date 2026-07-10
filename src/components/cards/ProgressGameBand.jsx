@@ -278,7 +278,7 @@ export default function ProgressGameBand({
   const [celebSub, setCelebSub] = useState('idle');         // 'idle' | 'react' during celebrate
   // Seed the finish push for resumed already-complete sessions so Swab mounts
   // past the pole (matches the seeded finishLit).
-  const [nudgeOffset, setNudgeOffset] = useState(() => (total > 0 && shownCompleted >= total) ? FINISH_PUSH_PX : 0);
+  const [nudgeOffset, setNudgeOffset] = useState(() => (total > 0 && scores.filter(Boolean).length >= total) ? FINISH_PUSH_PX : 0);
   const [nudgeDurMs, setNudgeDurMs] = useState(STEP_MS);    // duration of the current nudge animation
   const phaseRef = useRef('idle');
   const reactEndRef = useRef(0); // wall-clock ms when the in-flight reaction ends
