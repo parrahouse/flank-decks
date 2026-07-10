@@ -87,8 +87,11 @@ export default function StreakCounter({ streak = 0, record = 0 }) {
           aria-hidden
           style={{
             position: 'absolute', top: 0, left: 0,
-            width: FRAME * FRAMES * SCALE, height: size, // 1024 x 32
-            transform: `translateX(${-frame * size}px)`,  // always an integer step
+            display: 'block',
+            width: FRAME * FRAMES * SCALE,   // 1024
+            height: size,                    // 32
+            maxWidth: 'none',                // opt out of Tailwind Preflight's img{max-width:100%}
+            transform: `translateX(${-frame * size}px)`,
             imageRendering: 'pixelated',
           }}
         />
