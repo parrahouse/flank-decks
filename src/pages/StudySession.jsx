@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -9,8 +9,9 @@ import StudyCard from '@/components/cards/StudyCard';
 import StudyCardHorizontal from '@/components/cards/StudyCardHorizontal';
 import ContactSheet from '@/components/cards/ContactSheet';
 import ProgressGameBand from '@/components/cards/ProgressGameBand';
+import SessionStatsPanel from '@/components/cards/SessionStatsPanel';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useSavedSession } from '@/hooks/useSavedSession';
 import { useSound } from '@/hooks/useSound';
 
@@ -421,6 +422,7 @@ export default function StudySession() {
     setShuffledCards([]);
     setScores([]);
     setFirstWrongChoices([]);
+    setAnswerTimes([]);
     sessionSaved.current = false;
     setIntroPhase('intro');
   };
@@ -495,6 +497,12 @@ export default function StudySession() {
     });
   };
 
+  // Duration is frozen at the moment `done` flips so the panel doesn't tick on re-render.
+  const completionDurationMs = useMemo(() => {
+    if (!done || !sessionStartTime) return null;
+    return Date.now() - sessionStartTime.getTime();
+  }, [done, sessionStartTime]);
+
   if (isLoading || !activeCards.length) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -509,6 +517,7 @@ export default function StudySession() {
   const highScore = pastSessions.length > 0 ?
   Math.max(...pastSessions.map((s) => s.total_points || 0)) :
   0;
+
   const current = shuffledCards[cardIndex];
 
   // Filter selection screen
@@ -874,7 +883,7 @@ export default function StudySession() {
         transition={{ duration: 0.25, ease: 'easeOut' }}>
         
         {/* Background scene — only during active study */}
-        {!done && filterChosen &&
+        {filterChosen &&
         <ProgressGameBand
           cardIndex={cardIndex}
           total={shuffledCards.length}
@@ -945,189 +954,86 @@ export default function StudySession() {
         </div>
 
         {/* Floor space: extends the stage downward so the absolute scene has room for sky + ground below the controls */}
-        {!done && filterChosen && <div aria-hidden style={{ height: SCENE_FLOOR_H }} />}
+        {filterChosen && <div aria-hidden style={{ height: SCENE_FLOOR_H }} />}
       </motion.div>
 
-      {done ?
-      <div className="flex flex-col items-center py-10 gap-6 mt-6">
-          <div className="text-5xl">🎉</div>
-          <div className="text-center space-y-1">
-            <h2 className="text-xl font-bold">Deck complete!</h2>
-            <p className="text-muted-foreground text-sm">
-              Score: <span className="font-semibold text-foreground">{totalPoints.toFixed(2)} / {maxPoints}</span>
-              <span className="ml-2 text-xs">({pct}%)</span>
-            </p>
-            {(streak?.current_streak || 0) > 0 &&
-          <p className={cn(
-            'text-sm font-semibold mt-1',
-            (streak.current_streak || 0) >= 30 ? 'text-purple-500' :
-            (streak.current_streak || 0) >= 14 ? 'text-red-500' :
-            (streak.current_streak || 0) >= 7 ? 'text-orange-500' :
-            'text-amber-500'
-          )}>
-                🔥 {streak.current_streak}-day streak!
-                {streak.current_streak === streak.longest_streak && streak.current_streak >= 3 && ' (personal best)'}
-              </p>
-          }
-          </div>
-
-          {/* Per-card breakdown */}
-          <div className="w-full bg-card border border-border rounded-xl overflow-hidden">
-            {shuffledCards.map((card, i) => {
-            const result = scores[i];
-            const info = result ? SCORE_LABELS[result.key] : { label: 'Skipped', color: 'text-muted-foreground' };
-            const stat = cardStats.find((s) => s.card_id === card.id);
-            return (
-              <div key={card.id} className={cn('flex items-center justify-between px-4 py-2.5 text-sm', i > 0 && 'border-t border-border')}>
-                  <div className="flex items-center gap-3 min-w-0">
-                    {card.image_url && <img src={card.image_url} alt="" className="w-8 h-8 rounded object-cover shrink-0" />}
-                    <span className="truncate font-medium">{card.correct_answer}</span>
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0 ml-3">
-                    {stat?.mastered && <span className="text-xs bg-success/10 text-success px-1.5 py-0.5 rounded font-medium">Mastered</span>}
-                    <span className={cn('text-xs font-medium', info.color)}>{info.label}</span>
-                    <span className="text-xs text-muted-foreground w-8 text-right">{result ? result.points.toFixed(2) : '—'}</span>
-                  </div>
-                </div>);
-
-          })}
-          </div>
-
-          <div className="flex gap-2">
-            <Link to={`/stats/${deckId}`}>
-              <Button variant="outline" className="gap-1.5"><BarChart2 className="w-4 h-4" /> View Stats</Button>
-            </Link>
-            <Button onClick={restart} className="gap-1.5"><RotateCcw className="w-4 h-4" /> Study Again</Button>
-          </div>
-
-          {/* Historical stats */}
-          {pastSessions.length > 0 && (() => {
-          const allScores = pastSessions.map((s) => s.score_pct);
-          const avg = allScores.reduce((a, b) => a + b, 0) / allScores.length;
-          const best = Math.max(...allScores);
-          const masteredCount = cardStats.filter((s) => s.mastered).length;
-          const stillLearning = activeCards.length - masteredCount;
-
-          return (
-            <div className="w-full space-y-4 pt-2">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">All-time Stats</h3>
-
-                {/* Summary row */}
-                <div className="grid grid-cols-3 gap-3 w-full">
-                  <div className="bg-card border border-border rounded-xl p-3 flex flex-col gap-1">
-                    <span className="text-xs text-muted-foreground">Sessions</span>
-                    <span className="text-xl font-bold">{pastSessions.length}</span>
-                  </div>
-                  <div className="bg-card border border-border rounded-xl p-3 flex flex-col gap-1">
-                    <span className="text-xs text-muted-foreground">Avg Score</span>
-                    <span className="text-xl font-bold">{Math.round(avg)}%</span>
-                  </div>
-                  <div className="bg-card border border-border rounded-xl p-3 flex flex-col gap-1">
-                    <span className="text-xs text-muted-foreground flex items-center gap-1"><Trophy className="w-3 h-3 text-amber-500" /> Best</span>
-                    <span className="text-xl font-bold text-success">{Math.round(best)}%</span>
-                  </div>
-                </div>
-
-                {/* Mastery overview */}
-                {cardStats.length > 0 &&
-              <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-                    <div className="flex items-center gap-1.5 text-sm font-medium">
-                      <Trophy className="w-4 h-4 text-amber-500" /> Mastery
-                    </div>
-                    <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-                      <div
-                    className="bg-success h-2 rounded-full transition-all duration-700"
-                    style={{ width: `${activeCards.length > 0 ? masteredCount / activeCards.length * 100 : 0}%` }} />
-                  
-                    </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-success font-medium">✓ {masteredCount} mastered</span>
-                      <span className="text-muted-foreground">{stillLearning} still learning</span>
-                    </div>
-                  </div>
-              }
-
-                {/* Recent session history */}
-                <div className="bg-card border border-border rounded-xl overflow-hidden">
-                  <div className="px-4 py-2.5 border-b border-border bg-muted/40 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    Recent Sessions
-                  </div>
-                  {[...pastSessions].slice(0, 6).map((s, i) =>
-                <div key={s.id} className={cn('flex items-center justify-between px-4 py-2.5 text-sm', i > 0 && 'border-t border-border')}>
-                      <span className="text-muted-foreground text-xs">
-                        {new Date(s.created_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-20 bg-muted rounded-full h-1.5 overflow-hidden">
-                          <div
-                        className={cn('h-1.5 rounded-full', s.score_pct >= 75 ? 'bg-success' : s.score_pct >= 50 ? 'bg-amber-400' : 'bg-destructive')}
-                        style={{ width: `${s.score_pct}%` }} />
-                      
-                        </div>
-                        <span className="font-semibold w-10 text-right">{Math.round(s.score_pct)}%</span>
-                      </div>
-                    </div>
-                )}
-                </div>
-              </div>);
-
-        })()}
-        </div> :
-      contactSheetOpen ?
-      <div className="mt-4"><ContactSheet
-          cards={shuffledCards}
-          scores={scores}
-          cardIndex={cardIndex}
-          onJump={(i) => {setCardIndex(i);setContactSheetOpen(false);}} /></div> :
-
-      (() => {
-        const useHorizontal = layoutMode === 'horizontal' || layoutMode === 'auto' && isWide;
-        const introReady = questionReady;
-        const sharedProps = {
-          key: `${current.id}-${cardIndex}`,
-          card: current, deck,
-          onNext: handleNext, onPrev: handlePrev,
-          isFirst: cardIndex === 0, isLast: cardIndex === shuffledCards.length - 1,
-          onScore: handleScore, soundEnabled, autoAdvance,
-          note: notesByCardId[current.id] || null,
-          cardIndex, total: shuffledCards.length,
-          sessionStartTime, correctStreak, bestStreak, pastSessions,
-          masteredCount: cardStats.filter((s) => s.mastered).length,
-          totalCards: activeCards.length,
-          cardStats: cardStats.find((s) => s.card_id === current.id) || null,
-          eliminateAllowed,
-          learningMode,
-          isBookmarked: !!current.bookmarked,
-          onToggleBookmark: handleToggleBookmark,
-          onFirstWrong: handleFirstWrong,
-          introReady
-        };
-
-        const childVariant = {
-          hidden: { opacity: 0, y: 14 },
-          visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: 'easeOut' } }
-        };
-        const containerVariant = {
-          hidden: {},
-          visible: { transition: { staggerChildren: INTRO_STAGGER_MS } }
-        };
-
-        return (
+      <AnimatePresence mode="wait">
+        {done ? (
           <motion.div
-            className="relative bg-card border border-border rounded-lg p-4 mt-4"
-            variants={containerVariant}
-            initial="hidden"
-            animate="visible">
-            
-            {RestartWarningOverlay}
-            {ExitWarningOverlay}
-            {useHorizontal ?
-            <StudyCardHorizontal {...sharedProps} handedness={handedness} childVariant={childVariant} /> :
-            <StudyCard {...sharedProps} hintsAllowed={hintsAllowed} childVariant={childVariant} />
-            }
-          </motion.div>);
+            key="session-stats"
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.45, ease: 'easeOut' }}
+            className="relative bg-card border border-border rounded-lg p-4 mt-4">
+            <SessionStatsPanel
+              shuffledCards={shuffledCards} scores={scores} answerTimes={answerTimes}
+              firstWrongChoices={firstWrongChoices} cardStats={cardStats}
+              totalPoints={totalPoints} maxPoints={maxPoints} pct={pct}
+              bestStreak={bestStreak} streak={streak}
+              durationMs={completionDurationMs}
+              deckId={deckId} onRestart={restart} />
+          </motion.div>
+        ) : (
+          <motion.div key="study-area" initial={false} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+            {contactSheetOpen ?
+            <div className="mt-4"><ContactSheet
+                cards={shuffledCards}
+                scores={scores}
+                cardIndex={cardIndex}
+                onJump={(i) => {setCardIndex(i);setContactSheetOpen(false);}} /></div> :
 
-      })()}
+            (() => {
+              const useHorizontal = layoutMode === 'horizontal' || layoutMode === 'auto' && isWide;
+              const introReady = questionReady;
+              const sharedProps = {
+                key: `${current.id}-${cardIndex}`,
+                card: current, deck,
+                onNext: handleNext, onPrev: handlePrev,
+                isFirst: cardIndex === 0, isLast: cardIndex === shuffledCards.length - 1,
+                onScore: handleScore, soundEnabled, autoAdvance,
+                note: notesByCardId[current.id] || null,
+                cardIndex, total: shuffledCards.length,
+                sessionStartTime, correctStreak, bestStreak, pastSessions,
+                masteredCount: cardStats.filter((s) => s.mastered).length,
+                totalCards: activeCards.length,
+                cardStats: cardStats.find((s) => s.card_id === current.id) || null,
+                eliminateAllowed,
+                learningMode,
+                isBookmarked: !!current.bookmarked,
+                onToggleBookmark: handleToggleBookmark,
+                onFirstWrong: handleFirstWrong,
+                introReady
+              };
+
+              const childVariant = {
+                hidden: { opacity: 0, y: 14 },
+                visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: 'easeOut' } }
+              };
+              const containerVariant = {
+                hidden: {},
+                visible: { transition: { staggerChildren: INTRO_STAGGER_MS } }
+              };
+
+              return (
+                <motion.div
+                  className="relative bg-card border border-border rounded-lg p-4 mt-4"
+                  variants={containerVariant}
+                  initial="hidden"
+                  animate="visible">
+                  
+                  {RestartWarningOverlay}
+                  {ExitWarningOverlay}
+                  {useHorizontal ?
+                  <StudyCardHorizontal {...sharedProps} handedness={handedness} childVariant={childVariant} /> :
+                  <StudyCard {...sharedProps} hintsAllowed={hintsAllowed} childVariant={childVariant} />
+                  }
+                </motion.div>);
+
+            })()}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
 
     </div>);
