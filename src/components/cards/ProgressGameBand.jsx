@@ -32,7 +32,8 @@ const EGGLAY_MS       = 15 * REACT_FRAME_MS;  // egg-laying one-shot duration
 const EGG_REVEAL_MS   = 6  * REACT_FRAME_MS;  // egg settle one-shot
 const MARKER_PLANT_MS = 19 * REACT_FRAME_MS;  // pole+flag plant one-shot
 const WAYPOINT_OFFSET = 0;   // world-x offset from Swab's stand point at m — tune by eye
-const FINISH_OFFSET_PX_FACTOR = -1.0; // × character width W; pole sits behind Swab's final stand point — tune by eye
+const FINISH_GAP_FACTOR   = 0.5;  // × W — pole sits this far AHEAD of the final stand point; tune by eye
+const FINISH_CLEAR_FACTOR = 0.5;  // × W — extra margin past the pole at the end of the push; tune by eye
 
 const AVATAR_ENTRY_MS   = 1000;
 const AVATAR_ENTRY_EASE = 'linear';
@@ -205,6 +206,9 @@ export default function ProgressGameBand({
   const FINISH_BOTTOM = GROUND_DISP - FINISH_FOOT_TO_BOTTOM;
   const FINISH_FRAMES = finishAsset?.frames || 0;
   const FINISH_LOOP_MS = FINISH_FRAMES * REACT_FRAME_MS; // loop cadence, matches reaction frame rate
+  const FINISH_GAP_PX  = FINISH_GAP_FACTOR * W;
+  // Push must cover: the gap to the pole + the pole's own width + clear margin
+  const FINISH_PUSH_PX = FINISH_GAP_PX + FW + FINISH_CLEAR_FACTOR * W;
 
   // ── Resolve sprites through the nested fallback rules ───────────────────────
   // idle has no `sad` variant → resolveSprite falls back to `happy`.
@@ -272,7 +276,9 @@ export default function ProgressGameBand({
   const [idleVariant, setIdleVariant] = useState('happy'); // idle shown after a walk
   const [reactKey, setReactKey] = useState(0);              // re-arm one-shot layers
   const [celebSub, setCelebSub] = useState('idle');         // 'idle' | 'react' during celebrate
-  const [nudgeOffset, setNudgeOffset] = useState(0);        // forward reveal-nudge offset (px)
+  // Seed the finish push for resumed already-complete sessions so Swab mounts
+  // past the pole (matches the seeded finishLit).
+  const [nudgeOffset, setNudgeOffset] = useState(() => (total > 0 && shownCompleted >= total) ? FINISH_PUSH_PX : 0);
   const [nudgeDurMs, setNudgeDurMs] = useState(STEP_MS);    // duration of the current nudge animation
   const phaseRef = useRef('idle');
   const reactEndRef = useRef(0); // wall-clock ms when the in-flight reaction ends
@@ -365,26 +371,34 @@ export default function ProgressGameBand({
     const canCelebrate = RIGHT_FRAMES > 0 && !!rightSprite?.src;
 
     let cancelled = false;
-    let tStart, tWalk, tEggLay, tNudge;
+    let tStart, tWalk, tEggLay, tNudge, tPush;
 
     const finishWalk = () => {
       if (cancelled) return;
       setReactKey((k) => k + 1);
       // Arrival at a waypoint = egg is laid now (behind Swab; the nudge reveals it).
       // Covers both the lay-animation path and any no-lay-sprite fallback below.
-      if (isLast) {
-        setFinishLit(true);
-      }
       if (waypoints.includes(completedVal)) {
         setLaidEggs((prev) => prev.has(completedVal) ? prev : new Set(prev).add(completedVal));
       }
-      if (isLast && canCelebrate) {
-        stopWalking();
-        phaseRef.current = 'celebrate'; setPhase('celebrate');
-      } else if (isLast) {
-        stopWalking();
-        setIdleVariant('happy');                 // ends happy even with no reaction sprite
-        phaseRef.current = 'idle'; setPhase('idle');
+      if (isLast) {
+        // Finish push: keep walking past the pole. Don't stop or change phase —
+        // the walk animation continues seamlessly from the final step into the push.
+        setNudgeDurMs(FINISH_PUSH_MS);
+        setWalkVariant('happy');
+        phaseRef.current = 'walk'; setPhase('walk');
+        setNudgeOffset(FINISH_PUSH_PX);
+        tPush = setTimeout(() => {
+          if (cancelled) return;
+          setFinishLit(true);            // Swab is clear → sparkles start looping
+          stopWalking();
+          if (canCelebrate) {
+            phaseRef.current = 'celebrate'; setPhase('celebrate');
+          } else {
+            setIdleVariant('happy');
+            phaseRef.current = 'idle'; setPhase('idle');
+          }
+        }, FINISH_PUSH_MS);
       } else if (waypoints.includes(completedVal) && EGGLAY_FRAMES > 0 && eggLaySprite?.src) {
         // Arrived at a waypoint → lay an egg, then nudge forward to reveal it
         stopWalking();
@@ -447,7 +461,7 @@ export default function ProgressGameBand({
       }
     }
 
-    return () => { cancelled = true; clearTimeout(tStart); clearTimeout(tWalk); clearTimeout(tEggLay); clearTimeout(tNudge); };
+    return () => { cancelled = true; clearTimeout(tStart); clearTimeout(tWalk); clearTimeout(tEggLay); clearTimeout(tNudge); clearTimeout(tPush); };
   }
 
   processCommitRef.current = processCommit;
@@ -512,6 +526,8 @@ export default function ProgressGameBand({
   const STEP_PX  = (ANCHOR_X - LEAD_IN) / WAYPOINT_EVERY || 1; // width-relative per-card distance
   // Walk cycle derived so foot speed matches ground speed (no skating):
   const WALK_CYCLE_MS = Math.round(STEP_MS * STRIDE_PER_CYCLE_PX / STEP_PX);
+  // Finish push duration matched to walk speed (STEP_PX per STEP_MS) so feet don't skate
+  const FINISH_PUSH_MS = Math.round(STEP_MS * FINISH_PUSH_PX / STEP_PX);
 
   // Each waypoint Swab has passed adds one REVEAL_NUDGE_PX forward; carry it into
   // charWorldX so the first walk after a waypoint is a full STEP_PX (the nudge that
@@ -737,7 +753,7 @@ export default function ProgressGameBand({
         {finishAsset?.src && FINISH_FRAMES > 0 && (() => {
           const fx = LEAD_IN + total * STEP_PX
                    + REVEAL_NUDGE_PX * waypoints.length
-                   + FINISH_OFFSET_PX_FACTOR * W;
+                   + FINISH_GAP_PX;
           return (
             <div
               key="finish-line"
@@ -784,6 +800,7 @@ export default function ProgressGameBand({
           willChange: 'transform',
         }}>
           <motion.div
+            initial={false}
             animate={{ x: nudgeOffset }}
             transition={{ duration: nudgeDurMs / 1000, ease: 'linear' }}
             style={{ position: 'absolute', inset: 0, willChange: 'transform' }}
