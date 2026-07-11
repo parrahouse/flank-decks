@@ -991,7 +991,8 @@ export default function StudySession() {
               totalPoints={totalPoints} maxPoints={maxPoints} pct={pct}
               bestStreak={bestStreak} streak={streak}
               durationMs={completionDurationMs}
-              deckId={deckId} onRestart={restart} onReviewMissed={reviewMissed} />
+              deckId={deckId} onRestart={restart} onReviewMissed={reviewMissed}
+              useHorizontal={useHorizontal} />
           </motion.div>
         ) : (
           <motion.div key="study-area" initial={false} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>

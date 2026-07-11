@@ -1,14 +1,11 @@
 import { Link } from 'react-router-dom';
 import { BarChart2, RotateCcw, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { STUDY_CARD_H } from '@/lib/studyLayout';
 
 const CORRECT_KEYS = new Set(['correct', 'second_guess', 'correct_after_clue', 'second_guess_after_clue', 'partial']);
 const SECOND_GUESS_KEYS = new Set(['second_guess', 'second_guess_after_clue']);
 const CLUE_KEYS = new Set(['correct_after_clue', 'second_guess_after_clue']);
-
-// Matches StudyCard's fixed body so the crossfade doesn't resize.
-// Keep in sync with StudyCard's clamp(380px, 50vw, 520px).
-const CARD_BODY_H = 'clamp(380px, 50vw, 520px)';
 
 const fmtMs = (ms) => ms == null ? '—' : ms >= 60000
   ? `${Math.floor(ms / 60000)}:${String(Math.round((ms % 60000) / 1000)).padStart(2, '0')}`
@@ -25,9 +22,11 @@ function StatTile({ label, children }) {
 
 export default function SessionStatsPanel({
   shuffledCards = [], scores = [], pct = 0, totalPoints = 0, maxPoints = 0,
-  bestStreak = 0, durationMs, deckId, onRestart, onReviewMissed
+  bestStreak = 0, durationMs, deckId, onRestart, onReviewMissed, useHorizontal = false
 }) {
   const total = shuffledCards.length;
+  // Match the card body height the user just saw so the crossfade doesn't resize.
+  const cardBodyH = useHorizontal ? STUDY_CARD_H.horizontal : STUDY_CARD_H.vertical;
 
   let right = 0, wrong = 0, skips = 0;
   for (let i = 0; i < total; i++) {
@@ -51,7 +50,7 @@ export default function SessionStatsPanel({
   return (
     // Mirror StudyCard's root skeleton so body + footer sum to the same height.
     <div className="mx-auto flex flex-col gap-3 w-full max-w-[700px]">
-      <div style={{ height: CARD_BODY_H }} className="flex flex-col justify-between overflow-hidden">
+      <div style={{ height: cardBodyH }} className="flex flex-col justify-between overflow-hidden">
 
         {/* Header — score as a percentage */}
         <div className="flex items-baseline justify-between gap-2">
