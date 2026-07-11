@@ -310,6 +310,9 @@ export default function StudyCard({
       return 'idle-retry';
     }
     if (correct) return 'correct';
+    // The choice that finalized a wrong answer (e.g. a second guess that's also
+    // wrong) shows the red "wrong-final" reaction + shake instead of dimming.
+    if (answered && choice === finalAnswer) return 'wrong-final';
     return 'dim';
   };
 
@@ -509,12 +512,12 @@ export default function StudyCard({
                       >
                         <span style={{
                           width: 30, height: 30, borderRadius: 6, flexShrink: 0,
-                          backgroundColor: state === 'correct' ? '#00A842' : '#000',
+                          backgroundColor: state === 'correct' ? '#00A842' : state === 'wrong-final' ? '#dc2626' : '#000',
                           color: '#fff',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           fontSize: 13, fontWeight: 700,
                         }}>
-                          {state === 'correct' ? <Check style={{ width: 16, height: 16 }} /> : LETTERS[idx]}
+                          {state === 'correct' ? <Check style={{ width: 16, height: 16 }} /> : state === 'wrong-final' ? <X style={{ width: 16, height: 16 }} /> : LETTERS[idx]}
                         </span>
                         <MathRenderer text={choice} />
                       </button>
@@ -550,6 +553,7 @@ export default function StudyCard({
                           width: 28, height: 28, borderRadius: 5, flexShrink: 0,
                           backgroundColor:
                             state === 'correct' ? '#00A842' :
+                            state === 'wrong-final' ? '#dc2626' :
                             state === 'missed-correct' ? '#0165fc' :
                             state === 'selected-pending' ? '#0165fc' :
                             '#000',
@@ -559,9 +563,11 @@ export default function StudyCard({
                         }}>
                           {state === 'correct' || state === 'missed-correct' || state === 'selected-pending'
                             ? <Check style={{ width: 14, height: 14 }} />
-                            : (isSelectAll && state === 'first-wrong')
+                            : state === 'wrong-final'
                               ? <X style={{ width: 14, height: 14 }} />
-                              : LETTERS[idx]}
+                              : (isSelectAll && state === 'first-wrong')
+                                ? <X style={{ width: 14, height: 14 }} />
+                                : LETTERS[idx]}
                         </span>
                         <MathRenderer text={choice} className="flex-1" style={{ lineHeight: 1.3 }} />
                       </button>
