@@ -16,6 +16,7 @@ import {
   X, MessageCircleQuestion, Check, PlusCircle,
 } from 'lucide-react';
 import CardNoteEditor from './CardNoteEditor';
+import { STUDY_CARD_H } from '@/lib/studyLayout';
 import ShortAnswerInput from './ShortAnswerInput';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -485,7 +486,7 @@ export default function StudyCardHorizontal({
   const rightCol = handedness === 'right' ? ImageQuestionCol : AnswerCol;
 
   return (
-    <div style={{ display: 'flex', gap: 16, width: '100%', alignItems: 'stretch', height: 'clamp(400px, 56vh, 560px)' }}>
+    <div style={{ display: 'flex', gap: 16, width: '100%', alignItems: 'stretch', height: STUDY_CARD_H.horizontal }}>
       {leftCol}
       {rightCol}
 
