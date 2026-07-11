@@ -16,9 +16,11 @@ const FILL_START = { 1: 1, 2: 7, 3: 11, 4: 15 };
 // matches the current level, so a mid-fill break empties from where it sits
 // instead of snapping to full first. Frames chosen from the measured grey fill.
 const DRAIN_START = { 1: 27, 2: 26, 3: 25, 4: 24 };
+const LAY_DELAY_MS = 450; // hold full this long before draining, so the drain lines
+                          // up with Swab's egg-lay (tune to the react gap; 0 = drain at once)
 
-// Resting frame for a streak value: empty at 0, full (23) on every multiple of 5.
-const holdFrame = (s) => (s === 0 ? 0 : (s % 5 === 0 ? FULL : LEVEL[s % 5]));
+// Resting frame for a streak value: empty at 0 and after each lay.
+const holdFrame = (s) => (s % 5 === 0 ? 0 : LEVEL[s % 5]);
 
 const range = (a, b) => {
   const out = [], step = a <= b ? 1 : -1;
@@ -31,20 +33,17 @@ function sequenceFor(prev, next) {
   if (next === prev) return null;
   if (next > prev) {
     const m = next % 5;
-    // Leaving a full milestone: drain the laid egg (24..31), then fill the new
-    // one up to its level. The emptying animation lives here now, not at the lay.
-    if (prev > 0 && prev % 5 === 0) {
-      return { frames: [...range(23, 31), ...range(FILL_START[m], LEVEL[m])], land: LEVEL[m] };
+    if (m === 0) {
+      // Milestone: fill to full, hold full through the reaction, then drain in
+      // sync with the egg-lay. The full-frame pad delays the drain by ~LAY_DELAY_MS.
+      const pad = Array(Math.max(0, Math.round(LAY_DELAY_MS / FRAME_MS))).fill(FULL);
+      return { frames: [...range(19, 22), ...pad, ...range(23, 31)], land: 0 };
     }
-    // Reaching a milestone: fill to full and HOLD on 22 (no empty yet).
-    if (m === 0) return { frames: range(19, 22), land: FULL };
-    // Normal fill burst.
     return { frames: range(FILL_START[m], LEVEL[m]), land: LEVEL[m] };
   }
   if (next === 0) {                                                                 // streak broke
     const pm = prev % 5;
-    if (prev > 0 && pm === 0) return { frames: range(23, 31), land: 0 };            // break from full
-    if (!DRAIN_START[pm]) return { frames: [], land: 0 };
+    if (!DRAIN_START[pm]) return { frames: [], land: 0 };   // pm===0: already empty (post-lay)
     return { frames: range(DRAIN_START[pm], 31), land: 0 };
   }
   return { frames: [], land: holdFrame(next) };                                     // fallback settle
