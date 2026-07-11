@@ -564,7 +564,7 @@ export default function StudyCard({
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           fontSize: 12, fontWeight: 700,
                         }}>
-                          {state === 'correct' || state === 'missed-correct' || state === 'selected-pending'
+                          {state === 'correct' || state === 'missed-correct'
                             ? <Check style={{ width: 14, height: 14 }} />
                             : state === 'wrong-final'
                               ? <X style={{ width: 14, height: 14 }} />
