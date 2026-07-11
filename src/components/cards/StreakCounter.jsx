@@ -8,16 +8,17 @@ const FRAMES = 32;   // total frames on the sheet
 const SCALE = 2;     // integer upscale -> 32x32 rendered
 const FRAME_MS = 38; // per-frame playback speed (tune to taste)
 
-// Steady hold frame for the current fill level (index by streak % 5).
-const HOLD = [0, 7, 11, 15, 19];
-
-// Fill-burst start frame for each level (streak % 5; 0 is the milestone/lay).
+const LEVEL = { 1: 7, 2: 11, 3: 15, 4: 19 }; // holds for the 1st..4th correct
+const FULL = 23;                             // hold for the 5th — egg full (milestone)
 const FILL_START = { 1: 1, 2: 8, 3: 12, 4: 16 };
 
 // Break drain: enter the 24..31 emptying run at the frame whose fill roughly
 // matches the current level, so a mid-fill break empties from where it sits
 // instead of snapping to full first. Frames chosen from the measured grey fill.
 const DRAIN_START = { 1: 27, 2: 26, 3: 26, 4: 25 };
+
+// Resting frame for a streak value: empty at 0, full (23) on every multiple of 5.
+const holdFrame = (s) => (s === 0 ? 0 : (s % 5 === 0 ? FULL : LEVEL[s % 5]));
 
 const range = (a, b) => {
   const out = [], step = a <= b ? 1 : -1;
@@ -30,21 +31,29 @@ function sequenceFor(prev, next) {
   if (next === prev) return null;
   if (next > prev) {
     const m = next % 5;
-    if (m === 0) return { frames: [...range(20, 23), ...range(24, 31)], land: 0 }; // lay + empty
-    return { frames: range(FILL_START[m], HOLD[m]), land: HOLD[m] };               // fill burst
+    // Leaving a full milestone: drain the laid egg (24..31), then fill the new
+    // one up to its level. The emptying animation lives here now, not at the lay.
+    if (prev > 0 && prev % 5 === 0) {
+      return { frames: [...range(24, 31), ...range(FILL_START[m], LEVEL[m])], land: LEVEL[m] };
+    }
+    // Reaching a milestone: fill to full and HOLD on 23 (no empty yet).
+    if (m === 0) return { frames: range(20, 23), land: FULL };
+    // Normal fill burst.
+    return { frames: range(FILL_START[m], LEVEL[m]), land: LEVEL[m] };
   }
   if (next === 0) {                                                                 // streak broke
     const pm = prev % 5;
-    if (!DRAIN_START[pm]) return { frames: [], land: 0 };                           // was empty
+    if (prev > 0 && pm === 0) return { frames: range(24, 31), land: 0 };            // break from full
+    if (!DRAIN_START[pm]) return { frames: [], land: 0 };
     return { frames: range(DRAIN_START[pm], 31), land: 0 };
   }
-  return { frames: [], land: HOLD[next % 5] };                                      // fallback settle
+  return { frames: [], land: holdFrame(next) };                                     // fallback settle
 }
 
 const pad = (n) => String(n).padStart(2, '0');
 
 export default function StreakCounter({ streak = 0, record = 0 }) {
-  const [frame, setFrame] = useState(HOLD[streak % 5] ?? 0);
+  const [frame, setFrame] = useState(holdFrame(streak));
   const prevRef = useRef(streak);
   const timerRef = useRef(null);
 
