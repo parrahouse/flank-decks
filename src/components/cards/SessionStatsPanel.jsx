@@ -13,9 +13,9 @@ const fmtMs = (ms) => ms == null ? '—' : ms >= 60000
 
 function StatTile({ label, children }) {
   return (
-    <div className="bg-background border border-border rounded-lg p-2.5 flex flex-col justify-center gap-0.5">
-      <span className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</span>
-      <span className="font-bold" style={{ fontFamily: "'VT323', monospace", fontSize: 22, lineHeight: 1 }}>{children}</span>
+    <div className="bg-background border border-border rounded-lg p-4 flex flex-col items-center justify-center gap-1 text-center">
+      <span className="text-xs text-muted-foreground uppercase tracking-wide">{label}</span>
+      <span className="font-bold text-xl text-foreground">{children}</span>
     </div>
   );
 }
@@ -46,12 +46,13 @@ export default function SessionStatsPanel({
   }
 
   const header = (
-    <div className="flex items-baseline justify-between gap-2">
-      <h2 className="text-lg font-bold">Deck complete! 🎉</h2>
-      <div className="text-right leading-none">
-        <span className="font-bold" style={{ fontFamily: "'VT323', monospace", fontSize: 34, lineHeight: 1 }}>{pct}%</span>
-        <span className="block text-[11px] text-muted-foreground mt-0.5">{totalPoints.toFixed(2)} / {maxPoints} pts</span>
+    <div className="flex flex-col items-center text-center gap-2">
+      <h2 className="text-xl font-semibold text-muted-foreground uppercase tracking-wide">Deck Complete</h2>
+      <div className="leading-none">
+        <span className="font-bold text-foreground" style={{ fontSize: 72 }}>{pct}</span>
+        <span className="font-bold text-muted-foreground" style={{ fontSize: 36 }}>%</span>
       </div>
+      <span className="text-sm text-muted-foreground">{totalPoints.toFixed(2)} / {maxPoints} pts</span>
     </div>
   );
 
@@ -69,16 +70,16 @@ export default function SessionStatsPanel({
   );
 
   const actions = (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap justify-center gap-3">
       {missed > 0 && (
-        <Button onClick={onReviewMissed} className="gap-1.5">
-          <Target className="w-4 h-4" /> Review missed ({missed})
+        <Button onClick={onReviewMissed} size="lg" className="gap-2">
+          <Target className="w-5 h-5" /> Review missed ({missed})
         </Button>
       )}
       <Link to={`/stats/${deckId}`}>
-        <Button variant="outline" className="gap-1.5"><BarChart2 className="w-4 h-4" /> Full stats</Button>
+        <Button variant="outline" size="lg" className="gap-2"><BarChart2 className="w-5 h-5" /> Full stats</Button>
       </Link>
-      <Button variant="outline" onClick={onRestart} className="gap-1.5"><RotateCcw className="w-4 h-4" /> Study again</Button>
+      <Button variant="outline" size="lg" onClick={onRestart} className="gap-2"><RotateCcw className="w-5 h-5" /> Study again</Button>
     </div>
   );
 
@@ -86,7 +87,7 @@ export default function SessionStatsPanel({
   // a single fixed-height box, actions pinned at the bottom.
   if (useHorizontal) {
     return (
-      <div style={{ height: STUDY_CARD_H.horizontal }} className="w-full flex flex-col overflow-hidden">
+      <div style={{ height: STUDY_CARD_H.horizontal }} className="w-full flex flex-col justify-between gap-6 px-6 py-6 overflow-hidden">
         {header}
         {tiles}
         {actions}
@@ -96,8 +97,8 @@ export default function SessionStatsPanel({
 
   // Vertical card = fixed body + external nav row → mirror that skeleton.
   return (
-    <div className="mx-auto flex flex-col gap-3 w-full max-w-[700px]">
-      <div style={{ height: STUDY_CARD_H.vertical }} className="flex flex-col overflow-hidden">
+    <div className="mx-auto flex flex-col items-center gap-6 w-full max-w-[700px]">
+      <div style={{ height: STUDY_CARD_H.vertical }} className="w-full flex flex-col justify-center gap-8 px-4 py-6 overflow-hidden">
         {header}
         {tiles}
       </div>
