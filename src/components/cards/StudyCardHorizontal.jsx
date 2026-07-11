@@ -389,7 +389,7 @@ export default function StudyCardHorizontal({
         {/* Choices (non-short-answer) */}
         {!isShortAnswer && (
           <>
-            <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+            <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', padding: '0 8px' }}>
               {isTrueFalse ? (
                 <div style={{ display: 'flex', gap: 8 }}>
                   {shuffledChoices.map((choice, idx) => {

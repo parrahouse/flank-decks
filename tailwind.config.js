@@ -74,7 +74,7 @@ module.exports = {
   		keyframes: {
   			'accordion-down': { from: { height: '0' }, to: { height: 'var(--radix-accordion-content-height)' } },
   			'accordion-up': { from: { height: 'var(--radix-accordion-content-height)' }, to: { height: '0' } },
-        'shake': { '0%, 100%': { transform: 'translateX(0)' }, '20%': { transform: 'translateX(-6px)' }, '40%': { transform: 'translateX(6px)' }, '60%': { transform: 'translateX(-4px)' }, '80%': { transform: 'translateX(4px)' } },
+        'shake': { '0%, 100%': { transform: 'translateX(0)' }, '20%': { transform: 'translateX(-4px)' }, '40%': { transform: 'translateX(4px)' }, '60%': { transform: 'translateX(-3px)' }, '80%': { transform: 'translateX(3px)' } },
         'pop-in': { '0%': { transform: 'scale(0.95)', opacity: '0' }, '100%': { transform: 'scale(1)', opacity: '1' } },
         'subtle-shake': { '0%, 100%': { transform: 'translateX(0)' }, '25%': { transform: 'translateX(-3px)' }, '75%': { transform: 'translateX(3px)' } },
   		},

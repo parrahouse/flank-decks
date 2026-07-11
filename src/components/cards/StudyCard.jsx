@@ -486,7 +486,7 @@ export default function StudyCard({
         {/* Choice buttons (multiple_choice / true_false / select_all) */}
         {!isShortAnswer && (
           <>
-            <div style={{ flex: 1, overflow: 'hidden' }}>
+            <div style={{ flex: 1, overflow: 'hidden', padding: '0 8px' }}>
               {isTrueFalse ? (
                 <div style={{ display: 'flex', gap: 10 }}>
                   {shuffledChoices.map((choice, idx) => {
