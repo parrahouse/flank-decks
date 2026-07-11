@@ -237,9 +237,9 @@ export default function StudyCardHorizontal({
     if (!answered && !firstWrong) return 'idle';
     if (!answered && firstWrong) return choice === firstWrong ? 'first-wrong' : 'idle-retry';
     if (correct) return 'correct';
-    // The choice that finalized a wrong answer (e.g. a second guess that's also
-    // wrong) shows the red "wrong-final" reaction + shake instead of dimming.
-    if (answered && choice === finalAnswer) return 'wrong-final';
+    // Any wrong pick — the first attempt (firstWrong) or the final wrong guess
+    // (finalAnswer) — holds the red "wrong-final" state once the card is answered.
+    if (answered && (choice === finalAnswer || choice === firstWrong)) return 'wrong-final';
     return 'dim';
   };
 
@@ -396,7 +396,7 @@ export default function StudyCardHorizontal({
                     const state = getChoiceState(choice);
                     return (
                       <button key={choice} disabled={answered} onClick={() => handleSelect(choice)}
-                        className={cn('choice-btn', shake && (state === 'first-wrong' || state === 'wrong-final') && 'animate-shake')}
+                        className={cn('choice-btn', shake && (state === 'first-wrong' || (state === 'wrong-final' && choice === finalAnswer)) && 'animate-shake')}
                         style={{ flex: 1, minHeight: 56, borderRadius: 10, border: `2px solid ${choiceBorderColor(state)}`, backgroundColor: choiceBgColor(state), display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', cursor: answered ? 'default' : 'pointer', fontSize: 15, fontWeight: 500, textAlign: 'left', transition: 'border-color 0.4s ease 0.15s, background-color 0.4s ease 0.15s' }}
                       >
                         <span style={{ width: 26, height: 26, borderRadius: 5, flexShrink: 0, backgroundColor: state === 'correct' ? '#00A842' : state === 'wrong-final' ? '#dc2626' : '#000', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>
@@ -413,7 +413,7 @@ export default function StudyCardHorizontal({
                     const state = getChoiceState(choice);
                     return (
                       <button key={choice} disabled={state === 'eliminated' || answered} onClick={() => handleSelect(choice)}
-                        className={cn('choice-btn', shake && (state === 'first-wrong' || state === 'wrong-final') && 'animate-shake')}
+                        className={cn('choice-btn', shake && (state === 'first-wrong' || (state === 'wrong-final' && choice === finalAnswer)) && 'animate-shake')}
                         style={{ width: '100%', minHeight: choiceStyle.minHeight, borderRadius: 8, border: `2px solid ${choiceBorderColor(state)}`, backgroundColor: choiceBgColor(state), opacity: state === 'eliminated' || state === 'dim' ? 0.4 : 1, display: 'flex', alignItems: 'center', gap: 8, padding: choiceStyle.padding, cursor: answered || state === 'eliminated' ? 'default' : 'pointer', fontSize: choiceStyle.fontSize, fontWeight: 500, textAlign: 'left', transition: 'border-color 0.4s ease 0.15s, background-color 0.4s ease 0.15s, opacity 0.4s ease 0.15s' }}
                       >
                         <span style={{ width: 26, height: 26, borderRadius: 5, flexShrink: 0, backgroundColor: state === 'correct' ? '#00A842' : state === 'wrong-final' ? '#dc2626' : state === 'missed-correct' ? '#0165fc' : state === 'selected-pending' ? '#0165fc' : '#000', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>

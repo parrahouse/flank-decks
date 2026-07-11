@@ -310,9 +310,9 @@ export default function StudyCard({
       return 'idle-retry';
     }
     if (correct) return 'correct';
-    // The choice that finalized a wrong answer (e.g. a second guess that's also
-    // wrong) shows the red "wrong-final" reaction + shake instead of dimming.
-    if (answered && choice === finalAnswer) return 'wrong-final';
+    // Any wrong pick — the first attempt (firstWrong) or the final wrong guess
+    // (finalAnswer) — holds the red "wrong-final" state once the card is answered.
+    if (answered && (choice === finalAnswer || choice === firstWrong)) return 'wrong-final';
     return 'dim';
   };
 
@@ -496,7 +496,7 @@ export default function StudyCard({
                         key={choice}
                         disabled={answered}
                         onClick={() => handleSelect(choice)}
-                        className={cn('choice-btn', shake && (state === 'first-wrong' || state === 'wrong-final') && 'animate-shake')}
+                        className={cn('choice-btn', shake && (state === 'first-wrong' || (state === 'wrong-final' && choice === finalAnswer)) && 'animate-shake')}
                         style={{
                           flex: 1, minHeight: 64,
                           borderRadius: 12,
@@ -533,7 +533,7 @@ export default function StudyCard({
                         key={choice}
                         disabled={state === 'eliminated' || answered}
                         onClick={() => handleSelect(choice)}
-                        className={cn('choice-btn', shake && (state === 'first-wrong' || state === 'wrong-final') && 'animate-shake')}
+                        className={cn('choice-btn', shake && (state === 'first-wrong' || (state === 'wrong-final' && choice === finalAnswer)) && 'animate-shake')}
                         style={{
                           width: '100%',
                           minHeight: choiceStyle.minHeight,
