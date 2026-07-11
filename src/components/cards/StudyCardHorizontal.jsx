@@ -74,7 +74,8 @@ export default function StudyCardHorizontal({
   const [eliminated, setEliminated] = useState([]);
   const [clueManuallyRevealed, setClueManuallyRevealed] = useState(false);
   const [flipped, setFlipped] = useState(false);
-  const [shake, setShake] = useState(false);
+  const [shakingChoice, setShakingChoice] = useState(null);
+  const shakeTimerRef = useRef(null);
   const [countdown, setCountdown] = useState(null);
   const [noteEditing, setNoteEditing] = useState(false);
   const [eliminateShake, setEliminateShake] = useState(false);
@@ -121,14 +122,14 @@ export default function StudyCardHorizontal({
   useEffect(() => {
     setShuffledChoices(shuffle(card.choices || []));
     setFirstWrong(null); setFinalAnswer(null); setEliminated([]);
-    setClueManuallyRevealed(false); setFlipped(false); setShake(false);
+    setClueManuallyRevealed(false); setFlipped(false); setShakingChoice(null); clearTimeout(shakeTimerRef.current);
     setNoteEditing(false); setEliminateShake(false); setEliminateUsed(false);
     setHintVisible(false); setBookmarked(isBookmarked); setSelectAllPending(new Set());
     cancelCountdown(); clearTimeout(idleTimerRef.current);
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
   }, [card.id]);
 
-  useEffect(() => () => { cancelCountdown(); clearTimeout(idleTimerRef.current); }, []);
+  useEffect(() => () => { cancelCountdown(); clearTimeout(idleTimerRef.current); clearTimeout(shakeTimerRef.current); }, []);
 
   const handleSelect = (choice) => {
     if (finalAnswer) return;
@@ -150,7 +151,7 @@ export default function StudyCardHorizontal({
       onScore && onScore(cardPoints * SCORE[scoreKey], scoreKey);
       if (autoAdvance && !isLast) startCountdown();
     } else {
-      playWrong(); setShake(true); setTimeout(() => setShake(false), 400);
+      playWrong(); setShakingChoice(choice); clearTimeout(shakeTimerRef.current); shakeTimerRef.current = setTimeout(() => setShakingChoice(null), 400);
       if (!firstWrong && !eliminated.length) {
         setFirstWrong(choice);
         onFirstWrong && onFirstWrong(choice, { retry: true });
@@ -396,7 +397,7 @@ export default function StudyCardHorizontal({
                     const state = getChoiceState(choice);
                     return (
                       <button key={choice} disabled={answered} onClick={() => handleSelect(choice)}
-                        className={cn('choice-btn', shake && (state === 'first-wrong' || (state === 'wrong-final' && choice === finalAnswer)) && 'animate-shake')}
+                        className={cn('choice-btn', shakingChoice === choice && 'animate-shake')}
                         style={{ flex: 1, minHeight: 56, borderRadius: 10, border: `2px solid ${choiceBorderColor(state)}`, backgroundColor: choiceBgColor(state), display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', cursor: answered ? 'default' : 'pointer', fontSize: 15, fontWeight: 500, textAlign: 'left', transition: 'border-color 0.4s ease 0.15s, background-color 0.4s ease 0.15s' }}
                       >
                         <span style={{ width: 26, height: 26, borderRadius: 5, flexShrink: 0, backgroundColor: state === 'correct' ? '#00A842' : state === 'wrong-final' ? '#dc2626' : '#000', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>
@@ -413,7 +414,7 @@ export default function StudyCardHorizontal({
                     const state = getChoiceState(choice);
                     return (
                       <button key={choice} disabled={state === 'eliminated' || answered} onClick={() => handleSelect(choice)}
-                        className={cn('choice-btn', shake && (state === 'first-wrong' || (state === 'wrong-final' && choice === finalAnswer)) && 'animate-shake')}
+                        className={cn('choice-btn', shakingChoice === choice && 'animate-shake')}
                         style={{ width: '100%', minHeight: choiceStyle.minHeight, borderRadius: 8, border: `2px solid ${choiceBorderColor(state)}`, backgroundColor: choiceBgColor(state), opacity: state === 'eliminated' || state === 'dim' ? 0.4 : 1, display: 'flex', alignItems: 'center', gap: 8, padding: choiceStyle.padding, cursor: answered || state === 'eliminated' ? 'default' : 'pointer', fontSize: choiceStyle.fontSize, fontWeight: 500, textAlign: 'left', transition: 'border-color 0.4s ease 0.15s, background-color 0.4s ease 0.15s, opacity 0.4s ease 0.15s' }}
                       >
                         <span style={{ width: 26, height: 26, borderRadius: 5, flexShrink: 0, backgroundColor: state === 'correct' ? '#00A842' : state === 'wrong-final' ? '#dc2626' : state === 'missed-correct' ? '#0165fc' : state === 'selected-pending' ? '#0165fc' : '#000', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>

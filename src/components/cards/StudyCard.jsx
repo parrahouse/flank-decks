@@ -95,7 +95,8 @@ export default function StudyCard({
   const [questionRevealed] = useState(true);
   const [clueManuallyRevealed, setClueManuallyRevealed] = useState(false);
   const [flipped, setFlipped] = useState(false);
-  const [shake, setShake] = useState(false);
+  const [shakingChoice, setShakingChoice] = useState(null);
+  const shakeTimerRef = useRef(null);
 
   const [countdown, setCountdown] = useState(null);
   const [noteEditing, setNoteEditing] = useState(false);
@@ -145,7 +146,8 @@ export default function StudyCard({
     setEliminated([]);
     setClueManuallyRevealed(false);
     setFlipped(false);
-    setShake(false);
+    setShakingChoice(null);
+    clearTimeout(shakeTimerRef.current);
     setNoteEditing(false);
     setEliminateShake(false);
     setEliminateUsed(false);
@@ -158,7 +160,7 @@ export default function StudyCard({
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
   }, [card.id]);
 
-  useEffect(() => () => { cancelCountdown(); clearTimeout(idleTimerRef.current); }, []);
+  useEffect(() => () => { cancelCountdown(); clearTimeout(idleTimerRef.current); clearTimeout(shakeTimerRef.current); }, []);
 
   // Derived values (must be before effects that use them)
   const correctAnswers = (card.correct_answers || card.correct_answer || '')
@@ -201,8 +203,9 @@ export default function StudyCard({
       if (autoAdvance && !isLast) startCountdown();
     } else {
       playWrong();
-      setShake(true);
-      setTimeout(() => setShake(false), 400);
+      setShakingChoice(choice);
+      clearTimeout(shakeTimerRef.current);
+      shakeTimerRef.current = setTimeout(() => setShakingChoice(null), 400);
       if (!firstWrong && !eliminated.length && !isTrueFalse) {
         setFirstWrong(choice);
         onFirstWrong && onFirstWrong(choice, { retry: true });
@@ -496,7 +499,7 @@ export default function StudyCard({
                         key={choice}
                         disabled={answered}
                         onClick={() => handleSelect(choice)}
-                        className={cn('choice-btn', shake && (state === 'first-wrong' || (state === 'wrong-final' && choice === finalAnswer)) && 'animate-shake')}
+                        className={cn('choice-btn', shakingChoice === choice && 'animate-shake')}
                         style={{
                           flex: 1, minHeight: 64,
                           borderRadius: 12,
@@ -533,7 +536,7 @@ export default function StudyCard({
                         key={choice}
                         disabled={state === 'eliminated' || answered}
                         onClick={() => handleSelect(choice)}
-                        className={cn('choice-btn', shake && (state === 'first-wrong' || (state === 'wrong-final' && choice === finalAnswer)) && 'animate-shake')}
+                        className={cn('choice-btn', shakingChoice === choice && 'animate-shake')}
                         style={{
                           width: '100%',
                           minHeight: choiceStyle.minHeight,
