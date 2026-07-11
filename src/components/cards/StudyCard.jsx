@@ -510,7 +510,7 @@ export default function StudyCard({
                           cursor: answered ? 'default' : 'pointer',
                           fontSize: 16, fontWeight: 500,
                           textAlign: 'left',
-                          transition: 'border-color 0.4s ease 0.15s, background-color 0.4s ease 0.15s',
+                          transition: state === 'correct' ? 'none' : 'border-color 0.4s ease 0.15s, background-color 0.4s ease 0.15s',
                         }}
                       >
                         <span style={{
@@ -549,7 +549,7 @@ export default function StudyCard({
                           cursor: answered || state === 'eliminated' ? 'default' : 'pointer',
                           fontSize: choiceStyle.fontSize, fontWeight: 500,
                           textAlign: 'left',
-                          transition: 'border-color 0.4s ease 0.15s, background-color 0.4s ease 0.15s, opacity 0.4s ease 0.15s, transform 0.12s ease',
+                          transition: state === 'correct' ? 'transform 0.12s ease' : 'border-color 0.4s ease 0.15s, background-color 0.4s ease 0.15s, opacity 0.4s ease 0.15s, transform 0.12s ease',
                         }}
                       >
                         <span style={{
