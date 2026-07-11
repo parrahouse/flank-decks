@@ -227,6 +227,27 @@ export default function StudySession() {
     setIntroPhase('intro');
   };
 
+  const reviewMissed = () => {
+    const missed = shuffledCards.filter((c, i) => !(scores[i] && CORRECT_KEYS.has(scores[i].key)));
+    if (!missed.length) return;
+    clearSession();
+    beginIntro();
+    setShuffledCards(shuffle(missed));
+    setCardIndex(0);
+    setDone(false);
+    setScores([]);
+    setFirstWrongChoices([]);
+    setAnswerTimes([]);
+    setFilterMode('missed');
+    setFilterChosen(true);
+    setCorrectStreak(0);
+    setBestStreak(0);
+    setSessionStartTime(new Date());
+    sessionStartedAtRef.current = new Date().toISOString();
+    sessionSaved.current = false;
+    setIntroPhase('intro');
+  };
+
   const resumeSession = () => {
     if (!savedSession || !activeCards.length) return;
     // Reconstruct card order from saved card_ids
@@ -970,7 +991,7 @@ export default function StudySession() {
               totalPoints={totalPoints} maxPoints={maxPoints} pct={pct}
               bestStreak={bestStreak} streak={streak}
               durationMs={completionDurationMs}
-              deckId={deckId} onRestart={restart} />
+              deckId={deckId} onRestart={restart} onReviewMissed={reviewMissed} />
           </motion.div>
         ) : (
           <motion.div key="study-area" initial={false} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
