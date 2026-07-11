@@ -849,31 +849,31 @@ export default function StudySession() {
         alt="Exit"
         style={{ width: 32, height: 32, imageRendering: 'pixelated' }} />
       
-        <p className="pixel-ui text-foreground leading-snug" style={{ fontSize: 11 }}>
+        <p className="text-foreground uppercase" style={{ fontFamily: "'VT323', monospace", fontSize: 22, lineHeight: 1 }}>
           LEAVE SESSION?
         </p>
-        <p className="pixel-ui text-muted-foreground" style={{ fontSize: 9 }}>
+        <p className="text-muted-foreground uppercase" style={{ fontFamily: "'VT323', monospace", fontSize: 16, lineHeight: 1.1 }}>
           {scores.filter(Boolean).length} / {shuffledCards.length} CARDS DONE.{'\n'}SAVE TO RESUME WITHIN 24H.
         </p>
         <div className="flex flex-col gap-2 w-full mt-1">
           <button
           onClick={handleExitSave}
-          className="pixel-ui px-4 py-2 bg-primary text-primary-foreground border-2 border-primary hover:opacity-90 transition-opacity w-full"
-          style={{ fontSize: 9 }}>
+          className="px-4 py-2 bg-primary text-primary-foreground border-2 border-primary hover:opacity-90 transition-opacity w-full uppercase"
+          style={{ fontFamily: "'VT323', monospace", fontSize: 16 }}>
           
             SAVE &amp; EXIT
           </button>
           <button
           onClick={handleExitDiscard}
-          className="pixel-ui px-4 py-2 border-2 border-destructive text-destructive hover:bg-destructive/10 transition-colors w-full"
-          style={{ fontSize: 9 }}>
+          className="px-4 py-2 border-2 border-destructive text-destructive hover:bg-destructive/10 transition-colors w-full uppercase"
+          style={{ fontFamily: "'VT323', monospace", fontSize: 16 }}>
           
             DISCARD &amp; EXIT
           </button>
           <button
           onClick={() => setShowExitWarning(false)}
-          className="pixel-ui px-4 py-2 border-2 border-border text-foreground hover:bg-muted transition-colors w-full"
-          style={{ fontSize: 9 }}>
+          className="px-4 py-2 border-2 border-border text-foreground hover:bg-muted transition-colors w-full uppercase"
+          style={{ fontFamily: "'VT323', monospace", fontSize: 16 }}>
           
             KEEP GOING
           </button>
