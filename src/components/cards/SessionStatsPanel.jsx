@@ -25,8 +25,6 @@ export default function SessionStatsPanel({
   bestStreak = 0, durationMs, deckId, onRestart, onReviewMissed, useHorizontal = false
 }) {
   const total = shuffledCards.length;
-  // Match the card body height the user just saw so the crossfade doesn't resize.
-  const cardBodyH = useHorizontal ? STUDY_CARD_H.horizontal : STUDY_CARD_H.vertical;
 
   let right = 0, wrong = 0, skips = 0;
   for (let i = 0; i < total; i++) {
@@ -47,45 +45,63 @@ export default function SessionStatsPanel({
     else run = 0;
   }
 
+  const header = (
+    <div className="flex items-baseline justify-between gap-2">
+      <h2 className="text-lg font-bold">Deck complete! 🎉</h2>
+      <div className="text-right leading-none">
+        <span className="font-bold" style={{ fontFamily: "'VT323', monospace", fontSize: 34, lineHeight: 1 }}>{pct}%</span>
+        <span className="block text-[11px] text-muted-foreground mt-0.5">{totalPoints.toFixed(2)} / {maxPoints} pts</span>
+      </div>
+    </div>
+  );
+
+  const tiles = (
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 flex-1 auto-rows-fr">
+      <StatTile label="Right"><span className="text-success">{right}</span></StatTile>
+      <StatTile label="Wrong"><span className="text-destructive">{wrong}</span></StatTile>
+      <StatTile label="Skips"><span className="text-muted-foreground">{skips}</span></StatTile>
+      <StatTile label="Time">{fmtMs(durationMs)}</StatTile>
+      <StatTile label="Longest streak">{bestStreak}</StatTile>
+      <StatTile label="Streaks">{streaksCompleted}</StatTile>
+      <StatTile label="2nd guesses">{secondGuesses}</StatTile>
+      <StatTile label="Hints">{hints}</StatTile>
+    </div>
+  );
+
+  const actions = (
+    <div className="flex flex-wrap gap-2">
+      {missed > 0 && (
+        <Button onClick={onReviewMissed} className="gap-1.5">
+          <Target className="w-4 h-4" /> Review missed ({missed})
+        </Button>
+      )}
+      <Link to={`/stats/${deckId}`}>
+        <Button variant="outline" className="gap-1.5"><BarChart2 className="w-4 h-4" /> Full stats</Button>
+      </Link>
+      <Button variant="outline" onClick={onRestart} className="gap-1.5"><RotateCcw className="w-4 h-4" /> Study again</Button>
+    </div>
+  );
+
+  // Horizontal card = one fixed box with its nav row inside → mirror exactly:
+  // a single fixed-height box, actions pinned at the bottom.
+  if (useHorizontal) {
+    return (
+      <div style={{ height: STUDY_CARD_H.horizontal }} className="w-full flex flex-col overflow-hidden">
+        {header}
+        {tiles}
+        {actions}
+      </div>
+    );
+  }
+
+  // Vertical card = fixed body + external nav row → mirror that skeleton.
   return (
-    // Mirror StudyCard's root skeleton so body + footer sum to the same height.
     <div className="mx-auto flex flex-col gap-3 w-full max-w-[700px]">
-      <div style={{ height: cardBodyH }} className="flex flex-col justify-between overflow-hidden">
-
-        {/* Header — score as a percentage */}
-        <div className="flex items-baseline justify-between gap-2">
-          <h2 className="text-lg font-bold">Deck complete! 🎉</h2>
-          <div className="text-right leading-none">
-            <span className="font-bold" style={{ fontFamily: "'VT323', monospace", fontSize: 34, lineHeight: 1 }}>{pct}%</span>
-            <span className="block text-[11px] text-muted-foreground mt-0.5">{totalPoints.toFixed(2)} / {maxPoints} pts</span>
-          </div>
-        </div>
-
-        {/* Stat tiles — 8 metrics filling the fixed body */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 flex-1 content-center">
-          <StatTile label="Right"><span className="text-success">{right}</span></StatTile>
-          <StatTile label="Wrong"><span className="text-destructive">{wrong}</span></StatTile>
-          <StatTile label="Skips"><span className="text-muted-foreground">{skips}</span></StatTile>
-          <StatTile label="Time">{fmtMs(durationMs)}</StatTile>
-          <StatTile label="Longest streak">{bestStreak}</StatTile>
-          <StatTile label="Streaks">{streaksCompleted}</StatTile>
-          <StatTile label="2nd guesses">{secondGuesses}</StatTile>
-          <StatTile label="Hints">{hints}</StatTile>
-        </div>
+      <div style={{ height: STUDY_CARD_H.vertical }} className="flex flex-col overflow-hidden">
+        {header}
+        {tiles}
       </div>
-
-      {/* Footer actions — mirrors the card's nav row */}
-      <div className="flex flex-wrap gap-2">
-        {missed > 0 && (
-          <Button onClick={onReviewMissed} className="gap-1.5">
-            <Target className="w-4 h-4" /> Review missed ({missed})
-          </Button>
-        )}
-        <Link to={`/stats/${deckId}`}>
-          <Button variant="outline" className="gap-1.5"><BarChart2 className="w-4 h-4" /> Full stats</Button>
-        </Link>
-        <Button variant="outline" onClick={onRestart} className="gap-1.5"><RotateCcw className="w-4 h-4" /> Study again</Button>
-      </div>
+      {actions}
     </div>
   );
 }
