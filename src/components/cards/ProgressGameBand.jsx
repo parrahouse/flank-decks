@@ -232,7 +232,7 @@ export default function ProgressGameBand({
   // Shown on pending markers (frame 0 = empty box); covered by the fill wipe as the marker plants.
   const SIGN_NUM_PX     = 16;          // exact 2× grid at SCALE 2 — keep on multiples of 8 for crispness
   const SIGN_DIGIT_ADV  = 12;          // Silkscreen advance per digit at 16px (measured)
-  const SIGN_NUM_TOP    = 9;           // px from cell top to the number's line box — tune by eye ±1
+  const SIGN_NUM_TOP    = 14;           // px from cell top to the number's line box — tune by eye ±1
   const SIGN_NUM_COLOR  = '#20203c';   // dark ink on the light sign face
 
   // One-shot reaction durations (frames × per-frame cadence)
