@@ -30,7 +30,7 @@ const WAYPOINT_EVERY   = 10;
 // markers now follow the same SCALE as the character
 const EGGLAY_MS       = 15 * REACT_FRAME_MS;  // egg-laying one-shot duration
 const EGG_REVEAL_MS   = 6  * REACT_FRAME_MS;  // egg settle one-shot
-// MARKER_PLANT_MS is derived inside the component from MARKER_FRAMES (see below)
+// MARKER_PLANT_MS is derived inside the component from MARKER_FRAMES (see marker constants)
 const WAYPOINT_OFFSET = 0;   // world-x offset from Swab's stand point at m — tune by eye
 const EGG_OFFSET      = 0;   // world-x offset for milestone eggs under Swab — tune by eye
 const FINISH_GAP_FACTOR   = 0.5;  // × W — pole sits this far AHEAD of the final stand point; tune by eye
@@ -226,7 +226,14 @@ export default function ProgressGameBand({
   const EGGLAY_FRAMES    = eggLaySprite?.frames || 0;
   const EGG_FRAMES       = eggAsset?.frames || 0;
   const MARKER_FRAMES    = markerAsset?.frames || 0;
-  const MARKER_PLANT_MS  = MARKER_FRAMES * REACT_FRAME_MS;  // plant one-shot — derived, matches finish pattern
+  const MARKER_PLANT_MS  = MARKER_FRAMES * REACT_FRAME_MS;  // plant one-shot (fill wipe + checkmark) — derived
+
+  // Milestone number painted BEHIND the sign face (Silkscreen).
+  // Shown on pending markers (frame 0 = empty box); covered by the fill wipe as the marker plants.
+  const SIGN_NUM_PX     = 16;          // exact 2× grid at SCALE 2 — keep on multiples of 8 for crispness
+  const SIGN_DIGIT_ADV  = 12;          // Silkscreen advance per digit at 16px (measured)
+  const SIGN_NUM_TOP    = 9;           // px from cell top to the number's line box — tune by eye ±1
+  const SIGN_NUM_COLOR  = '#20203c';   // dark ink on the light sign face
 
   // One-shot reaction durations (frames × per-frame cadence)
   const RIGHT_DUR = RIGHT_FRAMES * REACT_FRAME_MS;
@@ -714,6 +721,34 @@ export default function ProgressGameBand({
                 animation: EGG_FRAMES > 1 ? `${KF_EGG} ${EGG_REVEAL_MS}ms steps(${EGG_FRAMES}) infinite` : 'none',
               }}
             />
+          );
+        })}
+
+        {/* Milestone numbers — behind the sign; visible on pending (frame-0) markers,
+            covered by the fill wipe + checkmark as each marker plants. */}
+        {markerAsset?.src && MARKER_FRAMES > 0 && waypoints.map((m) => {
+          const fx       = LEAD_IN + m * STEP_PX + WAYPOINT_OFFSET;
+          const digits   = String(m).length;
+          const numLeft  = Math.round(MW / 2 - (digits * SIGN_DIGIT_ADV) / 2);
+          return (
+            <div
+              key={`marker-num-${m}`}
+              aria-hidden="true"
+              style={{
+                position: 'absolute', bottom: MARKER_BOTTOM, left: 0, width: MW, height: MH,
+                transform: `translateX(${snapPx(fx)}px)`,
+                pointerEvents: 'none',
+              }}
+            >
+              <span style={{
+                position: 'absolute', left: numLeft, top: SIGN_NUM_TOP,
+                fontFamily: "'Silkscreen', monospace",
+                fontSize: SIGN_NUM_PX, lineHeight: `${SIGN_NUM_PX}px`,
+                color: SIGN_NUM_COLOR, whiteSpace: 'nowrap',
+              }}>
+                {m}
+              </span>
+            </div>
           );
         })}
 

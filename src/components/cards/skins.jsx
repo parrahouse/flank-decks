@@ -90,8 +90,8 @@ const SWAB = {
     baseline:  32,
   },
   marker: {
-    src:      'https://media.base44.com/images/public/69fd6153088222f7245f34d6/51ad1de5c_Swab-Waypoint-Marker.png',
-    frames:   14,
+    src:      'https://media.base44.com/images/public/69fd6153088222f7245f34d6/ca356d1c4_Swab-Waypoint-Marker.png',
+    frames:   15,
     tileW:     32,
     tileH:     50,
     baseline:  50,

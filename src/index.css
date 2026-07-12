@@ -3,6 +3,9 @@
 /* VT323 — pixel display face for deck titles & score displays */
 @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
 
+/* Silkscreen — pixel face for waypoint milestone numbers & .pixel-ui controls */
+@import url('https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
