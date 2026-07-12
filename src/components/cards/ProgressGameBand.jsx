@@ -30,7 +30,7 @@ const WAYPOINT_EVERY   = 10;
 // markers now follow the same SCALE as the character
 const EGGLAY_MS       = 15 * REACT_FRAME_MS;  // egg-laying one-shot duration
 const EGG_REVEAL_MS   = 6  * REACT_FRAME_MS;  // egg settle one-shot
-const MARKER_PLANT_MS = 19 * REACT_FRAME_MS;  // pole+flag plant one-shot
+// MARKER_PLANT_MS is derived inside the component from MARKER_FRAMES (see below)
 const WAYPOINT_OFFSET = 0;   // world-x offset from Swab's stand point at m — tune by eye
 const EGG_OFFSET      = 0;   // world-x offset for milestone eggs under Swab — tune by eye
 const FINISH_GAP_FACTOR   = 0.5;  // × W — pole sits this far AHEAD of the final stand point; tune by eye
@@ -226,6 +226,7 @@ export default function ProgressGameBand({
   const EGGLAY_FRAMES    = eggLaySprite?.frames || 0;
   const EGG_FRAMES       = eggAsset?.frames || 0;
   const MARKER_FRAMES    = markerAsset?.frames || 0;
+  const MARKER_PLANT_MS  = MARKER_FRAMES * REACT_FRAME_MS;  // plant one-shot — derived, matches finish pattern
 
   // One-shot reaction durations (frames × per-frame cadence)
   const RIGHT_DUR = RIGHT_FRAMES * REACT_FRAME_MS;
