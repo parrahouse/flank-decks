@@ -235,7 +235,6 @@ export default function ProgressGameBand({
   const SIGN_NUM_TOP    = 14;           // px from cell top to the number's line box — tune by eye ±1
   const SIGN_NUM_COLOR  = '#20203c';   // dark ink on the light sign face
   const SIGN_NUM_DX     = 2;           // horizontal nudge (right) — offsets the "1" side-bearing
-  const numLeft  = Math.round(MW / 2 - (digits * SIGN_DIGIT_ADV) / 2) + SIGN_NUM_DX;
 
   // One-shot reaction durations (frames × per-frame cadence)
   const RIGHT_DUR = RIGHT_FRAMES * REACT_FRAME_MS;
@@ -731,7 +730,7 @@ export default function ProgressGameBand({
         {markerAsset?.src && MARKER_FRAMES > 0 && waypoints.map((m) => {
           const fx       = LEAD_IN + m * STEP_PX + WAYPOINT_OFFSET;
           const digits   = String(m).length;
-          const numLeft  = Math.round(MW / 2 - (digits * SIGN_DIGIT_ADV) / 2);
+          const numLeft  = Math.round(MW / 2 - (digits * SIGN_DIGIT_ADV) / 2) + SIGN_NUM_DX;
           return (
             <div
               key={`marker-num-${m}`}
