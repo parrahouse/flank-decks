@@ -234,6 +234,7 @@ export default function ProgressGameBand({
   const SIGN_DIGIT_ADV  = 12;          // Silkscreen advance per digit at 16px (measured)
   const SIGN_NUM_TOP    = 14;           // px from cell top to the number's line box — tune by eye ±1
   const SIGN_NUM_COLOR  = '#20203c';   // dark ink on the light sign face
+  const SIGN_NUM_DX     = 2;           // horizontal nudge (right) — offsets the "1" side-bearing
 
   // One-shot reaction durations (frames × per-frame cadence)
   const RIGHT_DUR = RIGHT_FRAMES * REACT_FRAME_MS;
