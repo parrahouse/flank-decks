@@ -82,6 +82,7 @@ export default function StudyCard({
   isBookmarked = false,
   onToggleBookmark = null,
   eliminateAllowed = true,
+  secondGuessAllowed = true,
   learningMode = false,
   onFirstWrong = null,
   introReady = true,
@@ -115,7 +116,6 @@ export default function StudyCard({
   const isSelectAll = card.question_type === 'select_all';
   const isShortAnswer = card.question_type === 'short_answer';
   const hasImage = !!card.image_url;
-  const secondGuessAllowed = true;
   const cardPoints = card.point_value ?? 20;
 
   const cancelCountdown = () => {
@@ -206,7 +206,7 @@ export default function StudyCard({
       setShakingChoice(choice);
       clearTimeout(shakeTimerRef.current);
       shakeTimerRef.current = setTimeout(() => setShakingChoice(null), 400);
-      if (!firstWrong && !eliminated.length && !isTrueFalse) {
+      if (secondGuessAllowed && !firstWrong && !eliminated.length && !isTrueFalse) {
         setFirstWrong(choice);
         onFirstWrong && onFirstWrong(choice, { retry: true });
       } else {

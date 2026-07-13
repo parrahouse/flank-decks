@@ -61,6 +61,7 @@ export default function StudyCardHorizontal({
   masteredCount = 0, totalCards = 0, cardStats = null,
   isBookmarked = false, onToggleBookmark = null,
   eliminateAllowed = true,
+  secondGuessAllowed = true,
   learningMode = false,
   handedness = 'left', // 'left' = answers on right, 'right' = answers on left
   onFirstWrong = null,
@@ -92,7 +93,6 @@ export default function StudyCardHorizontal({
   const isSelectAll = card.question_type === 'select_all';
   const isShortAnswer = card.question_type === 'short_answer';
   const hasImage = !!card.image_url;
-  const secondGuessAllowed = true;
   const cardPoints = card.point_value ?? 20;
 
   const correctAnswers = (card.correct_answers || card.correct_answer || '')
@@ -152,7 +152,7 @@ export default function StudyCardHorizontal({
       if (autoAdvance && !isLast) startCountdown();
     } else {
       playWrong(); setShakingChoice(choice); clearTimeout(shakeTimerRef.current); shakeTimerRef.current = setTimeout(() => setShakingChoice(null), 400);
-      if (!firstWrong && !eliminated.length) {
+      if (secondGuessAllowed && !firstWrong && !eliminated.length) {
         setFirstWrong(choice);
         onFirstWrong && onFirstWrong(choice, { retry: true });
       } else {
