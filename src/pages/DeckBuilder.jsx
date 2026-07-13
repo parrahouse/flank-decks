@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, ArrowLeft, Pencil, Trash2, GalleryVerticalEnd, Image as ImageIcon, Cog, X, Upload, RotateCcw, PieChart, Archive, CircleDot, CheckSquare, ToggleRight, Play, Sparkles, Check, FolderOpen } from 'lucide-react';
+import { Plus, ArrowLeft, Pencil, Trash2, GalleryVerticalEnd, Image as ImageIcon, Cog, X, Upload, RotateCcw, PieChart, Archive, CircleDot, CheckSquare, ToggleRight, Play, Sparkles, Check, FolderOpen, ChevronDown, Loader2 } from 'lucide-react';
 import AiCardSuggestionsModal from '@/components/cards/AiCardSuggestionsModal';
 import QuickAddCardModal from '@/components/cards/QuickAddCardModal';
 import { Button } from '@/components/ui/button';
@@ -66,6 +66,7 @@ export default function DeckBuilder() {
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [showCollections, setShowCollections] = useState(false);
   const [previewCard, setPreviewCard] = useState(null);
+  const [closeDropdownOpen, setCloseDropdownOpen] = useState(false);
   const editorSaveRef = useRef(null);
 
   // Description editing
@@ -169,6 +170,7 @@ export default function DeckBuilder() {
     setShowEditor(false);
     setEditorDirty(false);
     setShowDiscardDialog(false);
+    setCloseDropdownOpen(false);
   };
 
   const saveMutation = useMutation({
@@ -431,10 +433,51 @@ export default function DeckBuilder() {
         {!isMobile && (
           <div className="flex fixed top-14 right-0 bottom-0 w-[640px] bg-card border-l border-border flex-col z-30 shadow-xl">
             <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-              <h2 className="font-semibold text-base">Card Details</h2>
-              <button onClick={requestCloseEditor} className="text-muted-foreground hover:text-foreground transition-colors">
-                <X className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-3">
+                <h2 className="font-semibold text-base">Card Details</h2>
+                <Button
+                  size="sm"
+                  onClick={() => editorSaveRef.current?.()}
+                  disabled={saveMutation.isPending}
+                  className="h-7 text-xs gap-1"
+                >
+                  {saveMutation.isPending ? <><Loader2 className="w-3 h-3 animate-spin" /> Saving…</> : 'Save Card'}
+                </Button>
+              </div>
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    if (editorDirty) {
+                      setCloseDropdownOpen(v => !v);
+                    } else {
+                      closeEditor();
+                    }
+                  }}
+                  className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors px-1 py-0.5 rounded"
+                >
+                  Close
+                  {editorDirty && <ChevronDown className="w-3.5 h-3.5" />}
+                </button>
+                {closeDropdownOpen && editorDirty && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setCloseDropdownOpen(false)} />
+                    <div className="absolute right-0 top-full mt-1 w-44 bg-popover border border-border rounded-md shadow-lg z-20 py-1 text-sm">
+                      <button
+                        onClick={() => { setCloseDropdownOpen(false); editorSaveRef.current?.(); }}
+                        className="w-full text-left px-3 py-2 hover:bg-accent hover:text-accent-foreground transition-colors"
+                      >
+                        Save &amp; Close
+                      </button>
+                      <button
+                        onClick={() => { setCloseDropdownOpen(false); closeEditor(); }}
+                        className="w-full text-left px-3 py-2 hover:bg-accent hover:text-accent-foreground transition-colors text-destructive"
+                      >
+                        Revert &amp; Close
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
             <div className="flex-1 overflow-y-auto px-5 pt-5 pb-4">
               <CardEditor
