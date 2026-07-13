@@ -555,7 +555,7 @@ export default function StudySession() {
   // Filter selection screen
   if (!filterChosen) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-8">
+      <div className="max-w-5xl mx-auto px-4 py-8">
         <div className="flex items-center gap-3 mb-8">
           <button onClick={() => navigate(`/deck/${deckId}`)} className="text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="w-5 h-5" />
@@ -584,7 +584,9 @@ export default function StudySession() {
           </div>
         }
 
-        <div className="flex flex-col items-center gap-6 py-8">
+        <div className="flex flex-col gap-8 py-8 lg:flex-row lg:items-start lg:gap-16">
+          {/* Left: study mode selection */}
+          <div className="flex-1 flex flex-col items-center gap-6">
           <div className="w-14 h-14 rounded-2xl bg-accent flex items-center justify-center">
             <Brain className="w-7 h-7 text-accent-foreground" />
           </div>
@@ -636,26 +638,36 @@ export default function StudySession() {
 
             <button
               onClick={() => startSession('bookmarked')}
-              disabled={bookmarkedCards.length === 0}
+              disabled={bookmarkedCards.length < 10}
               className={cn(
                 'w-full border-2 rounded-[4px] p-4 text-left transition-all',
-                bookmarkedCards.length === 0 ?
+                bookmarkedCards.length < 10 ?
                 'border-border opacity-50 cursor-not-allowed' :
                 'border-border hover:border-primary hover:bg-accent/40'
               )}>
               
               <div className="font-semibold flex items-center gap-2" style={{ fontSize: '18px' }}>
                 Bookmarked only
-                {bookmarkedCards.length > 0 &&
+                {bookmarkedCards.length >= 10 &&
                 <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">
                     {bookmarkedCards.length} card{bookmarkedCards.length !== 1 ? 's' : ''}
                   </span>
                 }
               </div>
               <div className="text-sm text-muted-foreground mt-0.5">
-                {bookmarkedCards.length === 0 ? 'No bookmarked cards yet' : 'Study only your bookmarked cards'}
+                {bookmarkedCards.length === 0
+                  ? 'No bookmarked cards yet'
+                  : bookmarkedCards.length < 10
+                    ? `Need 10 bookmarked cards (${bookmarkedCards.length} so far)`
+                    : 'Study only your bookmarked cards'}
               </div>
             </button>
+          </div>
+          </div>
+
+          {/* Right: session options & layout preferences */}
+          <div className="flex-1 w-full">
+          <div className="flex flex-col gap-3 w-full max-w-sm lg:max-w-md lg:pt-28">
 
             {/* Auto-advance toggle */}
             <div className="flex items-center justify-between px-1 pt-1">
@@ -820,6 +832,7 @@ export default function StudySession() {
                 {savingDefaults ? 'Saving…' : 'Save as my default'}
               </button>
             </div>
+          </div>
           </div>
         </div>
       </div>);
