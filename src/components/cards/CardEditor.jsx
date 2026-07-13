@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Plus, X, Wand2, Image as ImageIcon, Loader2, Pencil, Search, Sparkles, Tags, Zap, RotateCcw } from 'lucide-react';
+import { Plus, X, Wand2, Image as ImageIcon, Loader2, Pencil, Search, Sparkles, Tags, Zap, RotateCcw, AlertTriangle } from 'lucide-react';
 import { computeCardDifficulty } from '@/lib/computeCardDifficulty';
 import InfoTooltip from './InfoTooltip';
 import ImageEditor from './ImageEditor';
@@ -728,7 +728,10 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
             <p className="text-xs text-destructive">Click ✓ next to the correct answer(s).</p>
           )}
           {isSelectAll && correctSet.size === 1 && (
-            <p className="text-xs text-amber-600">Select All requires at least 2 correct answers.</p>
+            <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-amber-800">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
+              <p className="text-xs font-medium leading-snug">"Select All That Apply" with only one correct answer will behave identically to Multiple Choice. Mark at least 2 answers as correct, or change the question type.</p>
+            </div>
           )}
         </div>
       )}
