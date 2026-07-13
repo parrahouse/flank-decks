@@ -54,7 +54,7 @@ function getChoiceStyle(choices) {
 }
 
 export default function StudyCardHorizontal({
-  card, deck, onNext, onPrev, isFirst, isLast, onScore,
+  card, deck, onNext, onPrev, isFirst, isLast, onScore, onSkip, canSkip = true,
   soundEnabled = true, autoAdvance = false,
   note = null, cardIndex = 0, total = 1,
   correctStreak = 0, bestStreak = 0, pastSessions = [],
@@ -466,10 +466,11 @@ export default function StudyCardHorizontal({
                 )}
                 <button
                   onClick={() => {
-                    if (!answered) { onScore && onScore(SCORE.wrong, 'wrong'); onNext(); }
+                    if (!answered) { onSkip && onSkip(); }
                     else { cancelCountdown(); onNext(); }
                   }}
-                  style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', position: 'relative' }}
+                  disabled={!answered && !canSkip}
+                  style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: (!answered && !canSkip) ? 'not-allowed' : 'pointer', opacity: (!answered && !canSkip) ? 0.35 : 1, transition: 'opacity 0.3s', position: 'relative' }}
                 >
                   <SkipForward style={{ width: 14, height: 14, flexShrink: 0 }} />
                   <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2, position: 'relative' }}>

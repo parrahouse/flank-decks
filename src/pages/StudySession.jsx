@@ -89,6 +89,7 @@ export default function StudySession() {
   const [selectedPool, setSelectedPool] = useState(null); // 'all' | 'unmastered' | 'bookmarked' | null
   const [gameModeWanted, setGameModeWanted] = useState(() => localStorage.getItem('flashdeck_gamemode') === '1');
   const [gameMode, setGameMode] = useState(false); // engaged for the running session only
+  const [skipsUsed, setSkipsUsed] = useState(0);   // deferrals used this session (display only)
   const [contactSheetOpen, setContactSheetOpen] = useState(false);
   // Layout defaults: seeded from user profile, then overrideable per-session
   const [layoutMode, setLayoutMode] = useState(() => localStorage.getItem('flashdeck_layout') || 'auto');
@@ -123,11 +124,12 @@ export default function StudySession() {
   useEffect(() => () => clearTimeout(levelStartTimerRef.current), []);
 
   // Timing origin: the moment the current question becomes answerable.
+  // shuffledCards is a dep because a DEFER swaps the card at the same index.
   useEffect(() => {
     if (filterChosen && questionReady && !done) {
       cardShownAtRef.current = Date.now();
     }
-  }, [cardIndex, questionReady, filterChosen, done]);
+  }, [cardIndex, questionReady, filterChosen, done, shuffledCards]);
 
   const { data: deck } = useQuery({
     queryKey: ['deck', deckId],
@@ -234,6 +236,7 @@ export default function StudySession() {
     setFirstWrongChoices([]);
     setAnswerTimes([]);
     setFilterMode(mode);
+    setSkipsUsed(0);
     setFilterChosen(true);
     setCorrectStreak(0);
     setBestStreak(0);
@@ -256,6 +259,7 @@ export default function StudySession() {
     setAnswerTimes([]);
     setFilterMode('missed');
     setGameMode(false); // review runs are Progress mode
+    setSkipsUsed(0);
     setFilterChosen(true);
     setCorrectStreak(0);
     setBestStreak(0);
@@ -279,6 +283,7 @@ export default function StudySession() {
     setAnswerTimes(savedSession.answer_times || []);
     setFilterMode(savedSession.filter_mode || 'all');
     setGameMode(false); // saved sessions don't carry game-mode state yet (later stage)
+    setSkipsUsed(0);    // defer count isn't persisted yet (later stage)
     setFilterChosen(true);
     setCorrectStreak(0);
     setBestStreak(0);
@@ -505,6 +510,22 @@ export default function StudySession() {
     setDone(true);
   };
   const handlePrev = () => {if (cardIndex > 0) setCardIndex((i) => i - 1);};
+
+  // Skip = DEFER: the current card moves to the end of the queue. Nothing is
+  // scored, the streak is untouched, and cardIndex does not move — the next
+  // card slides into this position. Disallowed on answered cards and on the
+  // last queue position (there is nothing to defer behind).
+  const canSkip = scores[cardIndex] == null && cardIndex < shuffledCards.length - 1;
+  const handleSkip = () => {
+    if (!canSkip) return;
+    setSkipsUsed((n) => n + 1);
+    setShuffledCards((prev) => {
+      const next = [...prev];
+      const [deferred] = next.splice(cardIndex, 1);
+      next.push(deferred);
+      return next;
+    });
+  };
 
   const handleFirstWrong = (choice, meta) => {
     setFirstWrongChoices((prev) => {
@@ -1093,7 +1114,7 @@ export default function StudySession() {
               firstWrongChoices={firstWrongChoices} cardStats={cardStats}
               totalPoints={totalPoints} maxPoints={maxPoints} pct={pct}
               bestStreak={bestStreak} streak={streak}
-              durationMs={completionDurationMs}
+              durationMs={completionDurationMs} skipsUsed={skipsUsed}
               deckId={deckId} onRestart={restart} onReviewMissed={reviewMissed}
               useHorizontal={useHorizontal} />
           </motion.div>
@@ -1112,7 +1133,7 @@ export default function StudySession() {
               const sharedProps = {
                 key: `${current.id}-${cardIndex}`,
                 card: current, deck,
-                onNext: handleNext, onPrev: handlePrev,
+                onNext: handleNext, onPrev: handlePrev, onSkip: handleSkip, canSkip,
                 isFirst: cardIndex === 0, isLast: cardIndex === shuffledCards.length - 1,
                 onScore: handleScore, soundEnabled, autoAdvance,
                 note: notesByCardId[current.id] || null,

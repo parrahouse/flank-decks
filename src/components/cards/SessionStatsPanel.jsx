@@ -22,18 +22,18 @@ function StatTile({ label, children }) {
 
 export default function SessionStatsPanel({
   shuffledCards = [], scores = [], pct = 0, totalPoints = 0, maxPoints = 0,
-  bestStreak = 0, durationMs, deckId, onRestart, onReviewMissed, useHorizontal = false
+  bestStreak = 0, durationMs, deckId, onRestart, onReviewMissed, useHorizontal = false, skipsUsed = 0
 }) {
   const total = shuffledCards.length;
 
-  let right = 0, wrong = 0, skips = 0;
+  let right = 0, wrong = 0, unanswered = 0;
   for (let i = 0; i < total; i++) {
     const k = scores[i]?.key;
     if (k && CORRECT_KEYS.has(k)) right++;
     else if (k === 'wrong') wrong++;
-    else skips++;                         // unanswered / skipped
+    else unanswered++;                    // never answered (contact-sheet jumps only)
   }
-  const missed = wrong + skips;           // review pass covers wrong AND skipped
+  const missed = wrong + unanswered;      // review pass covers wrong AND unanswered
 
   const secondGuesses = scores.filter((s) => s && SECOND_GUESS_KEYS.has(s.key)).length;
   const hints = scores.filter((s) => s && CLUE_KEYS.has(s.key)).length;
@@ -60,7 +60,7 @@ export default function SessionStatsPanel({
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 flex-1 auto-rows-fr">
       <StatTile label="Right"><span className="text-success">{right}</span></StatTile>
       <StatTile label="Wrong"><span className="text-destructive">{wrong}</span></StatTile>
-      <StatTile label="Skips"><span className="text-muted-foreground">{skips}</span></StatTile>
+      <StatTile label="Defers"><span className="text-muted-foreground">{skipsUsed}</span></StatTile>
       <StatTile label="Time">{fmtMs(durationMs)}</StatTile>
       <StatTile label="Longest streak">{bestStreak}</StatTile>
       <StatTile label="Streaks">{streaksCompleted}</StatTile>
