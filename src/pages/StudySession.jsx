@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Brain, Volume2, VolumeX, Info, Trophy, PlayCircle, RefreshCw, Clock, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Volume2, VolumeX, Info, Trophy, PlayCircle, RefreshCw, Clock, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cardLabel } from '@/lib/utils';
@@ -587,9 +587,6 @@ export default function StudySession() {
         <div className="flex flex-col gap-8 py-8 lg:flex-row lg:items-start lg:gap-16">
           {/* Left: study mode selection */}
           <div className="flex-1 flex flex-col items-center gap-6">
-          <div className="w-14 h-14 rounded-2xl bg-accent flex items-center justify-center">
-            <Brain className="w-7 h-7 text-accent-foreground" />
-          </div>
           <div className="text-center">
             <h2 className="text-xl font-bold">What would you like to study?</h2>
             <p className="text-muted-foreground text-sm mt-1">
