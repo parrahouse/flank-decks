@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect, useLayoutEffect, useMemo } from 'react';
 import { motion, useAnimation } from 'framer-motion';
 import { useSound } from '@/hooks/useSound';
-import { DEFAULT_GROUND, getSkin, DEFAULT_SKIN_ID, resolveSprite } from './skins';
+import { DEFAULT_GROUND, getSkin, DEFAULT_SKIN_ID, resolveSprite, getEffectiveSkin, canZombify } from './skins';
 
 // ── ART-INDEPENDENT CONSTANTS ─────────────────────────────────────────────────
 const BAND_H = 100;
@@ -24,11 +24,15 @@ const IDLE_CYCLE_MS = 800;
 
 // Reaction cadence — one-shot reactions; duration = frames * REACT_FRAME_MS
 const REACT_FRAME_MS = 90;
+// Death choreography cadence — tune for drama independently of reactions
+const DEATH_FRAME_MS = 90;
+const ENTER_FRAME_MS = 90;
 
 // Waypoint system — egg-laying choreography at every-10 intervals
 const WAYPOINT_EVERY   = 10;
 // markers now follow the same SCALE as the character
-const EGGLAY_MS       = 15 * REACT_FRAME_MS;  // egg-laying one-shot duration
+// EGGLAY_MS is derived in-component from the resolved sprite's frame count
+// (base lay is 15 frames, zombie lay is 12 — a hardcoded 15 would desync).
 const EGG_REVEAL_MS   = 6  * REACT_FRAME_MS;  // egg settle one-shot
 // MARKER_PLANT_MS is derived inside the component from MARKER_FRAMES (see marker constants)
 const WAYPOINT_OFFSET = 0;   // world-x offset from Swab's stand point at m — tune by eye
@@ -59,6 +63,8 @@ const CORRECT_KEYS = new Set([
  *   entering      — true while the entry walk-in animation is playing
  *   onEntryComplete — callback fired when entry animation finishes
  *   wrongTick     — increments on the first wrong answer of a card → react.wrong
+ *   zombified     — Game Mode hearts hit zero; rising edge plays death → rise,
+ *                   then the zombie sub-skin overlay takes over for the session
  */
 function GroundCanvas({ src, tileW, tileH, scale, dispH, cameraX, stepMs }) {
   const canvasRef  = useRef(null);
@@ -160,8 +166,25 @@ export default function ProgressGameBand({
   soundEnabled = true,
   entering = false,
   wrongTick = 0,
+  zombified = false,
   onEntryComplete,
 }) {
+  // ── Zombie overlay — after death, the zombie sub-skin replaces the base ────
+  // zombieActive flips at the END of the rise animation, not when `zombified`
+  // arrives; the death → enter choreography itself plays on the base timeline.
+  const [zombieActive, setZombieActive] = useState(() => zombified);
+  const baseSkin = skin;
+  if (zombieActive) skin = getEffectiveSkin(baseSkin, true);
+
+  // Death / rise one-shots always come from the BASE skin (they play before the
+  // overlay flips). Both use the character grid and SCALE.
+  const deathSprite  = baseSkin.sprites?.death || null;
+  const enterSprite  = baseSkin.zombie?.enter || null;
+  const DEATH_FRAMES = deathSprite?.frames || 0;
+  const ENTER_FRAMES = enterSprite?.frames || 0;
+  const DEATH_DUR    = DEATH_FRAMES * DEATH_FRAME_MS;
+  const ENTER_DUR    = ENTER_FRAMES * ENTER_FRAME_MS;
+
   // ── Derive per-render from skin ─────────────────────────────────────────────
   const ground  = skin.ground || DEFAULT_GROUND;
 
@@ -224,6 +247,7 @@ export default function ProgressGameBand({
   const RIGHT_FRAMES      = rightSprite?.frames || 0;
   const WRONG_FRAMES      = wrongSprite?.frames || 0;
   const EGGLAY_FRAMES    = eggLaySprite?.frames || 0;
+  const EGGLAY_MS        = EGGLAY_FRAMES * REACT_FRAME_MS; // derived — see top-of-file note
   const EGG_FRAMES       = eggAsset?.frames || 0;
   const MARKER_FRAMES    = markerAsset?.frames || 0;
   const MARKER_PLANT_MS  = MARKER_FRAMES * REACT_FRAME_MS;  // plant one-shot (fill wipe + checkmark) — derived
@@ -253,9 +277,14 @@ export default function ProgressGameBand({
   const KF_RIGHT_SHOT  = `pgb-react-right-shot-${skin.id}`;
   const KF_WRONG_SHOT  = `pgb-react-wrong-shot-${skin.id}`;
   const KF_EGGLAY     = `pgb-egglay-${skin.id}`;
-  const KF_EGG        = `pgb-egg-${skin.id}`;
-  const KF_MARKER     = `pgb-marker-${skin.id}`;
-  const KF_FINISH     = `pgb-finish-${skin.id}`;
+  // World elements key off the BASE id: their art doesn't change when the
+  // zombie overlay flips, and re-keying would restart their animations —
+  // planted markers hold via `forwards` and would visibly REPLAY their wipe.
+  const KF_EGG        = `pgb-egg-${baseSkin.id}`;
+  const KF_MARKER     = `pgb-marker-${baseSkin.id}`;
+  const KF_FINISH     = `pgb-finish-${baseSkin.id}`;
+  const KF_DEATH      = `pgb-death-${baseSkin.id}`;
+  const KF_ENTER      = `pgb-zenter-${baseSkin.id}`;
 
   const KEYFRAMES = `
 @keyframes ${KF_IDLE} { from { background-position-x: 0 } to { background-position-x: -${IDLE_FRAMES * W}px } }
@@ -268,6 +297,8 @@ export default function ProgressGameBand({
 @keyframes ${KF_EGG} { from { background-position-x: 0 } to { background-position-x: -${EGG_FRAMES * EW}px } }
 @keyframes ${KF_MARKER} { from { background-position-x: 0 } to { background-position-x: -${Math.max(0, MARKER_FRAMES - 1) * MW}px } }
 @keyframes ${KF_FINISH} { from { background-position-x: 0 } to { background-position-x: -${FINISH_FRAMES * FW}px } }
+@keyframes ${KF_DEATH} { from { background-position-x: 0 } to { background-position-x: -${Math.max(0, DEATH_FRAMES - 1) * W}px } }
+@keyframes ${KF_ENTER} { from { background-position-x: 0 } to { background-position-x: -${Math.max(0, ENTER_FRAMES - 1) * W}px } }
 `;
 
   const { playWalking, stopWalking, playEggLay } = useSound(soundEnabled);
@@ -277,6 +308,7 @@ export default function ProgressGameBand({
 
   // ── Phase machine ──────────────────────────────────────────────────────────
   // phase: 'idle' | 'reactRight' | 'reactWrong' | 'walk' | 'eggLay' | 'celebrate'
+  //        | 'death' | 'zombieEnter'
   // Exactly one character layer is visible at a time (opacity 1); the rest 0.
   const [phase, setPhase] = useState('idle');
   const [walkVariant, setWalkVariant] = useState('happy'); // 'happy' | 'sad'
@@ -296,6 +328,9 @@ export default function ProgressGameBand({
 
   const processCommitRef = useRef(null);
   const commitCancelRef = useRef(null);         // cleanup of the in-flight processCommit
+  const pendingDeathRef = useRef(false);        // death queued behind the in-flight walk
+  const deathCancelRef  = useRef(null);         // cancels the death → enter timers
+  const startDeathRef   = useRef(null);         // latest-render startDeath closure
 
   const completed = scores.filter(Boolean).length;
   const [shownCompleted, setShownCompleted] = useState(() => scores.filter(Boolean).length);
@@ -372,6 +407,12 @@ export default function ProgressGameBand({
   //   waypoint m  → lay an egg, then nudge forward to reveal it
   //   last card    → after the walk, switch to react.right looping (celebrate)
   function processCommit(completedVal, commitKey, isMilestone = false) {
+    // A commit arriving mid-death (user answered during the cinematics): skip
+    // the rest of the death/rise, settle the overlay, choreograph normally.
+    if (phaseRef.current === 'death' || phaseRef.current === 'zombieEnter') {
+      deathCancelRef.current?.();
+      setZombieActive(true);
+    }
     const isCorrect = !!commitKey && CORRECT_KEYS.has(commitKey);
     const variant = isCorrect ? 'happy' : 'sad';
     const isLast = completedVal >= total;
@@ -395,6 +436,7 @@ export default function ProgressGameBand({
           if (cancelled) return;
           setFinishLit(true);            // Swab is clear → sparkles start looping
           stopWalking();
+          if (pendingDeathRef.current) { pendingDeathRef.current = false; startDeathRef.current?.(); return; }
           if (canCelebrate) {
             phaseRef.current = 'celebrate'; setPhase('celebrate');
           } else {
@@ -404,6 +446,7 @@ export default function ProgressGameBand({
         }, FINISH_PUSH_MS);
       } else {
         stopWalking();
+        if (pendingDeathRef.current) { pendingDeathRef.current = false; startDeathRef.current?.(); return; }
         setIdleVariant(variant);
         phaseRef.current = 'idle'; setPhase('idle');
       }
@@ -497,6 +540,59 @@ export default function ProgressGameBand({
 
   useEffect(() => () => { commitCancelRef.current?.(); }, []);
 
+  // ── Death → rise choreography ──────────────────────────────────────────────
+  // death one-shot (ends transparent) → enter one-shot (starts transparent,
+  // rises from the grave) → overlay flips → zombie idle. Missing art degrades:
+  // no death sprite = instant overlay flip; no enter sprite = flip after death.
+  const startDeath = () => {
+    if (!deathSprite?.src || DEATH_FRAMES === 0) {
+      setZombieActive(true);
+      setIdleVariant('happy');
+      phaseRef.current = 'idle'; setPhase('idle');
+      return;
+    }
+    stopWalking();
+    setReactKey((k) => k + 1);
+    phaseRef.current = 'death'; setPhase('death');
+    const tDeath = setTimeout(() => {
+      if (!enterSprite?.src || ENTER_FRAMES === 0) {
+        setZombieActive(true);
+        setIdleVariant('happy');
+        phaseRef.current = 'idle'; setPhase('idle');
+        return;
+      }
+      setReactKey((k) => k + 1);
+      phaseRef.current = 'zombieEnter'; setPhase('zombieEnter');
+      const tEnter = setTimeout(() => {
+        setZombieActive(true);       // the overlay flips as the risen zombie settles
+        setIdleVariant('happy');     // zombie has one mood; resolves via the fallback
+        phaseRef.current = 'idle'; setPhase('idle');
+      }, ENTER_DUR);
+      deathCancelRef.current = () => clearTimeout(tEnter);
+    }, DEATH_DUR);
+    deathCancelRef.current = () => clearTimeout(tDeath);
+  };
+  startDeathRef.current = startDeath;
+
+  // Rising edge of `zombified` → queue or play the death.
+  const prevZombifiedRef = useRef(zombified);
+  useEffect(() => {
+    if (zombified === prevZombifiedRef.current) return;
+    prevZombifiedRef.current = zombified;
+    if (!zombified) {                  // fresh session: hard-reset the overlay
+      deathCancelRef.current?.();
+      pendingDeathRef.current = false;
+      setZombieActive(false);
+      return;
+    }
+    if (!canZombify(baseSkin)) return; // this skin can't die — no-op
+    const p = phaseRef.current;
+    if (p === 'idle' || p === 'celebrate') startDeathRef.current?.();
+    else pendingDeathRef.current = true; // fatal commit's react/walk is in flight
+  }, [zombified]);
+
+  useEffect(() => () => { deathCancelRef.current?.(); }, []);
+
   // ── Celebration cycle: happy idle ×2, then right reaction ×1, looping ──────
   useEffect(() => {
     if (phase !== 'celebrate') return;
@@ -520,13 +616,16 @@ export default function ProgressGameBand({
 
   // ── Preload character sprites so the first reveal has no paint gap ────────
   useEffect(() => {
+    const z = baseSkin.zombie || {};
     const urls = [
       idleSprite?.src, idleSadSprite?.src, walkHappySprite?.src, walkSadSprite?.src,
       rightSprite?.src, wrongSprite?.src, eggLaySprite?.src, eggAsset?.src, markerAsset?.src,
       finishAsset?.src,
+      deathSprite?.src, enterSprite?.src,
+      z.idle?.src, z.walk?.src, z.react?.right?.src, z.react?.wrong?.src, z.eggLay?.src, z.egg?.src,
     ].filter(Boolean);
     urls.forEach((u) => { const img = new Image(); img.src = u; });
-  }, [idleSprite?.src, idleSadSprite?.src, walkHappySprite?.src, walkSadSprite?.src, rightSprite?.src, wrongSprite?.src, eggLaySprite?.src, eggAsset?.src, markerAsset?.src, finishAsset?.src]);
+  }, [idleSprite?.src, idleSadSprite?.src, walkHappySprite?.src, walkSadSprite?.src, rightSprite?.src, wrongSprite?.src, eggLaySprite?.src, eggAsset?.src, markerAsset?.src, finishAsset?.src, deathSprite?.src, enterSprite?.src, baseSkin.zombie]);
 
   // ── Deadzone/push camera — Swab walks to center, then the world scrolls ────
   const ANCHOR_X = bandW * ANCHOR_FRAC;
@@ -578,6 +677,8 @@ export default function ProgressGameBand({
   const showReactRight = !entering && (phase === 'reactRight' || (phase === 'celebrate' && celebSub === 'react'));
   const showReactWrong = !entering && phase === 'reactWrong';
   const showEggLay     = !entering && phase === 'eggLay';
+  const showDeath       = !entering && phase === 'death';
+  const showZombieEnter = !entering && phase === 'zombieEnter';
 
   // ── Character layers — stacked, opacity-toggled (never swap backgroundImage) ─
   const layers = (
@@ -670,6 +771,36 @@ export default function ProgressGameBand({
             backgroundSize: `${EGGLAY_FRAMES * W}px ${W}px`,
             animation: `${KF_EGGLAY} ${EGGLAY_MS}ms steps(${Math.max(1, EGGLAY_FRAMES - 1)}) forwards`,
             opacity: showEggLay ? 1 : 0,
+          }}
+        />
+      )}
+
+      {/* DEATH — one-shot (base skin); final frame transparent by design */}
+      {deathSprite?.src && DEATH_FRAMES > 0 && (
+        <div
+          key={`death-${reactKey}`}
+          style={{
+            position: 'absolute', inset: 0, width: W, height: W,
+            backgroundRepeat: 'no-repeat', imageRendering: 'pixelated',
+            backgroundImage: `url(${deathSprite.src})`,
+            backgroundSize: `${DEATH_FRAMES * W}px ${W}px`,
+            animation: `${KF_DEATH} ${DEATH_DUR}ms steps(${Math.max(1, DEATH_FRAMES - 1)}) forwards`,
+            opacity: showDeath ? 1 : 0,
+          }}
+        />
+      )}
+
+      {/* ZOMBIE ENTER — one-shot rise-from-grave; first frame transparent by design */}
+      {enterSprite?.src && ENTER_FRAMES > 0 && (
+        <div
+          key={`zenter-${reactKey}`}
+          style={{
+            position: 'absolute', inset: 0, width: W, height: W,
+            backgroundRepeat: 'no-repeat', imageRendering: 'pixelated',
+            backgroundImage: `url(${enterSprite.src})`,
+            backgroundSize: `${ENTER_FRAMES * W}px ${W}px`,
+            animation: `${KF_ENTER} ${ENTER_DUR}ms steps(${Math.max(1, ENTER_FRAMES - 1)}) forwards`,
+            opacity: showZombieEnter ? 1 : 0,
           }}
         />
       )}

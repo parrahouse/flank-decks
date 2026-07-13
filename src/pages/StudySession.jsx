@@ -581,7 +581,7 @@ export default function StudySession() {
         if (key === 'wrong') {
           setHearts((h) => Math.max(0, h - 1));
         } else if (key === 'correct' && (correctStreak + 1) % 5 === 0) {
-          setHearts((h) => Math.min(MAX_HEARTS, h + 1));
+          setHearts((h) => (h > 0 ? Math.min(MAX_HEARTS, h + 1) : h)); // death is permanent
         }
       }
     }
@@ -1059,6 +1059,7 @@ export default function StudySession() {
         {/* Background scene — only during active study */}
         {filterChosen &&
         <ProgressGameBand
+          zombified={gameMode && hearts === 0}
           cardIndex={cardIndex}
           total={shuffledCards.length}
           scores={scores}

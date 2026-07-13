@@ -185,6 +185,7 @@ export function getEffectiveSkin(skin, zombified = false) {
   const z = skin.zombie;
   return {
     ...skin,
+    id: `${skin.id}-zombie`, // distinct id: the band scopes character keyframe names by id
     sprites: {
       ...skin.sprites,
       idle: z.idle?.src ? { happy: z.idle } : skin.sprites.idle,
