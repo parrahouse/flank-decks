@@ -1050,11 +1050,11 @@ export default function StudySession() {
               {filterMode === 'bookmarked' && <span className="text-amber-600">Bookmarked only</span>}
             </p>
           </div>
+          {gameMode && <HeartsHud hearts={3} />}
           <div className="flex items-baseline gap-3 select-none px-1" style={{ fontFamily: "'VT323', monospace" }}>
             <span className="text-foreground uppercase" style={{ fontSize: 20, lineHeight: 1 }}>Score: {totalPoints.toFixed(2)}</span>
             <span className="text-muted-foreground uppercase" style={{ fontSize: 20, lineHeight: 1 }}>Top Score: {highScore > 0 ? highScore.toFixed(2) : '--'}</span>
           </div>
-          {gameMode && <HeartsHud hearts={3} />}
           <StreakCounter streak={correctStreak} record={Math.max(allTimeBest, bestStreak)} />
           <button
             onClick={() => {
