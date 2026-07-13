@@ -433,48 +433,48 @@ export default function DeckBuilder() {
         {!isMobile && (
           <div className="flex fixed top-14 right-0 bottom-0 w-[640px] bg-card border-l border-border flex-col z-30 shadow-xl">
             <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-              <div className="flex items-center gap-3">
-                <h2 className="font-semibold text-base">Card Details</h2>
-                <Button
-                  size="sm"
-                  onClick={() => editorSaveRef.current?.()}
-                  disabled={saveMutation.isPending}
-                  className="h-7 text-xs gap-1"
-                >
-                  {saveMutation.isPending ? <><Loader2 className="w-3 h-3 animate-spin" /> Saving…</> : 'Save Card'}
-                </Button>
-              </div>
+              <h2 className="font-semibold text-base">Card Details</h2>
               <div className="relative">
-                <button
-                  onClick={() => {
-                    if (editorDirty) {
-                      setCloseDropdownOpen(v => !v);
-                    } else {
-                      closeEditor();
-                    }
-                  }}
-                  className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors px-1 py-0.5 rounded"
-                >
-                  Close
-                  {editorDirty && <ChevronDown className="w-3.5 h-3.5" />}
-                </button>
-                {closeDropdownOpen && editorDirty && (
+                {!editorDirty ? (
+                  <button
+                    onClick={closeEditor}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors px-1 py-0.5 rounded"
+                  >
+                    Close
+                  </button>
+                ) : (
                   <>
-                    <div className="fixed inset-0 z-10" onClick={() => setCloseDropdownOpen(false)} />
-                    <div className="absolute right-0 top-full mt-1 w-44 bg-popover border border-border rounded-md shadow-lg z-20 py-1 text-sm">
-                      <button
-                        onClick={() => { setCloseDropdownOpen(false); editorSaveRef.current?.(); }}
-                        className="w-full text-left px-3 py-2 hover:bg-accent hover:text-accent-foreground transition-colors"
+                    <div className="flex items-center">
+                      <Button
+                        size="sm"
+                        onClick={() => editorSaveRef.current?.()}
+                        disabled={saveMutation.isPending}
+                        className="h-7 text-xs rounded-r-none pr-3"
                       >
-                        Save &amp; Close
-                      </button>
-                      <button
-                        onClick={() => { setCloseDropdownOpen(false); closeEditor(); }}
-                        className="w-full text-left px-3 py-2 hover:bg-accent hover:text-accent-foreground transition-colors text-destructive"
+                        {saveMutation.isPending ? <><Loader2 className="w-3 h-3 animate-spin" /> Saving…</> : 'Save & Close'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => setCloseDropdownOpen(v => !v)}
+                        disabled={saveMutation.isPending}
+                        className="h-7 text-xs rounded-l-none border-l border-primary-foreground/30 px-2"
                       >
-                        Revert &amp; Close
-                      </button>
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      </Button>
                     </div>
+                    {closeDropdownOpen && (
+                      <>
+                        <div className="fixed inset-0 z-10" onClick={() => setCloseDropdownOpen(false)} />
+                        <div className="absolute right-0 top-full mt-1 w-44 bg-popover border border-border rounded-md shadow-lg z-20 py-1 text-sm">
+                          <button
+                            onClick={() => { setCloseDropdownOpen(false); closeEditor(); }}
+                            className="w-full text-left px-3 py-2 hover:bg-accent hover:text-accent-foreground transition-colors text-destructive"
+                          >
+                            Revert &amp; Close
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </>
                 )}
               </div>
