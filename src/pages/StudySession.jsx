@@ -666,30 +666,6 @@ export default function StudySession() {
           <div className="flex-1 w-full">
           <div className="flex flex-col gap-3 w-full max-w-sm lg:max-w-md lg:pt-28">
 
-            {/* Auto-advance toggle */}
-            <div className="flex items-center justify-between px-1 pt-1">
-              <div>
-                <p className="text-sm font-medium">Auto-advance</p>
-                <p className="text-xs text-muted-foreground">Move to next card automatically after a correct answer</p>
-              </div>
-              <button
-                onClick={() => {
-                  const next = !autoAdvance;
-                  setAutoAdvance(next);
-                  localStorage.setItem('flashdeck_autoadvance', next ? '1' : '0');
-                }}
-                className={cn(
-                  'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer ml-4',
-                  autoAdvance ? 'bg-primary' : 'bg-muted'
-                )}>
-                
-                <span className={cn(
-                  'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform',
-                  autoAdvance ? 'translate-x-5' : 'translate-x-0'
-                )} />
-              </button>
-            </div>
-
             {/* Hints toggle */}
             <div className="flex items-center justify-between px-1 pt-1">
               <div>
@@ -759,9 +735,33 @@ export default function StudySession() {
               </button>
             </div>
 
-            {/* Divider */}
+            {/* UI Preferences group */}
             <div className="border-t border-border pt-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1 mb-2">Layout Preferences</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1 mb-2">UI Preferences</p>
+            </div>
+
+            {/* Auto-advance toggle */}
+            <div className="flex items-center justify-between px-1 pt-1">
+              <div>
+                <p className="text-sm font-medium">Auto-advance</p>
+                <p className="text-xs text-muted-foreground">Move to next card automatically after a correct answer</p>
+              </div>
+              <button
+                onClick={() => {
+                  const next = !autoAdvance;
+                  setAutoAdvance(next);
+                  localStorage.setItem('flashdeck_autoadvance', next ? '1' : '0');
+                }}
+                className={cn(
+                  'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer ml-4',
+                  autoAdvance ? 'bg-primary' : 'bg-muted'
+                )}>
+                
+                <span className={cn(
+                  'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform',
+                  autoAdvance ? 'translate-x-5' : 'translate-x-0'
+                )} />
+              </button>
             </div>
 
             {/* Layout mode */}
