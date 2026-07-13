@@ -647,9 +647,6 @@ export default function StudySession() {
           <div className="flex-1 flex flex-col items-center gap-6">
           <div className="text-center">
             <h2 className="text-xl font-bold">What would you like to study?</h2>
-            <p className="text-muted-foreground text-sm mt-1">
-              {masteredCardIds.size} of {activeCards.length} cards mastered
-            </p>
           </div>
 
           <div className="flex flex-col gap-3 w-full max-w-sm">
