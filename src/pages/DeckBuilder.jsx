@@ -352,10 +352,12 @@ export default function DeckBuilder() {
         <div className={`grid gap-4 ${showEditor ? 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4'}`}>
           {displayedCards.map((card, idx) => (
             <div key={card.id} onClick={() => openEdit(card)} className="group relative bg-card border border-border rounded-xl overflow-hidden hover:shadow-md transition-all cursor-pointer">
-              <div className="bg-muted h-28 flex items-center justify-center">
+              <div className="bg-muted h-28 flex items-center justify-center overflow-hidden">
                 {card.image_url
                   ? <img src={card.image_url} alt="" className="w-full h-full object-cover" />
-                  : <ImageIcon className="w-6 h-6 text-muted-foreground" />}
+                  : card.clue
+                    ? <p className="px-3 text-sm font-medium text-foreground line-clamp-4 leading-snug">{card.clue}</p>
+                    : <ImageIcon className="w-6 h-6 text-muted-foreground" />}
               </div>
               <div className="p-3">
                 <p className="text-sm font-medium text-foreground truncate">{card.correct_answers || card.correct_answer}</p>
