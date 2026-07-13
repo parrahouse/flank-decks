@@ -10,6 +10,8 @@ import StudyCard from '@/components/cards/StudyCard';
 import StudyCardHorizontal from '@/components/cards/StudyCardHorizontal';
 import ContactSheet from '@/components/cards/ContactSheet';
 import ProgressGameBand from '@/components/cards/ProgressGameBand';
+import HeartsHud from '@/components/cards/HeartsHud';
+import { getSkin, DEFAULT_SKIN_ID, canZombify } from '@/components/cards/skins';
 import SessionStatsPanel from '@/components/cards/SessionStatsPanel';
 import StreakCounter from '@/components/cards/StreakCounter';
 import { cn } from '@/lib/utils';
@@ -84,6 +86,9 @@ export default function StudySession() {
   // 'all' | 'unmastered'
   const [filterMode, setFilterMode] = useState('all');
   const [filterChosen, setFilterChosen] = useState(false);
+  const [selectedPool, setSelectedPool] = useState(null); // 'all' | 'unmastered' | 'bookmarked' | null
+  const [gameModeWanted, setGameModeWanted] = useState(() => localStorage.getItem('flashdeck_gamemode') === '1');
+  const [gameMode, setGameMode] = useState(false); // engaged for the running session only
   const [contactSheetOpen, setContactSheetOpen] = useState(false);
   // Layout defaults: seeded from user profile, then overrideable per-session
   const [layoutMode, setLayoutMode] = useState(() => localStorage.getItem('flashdeck_layout') || 'auto');
@@ -203,6 +208,15 @@ export default function StudySession() {
   const allMastered = unmasteredCards.length === 0 && activeCards.length > 0;
   const bookmarkedCards = activeCards.filter((c) => c.bookmarked);
 
+  // Game Mode gate — evaluated against the SELECTED pool, engaged at start time.
+  const GAME_MODE_MIN_CARDS = 20;
+  const poolFor = (mode) =>
+    mode === 'unmastered' ? unmasteredCards : mode === 'bookmarked' ? bookmarkedCards : activeCards;
+  const selectedQualifies =
+    selectedPool != null &&
+    poolFor(selectedPool).length >= GAME_MODE_MIN_CARDS &&
+    canZombify(getSkin(DEFAULT_SKIN_ID));
+
   const handleToggleBookmark = async (cardId, newVal) => {
     await base44.entities.Card.update(cardId, { bookmarked: newVal });
     refetchCards();
@@ -211,7 +225,8 @@ export default function StudySession() {
   const startSession = (mode) => {
     clearSession(); // discard any saved session on fresh start
     beginIntro();
-    const pool = mode === 'unmastered' ? unmasteredCards : mode === 'bookmarked' ? bookmarkedCards : activeCards;
+    const pool = poolFor(mode);
+    setGameMode(gameModeWanted && pool.length >= GAME_MODE_MIN_CARDS && canZombify(getSkin(DEFAULT_SKIN_ID)));
     setShuffledCards(shuffle(pool));
     setCardIndex(0);
     setDone(false);
@@ -240,6 +255,7 @@ export default function StudySession() {
     setFirstWrongChoices([]);
     setAnswerTimes([]);
     setFilterMode('missed');
+    setGameMode(false); // review runs are Progress mode
     setFilterChosen(true);
     setCorrectStreak(0);
     setBestStreak(0);
@@ -262,6 +278,7 @@ export default function StudySession() {
     setFirstWrongChoices(savedSession.first_wrong_choices || []);
     setAnswerTimes(savedSession.answer_times || []);
     setFilterMode(savedSession.filter_mode || 'all');
+    setGameMode(false); // saved sessions don't carry game-mode state yet (later stage)
     setFilterChosen(true);
     setCorrectStreak(0);
     setBestStreak(0);
@@ -597,20 +614,27 @@ export default function StudySession() {
 
           <div className="flex flex-col gap-3 w-full max-w-sm">
             <button
-              onClick={() => startSession('all')}
-              className="w-full border-2 border-border hover:border-primary p-4 text-left transition-all hover:bg-accent/40 rounded-[4px]">
+              onClick={() => setSelectedPool('all')}
+              className={cn(
+                'w-full border-2 rounded-[4px] p-4 text-left transition-all',
+                selectedPool === 'all'
+                  ? 'border-primary bg-accent/40'
+                  : 'border-border hover:border-primary hover:bg-accent/40'
+              )}>
               
               <div className="font-semibold" style={{ fontSize: '18px' }}>All cards</div>
               <div className="text-sm text-muted-foreground mt-0.5">{activeCards.length} cards</div>
             </button>
 
             <button
-              onClick={() => startSession('unmastered')}
+              onClick={() => setSelectedPool('unmastered')}
               disabled={allMastered}
               className={cn(
                 'w-full border-2 rounded-[4px] p-4 text-left transition-all',
                 allMastered ?
                 'border-border opacity-50 cursor-not-allowed' :
+                selectedPool === 'unmastered' ?
+                'border-primary bg-accent/40' :
                 'border-border hover:border-primary hover:bg-accent/40'
               )}>
               
@@ -635,12 +659,14 @@ export default function StudySession() {
             </button>
 
             <button
-              onClick={() => startSession('bookmarked')}
+              onClick={() => setSelectedPool('bookmarked')}
               disabled={bookmarkedCards.length < 10}
               className={cn(
                 'w-full border-2 rounded-[4px] p-4 text-left transition-all',
                 bookmarkedCards.length < 10 ?
                 'border-border opacity-50 cursor-not-allowed' :
+                selectedPool === 'bookmarked' ?
+                'border-primary bg-accent/40' :
                 'border-border hover:border-primary hover:bg-accent/40'
               )}>
               
@@ -659,6 +685,42 @@ export default function StudySession() {
                     ? `Need 10 bookmarked cards (${bookmarkedCards.length} so far)`
                     : 'Study only your bookmarked cards'}
               </div>
+            </button>
+
+            {selectedQualifies &&
+            <div className="flex items-center justify-between px-1 pt-2">
+              <div>
+                <p className="text-sm font-medium">Game Mode</p>
+                <p className="text-xs text-muted-foreground">Three hearts on the line ({GAME_MODE_MIN_CARDS}+ cards)</p>
+              </div>
+              <button
+                onClick={() => {
+                  const next = !gameModeWanted;
+                  setGameModeWanted(next);
+                  localStorage.setItem('flashdeck_gamemode', next ? '1' : '0');
+                }}
+                className={cn(
+                  'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer ml-4',
+                  gameModeWanted ? 'bg-primary' : 'bg-muted'
+                )}>
+                <span className={cn(
+                  'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform',
+                  gameModeWanted ? 'translate-x-5' : 'translate-x-0'
+                )} />
+              </button>
+            </div>
+            }
+
+            <button
+              onClick={() => selectedPool && startSession(selectedPool)}
+              disabled={!selectedPool}
+              className={cn(
+                'w-full border-2 rounded-[4px] p-3 text-center font-semibold transition-all',
+                selectedPool
+                  ? 'border-primary bg-primary text-primary-foreground hover:opacity-90'
+                  : 'border-border text-muted-foreground opacity-50 cursor-not-allowed'
+              )}>
+              Start session
             </button>
           </div>
           </div>
@@ -992,6 +1054,7 @@ export default function StudySession() {
             <span className="text-foreground uppercase" style={{ fontSize: 20, lineHeight: 1 }}>Score: {totalPoints.toFixed(2)}</span>
             <span className="text-muted-foreground uppercase" style={{ fontSize: 20, lineHeight: 1 }}>Top Score: {highScore > 0 ? highScore.toFixed(2) : '--'}</span>
           </div>
+          {gameMode && <HeartsHud hearts={3} />}
           <StreakCounter streak={correctStreak} record={Math.max(allTimeBest, bestStreak)} />
           <button
             onClick={() => {
