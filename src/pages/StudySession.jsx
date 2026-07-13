@@ -727,6 +727,28 @@ export default function StudySession() {
               </div>
             </button>
 
+            {/* Learning mode toggle */}
+            <div className="flex items-center justify-between px-1 pt-2">
+              <div>
+                <p className="text-sm font-medium">Learning mode</p>
+                <p className="text-xs text-muted-foreground">
+                  Auto-show explanation when you answer incorrectly
+                  {!hasCompletedFullSession && <span className="ml-1 text-amber-600 font-medium">(auto-on until first full session)</span>}
+                </p>
+              </div>
+              <button
+                onClick={() => setLearningModeOverride(!learningMode)}
+                className={cn(
+                  'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer ml-4',
+                  learningMode ? 'bg-primary' : 'bg-muted'
+                )}>
+                <span className={cn(
+                  'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform',
+                  learningMode ? 'translate-x-5' : 'translate-x-0'
+                )} />
+              </button>
+            </div>
+
             {selectedQualifies &&
             <div className="flex items-center justify-between px-1 pt-2">
               <div>
@@ -768,28 +790,6 @@ export default function StudySession() {
           {/* Right: session options & layout preferences */}
           <div className="flex-1 w-full">
           <div className="flex flex-col gap-3 w-full max-w-sm lg:max-w-md lg:pt-28">
-
-            {/* Learning mode toggle */}
-            <div className="flex items-center justify-between px-1 pt-1">
-              <div>
-                <p className="text-sm font-medium">Learning mode</p>
-                <p className="text-xs text-muted-foreground">
-                  Auto-show explanation when you answer incorrectly
-                  {!hasCompletedFullSession && <span className="ml-1 text-amber-600 font-medium">(auto-on until first full session)</span>}
-                </p>
-              </div>
-              <button
-                onClick={() => setLearningModeOverride(!learningMode)}
-                className={cn(
-                  'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer ml-4',
-                  learningMode ? 'bg-primary' : 'bg-muted'
-                )}>
-                <span className={cn(
-                  'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform',
-                  learningMode ? 'translate-x-5' : 'translate-x-0'
-                )} />
-              </button>
-            </div>
 
             {/* Helper Settings group */}
             <div className="border-t border-border pt-2">
