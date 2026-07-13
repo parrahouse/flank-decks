@@ -37,6 +37,8 @@ const EGG_REVEAL_MS   = 6  * REACT_FRAME_MS;  // egg settle one-shot
 // MARKER_PLANT_MS is derived inside the component from MARKER_FRAMES (see marker constants)
 const WAYPOINT_OFFSET = 0;   // world-x offset from Swab's stand point at m — tune by eye
 const EGG_OFFSET      = 0;   // world-x offset for milestone eggs under Swab — tune by eye
+const EGG_DROP_FRAME  = 9;   // lay frame (0-indexed) at which the world egg pops in — tune by eye
+const EGG_DROP_MS     = EGG_DROP_FRAME * REACT_FRAME_MS;
 const FINISH_GAP_FACTOR   = 0.5;  // × W — pole sits this far AHEAD of the final stand point; tune by eye
 const FINISH_CLEAR_FACTOR = 0.5;  // × W — extra margin past the pole at the end of the push; tune by eye
 
@@ -420,7 +422,7 @@ export default function ProgressGameBand({
     const canLay = EGGLAY_FRAMES > 0 && !!eggLaySprite?.src;
 
     let cancelled = false;
-    let tStart, tWalk, tEggLay, tNudge, tPush;
+    let tStart, tWalk, tEggLay, tNudge, tPush, tDrop;
 
     const finishWalk = () => {
       if (cancelled) return;
@@ -471,9 +473,12 @@ export default function ProgressGameBand({
         stopWalking();
         phaseRef.current = 'eggLay'; setPhase('eggLay');
         playEggLay();                   // one of three lay sounds, at random
-        setMilestoneEggs((prev) => {    // persist an egg at Swab's stand point
-          const next = new Set(prev); next.add(completedVal - 1); return next;
-        });
+        tDrop = setTimeout(() => {      // egg pops in when the lay reaches its drop frame
+          if (cancelled) return;
+          setMilestoneEggs((prev) => {  // persist an egg at Swab's stand point
+            const next = new Set(prev); next.add(completedVal - 1); return next;
+          });
+        }, EGG_DROP_MS);
         tEggLay = setTimeout(startWalk, EGGLAY_MS);
       } else {
         startWalk();
@@ -505,7 +510,7 @@ export default function ProgressGameBand({
       }
     }
 
-    return () => { cancelled = true; clearTimeout(tStart); clearTimeout(tWalk); clearTimeout(tEggLay); clearTimeout(tNudge); clearTimeout(tPush); };
+    return () => { cancelled = true; clearTimeout(tStart); clearTimeout(tWalk); clearTimeout(tEggLay); clearTimeout(tNudge); clearTimeout(tPush); clearTimeout(tDrop); };
   }
 
   processCommitRef.current = processCommit;
