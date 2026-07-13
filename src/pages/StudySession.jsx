@@ -789,7 +789,7 @@ export default function StudySession() {
 
           {/* Right: session options & layout preferences */}
           <div className="flex-1 w-full">
-          <div className="flex flex-col gap-3 w-full max-w-sm lg:max-w-md lg:pt-28">
+          <div className="flex flex-col gap-3 w-full max-w-sm lg:max-w-md">
 
             {/* Helper Settings group */}
             <div className="border-t border-border pt-2">
