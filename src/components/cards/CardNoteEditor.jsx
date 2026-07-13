@@ -67,7 +67,7 @@ export default function CardNoteEditor({ cardId, onSaved }) {
       <Textarea
         value={noteText}
         onChange={e => setNoteText(e.target.value)}
-        placeholder="Add a personal note for this card…"
+        placeholder="Add a personal note to this card. It could be a hint, a memorization tip, or anything else to help you study the material."
         className="resize-none min-h-[140px]"
         rows={6}
       />
