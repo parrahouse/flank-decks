@@ -39,8 +39,19 @@ function Heart({ full }) {
     }
 
     if (full) {
-      // full (or regained — refill animation is a later stage): hold the full frame
-      setFrame(FULL_FRAME);
+      if (prev) {
+        // was already full: just hold
+        setFrame(FULL_FRAME);
+      } else {
+        // regained: materialize — the break one-shot in reverse, then hold full
+        let i = BREAK_END;
+        const tick = () => {
+          setFrame(i);
+          i -= 1;
+          timerRef.current = setTimeout(i >= BREAK_START ? tick : () => setFrame(FULL_FRAME), FRAME_MS);
+        };
+        tick();
+      }
     } else if (prev && !full) {
       // just lost: play the break one-shot, then settle into the shimmer loop
       let i = BREAK_START;

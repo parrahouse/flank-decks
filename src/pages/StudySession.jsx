@@ -90,6 +90,7 @@ export default function StudySession() {
   const [gameModeWanted, setGameModeWanted] = useState(() => localStorage.getItem('flashdeck_gamemode') === '1');
   const [gameMode, setGameMode] = useState(false); // engaged for the running session only
   const [skipsUsed, setSkipsUsed] = useState(0);   // deferrals used this session (display only)
+  const [hearts, setHearts] = useState(3);         // Game Mode hearts remaining (0..MAX_HEARTS)
   const [contactSheetOpen, setContactSheetOpen] = useState(false);
   // Layout defaults: seeded from user profile, then overrideable per-session
   const [layoutMode, setLayoutMode] = useState(() => localStorage.getItem('flashdeck_layout') || 'auto');
@@ -212,6 +213,7 @@ export default function StudySession() {
 
   // Game Mode gate — evaluated against the SELECTED pool, engaged at start time.
   const GAME_MODE_MIN_CARDS = 20;
+  const MAX_HEARTS = 3;
   const poolFor = (mode) =>
     mode === 'unmastered' ? unmasteredCards : mode === 'bookmarked' ? bookmarkedCards : activeCards;
   const selectedQualifies =
@@ -237,6 +239,7 @@ export default function StudySession() {
     setAnswerTimes([]);
     setFilterMode(mode);
     setSkipsUsed(0);
+    setHearts(MAX_HEARTS);
     setFilterChosen(true);
     setCorrectStreak(0);
     setBestStreak(0);
@@ -260,6 +263,7 @@ export default function StudySession() {
     setFilterMode('missed');
     setGameMode(false); // review runs are Progress mode
     setSkipsUsed(0);
+    setHearts(MAX_HEARTS);
     setFilterChosen(true);
     setCorrectStreak(0);
     setBestStreak(0);
@@ -284,6 +288,7 @@ export default function StudySession() {
     setFilterMode(savedSession.filter_mode || 'all');
     setGameMode(false); // saved sessions don't carry game-mode state yet (later stage)
     setSkipsUsed(0);    // defer count isn't persisted yet (later stage)
+    setHearts(MAX_HEARTS);
     setFilterChosen(true);
     setCorrectStreak(0);
     setBestStreak(0);
@@ -565,6 +570,20 @@ export default function StudySession() {
         if (streakWorthy) setBestStreak((b) => Math.max(b, next));
         return next;
       });
+
+      // Game Mode hearts — first commits only, mirroring the streak rule.
+      // Drain: a clean 'wrong' costs a heart (assisted outcomes never drain —
+      // they already pay by not building the streak). Recovery: every 5-streak
+      // milestone restores one, cap MAX_HEARTS. `correctStreak` here is the
+      // committed render value, so `correctStreak + 1` equals the updater's
+      // `next` — a re-render always lands between first commits.
+      if (gameMode) {
+        if (key === 'wrong') {
+          setHearts((h) => Math.max(0, h - 1));
+        } else if (key === 'correct' && (correctStreak + 1) % 5 === 0) {
+          setHearts((h) => Math.min(MAX_HEARTS, h + 1));
+        }
+      }
     }
   };
 
@@ -1071,7 +1090,7 @@ export default function StudySession() {
               {filterMode === 'bookmarked' && <span className="text-amber-600">Bookmarked only</span>}
             </p>
           </div>
-          {gameMode && <HeartsHud hearts={3} />}
+          {gameMode && <HeartsHud hearts={hearts} />}
           <div className="flex items-baseline gap-3 select-none px-1" style={{ fontFamily: "'VT323', monospace" }}>
             <span className="text-foreground uppercase" style={{ fontSize: 20, lineHeight: 1 }}>Score: {totalPoints.toFixed(2)}</span>
             <span className="text-muted-foreground uppercase" style={{ fontSize: 20, lineHeight: 1 }}>Top Score: {highScore > 0 ? highScore.toFixed(2) : '--'}</span>
