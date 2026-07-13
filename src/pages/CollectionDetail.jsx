@@ -1,15 +1,18 @@
 import { useState, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, Plus, X, ChevronUp, ChevronDown, GalleryVerticalEnd, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Plus, X, ChevronUp, ChevronDown, GalleryVerticalEnd, Image as ImageIcon, SquarePen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AddDecksToCollectionDialog from '@/components/collections/AddDecksToCollectionDialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 
 export default function CollectionDetail() {
   const { collectionId } = useParams();
   const qc = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: collection } = useQuery({
     queryKey: ['collection', collectionId],
@@ -45,6 +48,9 @@ export default function CollectionDetail() {
   );
 
   const [addOpen, setAddOpen] = useState(false);
+  const [newDeckOpen, setNewDeckOpen] = useState(false);
+  const [newDeckTitle, setNewDeckTitle] = useState('');
+  const [creatingDeck, setCreatingDeck] = useState(false);
 
   const removeMut = useMutation({
     mutationFn: (membershipId) => base44.entities.CollectionDeck.delete(membershipId),
@@ -66,6 +72,26 @@ export default function CollectionDetail() {
       { id: b.id, sort_order: a.sort_order },
     ]);
     qc.invalidateQueries(['collection-decks', collectionId]);
+  };
+
+  const createDeck = async () => {
+    if (!newDeckTitle.trim()) return;
+    setCreatingDeck(true);
+    try {
+      const deck = await base44.entities.Deck.create({ title: newDeckTitle.trim() });
+      const baseOrder = memberships.reduce((mx, m) => Math.max(mx, m.sort_order || 0), -1);
+      await base44.entities.CollectionDeck.create({ collection: collectionId, deck: deck.id, sort_order: baseOrder + 1 });
+      qc.invalidateQueries(['collection-decks', collectionId]);
+      qc.invalidateQueries(['collection-decks-all']);
+      qc.invalidateQueries(['decks']);
+      setNewDeckOpen(false);
+      setNewDeckTitle('');
+      navigate(`/deck/${deck.id}`);
+    } catch (e) {
+      toast.error(e.message || 'Could not create deck');
+    } finally {
+      setCreatingDeck(false);
+    }
   };
 
   const cardCount = (deckId) => cards.filter((c) => c.deck_id === deckId && !c.deleted).length;
@@ -90,7 +116,10 @@ export default function CollectionDetail() {
             {collection?.description && <p className="text-muted-foreground text-sm mt-0.5">{collection.description}</p>}
           </div>
         </div>
-        <Button className="gap-1.5" onClick={() => setAddOpen(true)}><Plus className="w-4 h-4" /> Add decks</Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" className="gap-1.5" onClick={() => { setNewDeckTitle(''); setNewDeckOpen(true); }}><SquarePen className="w-4 h-4" /> New deck</Button>
+          <Button className="gap-1.5" onClick={() => setAddOpen(true)}><Plus className="w-4 h-4" /> Add decks</Button>
+        </div>
       </div>
 
       {membersLoading ? (
@@ -141,6 +170,27 @@ export default function CollectionDetail() {
       )}
 
       <AddDecksToCollectionDialog open={addOpen} onClose={() => setAddOpen(false)} collectionId={collectionId} />
+
+      <Dialog open={newDeckOpen} onOpenChange={(o) => { if (!o) setNewDeckOpen(false); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>New deck</DialogTitle>
+          </DialogHeader>
+          <Input
+            autoFocus
+            placeholder="Deck title"
+            value={newDeckTitle}
+            onChange={(e) => setNewDeckTitle(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && createDeck()}
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setNewDeckOpen(false)}>Cancel</Button>
+            <Button onClick={createDeck} disabled={!newDeckTitle.trim() || creatingDeck}>
+              {creatingDeck ? 'Creating…' : 'Create & open'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
