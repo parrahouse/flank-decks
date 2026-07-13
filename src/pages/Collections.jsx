@@ -2,13 +2,14 @@ import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { FolderOpen, Plus, Pencil, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
+import { FolderOpen, Plus, Pencil, Trash2, ChevronUp, ChevronDown, LibraryBig } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import CollectionFormDialog from '@/components/collections/CollectionFormDialog';
+import AddDecksToCollectionDialog from '@/components/collections/AddDecksToCollectionDialog';
 import { toast } from 'sonner';
 
 export default function Collections() {
@@ -33,6 +34,7 @@ export default function Collections() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
+  const [addingDecksTo, setAddingDecksTo] = useState(null); // collection id
 
   const deleteMut = useMutation({
     mutationFn: async (col) => {
@@ -107,6 +109,7 @@ export default function Collections() {
                   <button onClick={() => reorder(idx, 1)} disabled={idx === collections.length - 1} className="text-muted-foreground hover:text-foreground disabled:opacity-30"><ChevronDown className="w-4 h-4" /></button>
                 </div>
                 <div className="ml-auto flex items-center gap-1">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" title="Add decks" onClick={() => setAddingDecksTo(c.id)}><LibraryBig className="w-4 h-4" /></Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditing(c); setFormOpen(true); }}><Pencil className="w-4 h-4" /></Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleting(c)}><Trash2 className="w-4 h-4" /></Button>
                 </div>
@@ -117,6 +120,7 @@ export default function Collections() {
       )}
 
       <CollectionFormDialog open={formOpen} onClose={() => setFormOpen(false)} collection={editing} />
+      <AddDecksToCollectionDialog open={!!addingDecksTo} onClose={() => setAddingDecksTo(null)} collectionId={addingDecksTo} />
 
       <AlertDialog open={!!deleting} onOpenChange={(o) => { if (!o) setDeleting(null); }}>
         <AlertDialogContent>
