@@ -790,7 +790,7 @@ export default function StudySession() {
 
             {/* Helper Settings group */}
             <div className="border-t border-border pt-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1 mb-2">Helper Settings</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1 mb-2">Helpers</p>
             </div>
 
             {/* Allow 2nd guesses toggle */}
@@ -866,7 +866,7 @@ export default function StudySession() {
 
             {/* UI Preferences group */}
             <div className="border-t border-border pt-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1 mb-2">UI Preferences</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1 mb-2">UI Settings</p>
             </div>
 
             {/* Auto-advance toggle */}
