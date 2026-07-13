@@ -19,8 +19,8 @@ export default function CardThumbnail({ card }) {
   return (
     <div className="flex flex-col gap-2 w-full">
 
-      {/* Image */}
-      {card.image_url && (
+      {/* Image or written question fallback */}
+      {card.image_url ? (
         <div className="w-full overflow-hidden rounded" style={{ aspectRatio: '4/3' }}>
           <img
             src={card.image_url}
@@ -34,17 +34,14 @@ export default function CardThumbnail({ card }) {
             }}
           />
         </div>
-      )}
-
-      {/* Clue / Question */}
-      {card.clue && (
+      ) : card.clue ? (
         <div
           className="w-full rounded px-3 py-2"
-          style={{ backgroundColor: '#DFEDF5' }}
+          style={{ backgroundColor: '#DFEDF5', aspectRatio: '4/3', display: 'flex', alignItems: 'center' }}
         >
-          <MathRenderer text={card.clue} style={{ color: '#113656', fontSize: 14, fontWeight: 500, lineHeight: 1.4 }} />
+          <MathRenderer text={card.clue} style={{ color: '#113656', fontSize: 15, fontWeight: 500, lineHeight: 1.4 }} />
         </div>
-      )}
+      ) : null}
 
       {/* Answer section */}
       <div
