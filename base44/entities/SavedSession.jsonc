@@ -30,13 +30,23 @@
     },
     "first_wrong_choices": {
       "type": "array",
-      "items": {},
-      "description": "First wrong choices array up to the saved point"
+      "items": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "description": "First wrong choices array up to the saved point; null for cards answered correctly on the first try"
     },
     "answer_times": {
       "type": "array",
-      "items": {},
-      "description": "Per-card answer times (ms) up to the saved point, parallel to scores"
+      "items": {
+        "type": [
+          "number",
+          "null"
+        ]
+      },
+      "description": "Per-card answer times (ms) up to the saved point, parallel to scores; null for untimed/unanswered cards"
     },
     "elapsed_ms": {
       "type": "number",
