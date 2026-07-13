@@ -820,7 +820,7 @@ export default function StudySession() {
             {/* Hints toggle */}
             <div className="flex items-center justify-between px-1 pt-1">
               <div>
-                <p className="text-sm font-medium">Allow hints</p>
+                <p className="text-sm font-medium">Allow notes</p>
                 <p className="text-xs text-muted-foreground">Show the clue toggle on each card</p>
               </div>
               <button
