@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, Plus, X, ChevronUp, ChevronDown, GalleryVerticalEnd, Image as ImageIcon, SquarePen } from 'lucide-react';
+import { ArrowLeft, Plus, X, ChevronUp, ChevronDown, GalleryVerticalEnd, Image as ImageIcon, SquarePen, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AddDecksToCollectionDialog from '@/components/collections/AddDecksToCollectionDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -118,7 +118,12 @@ export default function CollectionDetail() {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" className="gap-1.5" onClick={() => { setNewDeckTitle(''); setNewDeckOpen(true); }}><SquarePen className="w-4 h-4" /> New deck</Button>
-          <Button className="gap-1.5" onClick={() => setAddOpen(true)}><Plus className="w-4 h-4" /> Add decks</Button>
+          <Button variant="outline" className="gap-1.5" onClick={() => setAddOpen(true)}><Plus className="w-4 h-4" /> Add decks</Button>
+          {orderedDecks.length > 0 && (
+            <Link to={`/collections/${collectionId}/study`}>
+              <Button className="gap-1.5"><Play className="w-4 h-4" /> Study collection</Button>
+            </Link>
+          )}
         </div>
       </div>
 
