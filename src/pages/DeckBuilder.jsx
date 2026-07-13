@@ -227,7 +227,7 @@ export default function DeckBuilder() {
     <div className="flex min-h-[calc(100vh-3.5rem)]">
     {/* Main content */}
     <div className={`flex-1 px-4 py-8 transition-all duration-300 ${showEditor ? 'md:mr-[640px]' : ''}`}>
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-7xl mx-auto">
 
       {/* Header */}
       <div className="mb-6 bg-card border border-border rounded-md overflow-hidden hover:shadow-md transition-all duration-200">
