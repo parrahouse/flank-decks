@@ -24,25 +24,14 @@ export default function SharedDeck() {
   const [shuffledCards, setShuffledCards] = useState([]);
   const [done, setDone] = useState(false);
 
-  const { data: decks = [], isLoading: loadingDeck } = useQuery({
+  const { data, isLoading: loadingDeck, isError: deckError } = useQuery({
     queryKey: ['shared-deck', token],
-    queryFn: () => base44.entities.Deck.filter({ share_token: token }),
+    queryFn: () => base44.functions.invoke('getSharedDeck', { token }),
   });
 
-  const deck = decks[0];
-
-  const { data: cards = [], isLoading: loadingCards } = useQuery({
-    queryKey: ['shared-cards', deck?.id],
-    queryFn: () => base44.entities.Card.filter({ deck_id: deck.id }, 'order'),
-    enabled: !!deck?.id,
-  });
-
-  const { data: sharedNotes = [] } = useQuery({
-    queryKey: ['shared-notes', deck?.id],
-    queryFn: () => base44.entities.CardNote.filter({ include_in_share: true }),
-    enabled: !!deck?.id,
-  });
-
+  const deck = data?.data?.deck;
+  const cards = data?.data?.cards ?? [];
+  const sharedNotes = data?.data?.notes ?? [];
   const sharedNotesByCardId = Object.fromEntries(sharedNotes.map(n => [n.card_id, n.note]));
 
   useEffect(() => {
@@ -62,7 +51,7 @@ export default function SharedDeck() {
   const handleNext = () => { if (cardIndex < shuffledCards.length - 1) setCardIndex(i => i + 1); else setDone(true); };
   const handlePrev = () => { if (cardIndex > 0) setCardIndex(i => i - 1); };
 
-  if (loadingDeck || loadingCards) {
+  if (loadingDeck) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="w-7 h-7 border-4 border-muted border-t-primary rounded-full animate-spin" />
@@ -70,7 +59,7 @@ export default function SharedDeck() {
     );
   }
 
-  if (!deck) {
+  if (deckError || !deck) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-3">
         <p className="text-muted-foreground">Deck not found or no longer shared.</p>
