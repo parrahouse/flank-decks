@@ -19,7 +19,7 @@ export default function ShareModal({ deck, open, onClose }) {
   const qc = useQueryClient();
 
   // Find collections this deck belongs to that are already publicly shared.
-  const { data: sharedCollections = [] } = useQuery({
+  const { data: sharedCollections = [], isLoading: checkingCollections } = useQuery({
     queryKey: ['shared-collections-for-deck', deck?.id],
     queryFn: async () => {
       const memberships = await base44.entities.CollectionDeck.filter({ deck: deck.id });
@@ -38,7 +38,9 @@ export default function ShareModal({ deck, open, onClose }) {
 
   const isPublic = !!deck.is_public && !!deck.share_token;
   const shareUrl = deck.share_token ? `${window.location.origin}/shared/${deck.share_token}` : null;
-  const collectionShare = sharedCollections[0];
+  // Only trust the collection result once the lookup has finished; otherwise we
+  // briefly render the "Enable sharing" button before the query resolves.
+  const collectionShare = checkingCollections ? null : sharedCollections[0];
   const collectionUrl = collectionShare
     ? `${window.location.origin}/shared-collection/${collectionShare.share_token}`
     : null;
@@ -97,7 +99,11 @@ export default function ShareModal({ deck, open, onClose }) {
           </DialogDescription>
         </DialogHeader>
 
-        {isPublic ? (
+        {checkingCollections && !isPublic ? (
+          <div className="mt-4 flex items-center justify-center py-6">
+            <div className="w-6 h-6 border-2 border-muted border-t-primary rounded-full animate-spin"></div>
+          </div>
+        ) : isPublic ? (
           <div className="space-y-4 mt-2">
             <div className="flex gap-2">
               <Input value={shareUrl} readOnly className="text-sm font-mono" />
