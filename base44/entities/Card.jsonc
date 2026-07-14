@@ -14,6 +14,10 @@
       "type": "string",
       "description": "Uploaded image URL"
     },
+    "image_original_url": {
+      "type": "string",
+      "description": "Pre-crop original image URL. Set on first crop; absent means image_url is the original."
+    },
     "image_focal_point": {
       "type": "object",
       "description": "Focal point for image cropping, as {x, y} percentages (0-100)",
@@ -110,18 +114,18 @@
     "point_value": {
       "type": "integer",
       "default": 20,
-      "description": "Resolved points this card is worth when answered correctly. Read-only at runtime \u2014 never recomputed during a session."
+      "description": "Resolved points this card is worth when answered correctly."
     },
     "difficulty_tier": {
       "type": "integer",
       "minimum": 1,
       "maximum": 5,
-      "description": "Resolved difficulty tier (1\u20135) behind point_value, kept for transparency and editing."
+      "description": "Resolved difficulty tier (1\u20135) behind point_value."
     },
     "difficulty_overridden": {
       "type": "boolean",
       "default": false,
-      "description": "True when an author has manually set point_value, locking it against recomputation."
+      "description": "True when an author has manually set point_value."
     }
   },
   "required": [

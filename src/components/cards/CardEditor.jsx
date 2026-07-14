@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Plus, X, Wand2, Image as ImageIcon, Loader2, Pencil, Search, Sparkles, Tags, Zap, RotateCcw, AlertTriangle } from 'lucide-react';
 import { computeCardDifficulty } from '@/lib/computeCardDifficulty';
 import InfoTooltip from './InfoTooltip';
@@ -38,6 +38,8 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
   const [testVerdict, setTestVerdict] = useState(null);
   const [testGrading, setTestGrading] = useState(false);
   const [imageUrl, setImageUrl] = useState(card?.image_url || '');
+  // Stage 4A
+  const [originalImageUrl, setOriginalImageUrl] = useState(card?.image_original_url || null);
 
   // All choices (including correct ones)
   const [allChoicesList, setAllChoicesList] = useState(() => {
@@ -51,6 +53,10 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
 
   const [focalPoint, setFocalPoint] = useState(card?.image_focal_point || (card?.image_url ? { x: 50, y: 50 } : null));
   const [imageFit, setImageFit] = useState(card?.image_fit || 'cover');
+  // Stage 1A
+  const previewImgRef = useRef(null);
+  const focalDragRef = useRef(null);
+  const [draggingPreview, setDraggingPreview] = useState(false);
   const [clue, setClue] = useState(card?.clue || '');
   const [explanation, setExplanation] = useState(card?.explanation || '');
   const [tags, setTags] = useState(card?.tags || []);
@@ -77,6 +83,44 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
   const fileRef = useRef();
   const quillRef = useRef(null);
 
+  // Stage 1A — drag-to-reposition handlers
+  const beginFocalDrag = (e) => {
+    if (imageFit !== 'cover' || !imageUrl) return;
+    const wrap = e.currentTarget;
+    const img = previewImgRef.current;
+    if (!img || !img.naturalWidth) return;
+    const cW = wrap.clientWidth, cH = wrap.clientHeight;
+    const scale = Math.max(cW / img.naturalWidth, cH / img.naturalHeight);
+    const ovX = img.naturalWidth * scale - cW;
+    const ovY = img.naturalHeight * scale - cH;
+    focalDragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startFocal: { ...(focalPoint || { x: 50, y: 50 }) },
+      ovX,
+      ovY,
+    };
+    setDraggingPreview(true);
+    wrap.setPointerCapture(e.pointerId);
+  };
+
+  const moveFocalDrag = (e) => {
+    const d = focalDragRef.current;
+    if (!d) return;
+    const dx = e.clientX - d.startX;
+    const dy = e.clientY - d.startY;
+    const clamp = (v) => Math.max(0, Math.min(100, Math.round(v)));
+    setFocalPoint({
+      x: d.ovX > 0.5 ? clamp(d.startFocal.x - (dx / d.ovX) * 100) : d.startFocal.x,
+      y: d.ovY > 0.5 ? clamp(d.startFocal.y - (dy / d.ovY) * 100) : d.startFocal.y,
+    });
+  };
+
+  const endFocalDrag = () => {
+    focalDragRef.current = null;
+    setDraggingPreview(false);
+  };
+
   // Bonus question state
 
 
@@ -94,6 +138,8 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
     if (JSON.stringify(tags) !== JSON.stringify(card?.tags || [])) return true;
     if (JSON.stringify(allChoicesList) !== JSON.stringify(origChoices)) return true;
     if ([...correctSet].sort().join('|') !== [...origCorrect].sort().join('|')) return true;
+    // Stage 4E
+    if ((originalImageUrl || null) !== (card?.image_original_url || null)) return true;
     return false;
   })();
   if (isDirty !== prevDirtyRef.current) {
@@ -114,6 +160,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
     setUploading(true);
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
     setImageUrl(file_url);
+    setOriginalImageUrl(null); // Stage 4C
     setFocalPoint({ x: 50, y: 50 });
     setImageFit('cover');
     setUploading(false);
@@ -254,6 +301,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
     const fullPrompt = `${aiImagePrompt.trim()}, ${styleEnhancer}${humorEnhancer}${noTextInstruction}. Compose for a 4:3 landscape frame. Keep all important subject matter centered and well within the frame, away from the edges. Leave generous safe margins on all sides.`;
     const { url } = await base44.integrations.Core.GenerateImage({ prompt: fullPrompt });
     setImageUrl(url);
+    setOriginalImageUrl(null); // Stage 4C
     setFocalPoint({ x: 50, y: 50 });
     setShowAiImageGen(false);
     setGeneratingImage(false);
@@ -282,7 +330,10 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
     if (imageUrl && imageUrl.startsWith('data:')) {
       setSaving(true);
       const blob = await (await fetch(imageUrl)).blob();
-      const file = new File([blob], 'edited-image.jpg', { type: 'image/jpeg' });
+      // Stage 2D: derive mime from data URL
+      const mime = imageUrl.slice(5, imageUrl.indexOf(';')) || 'image/jpeg';
+      const ext = mime.split('/')[1] || 'jpg';
+      const file = new File([blob], `edited-image.${ext}`, { type: mime });
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       finalImageUrl = file_url;
       setSaving(false);
@@ -292,6 +343,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
       image_url: finalImageUrl,
       image_focal_point: focalPoint,
       image_fit: imageFit,
+      image_original_url: originalImageUrl || null, // Stage 4E
       correct_answers,
       correct_answer: correctList[0] || canonicalAnswer.trim(),
       choices: filledChoices,
@@ -539,17 +591,36 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
           style={{ minHeight: 180 }}
         >
           {imageUrl ? (
-              <div className="relative w-full h-48 overflow-hidden" style={{ backgroundColor: '#f3f4f6' }} onClick={(e) => e.stopPropagation()}>
-                <img
-                  src={imageUrl}
-                  alt="card"
-                  className="w-full h-48 pointer-events-none"
-                  style={{
-                    objectFit: imageFit,
-                    objectPosition: imageFit === 'cover' && focalPoint ? `${focalPoint.x}% ${focalPoint.y}%` : 'center',
-                  }}
-                />
-              </div>
+            <div
+              className="relative w-full h-48 overflow-hidden select-none"
+              style={{
+                backgroundColor: '#f3f4f6',
+                touchAction: imageFit === 'cover' ? 'none' : 'auto',
+                cursor: imageFit === 'cover' ? (draggingPreview ? 'grabbing' : 'grab') : 'default',
+              }}
+              onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => { e.preventDefault(); beginFocalDrag(e); }}
+              onPointerMove={moveFocalDrag}
+              onPointerUp={endFocalDrag}
+              onPointerCancel={endFocalDrag}
+            >
+              <img
+                ref={previewImgRef}
+                src={imageUrl}
+                alt="card"
+                className="w-full h-48 pointer-events-none"
+                style={{
+                  objectFit: imageFit,
+                  objectPosition: imageFit === 'cover' && focalPoint ? `${focalPoint.x}% ${focalPoint.y}%` : 'center',
+                }}
+                draggable={false}
+              />
+              {imageFit === 'cover' && !draggingPreview && (
+                <div className="absolute bottom-2 left-2 bg-black/50 text-white text-[10px] px-2 py-0.5 rounded-full pointer-events-none">
+                  Drag to reposition
+                </div>
+              )}
+            </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-48 gap-2 text-muted-foreground">
               {uploading ? <Loader2 className="w-6 h-6 animate-spin" /> : <ImageIcon className="w-8 h-8" />}
@@ -558,7 +629,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
           )}
           {imageUrl && (
             <>
-              <button onClick={(e) => { e.stopPropagation(); setImageUrl(''); }} className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80">
+              <button onClick={(e) => { e.stopPropagation(); setImageUrl(''); setOriginalImageUrl(null); }} className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80">
                 <X className="w-3.5 h-3.5" />
               </button>
               <button onClick={(e) => { e.stopPropagation(); setShowImageEditor(true); }} className="absolute top-2 left-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80">
@@ -568,6 +639,39 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
           )}
         </div>
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+        {/* Stage 1C — inline display mode toggle */}
+        {imageUrl && (
+          <div className="flex gap-2">
+            {[{ value: 'cover', label: 'Fill frame' }, { value: 'contain', label: 'Fit whole image' }].map(({ value, label }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setImageFit(value)}
+                className={`px-3 py-1 rounded-md border text-xs transition-colors ${
+                  imageFit === value
+                    ? 'border-primary bg-primary/10 text-primary font-medium'
+                    : 'border-border hover:border-primary/50 text-muted-foreground'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+        {/* Stage 4D — revert to original */}
+        {originalImageUrl && (
+          <button
+            type="button"
+            onClick={() => {
+              setImageUrl(originalImageUrl);
+              setOriginalImageUrl(null);
+              setFocalPoint({ x: 50, y: 50 });
+            }}
+            className="text-xs text-muted-foreground hover:underline"
+          >
+            Revert to original (undo crop)
+          </button>
+        )}
         <div className="flex items-center justify-between">
           <InfoTooltip text="Accepted: JPG, PNG, GIF, WebP · Min 10 KB · Max 10 MB" />
           <div className="flex items-center gap-3">
@@ -631,14 +735,14 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
         )}
         {showImagePicker && (
           <ImagePickerFromDeck
-            onSelect={(url) => { setImageUrl(url); setFocalPoint({ x: 50, y: 50 }); setShowImagePicker(false); }}
+            onSelect={(url) => { setImageUrl(url); setOriginalImageUrl(null); setFocalPoint({ x: 50, y: 50 }); setShowImagePicker(false); }}
             onClose={() => setShowImagePicker(false)}
           />
         )}
         {showImageSearch && (
           <ImageSearchPanel
             defaultQuery={Array.from(correctSet)[0] || ''}
-            onSelect={(url) => { setImageUrl(url); setFocalPoint({ x: 50, y: 50 }); setShowImageSearch(false); }}
+            onSelect={(url) => { setImageUrl(url); setOriginalImageUrl(null); setFocalPoint({ x: 50, y: 50 }); setShowImageSearch(false); }}
             onClose={() => setShowImageSearch(false)}
           />
         )}
@@ -860,15 +964,17 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
       {showImageEditor && imageUrl && (
         <ImageEditor
           open={showImageEditor}
-          imageUrl={imageUrl}
-          initialFocalPoint={focalPoint}
-          initialImageFit={imageFit}
+          imageUrl={originalImageUrl || imageUrl}
           onClose={() => setShowImageEditor(false)}
-          onSave={(dataUrl, newFocalPoint, newImageFit) => {
+          onSave={(dataUrl) => {
             setShowImageEditor(false);
-            if (dataUrl) setImageUrl(dataUrl);
-            if (newFocalPoint) setFocalPoint(newFocalPoint);
-            if (newImageFit) setImageFit(newImageFit);
+            if (dataUrl) {
+              // Stage 4B: capture original on first bake
+              if (!originalImageUrl && imageUrl && !imageUrl.startsWith('data:')) {
+                setOriginalImageUrl(imageUrl);
+              }
+              setImageUrl(dataUrl);
+            }
           }}
         />
       )}
