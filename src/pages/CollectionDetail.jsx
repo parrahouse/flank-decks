@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, Plus, X, ChevronUp, ChevronDown, GalleryVerticalEnd, Image as ImageIcon, SquarePen, Play } from 'lucide-react';
+import { ArrowLeft, Plus, X, ChevronUp, ChevronDown, GalleryVerticalEnd, Image as ImageIcon, SquarePen, Play, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AddDecksToCollectionDialog from '@/components/collections/AddDecksToCollectionDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -162,6 +162,9 @@ export default function CollectionDetail() {
                     </div>
                     <Link to={`/study/${deck.id}`} className="flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80">
                       <GalleryVerticalEnd className="w-4 h-4" /> Study
+                    </Link>
+                    <Link to={`/deck/${deck.id}`} className="text-muted-foreground hover:text-foreground" title="Edit deck">
+                      <Pencil className="w-4 h-4" />
                     </Link>
                     <button onClick={() => removeMut.mutate(m.id)} className="text-muted-foreground hover:text-destructive" title="Remove from collection">
                       <X className="w-4 h-4" />
