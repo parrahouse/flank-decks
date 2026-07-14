@@ -13,15 +13,32 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const payload = await req.json();
+    // Normalize first (trim + uppercase) so a lowercase but valid code still succeeds.
     const rawCode = (payload.invite_code || '').trim().toUpperCase();
     const display_name = (payload.display_name || '').trim() || emailPrefix(user.email);
 
     if (!rawCode) return Response.json({ error: 'Invalid invite code' }, { status: 404 });
 
+    // Format validation: exactly 8 chars from the invite-code alphabet.
+    // Because RLS is row-level, an owner can edit their own invite_code
+    // client-side (including copying another group's code), so we validate
+    // the format and detect collisions before trusting a lookup.
+    const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    if (rawCode.length !== 8 || !rawCode.split('').every(c => CODE_ALPHABET.includes(c))) {
+      return Response.json({ error: 'Invalid invite code' }, { status: 404 });
+    }
+
     // Look up the group by invite_code (service role — invite_code is secret)
     const groups = await base44.asServiceRole.entities.StudyGroup.filter({ invite_code: rawCode });
     if (!groups || groups.length === 0) {
       return Response.json({ error: 'Invalid invite code' }, { status: 404 });
+    }
+    if (groups.length > 1) {
+      // Invite code collision — two groups share the same code (an owner
+      // may have copied another group's code client-side). Do not guess;
+      // refuse the join.
+      console.error('Invite code collision for code', rawCode, '— group ids:', groups.map(g => g.id));
+      return Response.json({ error: 'Invite code conflict; ask the group owner to regenerate' }, { status: 409 });
     }
     const group = groups[0];
 

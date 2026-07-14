@@ -29,7 +29,7 @@
     },
     "owner_email": {
       "type": "string",
-      "description": "Email of the group creator/owner. Set by createGroup so the read RLS can match the owner, since service-role writes do not attribute created_by to the caller."
+      "description": "Set only by the createGroup function. Authoritative owner identifier; do not rely on created_by."
     }
   },
   "required": [
