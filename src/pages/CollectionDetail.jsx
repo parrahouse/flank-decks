@@ -2,12 +2,19 @@ import { useState, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, Plus, X, ChevronUp, ChevronDown, GalleryVerticalEnd, Image as ImageIcon, SquarePen, Play, Pencil } from 'lucide-react';
+import { ArrowLeft, Plus, GalleryVerticalEnd, SquarePen, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AddDecksToCollectionDialog from '@/components/collections/AddDecksToCollectionDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import DeckCard from '@/components/deck/DeckCard';
+import ShareModal from '@/components/deck/ShareModal';
+import CoverImagePicker from '@/components/deck/CoverImagePicker';
+
+function makeToken() {
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
 
 export default function CollectionDetail() {
   const { collectionId } = useParams();
@@ -47,10 +54,72 @@ export default function CollectionDetail() {
     [memberships, deckMap]
   );
 
+  const { data: currentUser } = useQuery({
+    queryKey: ['me'],
+    queryFn: () => base44.auth.me(),
+  });
+
+  const { data: sessions = [] } = useQuery({
+    queryKey: ['study-sessions-home'],
+    queryFn: () => base44.entities.StudySession.list('-created_date', 500),
+  });
+
+  const { data: savedSessions = [] } = useQuery({
+    queryKey: ['saved-sessions-home', currentUser?.id],
+    queryFn: () => base44.entities.SavedSession.filter({ user_id: currentUser.id }),
+    enabled: !!currentUser?.id,
+  });
+
+  const { data: cardStats = [] } = useQuery({
+    queryKey: ['card-stats-home', currentUser?.id],
+    queryFn: () => base44.entities.UserCardStats.filter({ user_id: currentUser.id }),
+    enabled: !!currentUser?.id,
+  });
+
+  const deckMasteryPct = (deckId) => {
+    const total = cards.filter((c) => c.deck_id === deckId && !c.deleted).length;
+    if (!total) return 0;
+    const mastered = cardStats.filter((s) => s.deck_id === deckId && s.mastered).length;
+    return Math.round((mastered / total) * 100);
+  };
+
+  const savedHoursLeft = (deckId) => {
+    const s = savedSessions.find((x) => x.deck_id === deckId && new Date(x.expires_at).getTime() > Date.now());
+    if (!s) return null;
+    return Math.max(0, Math.ceil((new Date(s.expires_at).getTime() - Date.now()) / 3600000));
+  };
+
+  const deckStats = (deckId) => {
+    const s = sessions.filter((x) => x.deck_id === deckId);
+    if (!s.length) return null;
+    const finished = s.filter((x) => x.score_pct != null);
+    const scores = finished.map((x) => x.score_pct);
+    const last = s[0];
+    return {
+      timesStarted: s.length,
+      timesFinished: finished.length,
+      highScore: scores.length ? Math.round(Math.max(...scores)) : null,
+      lowScore: scores.length ? Math.round(Math.min(...scores)) : null,
+      lastStudied: last?.created_date || null,
+    };
+  };
+
+  const getCoverUrl = (deck) => {
+    if (deck.cover_image_url) return deck.cover_image_url;
+    const firstCard = cards.find((c) => c.deck_id === deck.id && c.image_url);
+    return firstCard?.image_url || null;
+  };
+
   const [addOpen, setAddOpen] = useState(false);
   const [newDeckOpen, setNewDeckOpen] = useState(false);
   const [newDeckTitle, setNewDeckTitle] = useState('');
   const [creatingDeck, setCreatingDeck] = useState(false);
+  const [shareDeck, setShareDeck] = useState(null);
+  const [coverDeck, setCoverDeck] = useState(null);
+  const [editingDeck, setEditingDeck] = useState(null);
+  const [formTitle, setFormTitle] = useState('');
+  const [formDesc, setFormDesc] = useState('');
+  const [showEditForm, setShowEditForm] = useState(false);
 
   const removeMut = useMutation({
     mutationFn: (membershipId) => base44.entities.CollectionDeck.delete(membershipId),
@@ -62,17 +131,36 @@ export default function CollectionDetail() {
     },
   });
 
-  const reorder = async (idx, dir) => {
-    const swap = idx + dir;
-    if (swap < 0 || swap >= memberships.length) return;
-    const a = memberships[idx];
-    const b = memberships[swap];
-    await base44.entities.CollectionDeck.bulkUpdate([
-      { id: a.id, sort_order: b.sort_order },
-      { id: b.id, sort_order: a.sort_order },
-    ]);
-    qc.invalidateQueries(['collection-decks', collectionId]);
-  };
+  const saveCoverMutation = useMutation({
+    mutationFn: ({ deck, url }) => base44.entities.Deck.update(deck.id, { cover_image_url: url }),
+    onSuccess: () => { qc.invalidateQueries(['decks']); toast.success('Cover updated'); },
+  });
+
+  const editDeckMutation = useMutation({
+    mutationFn: () => base44.entities.Deck.update(editingDeck.id, { title: formTitle, description: formDesc }),
+    onSuccess: () => { qc.invalidateQueries(['decks']); setShowEditForm(false); toast.success('Deck updated'); },
+  });
+
+  const deleteDeckMutation = useMutation({
+    mutationFn: async (deck) => {
+      await base44.entities.Deck.delete(deck.id);
+      const deckCards = cards.filter((c) => c.deck_id === deck.id);
+      await Promise.all(deckCards.map((c) => base44.entities.Card.delete(c.id)));
+    },
+    onSuccess: () => { qc.invalidateQueries(['decks']); qc.invalidateQueries(['cards-all']); toast.success('Deck deleted'); },
+  });
+
+  const duplicateDeckMutation = useMutation({
+    mutationFn: async (deck) => {
+      const newDeck = await base44.entities.Deck.create({ title: deck.title + ' (copy)', description: deck.description, is_public: false, share_token: makeToken() });
+      const deckCards = cards.filter((c) => c.deck_id === deck.id);
+      await Promise.all(deckCards.map((c) => base44.entities.Card.create({ ...c, id: undefined, deck_id: newDeck.id })));
+      return newDeck;
+    },
+    onSuccess: () => { qc.invalidateQueries(['decks']); qc.invalidateQueries(['cards-all']); toast.success('Deck duplicated'); },
+  });
+
+  const openEdit = (deck) => { setEditingDeck(deck); setFormTitle(deck.title); setFormDesc(deck.description || ''); setShowEditForm(true); };
 
   const createDeck = async () => {
     if (!newDeckTitle.trim()) return;
@@ -94,12 +182,16 @@ export default function CollectionDetail() {
     }
   };
 
-  const cardCount = (deckId) => cards.filter((c) => c.deck_id === deckId && !c.deleted).length;
-  const coverUrl = (deckId) => {
-    const deck = deckMap[deckId];
-    if (deck?.cover_image_url) return deck.cover_image_url;
-    const first = cards.find((c) => c.deck_id === deckId && c.image_url);
-    return first?.image_url || null;
+  const reorder = async (idx, dir) => {
+    const swap = idx + dir;
+    if (swap < 0 || swap >= memberships.length) return;
+    const a = memberships[idx];
+    const b = memberships[swap];
+    await base44.entities.CollectionDeck.bulkUpdate([
+      { id: a.id, sort_order: b.sort_order },
+      { id: b.id, sort_order: a.sort_order },
+    ]);
+    qc.invalidateQueries(['collection-decks', collectionId]);
   };
 
   return (
@@ -142,36 +234,23 @@ export default function CollectionDetail() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {orderedDecks.map((m, idx) => {
+          {orderedDecks.map((m) => {
             const deck = m.deck;
-            const url = coverUrl(deck.id);
             return (
-              <div key={m.id} className="group relative bg-card border border-border rounded-md overflow-hidden flex flex-col hover:shadow-md transition-all">
-                <Link to={`/deck/${deck.id}`} className="block">
-                  <div className="h-32 bg-muted flex items-center justify-center overflow-hidden">
-                    {url ? <img src={url} alt="" className="w-full h-full object-cover" /> : <ImageIcon className="w-6 h-6 text-muted-foreground/40" />}
-                  </div>
-                </Link>
-                <div className="p-3 flex flex-col gap-1.5">
-                  <Link to={`/deck/${deck.id}`} className="font-semibold text-sm text-foreground truncate hover:underline">{deck.title}</Link>
-                  <p className="text-xs text-muted-foreground">{cardCount(deck.id)} cards</p>
-                  <div className="flex items-center justify-between mt-1">
-                    <div className="flex flex-col">
-                      <button onClick={() => reorder(idx, -1)} disabled={idx === 0} className="text-muted-foreground hover:text-foreground disabled:opacity-30"><ChevronUp className="w-4 h-4" /></button>
-                      <button onClick={() => reorder(idx, 1)} disabled={idx === orderedDecks.length - 1} className="text-muted-foreground hover:text-foreground disabled:opacity-30"><ChevronDown className="w-4 h-4" /></button>
-                    </div>
-                    <Link to={`/study/${deck.id}`} className="flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80">
-                      <GalleryVerticalEnd className="w-4 h-4" /> Study
-                    </Link>
-                    <Link to={`/deck/${deck.id}`} className="text-muted-foreground hover:text-foreground" title="Edit deck">
-                      <Pencil className="w-4 h-4" />
-                    </Link>
-                    <button onClick={() => removeMut.mutate(m.id)} className="text-muted-foreground hover:text-destructive" title="Remove from collection">
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <DeckCard
+                key={m.id}
+                deck={deck}
+                cardCount={cards.filter((c) => c.deck_id === deck.id && !c.deleted).length}
+                coverUrl={getCoverUrl(deck)}
+                stats={deckStats(deck.id)}
+                masteryPct={deckMasteryPct(deck.id)}
+                savedHoursLeft={savedHoursLeft(deck.id)}
+                onEdit={openEdit}
+                onDelete={(d) => deleteDeckMutation.mutate(d)}
+                onDuplicate={(d) => duplicateDeckMutation.mutate(d)}
+                onShare={(d) => setShareDeck(d)}
+                onSetCover={(d) => setCoverDeck(d)}
+              />
             );
           })}
         </div>
@@ -179,26 +258,44 @@ export default function CollectionDetail() {
 
       <AddDecksToCollectionDialog open={addOpen} onClose={() => setAddOpen(false)} collectionId={collectionId} />
 
+      {/* New deck dialog */}
       <Dialog open={newDeckOpen} onOpenChange={(o) => { if (!o) setNewDeckOpen(false); }}>
         <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>New deck</DialogTitle>
-          </DialogHeader>
-          <Input
-            autoFocus
-            placeholder="Deck title"
-            value={newDeckTitle}
-            onChange={(e) => setNewDeckTitle(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && createDeck()}
-          />
+          <DialogHeader><DialogTitle>New deck</DialogTitle></DialogHeader>
+          <Input autoFocus placeholder="Deck title" value={newDeckTitle} onChange={(e) => setNewDeckTitle(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && createDeck()} />
           <DialogFooter>
             <Button variant="ghost" onClick={() => setNewDeckOpen(false)}>Cancel</Button>
-            <Button onClick={createDeck} disabled={!newDeckTitle.trim() || creatingDeck}>
-              {creatingDeck ? 'Creating…' : 'Create & open'}
-            </Button>
+            <Button onClick={createDeck} disabled={!newDeckTitle.trim() || creatingDeck}>{creatingDeck ? 'Creating…' : 'Create & open'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit deck dialog */}
+      <Dialog open={showEditForm} onOpenChange={(o) => { if (!o) setShowEditForm(false); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Edit Deck</DialogTitle></DialogHeader>
+          <div className="space-y-3 py-2">
+            <Input placeholder="Title" value={formTitle} onChange={(e) => setFormTitle(e.target.value)} />
+            <Input placeholder="Description (optional)" value={formDesc} onChange={(e) => setFormDesc(e.target.value)} />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowEditForm(false)}>Cancel</Button>
+            <Button onClick={() => editDeckMutation.mutate()} disabled={!formTitle.trim() || editDeckMutation.isPending}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ShareModal deck={shareDeck} open={!!shareDeck} onClose={() => setShareDeck(null)} />
+
+      {coverDeck && (
+        <CoverImagePicker
+          open={!!coverDeck}
+          onClose={() => setCoverDeck(null)}
+          cards={cards.filter((c) => c.deck_id === coverDeck.id)}
+          currentUrl={coverDeck.cover_image_url || null}
+          onSave={(url) => saveCoverMutation.mutate({ deck: coverDeck, url })}
+        />
+      )}
     </div>
   );
 }
