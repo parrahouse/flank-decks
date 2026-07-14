@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { FolderOpen, Plus, Pencil, Trash2, ChevronUp, ChevronDown, LibraryBig, GalleryVerticalEnd, Share2 } from 'lucide-react';
+import { FolderOpen, Plus, Pencil, Trash2, ChevronUp, ChevronDown, LibraryBig, WalletCards, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -106,7 +106,7 @@ export default function Collections() {
                 <p className="text-xs text-muted-foreground mt-1">{counts[c.id] || 0} {counts[c.id] === 1 ? 'deck' : 'decks'}</p>
                 {(counts[c.id] || 0) > 0 && (
                   <Link to={`/collections/${c.id}/study`} onClick={e => e.stopPropagation()} className="mt-1 flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors w-fit">
-                    <GalleryVerticalEnd className="w-3.5 h-3.5" /> Study
+                    <WalletCards className="w-3.5 h-3.5" /> Study
                   </Link>
                 )}
               </Link>

@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, Plus, GalleryVerticalEnd, SquarePen, Play, Share2 } from 'lucide-react';
+import { ArrowLeft, Plus, WalletCards, SquarePen, Play, Share2, GalleryVerticalEnd } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AddDecksToCollectionDialog from '@/components/collections/AddDecksToCollectionDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -216,7 +216,7 @@ export default function CollectionDetail() {
           <Button variant="outline" className="gap-1.5" onClick={() => setAddOpen(true)}><Plus className="w-4 h-4" /> Add decks</Button>
           {orderedDecks.length > 0 && (
             <Link to={`/collections/${collectionId}/study`}>
-              <Button className="gap-1.5"><Play className="w-4 h-4" /> Study collection</Button>
+              <Button className="gap-1.5"><WalletCards className="w-4 h-4" /> Study collection</Button>
             </Link>
           )}
         </div>
