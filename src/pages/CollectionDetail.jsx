@@ -206,7 +206,14 @@ export default function CollectionDetail() {
         <div className="flex items-center gap-3">
           <span className="w-4 h-4 rounded-full mt-1 shrink-0" style={{ backgroundColor: collection?.accent_color || '#64748b' }} />
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">{collection?.name || 'Loading…'}</h1>
+            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2 flex-wrap">
+              {collection?.name || 'Loading…'}
+              {collection?.is_public && (
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-primary bg-accent px-2 py-0.5 rounded-full">
+                  <Share2 className="w-3 h-3" /> Shared
+                </span>
+              )}
+            </h1>
             {collection?.description && <p className="text-muted-foreground text-sm mt-0.5">{collection.description}</p>}
           </div>
         </div>

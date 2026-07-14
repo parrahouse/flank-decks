@@ -103,7 +103,14 @@ export default function Collections() {
                   <span className="w-3 h-3 rounded-full shrink-0 mt-1" style={{ backgroundColor: c.accent_color || '#64748b' }} />
                 </div>
                 {c.description && <p className="text-xs text-muted-foreground line-clamp-2">{c.description}</p>}
-                <p className="text-xs text-muted-foreground mt-1">{counts[c.id] || 0} {counts[c.id] === 1 ? 'deck' : 'decks'}</p>
+                <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
+                  <span>{counts[c.id] || 0} {counts[c.id] === 1 ? 'deck' : 'decks'}</span>
+                  {c.is_public && (
+                    <span className="inline-flex items-center gap-1 text-primary font-medium">
+                      <Share2 className="w-3 h-3" /> Shared
+                    </span>
+                  )}
+                </div>
                 {(counts[c.id] || 0) > 0 && (
                   <Link to={`/collections/${c.id}/study`} onClick={e => e.stopPropagation()} className="mt-1 flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors w-fit">
                     <WalletCards className="w-3.5 h-3.5" /> Study
