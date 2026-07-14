@@ -30,8 +30,10 @@ export default function ShareCollectionModal({ collection, open, onClose }) {
         is_public: true,
       });
       // Share every member deck so each is individually studyable from the
-      // shared collection link. Decks that already have a share token are
-      // left untouched (preserve any individually-shared link).
+      // shared collection link. Mark all decks public and ensure each has a
+      // share token, preserving any existing token (keeps individually-shared
+      // links stable). Decks created/duplicated get a token with is_public
+      // false, so we must flip is_public on every deck, not just tokenless ones.
       const memberships = await base44.entities.CollectionDeck.filter({ collection: collection.id });
       const deckIds = (memberships || []).map((m) => m.deck).filter(Boolean);
       const decks = (await Promise.all(
@@ -40,9 +42,10 @@ export default function ShareCollectionModal({ collection, open, onClose }) {
         )
       )).filter(Boolean);
       await Promise.all(
-        decks
-          .filter((d) => !d.share_token)
-          .map((d) => base44.entities.Deck.update(d.id, { is_public: true, share_token: makeToken() }))
+        decks.map((d) => base44.entities.Deck.update(d.id, {
+          is_public: true,
+          share_token: d.share_token || makeToken(),
+        }))
       );
       qc.invalidateQueries(['collections']);
       qc.invalidateQueries(['collection', collection.id]);

@@ -21,6 +21,12 @@ export default function AddDecksToCollectionDialog({ open, onClose, collectionId
     enabled: open && !!collectionId,
   });
 
+  const { data: collection } = useQuery({
+    queryKey: ['collection', collectionId],
+    queryFn: () => base44.entities.Collection.filter({ id: collectionId }).then((r) => r[0]),
+    enabled: open && !!collectionId,
+  });
+
   const existingDeckIds = useMemo(() => new Set(memberships.map((m) => m.deck)), [memberships]);
   const available = useMemo(() => decks.filter((d) => !existingDeckIds.has(d.id)), [decks, existingDeckIds]);
 
@@ -31,6 +37,18 @@ export default function AddDecksToCollectionDialog({ open, onClose, collectionId
       await base44.entities.CollectionDeck.bulkCreate(
         ids.map((deckId, i) => ({ collection: collectionId, deck: deckId, sort_order: baseOrder + 1 + i }))
       );
+      // If the collection is already public, share the newly-added decks so
+      // they're studyable from the shared collection link.
+      if (collection?.is_public) {
+        const makeToken = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
+        const addedDecks = decks.filter((d) => ids.includes(d.id));
+        await Promise.all(
+          addedDecks.map((d) => base44.entities.Deck.update(d.id, {
+            is_public: true,
+            share_token: d.share_token || makeToken(),
+          }))
+        );
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries(['collection-decks', collectionId]);
