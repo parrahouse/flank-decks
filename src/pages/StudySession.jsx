@@ -647,11 +647,14 @@ export default function StudySession() {
   }
 
   if (!activeCards.length) {
+    // Admins bypass the Card read rule, so for them an empty result means the deck
+    // really is empty — never "you might not have access".
     const isOwner = !!currentUser?.email && deck.created_by === currentUser.email;
+    const canSeeAll = isOwner || currentUser?.role === 'admin';
     return (
       <SessionNotice
-        title={isOwner ? 'This deck has no cards yet' : 'No cards available'}
-        body={isOwner ?
+        title={canSeeAll ? 'This deck has no cards yet' : 'No cards available'}
+        body={canSeeAll ?
           "Add some cards to this deck and it'll be ready to study." :
           "This deck has no cards you can view. If you expected to see cards here, your account may not have access to them."}
         deckId={deckId} />
