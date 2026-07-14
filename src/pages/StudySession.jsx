@@ -65,6 +65,32 @@ function MasteryTooltip({ minSessions, masteryPct }) {
 
 }
 
+// Terminal states for the session loader.
+// A zero-card result is a real outcome, not a pending one — it gets a message, never a spinner.
+function SessionNotice({ title, body, deckId, onRetry }) {
+  return (
+    <div className="max-w-md mx-auto px-4 py-16 text-center">
+      <AlertTriangle className="w-8 h-8 mx-auto mb-4 text-muted-foreground/60" />
+      <h1 className="font-semibold mb-2">{title}</h1>
+      <p className="text-sm text-muted-foreground mb-6">{body}</p>
+      <div className="flex items-center justify-center gap-2">
+        {onRetry &&
+          <Button size="sm" className="gap-1.5" onClick={onRetry}>
+            <RefreshCw className="w-3.5 h-3.5" /> Try again
+          </Button>
+        }
+        {deckId &&
+          <Link to={`/deck/${deckId}`}>
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <ArrowLeft className="w-3.5 h-3.5" /> Back to deck
+            </Button>
+          </Link>
+        }
+      </div>
+    </div>
+  );
+}
+
 export default function StudySession() {
   const { deckId } = useParams();
   const navigate = useNavigate();
@@ -132,13 +158,13 @@ export default function StudySession() {
     }
   }, [cardIndex, questionReady, filterChosen, done, shuffledCards]);
 
-  const { data: deck } = useQuery({
+  const { data: deck, isLoading: deckLoading, error: deckError } = useQuery({
     queryKey: ['deck', deckId],
     queryFn: () => base44.entities.Deck.filter({ id: deckId }).then((r) => r[0]),
     enabled: !!deckId
   });
 
-  const { data: allCards = [], isLoading, refetch: refetchCards } = useQuery({
+  const { data: allCards = [], isLoading, error: cardsError, refetch: refetchCards } = useQuery({
     queryKey: ['cards', deckId],
     queryFn: () => base44.entities.Card.filter({ deck_id: deckId }, 'order'),
     enabled: !!deckId
@@ -146,7 +172,7 @@ export default function StudySession() {
 
   const activeCards = allCards.filter((c) => !c.deleted);
 
-  const { data: currentUser, refetch: refetchMe } = useQuery({
+  const { data: currentUser, isLoading: meLoading, refetch: refetchMe } = useQuery({
     queryKey: ['me'],
     queryFn: () => base44.auth.me()
   });
@@ -593,12 +619,43 @@ export default function StudySession() {
     return Date.now() - sessionStartTime.getTime();
   }, [done, sessionStartTime]);
 
-  if (isLoading || !activeCards.length) {
+  // Loading is loading. Everything below it is a resolved outcome with its own message.
+  if (isLoading || deckLoading || meLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="w-7 h-7 border-4 border-muted border-t-primary rounded-full animate-spin" />
-      </div>);
+      </div>
+    );
+  }
 
+  if (deckError || cardsError) {
+    return (
+      <SessionNotice
+        title="Couldn't load this deck"
+        body="Something went wrong fetching this deck. Try again, or head back and pick another."
+        deckId={deckId}
+        onRetry={() => refetchCards()} />
+    );
+  }
+
+  if (!deck) {
+    return (
+      <SessionNotice
+        title="Deck not found"
+        body="This deck doesn't exist, or it isn't visible to your account." />
+    );
+  }
+
+  if (!activeCards.length) {
+    const isOwner = !!currentUser?.email && deck.created_by === currentUser.email;
+    return (
+      <SessionNotice
+        title={isOwner ? 'This deck has no cards yet' : 'No cards available'}
+        body={isOwner ?
+          "Add some cards to this deck and it'll be ready to study." :
+          "This deck has no cards you can view. If you expected to see cards here, your account may not have access to them."}
+        deckId={deckId} />
+    );
   }
 
   const totalPoints = scores.reduce((s, r) => s + (r?.points || 0), 0);
