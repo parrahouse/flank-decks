@@ -29,8 +29,24 @@ export default function ShareCollectionModal({ collection, open, onClose }) {
         share_token: makeToken(),
         is_public: true,
       });
+      // Share every member deck so each is individually studyable from the
+      // shared collection link. Decks that already have a share token are
+      // left untouched (preserve any individually-shared link).
+      const memberships = await base44.entities.CollectionDeck.filter({ collection: collection.id });
+      const deckIds = (memberships || []).map((m) => m.deck).filter(Boolean);
+      const decks = (await Promise.all(
+        deckIds.map((id) =>
+          base44.entities.Deck.filter({ id }).then((r) => (r && r[0]) || null).catch(() => null)
+        )
+      )).filter(Boolean);
+      await Promise.all(
+        decks
+          .filter((d) => !d.share_token)
+          .map((d) => base44.entities.Deck.update(d.id, { is_public: true, share_token: makeToken() }))
+      );
       qc.invalidateQueries(['collections']);
       qc.invalidateQueries(['collection', collection.id]);
+      qc.invalidateQueries(['decks']);
     } catch (e) {
       toast.error(e.message || 'Could not enable sharing');
     } finally {
