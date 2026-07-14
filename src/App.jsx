@@ -20,6 +20,8 @@ import AdminExtras from '@/pages/AdminExtras';
 import Profile from '@/pages/Profile';
 import CollectionStudy from '@/pages/CollectionStudy';
 import SharedCollection from '@/pages/SharedCollection';
+import Groups from '@/pages/Groups';
+import GroupDetail from '@/pages/GroupDetail';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -51,6 +53,8 @@ const AuthenticatedApp = () => {
         <Route path="/admin/extras" element={<AdminExtras />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/collections/:collectionId/study" element={<CollectionStudy />} />
+        <Route path="/groups" element={<Groups />} />
+        <Route path="/groups/:groupId" element={<GroupDetail />} />
       </Route>
       <Route path="/shared/:token" element={<SharedDeck />} />
       <Route path="/shared-collection/:token" element={<SharedCollection />} />
