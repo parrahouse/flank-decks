@@ -132,7 +132,7 @@ export default function CollectionDetail() {
   });
 
   const saveCoverMutation = useMutation({
-    mutationFn: ({ deck, url }) => base44.entities.Deck.update(deck.id, { cover_image_url: url }),
+    mutationFn: ({ deck, url, focalPoint }) => base44.entities.Deck.update(deck.id, { cover_image_url: url, cover_focal_point: focalPoint }),
     onSuccess: () => { qc.invalidateQueries(['decks']); toast.success('Cover updated'); },
   });
 
@@ -293,7 +293,8 @@ export default function CollectionDetail() {
           onClose={() => setCoverDeck(null)}
           cards={cards.filter((c) => c.deck_id === coverDeck.id)}
           currentUrl={coverDeck.cover_image_url || null}
-          onSave={(url) => saveCoverMutation.mutate({ deck: coverDeck, url })}
+          currentFocalPoint={coverDeck.cover_focal_point || null}
+          onSave={(url, focalPoint) => saveCoverMutation.mutate({ deck: coverDeck, url, focalPoint })}
         />
       )}
     </div>

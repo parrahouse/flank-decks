@@ -37,6 +37,18 @@
       "type": "string",
       "description": "URL of the deck cover image (custom upload or picked from a card)"
     },
+    "cover_focal_point": {
+      "type": "object",
+      "description": "Focal point for cover image cropping, as {x, y} percentages (0-100)",
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      }
+    },
     "mastery_min_sessions": {
       "type": "number",
       "default": 3,

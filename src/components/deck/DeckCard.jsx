@@ -124,6 +124,8 @@ function WaterFill({ pct }) {
 }
 
 export default function DeckCard({ deck, cardCount, coverUrl, stats, masteryPct = 0, savedHoursLeft, onEdit, onDelete, onDuplicate, onShare, onSetCover }) {
+  const fp = deck.cover_focal_point;
+  const objectPosition = fp ? `${fp.x}% ${fp.y}%` : '50% 50%';
   const avgScore = stats && stats.highScore !== null && stats.lowScore !== null
     ? Math.round((stats.highScore + stats.lowScore) / 2)
     : null;
@@ -148,7 +150,7 @@ export default function DeckCard({ deck, cardCount, coverUrl, stats, masteryPct 
         {/* Cover image */}
         <div className="relative h-36 bg-muted flex items-center justify-center overflow-hidden">
           {coverUrl ? (
-            <img src={coverUrl} alt="" className="w-full h-full object-cover" />
+            <img src={coverUrl} alt="" className="w-full h-full object-cover" style={{ objectPosition }} />
           ) : (
             <ImageIcon className="w-7 h-7 text-muted-foreground/40" />
           )}
