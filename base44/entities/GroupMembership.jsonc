@@ -1,0 +1,70 @@
+{
+  "name": "GroupMembership",
+  "type": "object",
+  "properties": {
+    "group_id": {
+      "type": "string",
+      "description": "Reference to the StudyGroup this membership belongs to"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email of the member. Authoritative member identifier \u2014 do NOT rely on created_by, because rows are written by service-role functions."
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "owner",
+        "member"
+      ],
+      "description": "owner = group creator (the teacher, in classroom groups); member = everyone who joined via invite code"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "removed"
+      ],
+      "default": "active",
+      "description": "Soft-delete flag. Removed members keep their row for history; rejoining flips it back to active."
+    },
+    "display_name": {
+      "type": "string",
+      "description": "Name shown to groupmates. Optional; defaults to the user's email prefix at join time."
+    }
+  },
+  "required": [
+    "group_id",
+    "user_email",
+    "role",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

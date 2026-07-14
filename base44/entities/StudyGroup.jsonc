@@ -1,0 +1,79 @@
+{
+  "name": "StudyGroup",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Display name of the group"
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional description shown to members"
+    },
+    "group_type": {
+      "type": "string",
+      "enum": [
+        "peer",
+        "classroom"
+      ],
+      "default": "peer",
+      "description": "peer = symmetric study group with shared accountability stats; classroom = owner is a teacher who assigns study and tracks student progress. Governs UI framing only \u2014 the schema is identical for both."
+    },
+    "invite_code": {
+      "type": "string",
+      "description": "Server-generated join code. SECRET: never expose to non-owners, never generate client-side. Created only by the createGroup backend function."
+    },
+    "accent_color": {
+      "type": "string",
+      "description": "Hex accent color, same convention as Collection.accent_color"
+    }
+  },
+  "required": [
+    "name",
+    "group_type",
+    "invite_code"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
