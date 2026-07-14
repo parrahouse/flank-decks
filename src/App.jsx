@@ -19,6 +19,7 @@ import DeckSettings from '@/pages/DeckSettings';
 import AdminExtras from '@/pages/AdminExtras';
 import Profile from '@/pages/Profile';
 import CollectionStudy from '@/pages/CollectionStudy';
+import SharedCollection from '@/pages/SharedCollection';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -52,6 +53,7 @@ const AuthenticatedApp = () => {
         <Route path="/collections/:collectionId/study" element={<CollectionStudy />} />
       </Route>
       <Route path="/shared/:token" element={<SharedDeck />} />
+      <Route path="/shared-collection/:token" element={<SharedCollection />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

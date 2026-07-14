@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, Plus, GalleryVerticalEnd, SquarePen, Play } from 'lucide-react';
+import { ArrowLeft, Plus, GalleryVerticalEnd, SquarePen, Play, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AddDecksToCollectionDialog from '@/components/collections/AddDecksToCollectionDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import DeckCard from '@/components/deck/DeckCard';
 import ShareModal from '@/components/deck/ShareModal';
+import ShareCollectionModal from '@/components/collections/ShareCollectionModal';
 import CoverImagePicker from '@/components/deck/CoverImagePicker';
 
 function makeToken() {
@@ -115,6 +116,7 @@ export default function CollectionDetail() {
   const [newDeckTitle, setNewDeckTitle] = useState('');
   const [creatingDeck, setCreatingDeck] = useState(false);
   const [shareDeck, setShareDeck] = useState(null);
+  const [shareCollectionOpen, setShareCollectionOpen] = useState(false);
   const [coverDeck, setCoverDeck] = useState(null);
   const [editingDeck, setEditingDeck] = useState(null);
   const [formTitle, setFormTitle] = useState('');
@@ -209,6 +211,7 @@ export default function CollectionDetail() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" title="Share collection" onClick={() => setShareCollectionOpen(true)}><Share2 className="w-4 h-4" /></Button>
           <Button variant="outline" className="gap-1.5" onClick={() => { setNewDeckTitle(''); setNewDeckOpen(true); }}><SquarePen className="w-4 h-4" /> New deck</Button>
           <Button variant="outline" className="gap-1.5" onClick={() => setAddOpen(true)}><Plus className="w-4 h-4" /> Add decks</Button>
           {orderedDecks.length > 0 && (
@@ -286,6 +289,7 @@ export default function CollectionDetail() {
       </Dialog>
 
       <ShareModal deck={shareDeck} open={!!shareDeck} onClose={() => setShareDeck(null)} />
+      <ShareCollectionModal collection={collection} open={shareCollectionOpen} onClose={() => setShareCollectionOpen(false)} />
 
       {coverDeck && (
         <CoverImagePicker

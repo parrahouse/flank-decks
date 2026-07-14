@@ -18,6 +18,15 @@
       "type": "number",
       "default": 0,
       "description": "Order of the collection in the collections list (ascending)"
+    },
+    "share_token": {
+      "type": "string",
+      "description": "Unique token for share link"
+    },
+    "is_public": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the collection can be viewed via share link"
     }
   },
   "required": [
