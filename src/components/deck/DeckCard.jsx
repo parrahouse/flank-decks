@@ -148,7 +148,7 @@ export default function DeckCard({ deck, cardCount, coverUrl, stats, masteryPct 
 
       <div className="group bg-card border border-border rounded-md overflow-hidden flex flex-col hover:shadow-md transition-all duration-200">
         {/* Cover image */}
-        <div className="relative h-36 bg-muted flex items-center justify-center overflow-hidden">
+        <div className="relative h-52 bg-muted flex items-center justify-center overflow-hidden">
           {coverUrl ? (
             <img src={coverUrl} alt="" className="w-full h-full object-cover" style={{ objectPosition }} />
           ) : (
