@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -8,39 +7,25 @@ import { Button } from '@/components/ui/button';
 export default function SharedCollection() {
   const { token } = useParams();
 
-  const { data: collections = [], isLoading: loadingCol } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['shared-collection', token],
-    queryFn: () => base44.entities.Collection.filter({ share_token: token, is_public: true }),
+    queryFn: async () => {
+      const res = await base44.functions.invoke('getSharedCollection', { share_token: token });
+      const status = res?.status ?? 200;
+      if (status >= 400) {
+        const err = new Error(res?.data?.error || 'Collection not found');
+        err.status = status;
+        throw err;
+      }
+      return res.data;
+    },
+    retry: false,
     enabled: !!token,
   });
 
-  const collection = collections[0];
-
-  const { data: memberships = [], isLoading: loadingMem } = useQuery({
-    queryKey: ['shared-collection-decks', collection?.id],
-    queryFn: () => base44.entities.CollectionDeck.filter({ collection: collection.id }, 'sort_order'),
-    enabled: !!collection?.id,
-  });
-
-  const deckIds = memberships.map((m) => m.deck);
-
-  const { data: allDecks = [] } = useQuery({
-    queryKey: ['decks-for-shared-collection', collection?.id],
-    queryFn: () => base44.entities.Deck.list(),
-    enabled: !!collection?.id,
-  });
-
-  const { data: cards = [] } = useQuery({
-    queryKey: ['cards-for-shared-collection', collection?.id],
-    queryFn: () => base44.entities.Card.list(),
-    enabled: !!collection?.id,
-  });
-
-  const orderedDecks = deckIds
-    .map((id) => allDecks.find((d) => d.id === id))
-    .filter(Boolean);
-
-  const isLoading = loadingCol || loadingMem;
+  const collection = data?.collection || null;
+  const decks = data?.decks || [];
+  const cards = data?.cards || [];
 
   if (isLoading) {
     return (
@@ -79,20 +64,20 @@ export default function SharedCollection() {
             <p className="text-muted-foreground mt-1">{collection.description}</p>
           )}
           <p className="text-sm text-muted-foreground mt-2">
-            {orderedDecks.length} {orderedDecks.length === 1 ? 'deck' : 'decks'}
+            {decks.length} {decks.length === 1 ? 'deck' : 'decks'}
           </p>
         </div>
       </div>
 
       {/* Deck grid */}
-      {orderedDecks.length === 0 ? (
+      {decks.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 gap-3 text-center">
           <GalleryVerticalEnd className="w-10 h-10 text-muted-foreground" />
           <p className="text-muted-foreground">No decks in this collection yet.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {orderedDecks.map((deck) => {
+          {decks.map((deck) => {
             const coverUrl = getCoverUrl(deck);
             const fp = deck.cover_focal_point;
             const objectPosition = fp ? `${fp.x}% ${fp.y}%` : '50% 50%';
