@@ -49,6 +49,10 @@
         }
       }
     },
+    "cover_image_original_url": {
+      "type": "string",
+      "description": "Pre-crop original cover image URL. Set on first crop; absent means cover_image_url is the original."
+    },
     "mastery_min_sessions": {
       "type": "number",
       "default": 3,
