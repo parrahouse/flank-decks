@@ -26,12 +26,17 @@
     "accent_color": {
       "type": "string",
       "description": "Hex accent color, same convention as Collection.accent_color"
+    },
+    "owner_email": {
+      "type": "string",
+      "description": "Email of the group creator/owner. Set by createGroup so the read RLS can match the owner, since service-role writes do not attribute created_by to the caller."
     }
   },
   "required": [
     "name",
     "group_type",
-    "invite_code"
+    "invite_code",
+    "owner_email"
   ],
   "rls": {
     "create": {
@@ -42,7 +47,7 @@
     "read": {
       "$or": [
         {
-          "created_by": "{{user.email}}"
+          "data.owner_email": "{{user.email}}"
         },
         {
           "user_condition": {
@@ -54,7 +59,7 @@
     "update": {
       "$or": [
         {
-          "created_by": "{{user.email}}"
+          "data.owner_email": "{{user.email}}"
         },
         {
           "user_condition": {
@@ -66,7 +71,7 @@
     "delete": {
       "$or": [
         {
-          "created_by": "{{user.email}}"
+          "data.owner_email": "{{user.email}}"
         },
         {
           "user_condition": {
