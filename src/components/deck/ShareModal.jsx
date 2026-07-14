@@ -91,40 +91,13 @@ export default function ShareModal({ deck, open, onClose }) {
           <DialogDescription>
             {isPublic
               ? 'Anyone with this link can view and study this deck.'
+              : collectionShare && !useDeckLink
+              ? 'This deck is already accessible through a shared collection.'
               : 'Enable sharing to get a link anyone can use to view this deck.'}
           </DialogDescription>
         </DialogHeader>
 
-        {collectionShare && !useDeckLink && (
-          <div className="mt-2 rounded-md border border-accent bg-accent/50 p-3 space-y-2">
-            <div className="flex items-start gap-2">
-              <Folder className="w-4 h-4 text-accent-foreground mt-0.5 shrink-0" />
-              <p className="text-sm text-accent-foreground">
-                This deck belongs to "{collectionShare.name}", which is already shared. You can use the collection
-                link to share all its decks at once.
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Input value={collectionUrl} readOnly className="text-xs font-mono bg-background" />
-              <Button variant="outline" size="icon" onClick={() => handleCopy(collectionUrl)}>
-                {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
-              </Button>
-              <Button variant="outline" size="icon" asChild>
-                <a href={collectionUrl} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="w-4 h-4" />
-                </a>
-              </Button>
-            </div>
-            <button
-              onClick={() => setUseDeckLink(true)}
-              className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
-            >
-              Share just this deck instead
-            </button>
-          </div>
-        )}
-
-        {(isPublic || useDeckLink) && shareUrl ? (
+        {isPublic ? (
           <div className="space-y-4 mt-2">
             <div className="flex gap-2">
               <Input value={shareUrl} readOnly className="text-sm font-mono" />
@@ -146,6 +119,35 @@ export default function ShareModal({ deck, open, onClose }) {
             >
               {disabling ? 'Disabling…' : 'Disable sharing'}
             </Button>
+          </div>
+        ) : collectionShare && !useDeckLink ? (
+          <div className="space-y-4 mt-2">
+            <div className="rounded-md border border-accent bg-accent/50 p-3 space-y-2">
+              <div className="flex items-start gap-2">
+                <Folder className="w-4 h-4 text-accent-foreground mt-0.5 shrink-0" />
+                <p className="text-sm text-accent-foreground">
+                  This deck is already shared as part of "{collectionShare.name}". Share the collection to give
+                  access to all its decks.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Input value={collectionUrl} readOnly className="text-xs font-mono bg-background" />
+                <Button variant="outline" size="icon" onClick={() => handleCopy(collectionUrl)}>
+                  {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
+                </Button>
+                <Button variant="outline" size="icon" asChild>
+                  <a href={collectionUrl} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                </Button>
+              </div>
+            </div>
+            <button
+              onClick={() => setUseDeckLink(true)}
+              className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+            >
+              Get a separate link for just this deck
+            </button>
           </div>
         ) : (
           <Button className="mt-2 gap-1.5" onClick={handleEnable} disabled={enabling}>
