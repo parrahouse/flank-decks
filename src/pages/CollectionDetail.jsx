@@ -268,6 +268,7 @@ export default function CollectionDetail() {
                 onDuplicate={(d) => duplicateDeckMutation.mutate(d)}
                 onShare={(d) => setShareDeck(d)}
                 onSetCover={(d) => setCoverDeck(d)}
+                onRemoveFromCollection={(d) => removeMut.mutate(m.id)}
               />
             );
           })}

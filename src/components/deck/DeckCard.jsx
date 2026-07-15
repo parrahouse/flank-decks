@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { MoreHorizontal, GalleryVerticalEnd, Copy, Trash2, Share2, Pencil, Image as ImageIcon, PlayCircle, LogOut } from 'lucide-react';
+import { MoreHorizontal, GalleryVerticalEnd, Copy, Trash2, Share2, Pencil, Image as ImageIcon, PlayCircle, LogOut, FolderMinus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -123,7 +123,7 @@ function WaterFill({ pct }) {
   );
 }
 
-export default function DeckCard({ deck, cardCount, coverUrl, stats, masteryPct = 0, savedHoursLeft, onEdit, onDelete, onDuplicate, onShare, onSetCover, isShared = false, onLeave }) {
+export default function DeckCard({ deck, cardCount, coverUrl, stats, masteryPct = 0, savedHoursLeft, onEdit, onDelete, onDuplicate, onShare, onSetCover, isShared = false, onLeave, onRemoveFromCollection }) {
   const fp = deck.cover_focal_point;
   const objectPosition = fp ? `${fp.x}% ${fp.y}%` : '50% 50%';
   const avgScore = stats && stats.highScore !== null && stats.lowScore !== null
@@ -210,6 +210,14 @@ export default function DeckCard({ deck, cardCount, coverUrl, stats, masteryPct 
                       <DropdownMenuItem onClick={() => onShare(deck)}>
                         <Share2 className="w-4 h-4 mr-2" /> Share
                       </DropdownMenuItem>
+                      {onRemoveFromCollection && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => onRemoveFromCollection(deck)} className="text-destructive focus:text-destructive">
+                            <FolderMinus className="w-4 h-4 mr-2" /> Remove from collection
+                          </DropdownMenuItem>
+                        </>
+                      )}
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => onDelete(deck)} className="text-destructive focus:text-destructive">
                         <Trash2 className="w-4 h-4 mr-2" /> Delete
