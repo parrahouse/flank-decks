@@ -44,12 +44,15 @@ export default function SharedDeck() {
     if (cards.length) setShuffledCards(shuffle(cards));
   }, [cards.length]);
 
-  const duplicateMutation = useMutation({
+  const subscribeMutation = useMutation({
     mutationFn: async () => {
-      const res = await base44.functions.invoke('cloneDeck', { token });
+      const res = await base44.functions.invoke('subscribeToDeck', { token });
       return res.data;
     },
-    onSuccess: () => toast.success('Deck added to your collection'),
+    onSuccess: (data) => {
+      if (data?.already_subscribed) toast.message('Already in your library');
+      else toast.success('Added to your library');
+    },
   });
 
   const restart = () => { setShuffledCards(shuffle(cards)); setCardIndex(0); setDone(false); };
@@ -85,8 +88,8 @@ export default function SharedDeck() {
           <p className="text-xs text-muted-foreground">{done ? 'Complete!' : `Card ${cardIndex + 1} of ${shuffledCards.length}`}</p>
         </div>
         {!isOwner && (
-          <Button variant="outline" size="sm" onClick={() => duplicateMutation.mutate()} disabled={duplicateMutation.isPending} className="gap-1.5">
-            <Copy className="w-4 h-4" /> Duplicate
+          <Button variant="outline" size="sm" onClick={() => subscribeMutation.mutate()} disabled={subscribeMutation.isPending} className="gap-1.5">
+            <BookOpen className="w-4 h-4" /> {subscribeMutation.isPending ? 'Adding…' : 'Add to Library'}
           </Button>
         )}
       </div>

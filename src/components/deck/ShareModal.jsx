@@ -52,8 +52,11 @@ export default function ShareModal({ deck, open, onClose }) {
         is_public: true,
         share_token: deck.share_token || makeToken(),
       });
+      // Mirror deck visibility onto its cards so subscribers can read them via RLS.
+      await base44.entities.Card.updateMany({ deck_id: deck.id }, { $set: { is_public: true } });
       qc.invalidateQueries(['decks']);
       qc.invalidateQueries(['deck', deck.id]);
+      qc.invalidateQueries(['cards-library']);
       qc.invalidateQueries(['shared-collections-for-deck', deck.id]);
     } catch (e) {
       toast.error(e.message || 'Could not enable sharing');
@@ -69,8 +72,10 @@ export default function ShareModal({ deck, open, onClose }) {
         is_public: false,
         share_token: null,
       });
+      await base44.entities.Card.updateMany({ deck_id: deck.id }, { $set: { is_public: false } });
       qc.invalidateQueries(['decks']);
       qc.invalidateQueries(['deck', deck.id]);
+      qc.invalidateQueries(['cards-library']);
       toast.success('Sharing disabled');
     } catch (e) {
       toast.error(e.message || 'Could not disable sharing');

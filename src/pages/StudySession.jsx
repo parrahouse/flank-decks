@@ -248,6 +248,9 @@ export default function StudySession() {
     canZombify(getSkin(DEFAULT_SKIN_ID));
 
   const handleToggleBookmark = async (cardId, newVal) => {
+    // Bookmarking writes to the card record, which only the deck owner may do.
+    // For shared (non-owned) decks, no-op rather than throw an RLS error.
+    if (deck && currentUser && deck.created_by !== currentUser.email) return;
     await base44.entities.Card.update(cardId, { bookmarked: newVal });
     refetchCards();
   };

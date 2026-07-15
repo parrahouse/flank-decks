@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { MoreHorizontal, GalleryVerticalEnd, Copy, Trash2, Share2, Pencil, Image as ImageIcon, PlayCircle } from 'lucide-react';
+import { MoreHorizontal, GalleryVerticalEnd, Copy, Trash2, Share2, Pencil, Image as ImageIcon, PlayCircle, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -123,7 +123,7 @@ function WaterFill({ pct }) {
   );
 }
 
-export default function DeckCard({ deck, cardCount, coverUrl, stats, masteryPct = 0, savedHoursLeft, onEdit, onDelete, onDuplicate, onShare, onSetCover }) {
+export default function DeckCard({ deck, cardCount, coverUrl, stats, masteryPct = 0, savedHoursLeft, onEdit, onDelete, onDuplicate, onShare, onSetCover, isShared = false, onLeave }) {
   const fp = deck.cover_focal_point;
   const objectPosition = fp ? `${fp.x}% ${fp.y}%` : '50% 50%';
   const avgScore = stats && stats.highScore !== null && stats.lowScore !== null
@@ -154,12 +154,14 @@ export default function DeckCard({ deck, cardCount, coverUrl, stats, masteryPct 
           ) : (
             <ImageIcon className="w-7 h-7 text-muted-foreground/40" />
           )}
+          {!isShared && (
           <button
             onClick={() => onSetCover(deck)}
             className="absolute bottom-2 right-2 bg-black/50 hover:bg-black/70 text-white text-xs rounded-md px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1"
           >
             <ImageIcon className="w-3 h-3" /> Set cover
           </button>
+          )}
         </div>
 
         {/* Card body — the tank */}
@@ -175,7 +177,10 @@ export default function DeckCard({ deck, cardCount, coverUrl, stats, masteryPct 
             {/* Title + menu */}
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-foreground truncate">{deck.title}</h3>
+                <h3 className="font-semibold text-foreground truncate flex items-center gap-2">
+                  {deck.title}
+                  {isShared && <span className="text-[10px] font-medium uppercase tracking-wide bg-accent text-accent-foreground px-1.5 py-0.5 rounded">Shared</span>}
+                </h3>
                 {deck.description && (
                   <p className="text-xs text-muted-foreground mt-0.5 line-clamp-3">{deck.description}</p>
                 )}
@@ -187,22 +192,30 @@ export default function DeckCard({ deck, cardCount, coverUrl, stats, masteryPct 
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-44">
-                  <DropdownMenuItem onClick={() => navigate(`/deck/${deck.id}`)}>
-                    <Pencil className="w-4 h-4 mr-2" /> Edit deck
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onSetCover(deck)}>
-                    <ImageIcon className="w-4 h-4 mr-2" /> Set cover
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onDuplicate(deck)}>
-                    <Copy className="w-4 h-4 mr-2" /> Duplicate
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onShare(deck)}>
-                    <Share2 className="w-4 h-4 mr-2" /> Share
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => onDelete(deck)} className="text-destructive focus:text-destructive">
-                    <Trash2 className="w-4 h-4 mr-2" /> Delete
-                  </DropdownMenuItem>
+                  {isShared ? (
+                    <DropdownMenuItem onClick={() => onLeave && onLeave(deck)} className="text-destructive focus:text-destructive">
+                      <LogOut className="w-4 h-4 mr-2" /> Leave deck
+                    </DropdownMenuItem>
+                  ) : (
+                    <>
+                      <DropdownMenuItem onClick={() => navigate(`/deck/${deck.id}`)}>
+                        <Pencil className="w-4 h-4 mr-2" /> Edit deck
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onSetCover(deck)}>
+                        <ImageIcon className="w-4 h-4 mr-2" /> Set cover
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onDuplicate(deck)}>
+                        <Copy className="w-4 h-4 mr-2" /> Duplicate
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onShare(deck)}>
+                        <Share2 className="w-4 h-4 mr-2" /> Share
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => onDelete(deck)} className="text-destructive focus:text-destructive">
+                        <Trash2 className="w-4 h-4 mr-2" /> Delete
+                      </DropdownMenuItem>
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>

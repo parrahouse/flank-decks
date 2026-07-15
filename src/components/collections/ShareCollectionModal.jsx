@@ -47,7 +47,12 @@ export default function ShareCollectionModal({ collection, open, onClose }) {
           share_token: d.share_token || makeToken(),
         }))
       );
+      // Mirror visibility onto each member deck's cards so subscribers can study them.
+      await Promise.all(
+        decks.map((d) => base44.entities.Card.updateMany({ deck_id: d.id }, { $set: { is_public: true } }))
+      );
       qc.invalidateQueries(['collections']);
+      qc.invalidateQueries(['cards-library']);
       qc.invalidateQueries(['collection', collection.id]);
       qc.invalidateQueries(['decks']);
     } catch (e) {

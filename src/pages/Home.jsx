@@ -20,24 +20,43 @@ function makeToken() {
 export default function Home() {
   const qc = useQueryClient();
 
-  const { data: decks = [], isLoading } = useQuery({
-    queryKey: ['decks'],
-    queryFn: () => base44.entities.Deck.list('-created_date')
+  const { data: currentUser } = useQuery({
+    queryKey: ['me'],
+    queryFn: () => base44.auth.me()
   });
 
+  const { data: ownedDecks = [], isLoading } = useQuery({
+    queryKey: ['owned-decks', currentUser?.email],
+    queryFn: () => base44.entities.Deck.filter({ created_by: currentUser.email }, '-created_date'),
+    enabled: !!currentUser?.email
+  });
+
+  const { data: subscriptions = [] } = useQuery({
+    queryKey: ['deck-subscriptions', currentUser?.email],
+    queryFn: () => base44.entities.DeckSubscription.filter({ user_email: currentUser.email }),
+    enabled: !!currentUser?.email
+  });
+
+  const subscribedDeckIds = (subscriptions || []).map((s) => s.deck_id).filter(Boolean);
+  const { data: subscribedDecks = [] } = useQuery({
+    queryKey: ['subscribed-decks', subscribedDeckIds.join(',')],
+    queryFn: () => base44.entities.Deck.filter({ id: { $in: subscribedDeckIds } }, '-created_date'),
+    enabled: subscribedDeckIds.length > 0
+  });
+
+  const decks = [...ownedDecks, ...subscribedDecks];
+  const ownedIds = new Set((ownedDecks || []).map((d) => d.id));
+  const libraryDeckIds = decks.map((d) => d.id);
+
   const { data: cards = [] } = useQuery({
-    queryKey: ['cards-all'],
-    queryFn: () => base44.entities.Card.list()
+    queryKey: ['cards-library', libraryDeckIds.join(',')],
+    queryFn: () => base44.entities.Card.filter({ deck_id: { $in: libraryDeckIds } }),
+    enabled: libraryDeckIds.length > 0
   });
 
   const { data: sessions = [] } = useQuery({
     queryKey: ['study-sessions-home'],
     queryFn: () => base44.entities.StudySession.list('-created_date', 500)
-  });
-
-  const { data: currentUser } = useQuery({
-    queryKey: ['me'],
-    queryFn: () => base44.auth.me()
   });
 
   const { data: savedSessions = [] } = useQuery({
@@ -110,7 +129,7 @@ export default function Home() {
       const deckCards = cards.filter((c) => c.deck_id === deck.id);
       await Promise.all(deckCards.map((c) => base44.entities.Card.delete(c.id)));
     },
-    onSuccess: () => {qc.invalidateQueries(['decks']);qc.invalidateQueries(['cards-all']);toast.success('Deck deleted');}
+    onSuccess: () => {qc.invalidateQueries(['owned-decks']);qc.invalidateQueries(['cards-library']);toast.success('Deck deleted');}
   });
 
   const duplicateMutation = useMutation({
@@ -120,7 +139,15 @@ export default function Home() {
       await Promise.all(deckCards.map((c) => base44.entities.Card.create({ ...c, id: undefined, deck_id: newDeck.id })));
       return newDeck;
     },
-    onSuccess: () => {qc.invalidateQueries(['decks']);qc.invalidateQueries(['cards-all']);toast.success('Deck duplicated');}
+    onSuccess: () => {qc.invalidateQueries(['owned-decks']);qc.invalidateQueries(['cards-library']);toast.success('Deck duplicated');}
+  });
+
+  const leaveMutation = useMutation({
+    mutationFn: async (deck) => {
+      const sub = (subscriptions || []).find((s) => s.deck_id === deck.id);
+      if (sub) await base44.entities.DeckSubscription.delete(sub.id);
+    },
+    onSuccess: () => {qc.invalidateQueries(['deck-subscriptions']);qc.invalidateQueries(['subscribed-decks']);qc.invalidateQueries(['cards-library']);toast.success('Removed from library');}
   });
 
   const cardCount = (deckId) => cards.filter((c) => c.deck_id === deckId).length;
@@ -182,7 +209,9 @@ export default function Home() {
           onDelete={(d) => deleteMutation.mutate(d)}
           onDuplicate={(d) => duplicateMutation.mutate(d)}
           onShare={(d) => setShareDeck(d)}
-          onSetCover={(d) => setCoverDeck(d)} />
+          onSetCover={(d) => setCoverDeck(d)}
+          isShared={!ownedIds.has(deck.id)}
+          onLeave={(d) => leaveMutation.mutate(d)} />
 
         )}
         </div>
