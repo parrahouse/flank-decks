@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, Pencil, Trash2, Copy, RefreshCw, Users, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2, Copy, RefreshCw, Users, AlertTriangle, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import GroupFormDialog from '@/components/groups/GroupFormDialog';
+import AssignDeckDialog from '@/components/groups/AssignDeckDialog';
 import { toast } from 'sonner';
 
 function formatDate(iso) {
@@ -25,6 +26,7 @@ export default function GroupDetail() {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [regenOpen, setRegenOpen] = useState(false);
+  const [assignOpen, setAssignOpen] = useState(false);
 
   const { data: group, isLoading, isError, error } = useQuery({
     queryKey: ['group', groupId],
@@ -73,6 +75,16 @@ export default function GroupDetail() {
     navigator.clipboard?.writeText(group.invite_code);
     toast.success('Code copied');
   };
+
+  const unassignMut = useMutation({
+    mutationFn: (deck_id) =>
+      base44.functions.invoke('unassignDeckFromGroup', { group_id: groupId, deck_id }).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries(['group', groupId]);
+      toast.success('Deck removed from group');
+    },
+    onError: (e) => toast.error(e?.response?.data?.error || e.message || 'Could not remove deck'),
+  });
 
   if (isLoading) {
     return (
@@ -176,6 +188,78 @@ export default function GroupDetail() {
           ))}
         </div>
       </div>
+
+      {/* Shared decks */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-foreground">Shared decks ({(group.assignments || []).length})</h2>
+          {isOwner && (
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setAssignOpen(true)}>
+              <Plus className="w-4 h-4" /> Assign deck
+            </Button>
+          )}
+        </div>
+        {(!group.assignments || group.assignments.length === 0) ? (
+          <div className="rounded-md border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+            No decks shared with this group yet.
+          </div>
+        ) : (
+          <div className="rounded-md border border-border bg-card divide-y divide-border">
+            {group.assignments.map((a) => (
+              <div key={a.deck_id} className="flex items-center justify-between gap-3 p-4">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-foreground truncate">{a.deck_title}</span>
+                    {a.in_library && <span className="text-[10px] font-medium uppercase tracking-wide bg-accent text-accent-foreground px-1.5 py-0.5 rounded">In library</span>}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">{a.deck_card_count} cards{a.due_date ? ` · due ${formatDate(a.due_date)}` : ''}</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button asChild size="sm" variant="outline">
+                    <Link to={`/study/${a.deck_id}`}>Study</Link>
+                  </Button>
+                  {isOwner && (
+                    <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive" title="Remove from group" onClick={() => unassignMut.mutate(a.deck_id)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Recent activity */}
+      <div className="mb-8">
+        <h2 className="text-sm font-semibold text-foreground mb-3">Recent activity</h2>
+        {(!group.activity || group.activity.length === 0) ? (
+          <div className="rounded-md border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+            No activity yet. Study a shared deck to get started.
+          </div>
+        ) : (
+          <div className="rounded-md border border-border bg-card divide-y divide-border">
+            {group.activity.map((act, i) => (
+              <div key={i} className="flex items-center justify-between gap-3 p-4">
+                <div className="min-w-0 text-sm">
+                  <span className="font-medium text-foreground">{act.display_name}{act.is_self ? ' (you)' : ''}</span>
+                  <span className="text-muted-foreground"> studied </span>
+                  <span className="font-medium text-foreground truncate">{act.deck_title}</span>
+                </div>
+                <span className="text-xs text-muted-foreground shrink-0">{Math.round(act.score_pct)}% · {act.card_count} cards</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Assign deck dialog */}
+      <AssignDeckDialog
+        open={assignOpen}
+        onClose={() => setAssignOpen(false)}
+        groupId={groupId}
+        assignedDeckIds={(group.assignments || []).map((a) => a.deck_id)}
+      />
 
       {/* Edit dialog */}
       <GroupFormDialog

@@ -1,0 +1,79 @@
+{
+  "name": "GroupMemberStudyLog",
+  "type": "object",
+  "properties": {
+    "group_id": {
+      "type": "string",
+      "description": "Reference to the StudyGroup this activity belongs to"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email of the member who studied"
+    },
+    "display_name": {
+      "type": "string",
+      "description": "Display name of the member at study time"
+    },
+    "deck_id": {
+      "type": "string",
+      "description": "Reference to the Deck studied"
+    },
+    "deck_title": {
+      "type": "string",
+      "description": "Deck title at study time (denormalized for activity feed display)"
+    },
+    "score_pct": {
+      "type": "number",
+      "description": "Session score as a percentage (0-100)"
+    },
+    "total_points": {
+      "type": "number",
+      "description": "Raw points earned"
+    },
+    "max_points": {
+      "type": "number",
+      "description": "Maximum possible points"
+    },
+    "card_count": {
+      "type": "number",
+      "description": "Number of cards in the session"
+    },
+    "duration_ms": {
+      "type": "number",
+      "description": "Active study duration in ms"
+    },
+    "studied_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the session completed"
+    }
+  },
+  "required": [
+    "group_id",
+    "user_email",
+    "deck_id",
+    "studied_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

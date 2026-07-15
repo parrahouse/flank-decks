@@ -373,6 +373,17 @@ export default function StudySession() {
         best_streak: bestStreak
       });
 
+      // Fire-and-forget: log this session to any groups the deck is assigned to
+      // so the group activity feed reflects member study. Never blocks completion.
+      base44.functions.invoke('logGroupStudy', {
+        deck_id: deckId,
+        score_pct: max > 0 ? total / max * 100 : 0,
+        total_points: total,
+        max_points: max,
+        card_count: shuffledCards.length,
+        duration_ms: durationMs,
+      }).catch(() => {});
+
       // Update streak
       const today = new Date().toISOString().slice(0, 10);
       const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);

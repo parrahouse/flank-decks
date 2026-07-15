@@ -1,0 +1,49 @@
+{
+  "name": "GroupDeckAssignment",
+  "type": "object",
+  "properties": {
+    "group_id": {
+      "type": "string",
+      "description": "Reference to the StudyGroup this deck is assigned to"
+    },
+    "deck_id": {
+      "type": "string",
+      "description": "Reference to the Deck assigned to the group"
+    },
+    "assigned_by": {
+      "type": "string",
+      "description": "Email of the group owner who assigned the deck"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Optional due date for teacher-assigned study (used later by classroom flows)"
+    }
+  },
+  "required": [
+    "group_id",
+    "deck_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
