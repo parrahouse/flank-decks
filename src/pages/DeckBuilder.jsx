@@ -78,6 +78,18 @@ export default function DeckBuilder() {
   const saveDesc = () => { updateDeckMutation.mutate({ description: descValue }); setEditingDesc(false); };
   const cancelEditDesc = () => setEditingDesc(false);
 
+  // Title editing
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleValue, setTitleValue] = useState('');
+  const startEditTitle = () => { setTitleValue(deck?.title || ''); setEditingTitle(true); };
+  const saveTitle = () => {
+    const trimmed = titleValue.trim();
+    if (!trimmed) return;
+    updateDeckMutation.mutate({ title: trimmed });
+    setEditingTitle(false);
+  };
+  const cancelEditTitle = () => setEditingTitle(false);
+
   const DESC_MAX = 150;
 
   const draftDescription = async () => {
@@ -235,7 +247,27 @@ export default function DeckBuilder() {
       <div className="mb-6 bg-card border border-border rounded-md overflow-hidden hover:shadow-md transition-all duration-200">
         {/* Title + description */}
         <div className="px-4 pt-4 pb-3">
-          <h1 className="text-xl font-bold">{deck?.title || 'Loading…'}</h1>
+          {editingTitle ? (
+            <div className="flex items-center gap-2">
+              <input
+                autoFocus
+                value={titleValue}
+                onChange={e => setTitleValue(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') saveTitle(); if (e.key === 'Escape') cancelEditTitle(); }}
+                placeholder="Deck title"
+                className="text-xl font-bold bg-transparent border-b border-primary focus:outline-none flex-1 min-w-0"
+              />
+              <button onClick={saveTitle} className="flex items-center gap-1 text-xs text-primary hover:underline font-medium shrink-0">
+                <Check className="w-3.5 h-3.5" /> Save
+              </button>
+              <button onClick={cancelEditTitle} className="text-xs text-muted-foreground hover:text-foreground shrink-0">Cancel</button>
+            </div>
+          ) : (
+            <h1 className="text-xl font-bold group/title flex items-center gap-1.5 cursor-text" onClick={startEditTitle} title="Click to edit title">
+              {deck?.title || 'Loading…'}
+              <Pencil className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover/title:opacity-100 transition-opacity" />
+            </h1>
+          )}
           {editingDesc ? (
             <div className="mt-1.5 flex flex-col gap-1.5">
               <div className="relative">
