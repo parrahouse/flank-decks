@@ -29,10 +29,16 @@ export default function SharedDeck() {
     queryFn: () => base44.functions.invoke('getSharedDeck', { token }),
   });
 
+  const { data: me } = useQuery({
+    queryKey: ['me'],
+    queryFn: () => base44.auth.me(),
+  });
+
   const deck = data?.data?.deck;
   const cards = data?.data?.cards ?? [];
   const sharedNotes = data?.data?.notes ?? [];
   const sharedNotesByCardId = Object.fromEntries(sharedNotes.map(n => [n.card_id, n.note]));
+  const isOwner = !!me && !!deck && deck.created_by === me.email;
 
   useEffect(() => {
     if (cards.length) setShuffledCards(shuffle(cards));
@@ -78,9 +84,11 @@ export default function SharedDeck() {
           </div>
           <p className="text-xs text-muted-foreground">{done ? 'Complete!' : `Card ${cardIndex + 1} of ${shuffledCards.length}`}</p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => duplicateMutation.mutate()} disabled={duplicateMutation.isPending} className="gap-1.5">
-          <Copy className="w-4 h-4" /> Duplicate
-        </Button>
+        {!isOwner && (
+          <Button variant="outline" size="sm" onClick={() => duplicateMutation.mutate()} disabled={duplicateMutation.isPending} className="gap-1.5">
+            <Copy className="w-4 h-4" /> Duplicate
+          </Button>
+        )}
       </div>
 
       <div className="w-full bg-muted rounded-full h-1.5 mb-6">
