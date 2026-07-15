@@ -112,7 +112,7 @@ export default function StudySession() {
   // 'all' | 'unmastered'
   const [filterMode, setFilterMode] = useState('all');
   const [filterChosen, setFilterChosen] = useState(false);
-  const [selectedPool, setSelectedPool] = useState(null); // 'all' | 'unmastered' | 'bookmarked' | null
+  const [selectedPool, setSelectedPool] = useState('all'); // 'all' | 'unmastered' | 'bookmarked'
   const [gameModeWanted, setGameModeWanted] = useState(() => localStorage.getItem('flashdeck_gamemode') === '1');
   const [gameMode, setGameMode] = useState(false); // engaged for the running session only
   const [skipsUsed, setSkipsUsed] = useState(0);   // deferrals used this session (display only)
