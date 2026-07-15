@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
 
     return Response.json({
       deck_id: newDeck.id,
-      card_count: createdCards.length,
+      card_count: createdCount,
       note_count: noteCount,
     });
   } catch (error) {
