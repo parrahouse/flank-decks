@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, BookOpen, Link2 } from 'lucide-react';
+import { Plus, BookOpen, Link2, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -44,8 +44,12 @@ export default function Home() {
     enabled: subscribedDeckIds.length > 0
   });
 
-  const decks = [...ownedDecks, ...subscribedDecks];
   const ownedIds = new Set((ownedDecks || []).map((d) => d.id));
+  // Dedupe: a deck the user owns may also appear via a subscription; keep the owned copy only.
+  const decks = useMemo(
+    () => [...(ownedDecks || []), ...(subscribedDecks || []).filter((d) => !ownedIds.has(d.id))],
+    [ownedDecks, subscribedDecks]
+  );
   const libraryDeckIds = decks.map((d) => d.id);
 
   const { data: cards = [] } = useQuery({
@@ -108,6 +112,21 @@ export default function Home() {
   const [showAddLink, setShowAddLink] = useState(false);
   const [formTitle, setFormTitle] = useState('');
   const [formDesc, setFormDesc] = useState('');
+  const [search, setSearch] = useState('');
+  const [ownershipFilter, setOwnershipFilter] = useState('all');
+
+  const filteredDecks = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return decks.filter((d) => {
+      if (ownershipFilter === 'owned' && !ownedIds.has(d.id)) return false;
+      if (ownershipFilter === 'shared' && ownedIds.has(d.id)) return false;
+      if (!q) return true;
+      return (
+        (d.title || '').toLowerCase().includes(q) ||
+        (d.description || '').toLowerCase().includes(q)
+      );
+    });
+  }, [decks, search, ownershipFilter, ownedIds]);
 
   const openCreate = () => {setEditingDeck(null);setFormTitle('');setFormDesc('');setShowForm(true);};
   const openEdit = (deck) => {setEditingDeck(deck);setFormTitle(deck.title);setFormDesc(deck.description || '');setShowForm(true);};
@@ -195,8 +214,34 @@ export default function Home() {
           <Button onClick={openCreate} className="mt-2 gap-1.5"><Plus className="w-4 h-4" /> New Deck</Button>
         </div> :
 
+      <>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search decks by title or description"
+            className="pl-9"
+          />
+        </div>
+        <div className="flex items-center gap-1 border border-border rounded-md p-0.5 bg-background">
+          {['all', 'owned', 'shared'].map((opt) => (
+            <button
+              key={opt}
+              onClick={() => setOwnershipFilter(opt)}
+              className={'px-3 py-1 text-xs font-medium rounded transition-colors ' + (ownershipFilter === opt ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground')}
+            >
+              {opt === 'all' ? 'All' : opt === 'owned' ? 'Mine' : 'Shared'}
+            </button>
+          ))}
+        </div>
+      </div>
+      {filteredDecks.length === 0 ? (
+        <p className="text-center text-muted-foreground text-sm py-12">No decks match your filters.</p>
+      ) : (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {decks.map((deck) =>
+          {filteredDecks.map((deck) =>
         <DeckCard
           key={deck.id}
           deck={deck}
@@ -215,6 +260,8 @@ export default function Home() {
 
         )}
         </div>
+      )}
+      </>
       }
 
       {/* Create / Edit Dialog */}
