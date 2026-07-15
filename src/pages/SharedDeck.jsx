@@ -40,9 +40,8 @@ export default function SharedDeck() {
 
   const duplicateMutation = useMutation({
     mutationFn: async () => {
-      const newDeck = await base44.entities.Deck.create({ title: deck.title + ' (copy)', description: deck.description, is_public: false, share_token: makeToken() });
-      await Promise.all(cards.map(c => base44.entities.Card.create({ ...c, id: undefined, deck_id: newDeck.id })));
-      return newDeck;
+      const res = await base44.functions.invoke('cloneDeck', { token });
+      return res.data;
     },
     onSuccess: () => toast.success('Deck added to your collection'),
   });
