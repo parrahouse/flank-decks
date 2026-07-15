@@ -40,8 +40,10 @@ export default function Collections() {
 
   const deleteMut = useMutation({
     mutationFn: async (col) => {
-      const rows = memberships.filter((m) => m.collection === col.id);
-      await Promise.all(rows.map((r) => base44.entities.CollectionDeck.delete(r.id)));
+      await base44.functions.invoke('mutateCollectionDecks', {
+        action: 'clear',
+        collection_id: col.id,
+      });
       await base44.entities.Collection.delete(col.id);
     },
     onSuccess: () => {

@@ -124,7 +124,8 @@ export default function CollectionDetail() {
   const [showEditForm, setShowEditForm] = useState(false);
 
   const removeMut = useMutation({
-    mutationFn: (membershipId) => base44.entities.CollectionDeck.delete(membershipId),
+    mutationFn: (membershipId) =>
+      base44.functions.invoke('mutateCollectionDecks', { action: 'remove', row_ids: [membershipId] }),
     onSuccess: () => {
       qc.invalidateQueries(['collection-decks', collectionId]);
       qc.invalidateQueries(['collection-decks-all']);
@@ -169,8 +170,11 @@ export default function CollectionDetail() {
     setCreatingDeck(true);
     try {
       const deck = await base44.entities.Deck.create({ title: newDeckTitle.trim() });
-      const baseOrder = memberships.reduce((mx, m) => Math.max(mx, m.sort_order || 0), -1);
-      await base44.entities.CollectionDeck.create({ collection: collectionId, deck: deck.id, sort_order: baseOrder + 1 });
+      await base44.functions.invoke('mutateCollectionDecks', {
+        action: 'add',
+        collection_id: collectionId,
+        deck_ids: [deck.id],
+      });
       qc.invalidateQueries(['collection-decks', collectionId]);
       qc.invalidateQueries(['collection-decks-all']);
       qc.invalidateQueries(['decks']);
@@ -189,10 +193,14 @@ export default function CollectionDetail() {
     if (swap < 0 || swap >= memberships.length) return;
     const a = memberships[idx];
     const b = memberships[swap];
-    await base44.entities.CollectionDeck.bulkUpdate([
-      { id: a.id, sort_order: b.sort_order },
-      { id: b.id, sort_order: a.sort_order },
-    ]);
+    await base44.functions.invoke('mutateCollectionDecks', {
+      action: 'reorder',
+      collection_id: collectionId,
+      rows: [
+        { id: a.id, sort_order: b.sort_order },
+        { id: b.id, sort_order: a.sort_order },
+      ],
+    });
     qc.invalidateQueries(['collection-decks', collectionId]);
   };
 

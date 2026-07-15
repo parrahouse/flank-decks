@@ -32,11 +32,12 @@ export default function AddDecksToCollectionDialog({ open, onClose, collectionId
 
   const add = useMutation({
     mutationFn: async () => {
-      const baseOrder = memberships.reduce((mx, m) => Math.max(mx, m.sort_order || 0), -1);
       const ids = Array.from(selected);
-      await base44.entities.CollectionDeck.bulkCreate(
-        ids.map((deckId, i) => ({ collection: collectionId, deck: deckId, sort_order: baseOrder + 1 + i }))
-      );
+      await base44.functions.invoke('mutateCollectionDecks', {
+        action: 'add',
+        collection_id: collectionId,
+        deck_ids: ids,
+      });
       // If the collection is already public, share the newly-added decks so
       // they're studyable from the shared collection link.
       if (collection?.is_public) {

@@ -28,9 +28,13 @@ export default function DeckCollectionsDialog({ open, onClose, deckId, deckTitle
     try {
       if (isMember) {
         const row = memberships.find((m) => m.collection === collectionId);
-        if (row) await base44.entities.CollectionDeck.delete(row.id);
+        if (row) await base44.functions.invoke('mutateCollectionDecks', { action: 'remove', row_ids: [row.id] });
       } else {
-        await base44.entities.CollectionDeck.create({ collection: collectionId, deck: deckId, sort_order: 0 });
+        await base44.functions.invoke('mutateCollectionDecks', {
+          action: 'add',
+          collection_id: collectionId,
+          deck_ids: [deckId],
+        });
       }
       qc.invalidateQueries(['collection-decks-by-deck', deckId]);
       qc.invalidateQueries(['collection-decks']);
