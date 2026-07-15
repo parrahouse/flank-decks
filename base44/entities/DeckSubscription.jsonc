@@ -1,0 +1,47 @@
+{
+  "name": "DeckSubscription",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email of the user who added this shared deck to their library. Stamped by subscribeToDeck; service-role writes set created_by to the service role, so read RLS matches on this instead."
+    },
+    "deck_id": {
+      "type": "string",
+      "description": "Reference to the shared Deck this user has added to their library"
+    }
+  },
+  "required": [
+    "user_email",
+    "deck_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
