@@ -9,6 +9,8 @@ import SessionStatsPanel from '@/components/cards/SessionStatsPanel';
 import ProgressGameBand from '@/components/cards/ProgressGameBand';
 import HeartsHud from '@/components/cards/HeartsHud';
 import StreakCounter from '@/components/cards/StreakCounter';
+import CollectionStudySettings from '@/components/cards/CollectionStudySettings';
+import { getSkin, DEFAULT_SKIN_ID, canZombify } from '@/components/cards/skins';
 import { cardLabel } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,6 +19,8 @@ import { useSound } from '@/hooks/useSound';
 const CORRECT_KEYS = new Set(['correct', 'second_guess', 'correct_after_clue', 'second_guess_after_clue', 'partial']);
 const SCENE_FLOOR_H = 165;
 const INTRO_STAGGER_MS = 0.18;
+const GAME_MODE_MIN_CARDS = 20;
+const MAX_HEARTS = 3;
 
 function shuffle(arr) {
   const a = [...arr];
@@ -35,6 +39,10 @@ export default function CollectionStudy() {
   const [autoAdvance, setAutoAdvance] = useState(() => localStorage.getItem('flashdeck_autoadvance') === '1');
   const [eliminateAllowed, setEliminateAllowed] = useState(() => localStorage.getItem('flashdeck_eliminate') !== '0');
   const [secondGuessAllowed, setSecondGuessAllowed] = useState(() => localStorage.getItem('flashdeck_secondguess') !== '0');
+  const [hintsAllowed, setHintsAllowed] = useState(() => localStorage.getItem('flashdeck_hints') !== '0');
+  const [gameModeWanted, setGameModeWanted] = useState(() => localStorage.getItem('flashdeck_gamemode') === '1');
+  const [gameMode, setGameMode] = useState(false);
+  const [hearts, setHearts] = useState(MAX_HEARTS);
   const [layoutMode] = useState(() => localStorage.getItem('flashdeck_layout') || 'auto');
   const [handedness] = useState(() => localStorage.getItem('flashdeck_handedness') || 'left');
   const [isWide, setIsWide] = useState(() => window.innerWidth >= 900);
@@ -140,6 +148,8 @@ export default function CollectionStudy() {
     setSessionStartTime(new Date());
     sessionSaved.current = false;
     setIntroPhase('intro');
+    setGameMode(gameModeWanted && allCards.length >= GAME_MODE_MIN_CARDS && canZombify(getSkin(DEFAULT_SKIN_ID)));
+    setHearts(MAX_HEARTS);
     setStarted(true);
   };
 
@@ -258,6 +268,13 @@ export default function CollectionStudy() {
         if (streakWorthy) setBestStreak((b) => Math.max(b, next));
         return next;
       });
+      if (gameMode) {
+        if (key === 'wrong') {
+          setHearts((h) => Math.max(0, h - 1));
+        } else if (key === 'correct' && (correctStreak + 1) % 5 === 0) {
+          setHearts((h) => (h > 0 ? Math.min(MAX_HEARTS, h + 1) : h));
+        }
+      }
     }
   };
 
@@ -275,6 +292,7 @@ export default function CollectionStudy() {
 
   // Pre-start screen
   if (!started) {
+    const gameModeAvailable = allCards.length >= GAME_MODE_MIN_CARDS && canZombify(getSkin(DEFAULT_SKIN_ID));
     return (
       <div className="max-w-5xl mx-auto px-4 py-8">
         <div className="flex items-center gap-3 mb-8">
@@ -287,23 +305,45 @@ export default function CollectionStudy() {
           </div>
         </div>
 
-        <div className="flex flex-col items-center gap-6 py-12 text-center">
-          <h2 className="text-xl font-bold">Study entire collection</h2>
-          <p className="text-muted-foreground text-sm max-w-sm">
-            All {allCards.length} cards from this collection will be shuffled together into one session.
-          </p>
-          {loading ? (
-            <div className="w-7 h-7 border-4 border-muted border-t-primary rounded-full animate-spin" />
-          ) : allCards.length === 0 ? (
-            <p className="text-destructive text-sm">No cards found in this collection.</p>
-          ) : (
-            <button
-              onClick={startSession}
-              className="border-2 border-primary bg-primary text-primary-foreground rounded-[4px] px-8 py-3 font-semibold hover:opacity-90 transition-opacity"
-            >
-              Start session
-            </button>
-          )}
+        <div className="flex flex-col gap-8 py-8 lg:flex-row lg:items-start lg:gap-16">
+          <div className="flex-1 flex flex-col items-center gap-6 text-center">
+            <div>
+              <h2 className="text-xl font-bold">Study entire collection</h2>
+              <p className="text-muted-foreground text-sm max-w-sm mt-1">
+                All {allCards.length} cards from this collection will be shuffled together into one session.
+              </p>
+            </div>
+            {loading ? (
+              <div className="w-7 h-7 border-4 border-muted border-t-primary rounded-full animate-spin" />
+            ) : allCards.length === 0 ? (
+              <p className="text-destructive text-sm">No cards found in this collection.</p>
+            ) : (
+              <button
+                onClick={startSession}
+                className="border-2 border-primary bg-primary text-primary-foreground rounded-[4px] px-8 py-3 font-semibold hover:opacity-90 transition-opacity"
+              >
+                Start session
+              </button>
+            )}
+          </div>
+
+          <div className="flex-1 w-full">
+            <CollectionStudySettings
+              soundEnabled={soundEnabled}
+              onSoundChange={(v) => { setSoundEnabled(v); localStorage.setItem('flashdeck_sound', v ? '1' : '0'); }}
+              autoAdvance={autoAdvance}
+              onAutoAdvanceChange={(v) => { setAutoAdvance(v); localStorage.setItem('flashdeck_autoadvance', v ? '1' : '0'); }}
+              secondGuessAllowed={secondGuessAllowed}
+              onSecondGuessChange={(v) => { setSecondGuessAllowed(v); localStorage.setItem('flashdeck_secondguess', v ? '1' : '0'); }}
+              hintsAllowed={hintsAllowed}
+              onHintsChange={(v) => { setHintsAllowed(v); localStorage.setItem('flashdeck_hints', v ? '1' : '0'); }}
+              eliminateAllowed={eliminateAllowed}
+              onEliminateChange={(v) => { setEliminateAllowed(v); localStorage.setItem('flashdeck_eliminate', v ? '1' : '0'); }}
+              gameMode={gameModeWanted}
+              onGameModeChange={(v) => { setGameModeWanted(v); localStorage.setItem('flashdeck_gamemode', v ? '1' : '0'); }}
+              gameModeAvailable={gameModeAvailable}
+            />
+          </div>
         </div>
       </div>
     );
@@ -339,6 +379,7 @@ export default function CollectionStudy() {
     cardStats: cardStats.find((s) => s.card_id === current?.id) || null,
     eliminateAllowed,
     secondGuessAllowed,
+    hintsAllowed,
     learningMode: false,
     isBookmarked: !!current?.bookmarked,
     onToggleBookmark: async (cardId, newVal) => { await base44.entities.Card.update(cardId, { bookmarked: newVal }); },
@@ -350,7 +391,7 @@ export default function CollectionStudy() {
     <div className={cn('mx-auto px-4 py-8 min-h-screen bg-background', useHorizontal ? 'max-w-7xl' : 'max-w-6xl')}>
       <motion.div className="relative mb-1" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, ease: 'easeOut' }}>
         <ProgressGameBand
-          zombified={false}
+          zombified={gameMode && hearts === 0}
           cardIndex={cardIndex}
           total={shuffledCards.length}
           scores={scores}
@@ -368,6 +409,7 @@ export default function CollectionStudy() {
           <div className="flex-1">
             <h1 style={{ fontFamily: "'VT323', monospace", fontSize: 26, lineHeight: 1 }}>{collection?.name}</h1>
           </div>
+          {gameMode && <HeartsHud hearts={hearts} />}
           <div className="flex items-baseline gap-3 select-none px-1" style={{ fontFamily: "'VT323', monospace" }}>
             <span className="text-foreground uppercase" style={{ fontSize: 20, lineHeight: 1 }}>Score: {totalPoints.toFixed(2)}</span>
           </div>
@@ -417,7 +459,7 @@ export default function CollectionStudy() {
             <motion.div className="relative bg-card border border-border rounded-lg p-4 mt-4" variants={containerVariant} initial="hidden" animate="visible">
               {useHorizontal
                 ? <StudyCardHorizontal {...sharedProps} handedness={handedness} childVariant={childVariant} />
-                : <StudyCard {...sharedProps} hintsAllowed={true} childVariant={childVariant} />
+                : <StudyCard {...sharedProps} childVariant={childVariant} />
               }
             </motion.div>
           </motion.div>
