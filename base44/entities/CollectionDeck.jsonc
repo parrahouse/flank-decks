@@ -14,6 +14,10 @@
       "type": "number",
       "default": 0,
       "description": "Position of the deck within the collection (ascending)"
+    },
+    "owner_email": {
+      "type": "string",
+      "description": "Email of the collection owner. Stamped by mutateCollectionDecks. Service-role writes attribute created_by to the service role, not the caller, so read RLS matches on this instead."
     }
   },
   "required": [
@@ -21,9 +25,16 @@
     "deck"
   ],
   "rls": {
-    "create": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
     "read": {
       "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
         {
           "created_by": "{{user.email}}"
         },
@@ -35,28 +46,14 @@
       ]
     },
     "update": {
-      "$or": [
-        {
-          "created_by": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "delete": {
-      "$or": [
-        {
-          "created_by": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     }
   }
 }
