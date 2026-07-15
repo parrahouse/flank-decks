@@ -254,6 +254,8 @@ export default function Home() {
         currentUrl={coverDeck.cover_image_url || null}
         currentFocalPoint={coverDeck.cover_focal_point || null}
         currentOriginalUrl={coverDeck.cover_image_original_url || null}
+        deckTitle={coverDeck.title}
+        deckDescription={coverDeck.description}
         onSave={(url, focalPoint, originalUrl) => saveCoverMutation.mutate({ deck: coverDeck, url, focalPoint, originalUrl })} />
 
       }

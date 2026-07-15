@@ -5,8 +5,10 @@ import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
 import ImageEditor from '@/components/cards/ImageEditor';
+import ImagePoolGallery from '@/components/deck/ImagePoolGallery';
+import { toast } from 'sonner';
 
-export default function CoverImagePicker({ open, onClose, cards, currentUrl, currentFocalPoint, currentOriginalUrl, onSave }) {
+export default function CoverImagePicker({ open, onClose, cards, currentUrl, currentFocalPoint, currentOriginalUrl, onSave, deckTitle, deckDescription }) {
   const [selected, setSelected] = useState(currentUrl || null);
   const [originalUrl, setOriginalUrl] = useState(currentOriginalUrl || null);
   const [focalPoint, setFocalPoint] = useState(currentFocalPoint || { x: 50, y: 50 });
@@ -14,7 +16,11 @@ export default function CoverImagePicker({ open, onClose, cards, currentUrl, cur
   const [saving, setSaving] = useState(false);
   const [draggingPreview, setDraggingPreview] = useState(false);
   const [showEditor, setShowEditor] = useState(false);
+  const [addToPool, setAddToPool] = useState(false);
+  const [poolTags, setPoolTags] = useState('');
   const fileRef = useRef();
+
+  const parseTags = (str) => str.split(',').map((t) => t.trim()).filter(Boolean);
   const previewRef = useRef();
   const previewImgRef = useRef();
   const focalDragRef = useRef();
@@ -30,6 +36,14 @@ export default function CoverImagePicker({ open, onClose, cards, currentUrl, cur
     setOriginalUrl(null);
     setFocalPoint({ x: 50, y: 50 });
     setUploading(false);
+    if (addToPool) {
+      try {
+        await base44.entities.ImagePool.create({ image_url: file_url, tags: parseTags(poolTags) });
+        toast.success('Image added to pool');
+      } catch (e) {
+        toast.error('Could not add image to pool');
+      }
+    }
   };
 
   const handlePickCard = (imageUrl) => {
@@ -193,6 +207,27 @@ export default function CoverImagePicker({ open, onClose, cards, currentUrl, cur
                 {uploading ? 'Uploading…' : 'Click to upload a custom cover'}
               </button>
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
+
+              {/* Add to image pool */}
+              <div className="mt-2 space-y-1.5">
+                <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={addToPool}
+                    onChange={(e) => setAddToPool(e.target.checked)}
+                    className="accent-primary w-3.5 h-3.5"
+                  />
+                  Add this image to the reusable image pool
+                </label>
+                {addToPool && (
+                  <input
+                    value={poolTags}
+                    onChange={(e) => setPoolTags(e.target.value)}
+                    placeholder="Tags (comma-separated, e.g. biology, cell, plant)"
+                    className="w-full text-xs border border-border rounded-md px-2.5 py-1.5 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                )}
+              </div>
             </div>
 
             {/* Pick from cards */}
@@ -220,6 +255,14 @@ export default function CoverImagePicker({ open, onClose, cards, currentUrl, cur
                 </div>
               </div>
             )}
+
+            {/* Image pool (reuse + AI suggestion) */}
+            <ImagePoolGallery
+              deckTitle={deckTitle}
+              deckDescription={deckDescription}
+              selected={selected}
+              onSelect={(url) => { setSelected(url); setOriginalUrl(null); setFocalPoint({ x: 50, y: 50 }); }}
+            />
 
             {cardImages.length === 0 && !selected && (
               <p className="text-sm text-muted-foreground text-center py-2">No card images yet. Upload a custom cover above.</p>

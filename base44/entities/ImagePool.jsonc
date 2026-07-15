@@ -1,0 +1,53 @@
+{
+  "name": "ImagePool",
+  "type": "object",
+  "properties": {
+    "image_url": {
+      "type": "string",
+      "description": "URL of the stock image available to reuse as a deck cover"
+    },
+    "tags": {
+      "type": "array",
+      "description": "User-defined tags describing the image, used for search and AI suggestion matching",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional freeform note about the image"
+    }
+  },
+  "required": [
+    "image_url"
+  ],
+  "rls": {
+    "create": {},
+    "read": {},
+    "update": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
