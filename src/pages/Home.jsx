@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, BookOpen } from 'lucide-react';
+import { Plus, BookOpen, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Link } from 'react-router-dom';
 import DeckCard from '@/components/deck/DeckCard';
 import ShareModal from '@/components/deck/ShareModal';
+import AddDeckByLinkDialog from '@/components/deck/AddDeckByLinkDialog';
 import CoverImagePicker from '@/components/deck/CoverImagePicker';
 import { toast } from 'sonner';
 function makeToken() {
@@ -85,6 +86,7 @@ export default function Home() {
   const [editingDeck, setEditingDeck] = useState(null);
   const [shareDeck, setShareDeck] = useState(null);
   const [coverDeck, setCoverDeck] = useState(null);
+  const [showAddLink, setShowAddLink] = useState(false);
   const [formTitle, setFormTitle] = useState('');
   const [formDesc, setFormDesc] = useState('');
 
@@ -142,9 +144,14 @@ export default function Home() {
           <h1 className="text-2xl font-bold tracking-tight">My Decks</h1>
           <p className="text-muted-foreground text-sm mt-0.5">Create, study and share image flashcard decks.</p>
         </div>
-        <Button onClick={openCreate} className="gap-1.5 rounded-[20px]">
-          <Plus className="w-4 h-4" /> New Deck
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setShowAddLink(true)} className="gap-1.5">
+            <Link2 className="w-4 h-4" /> Add via Link
+          </Button>
+          <Button onClick={openCreate} className="gap-1.5 rounded-[20px]">
+            <Plus className="w-4 h-4" /> New Deck
+          </Button>
+        </div>
       </div>
 
       {isLoading ?
@@ -207,6 +214,8 @@ export default function Home() {
       </Dialog>
 
       <ShareModal deck={shareDeck} open={!!shareDeck} onClose={() => setShareDeck(null)} />
+
+      <AddDeckByLinkDialog open={showAddLink} onClose={() => setShowAddLink(false)} />
 
       {coverDeck &&
       <CoverImagePicker
