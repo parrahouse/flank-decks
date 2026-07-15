@@ -20,11 +20,6 @@ Deno.serve(async (req) => {
     }
     if (!sourceDeck) return Response.json({ error: 'Not found' }, { status: 404 });
 
-    // Prevent owners from cloning their own deck — they already have it.
-    if (sourceDeck.created_by === user.email) {
-      return Response.json({ error: 'This is already your deck.' }, { status: 409 });
-    }
-
     // Authorization: deck must be public, OR belong to a public collection.
     if (!sourceDeck.is_public) {
       const memberships = await svc.entities.CollectionDeck.filter({ deck: sourceDeck.id });
