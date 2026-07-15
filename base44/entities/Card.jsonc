@@ -126,6 +126,11 @@
       "type": "boolean",
       "default": false,
       "description": "True when an author has manually set point_value."
+    },
+    "is_public": {
+      "type": "boolean",
+      "default": false,
+      "description": "Mirrors the parent deck's is_public so shared decks' cards are readable by subscribers. Kept in sync by the share flows."
     }
   },
   "required": [
@@ -137,6 +142,9 @@
       "$or": [
         {
           "created_by": "{{user.email}}"
+        },
+        {
+          "data.is_public": true
         },
         {
           "user_condition": {
