@@ -4,7 +4,7 @@ import { useSound } from '@/hooks/useSound';
 import { DEFAULT_GROUND, getSkin, DEFAULT_SKIN_ID, resolveSprite, getEffectiveSkin, canZombify } from './skins';
 
 // ── ART-INDEPENDENT CONSTANTS ─────────────────────────────────────────────────
-const BAND_H = 100;
+const BAND_H = 75;
 const SKY    = '#e5e7eb';
 
 // FEEL DIALS — tune by eye
