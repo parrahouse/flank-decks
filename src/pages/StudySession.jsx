@@ -122,7 +122,7 @@ export default function StudySession() {
   const [layoutMode, setLayoutMode] = useState(() => localStorage.getItem('flashdeck_layout') || 'auto');
   const [handedness, setHandedness] = useState(() => localStorage.getItem('flashdeck_handedness') || 'left');
   const [isWide, setIsWide] = useState(() => window.innerWidth >= 900);
-  const SCENE_FLOOR_H = 165; // px of sky+ground the scene gets BELOW the header line
+  const SCENE_FLOOR_H = 150; // px of sky+ground the scene gets BELOW the header line
   const [savingDefaults, setSavingDefaults] = useState(false);
   const [introPhase, setIntroPhase] = useState('intro'); // 'intro' | 'ready'
   const [wrongTick, setWrongTick] = useState(0); // increments each time a wrong answer is picked
