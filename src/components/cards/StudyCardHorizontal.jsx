@@ -152,7 +152,7 @@ export default function StudyCardHorizontal({
       if (autoAdvance && !isLast) startCountdown();
     } else {
       playWrong(); setShakingChoice(choice); clearTimeout(shakeTimerRef.current); shakeTimerRef.current = setTimeout(() => setShakingChoice(null), 400);
-      if (secondGuessAllowed && !firstWrong && !eliminated.length) {
+      if (secondGuessAllowed && !firstWrong && !eliminated.length && !isTrueFalse) {
         setFirstWrong(choice);
         onFirstWrong && onFirstWrong(choice, { retry: true });
       } else {
