@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 
-// Swab streak counter — 32-frame 16x16 sheet. Egg fills over 5 correct answers,
+// Swab streak counter — 32-frame 12x12 sheet. Egg fills over 5 correct answers,
 // "lays" (empties) at each multiple of 5, and drains when the streak breaks.
-const SHEET = 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/1550b7b3a_Swab-Streak-Counter.png';
-const FRAME = 16;    // source frame px
+const SHEET = 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/3f8c1b78f_Swab-Streak-Counter.png';
+const FRAME = 12;    // source frame px
 const FRAMES = 32;   // total frames on the sheet
-const SCALE = 2;     // integer upscale -> 32x32 rendered
+const SCALE = 2;     // integer upscale -> 24x24 rendered, matching HeartsHud
 const FRAME_MS = 38; // per-frame playback speed (tune to taste)
 
 const LEVEL = { 1: 6, 2: 10, 3: 14, 4: 18 }; // holds for the 1st..4th correct
@@ -80,7 +80,7 @@ export default function StreakCounter({ streak = 0, record = 0 }) {
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [streak]);
 
-  const size = FRAME * SCALE; // 32
+  const size = FRAME * SCALE; // 24
 
   return (
     <div
@@ -96,8 +96,8 @@ export default function StreakCounter({ streak = 0, record = 0 }) {
           style={{
             position: 'absolute', top: 0, left: 0,
             display: 'block',
-            width: FRAME * FRAMES * SCALE,   // 1024
-            height: size,                    // 32
+            width: FRAME * FRAMES * SCALE,   // 768
+            height: size,                    // 24
             maxWidth: 'none',                // opt out of Tailwind Preflight's img{max-width:100%}
             transform: `translateX(${-frame * size}px)`,
             imageRendering: 'pixelated',
