@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { ArrowLeft, RotateCcw, Copy, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ function shuffle(arr) {
 function makeToken() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
 
 export default function SharedDeck() {
+  const qc = useQueryClient();
   const { token } = useParams();
   const [cardIndex, setCardIndex] = useState(0);
   const [shuffledCards, setShuffledCards] = useState([]);
@@ -50,6 +51,9 @@ export default function SharedDeck() {
       return res.data;
     },
     onSuccess: (data) => {
+      qc.invalidateQueries(['deck-subscriptions']);
+      qc.invalidateQueries(['subscribed-decks']);
+      qc.invalidateQueries(['cards-library']);
       if (data?.already_subscribed) toast.message('Already in your library');
       else toast.success('Added to your library');
     },

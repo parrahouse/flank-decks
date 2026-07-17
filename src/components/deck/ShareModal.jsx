@@ -54,7 +54,9 @@ export default function ShareModal({ deck, open, onClose }) {
       });
       // Mirror deck visibility onto its cards so subscribers can read them via RLS.
       await base44.entities.Card.updateMany({ deck_id: deck.id }, { $set: { is_public: true } });
-      qc.invalidateQueries(['decks']);
+      qc.invalidateQueries(['owned-decks']);
+      qc.invalidateQueries(['deck-subscriptions']);
+      qc.invalidateQueries(['subscribed-decks']);
       qc.invalidateQueries(['deck', deck.id]);
       qc.invalidateQueries(['cards-library']);
       qc.invalidateQueries(['shared-collections-for-deck', deck.id]);
@@ -73,7 +75,9 @@ export default function ShareModal({ deck, open, onClose }) {
         share_token: null,
       });
       await base44.entities.Card.updateMany({ deck_id: deck.id }, { $set: { is_public: false } });
-      qc.invalidateQueries(['decks']);
+      qc.invalidateQueries(['owned-decks']);
+      qc.invalidateQueries(['deck-subscriptions']);
+      qc.invalidateQueries(['subscribed-decks']);
       qc.invalidateQueries(['deck', deck.id]);
       qc.invalidateQueries(['cards-library']);
       toast.success('Sharing disabled');

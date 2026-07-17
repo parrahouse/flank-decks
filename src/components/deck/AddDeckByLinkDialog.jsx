@@ -51,8 +51,10 @@ export default function AddDeckByLinkDialog({ open, onClose }) {
         navigate(`/shared-collection/${data.collectionRedirect}`);
         return;
       }
-      qc.invalidateQueries(['decks']);
-      qc.invalidateQueries(['cards-all']);
+      qc.invalidateQueries(['owned-decks']);
+      qc.invalidateQueries(['deck-subscriptions']);
+      qc.invalidateQueries(['subscribed-decks']);
+      qc.invalidateQueries(['cards-library']);
       setResult(data);
       toast.success('Deck added to your collection');
     },

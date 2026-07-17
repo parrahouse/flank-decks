@@ -25,6 +25,9 @@ export default function AssignDeckDialog({ open, onClose, groupId, assignedDeckI
       base44.functions.invoke('assignDeckToGroup', { group_id: groupId, deck_id }).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries(['group', groupId]);
+      qc.invalidateQueries(['deck-subscriptions']);
+      qc.invalidateQueries(['subscribed-decks']);
+      qc.invalidateQueries(['cards-library']);
       toast.success('Deck shared with group');
     },
     onError: (e) => toast.error(e?.response?.data?.error || e.message || 'Could not assign deck'),
