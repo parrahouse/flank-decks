@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { MoreHorizontal, GalleryVerticalEnd, Copy, Trash2, Share2, Pencil, Image as ImageIcon, PlayCircle, LogOut, FolderMinus } from 'lucide-react';
+import { MoreHorizontal, GalleryVerticalEnd, Copy, Trash2, Share2, Pencil, Image as ImageIcon, PlayCircle, LogOut, FolderMinus, BarChart2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -193,9 +193,14 @@ export default function DeckCard({ deck, cardCount, coverUrl, stats, masteryPct 
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-44">
                   {isShared ? (
-                    <DropdownMenuItem onClick={() => onLeave && onLeave(deck)} className="text-destructive focus:text-destructive">
-                      <LogOut className="w-4 h-4 mr-2" /> Leave deck
-                    </DropdownMenuItem>
+                    <>
+                      <DropdownMenuItem onClick={() => navigate(`/stats/${deck.id}`)}>
+                        <BarChart2 className="w-4 h-4 mr-2" /> View stats
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onLeave && onLeave(deck)} className="text-destructive focus:text-destructive">
+                        <LogOut className="w-4 h-4 mr-2" /> Leave deck
+                      </DropdownMenuItem>
+                    </>
                   ) : (
                     <>
                       <DropdownMenuItem onClick={() => navigate(`/deck/${deck.id}`)}>
