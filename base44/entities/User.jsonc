@@ -7,6 +7,10 @@
         "admin",
         "user"
       ]
+    },
+    "username": {
+      "type": "string",
+      "description": "Unique display username chosen by the user, used for direct deck sharing and search"
     }
   },
   "required": [

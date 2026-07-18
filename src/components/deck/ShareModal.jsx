@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import ShareWithPerson from '@/components/deck/ShareWithPerson';
 
 function makeToken() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -134,6 +135,9 @@ export default function ShareModal({ deck, open, onClose }) {
             >
               {disabling ? 'Disabling…' : 'Disable sharing'}
             </Button>
+            <div className="pt-3 border-t border-border">
+              <ShareWithPerson deck={deck} />
+            </div>
           </div>
         ) : collectionShare && !useDeckLink ? (
           <div className="space-y-4 mt-2">

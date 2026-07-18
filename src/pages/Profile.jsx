@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
 import { User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 
 export default function Profile() {
@@ -15,6 +16,27 @@ export default function Profile() {
   const [layoutMode, setLayoutMode] = useState(() => currentUser?.default_layout_mode || 'auto');
   const [handedness, setHandedness] = useState(() => currentUser?.default_handedness || 'left');
   const [saving, setSaving] = useState(false);
+  const [username, setUsernameState] = useState('');
+  const [savingUsername, setSavingUsername] = useState(false);
+
+  useEffect(() => {
+    setUsernameState(currentUser?.username || '');
+  }, [currentUser?.username]);
+
+  const handleSaveUsername = async () => {
+    const clean = username.trim();
+    if (!clean) { toast.error('Username is required'); return; }
+    setSavingUsername(true);
+    try {
+      await base44.functions.invoke('setUsername', { username: clean });
+      await refetch();
+      toast.success('Username saved');
+    } catch (e) {
+      toast.error(e?.response?.data?.error || e?.message || 'Could not save username');
+    } finally {
+      setSavingUsername(false);
+    }
+  };
 
   // Sync state once user data loads
   const defaultLayoutMode = currentUser?.default_layout_mode || 'auto';
@@ -41,6 +63,21 @@ export default function Profile() {
       </div>
 
       <div className="border border-border rounded-lg divide-y divide-border">
+        <div className="px-5 py-4">
+          <h2 className="text-sm font-semibold mb-1">Username</h2>
+          <p className="text-xs text-muted-foreground mb-3">A unique name others can search to share decks with you.</p>
+          <div className="flex gap-2">
+            <Input
+              value={username}
+              onChange={(e) => setUsernameState(e.target.value)}
+              placeholder="Choose a username"
+              className="flex-1"
+            />
+            <Button size="sm" onClick={handleSaveUsername} disabled={savingUsername}>
+              {savingUsername ? 'Saving…' : 'Save'}
+            </Button>
+          </div>
+        </div>
         <div className="px-5 py-4">
           <h2 className="text-sm font-semibold mb-1">Study Session Defaults</h2>
           <p className="text-xs text-muted-foreground mb-5">These are used as starting values each time you begin a new session. You can still override them per-session.</p>
