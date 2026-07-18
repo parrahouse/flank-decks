@@ -51,6 +51,11 @@ export default function DeckStats() {
     enabled: !!deckId,
   });
 
+  const { data: currentUser } = useQuery({
+    queryKey: ['me'],
+    queryFn: () => base44.auth.me(),
+  });
+
   const { data: sessions = [], isLoading } = useQuery({
     queryKey: ['study-sessions', deckId, currentUser?.email],
     queryFn: () => base44.entities.StudySession.filter({ deck_id: deckId, created_by: currentUser.email }, '-created_date'),
@@ -61,11 +66,6 @@ export default function DeckStats() {
     queryKey: ['cards', deckId],
     queryFn: () => base44.entities.Card.filter({ deck_id: deckId }, 'order').then(r => r.filter(c => !c.deleted)),
     enabled: !!deckId,
-  });
-
-  const { data: currentUser } = useQuery({
-    queryKey: ['me'],
-    queryFn: () => base44.auth.me(),
   });
 
   const { data: cardStats = [] } = useQuery({
