@@ -59,8 +59,9 @@ export default function Home() {
   });
 
   const { data: sessions = [] } = useQuery({
-    queryKey: ['study-sessions-home'],
-    queryFn: () => base44.entities.StudySession.list('-created_date', 500)
+    queryKey: ['study-sessions-home', currentUser?.email],
+    queryFn: () => base44.entities.StudySession.filter({ created_by: currentUser.email }, '-created_date', 500),
+    enabled: !!currentUser?.email
   });
 
   const { data: savedSessions = [] } = useQuery({
