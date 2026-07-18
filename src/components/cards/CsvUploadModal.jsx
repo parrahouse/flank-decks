@@ -58,7 +58,8 @@ function rowToCard(row, deckId, order) {
   const questionType = row.question_type?.trim() || 'multiple_choice';
   const isShortAnswer = questionType === 'short_answer';
 
-  const firstCorrect = correctAnswers.split('|')[0].trim();
+  const allCorrect = correctAnswers.split('|').map(s => s.trim()).filter(Boolean);
+  const firstCorrect = allCorrect[0] || '';
   const decoys = [2, 3, 4, 5, 6]
     .map(n => row[`choice_${n}`]?.trim())
     .filter(Boolean);
@@ -76,7 +77,7 @@ function rowToCard(row, deckId, order) {
     correct_answers: correctAnswers,
     correct_answer: firstCorrect,
     question_type: questionType,
-    choices: isShortAnswer ? [] : [firstCorrect, ...decoys],
+    choices: isShortAnswer ? [] : [...allCorrect, ...decoys],
     clue: (row.written_question ?? row.clue)?.trim() || '',
     explanation: row.explanation?.trim() || '',
     image_url: row.image_url?.trim() || '',
