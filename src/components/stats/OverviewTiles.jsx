@@ -1,6 +1,6 @@
 import { BarChart2, Target, Trophy, TrendingDown, Clock, Timer, CheckCircle2, GraduationCap, Flame, Zap } from 'lucide-react';
 import StatTile from './StatTile';
-import { formatDuration, formatClockMs, formatSpan, pct } from '@/lib/statsUtils';
+import { formatDuration, formatClockMs, formatSpan, pct, pct100 } from '@/lib/statsUtils';
 
 export default function OverviewTiles({ overview }) {
   const {
@@ -24,9 +24,9 @@ export default function OverviewTiles({ overview }) {
         value={formatDuration(avgSession)}
         sub={durationsCount < count ? `across ${durationsCount} of ${count} sessions` : null}
       />
-      <StatTile icon={<Target className="w-4 h-4" />} label="Avg score" value={pct(avgScore)} />
-      <StatTile icon={<Trophy className="w-4 h-4" />} label="Best" value={pct(best)} valueClass="text-success" />
-      <StatTile icon={<TrendingDown className="w-4 h-4" />} label="Worst" value={pct(worst)} valueClass="text-destructive" />
+      <StatTile icon={<Target className="w-4 h-4" />} label="Avg score" value={pct100(avgScore)} />
+      <StatTile icon={<Trophy className="w-4 h-4" />} label="Best" value={pct100(best)} valueClass="text-success" />
+      <StatTile icon={<TrendingDown className="w-4 h-4" />} label="Worst" value={pct100(worst)} valueClass="text-destructive" />
       <StatTile
         icon={<Timer className="w-4 h-4" />}
         label="Avg time per card"

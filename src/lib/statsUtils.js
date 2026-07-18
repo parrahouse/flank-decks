@@ -71,3 +71,9 @@ export function pct(v) {
   if (v == null) return '—';
   return `${Math.round(v * 100)}%`;
 }
+
+// For values already stored on a 0–100 scale (e.g. StudySession.score_pct).
+export function pct100(v) {
+  if (v == null) return '—';
+  return `${Math.round(v)}%`;
+}
