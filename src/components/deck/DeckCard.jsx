@@ -187,7 +187,7 @@ export default function DeckCard({ deck, cardCount, coverUrl, stats, masteryPct 
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 rounded-full border border-transparent bg-transparent hover:bg-card hover:border-border">
                     <MoreHorizontal className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
