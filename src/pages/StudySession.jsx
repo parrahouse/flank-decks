@@ -370,7 +370,9 @@ export default function StudySession() {
         duration_ms: durationMs,
         filter_mode: filterMode,
         card_count: shuffledCards.length,
-        best_streak: bestStreak
+        best_streak: bestStreak,
+        game_mode: gameMode,
+        hearts_remaining: gameMode ? hearts : null
       });
 
       // Fire-and-forget: log this session to any groups the deck is assigned to

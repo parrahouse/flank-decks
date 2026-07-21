@@ -1,0 +1,73 @@
+{
+  "name": "PointLedger",
+  "type": "object",
+  "properties": {
+    "owner_email": {
+      "type": "string",
+      "description": "Email of the player who owns this award. Stamped by bankSessionPoints (service-role). Service-role writes attribute created_by to the service role, not the caller, so read RLS matches on this instead."
+    },
+    "session_id": {
+      "type": "string",
+      "description": "ID of the StudySession that produced this award. Exactly one ledger row per session \u2014 this is the idempotency key that makes banking exactly-once."
+    },
+    "deck_id": {
+      "type": "string",
+      "description": "Deck studied (denormalized for history/display)."
+    },
+    "base_points": {
+      "type": "number",
+      "description": "Points earned in the session before the multiplier (StudySession.total_points)."
+    },
+    "multiplier": {
+      "type": "number",
+      "default": 1,
+      "description": "1, or 2 when the player survived Game Mode (finished with hearts remaining)."
+    },
+    "awarded_points": {
+      "type": "number",
+      "description": "base_points * multiplier \u2014 the amount added to the player's balance."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the award was banked."
+    }
+  },
+  "required": [
+    "owner_email",
+    "session_id",
+    "awarded_points"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

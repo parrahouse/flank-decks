@@ -44,6 +44,16 @@
       "type": "number",
       "description": "Longest run of consecutive correct answers within this session"
     },
+    "game_mode": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if this session ran in Game Mode (hearts engaged)."
+    },
+    "hearts_remaining": {
+      "type": "number",
+      "default": null,
+      "description": "Hearts left at completion (0..MAX_HEARTS). Null in Progress mode. Survival = game_mode && hearts_remaining > 0."
+    },
     "card_results": {
       "type": "array",
       "description": "Per-card results: [{card_id, correct_answer, image_url, points, key, first_wrong}]",
