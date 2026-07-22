@@ -588,11 +588,11 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
         <div
           onClick={() => fileRef.current?.click()}
           className="relative border-2 border-dashed border-border rounded-xl overflow-hidden cursor-pointer hover:border-primary/50 transition-colors"
-          style={{ minHeight: 180 }}
+          style={{ aspectRatio: '16 / 9' }}
         >
           {imageUrl ? (
             <div
-              className="relative w-full h-48 overflow-hidden select-none"
+              className="relative w-full h-full overflow-hidden select-none"
               style={{
                 backgroundColor: '#f3f4f6',
                 touchAction: imageFit === 'cover' ? 'none' : 'auto',
@@ -608,7 +608,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
                 ref={previewImgRef}
                 src={imageUrl}
                 alt="card"
-                className="w-full h-48 pointer-events-none"
+                className="w-full h-full pointer-events-none"
                 style={{
                   objectFit: imageFit,
                   objectPosition: imageFit === 'cover' && focalPoint ? `${focalPoint.x}% ${focalPoint.y}%` : 'center',
@@ -622,7 +622,7 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
               )}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-48 gap-2 text-muted-foreground">
+            <div className="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground">
               {uploading ? <Loader2 className="w-6 h-6 animate-spin" /> : <ImageIcon className="w-8 h-8" />}
               <span className="text-sm">{uploading ? 'Uploading…' : 'Click to upload image'}</span>
             </div>
