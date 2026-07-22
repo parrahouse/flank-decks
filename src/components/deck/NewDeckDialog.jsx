@@ -1,12 +1,13 @@
 import { useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Upload, X, FileText, AlertCircle, CheckCircle2, Loader2, Download, ImagePlus } from 'lucide-react';
+import { Upload, X, FileText, AlertCircle, CheckCircle2, Loader2, Download, ImagePlus, Images } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { base44 } from '@/api/base44Client';
+import ImagePoolGallery from '@/components/deck/ImagePoolGallery';
 import { parseCSV, rowToCard, SAMPLE_CSV } from '@/components/cards/CsvUploadModal';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -24,6 +25,7 @@ export default function NewDeckDialog({ open, onClose }) {
   const [desc, setDesc] = useState('');
   const [coverUrl, setCoverUrl] = useState('');
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [showPool, setShowPool] = useState(false);
 
   const [csvName, setCsvName] = useState('');
   const [preview, setPreview] = useState(null); // { cards, errors }
@@ -34,6 +36,7 @@ export default function NewDeckDialog({ open, onClose }) {
     setTitle('');
     setDesc('');
     setCoverUrl('');
+    setShowPool(false);
     setCsvName('');
     setPreview(null);
   };
@@ -168,6 +171,19 @@ export default function NewDeckDialog({ open, onClose }) {
               </div>
             )}
             <input ref={coverRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleCoverFile(e.target.files[0])} />
+            <div className="flex items-center gap-3">
+              <button type="button" onClick={() => setShowPool((v) => !v)} className="flex items-center gap-1 text-xs text-primary hover:underline">
+                <Images className="w-3 h-3" /> Pick from pool
+              </button>
+            </div>
+            {showPool && (
+              <ImagePoolGallery
+                deckTitle={title}
+                deckDescription={desc}
+                selected={coverUrl}
+                onSelect={(url) => setCoverUrl(url)}
+              />
+            )}
           </div>
 
           {/* CSV import */}
