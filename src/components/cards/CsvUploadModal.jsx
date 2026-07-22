@@ -6,7 +6,7 @@ import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
-function parseCSV(text) {
+export function parseCSV(text) {
   const lines = text.trim().split('\n');
   if (lines.length < 2) return { rows: [], error: 'File must have a header row and at least one data row.' };
 
@@ -51,7 +51,7 @@ function parseCSV(text) {
   return { rows, error: null, isBackfillMode: headers.includes('id') && headers.includes('point_value') && !headers.includes('correct_answers') };
 }
 
-function rowToCard(row, deckId, order) {
+export function rowToCard(row, deckId, order) {
   const correctAnswers = row.correct_answers?.trim();
   if (!correctAnswers) return null;
 
@@ -93,7 +93,7 @@ function rowToCard(row, deckId, order) {
   };
 }
 
-const SAMPLE_CSV = `correct_answers,question_type,choice_2,choice_3,choice_4,choice_5,choice_6,canonical_answer,written_question,explanation,image_url,tags
+export const SAMPLE_CSV = `correct_answers,question_type,choice_2,choice_3,choice_4,choice_5,choice_6,canonical_answer,written_question,explanation,image_url,tags
 Elephant,multiple_choice,Lion,Giraffe,Zebra,Hippopotamus,Rhinoceros,,Which is the largest land animal?,Elephants are the largest land mammals on Earth reaching up to 13 feet tall.,,animals;vocabulary
 Sahara,multiple_choice,Gobi,Kalahari,Atacama,Arabian,Mojave,,What is the world's largest hot desert?,The Sahara covers about 9.2 million square kilometers across North Africa.,,geography;places
 True,true_false,False,,,,,,,Does the Earth orbit the Sun?,,science

@@ -12,6 +12,7 @@ import DeckCard from '@/components/deck/DeckCard';
 import ShareModal from '@/components/deck/ShareModal';
 import AddDeckByLinkDialog from '@/components/deck/AddDeckByLinkDialog';
 import CoverImagePicker from '@/components/deck/CoverImagePicker';
+import NewDeckDialog from '@/components/deck/NewDeckDialog';
 import { toast } from 'sonner';
 function makeToken() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -107,6 +108,7 @@ export default function Home() {
   };
 
   const [showForm, setShowForm] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
   const [editingDeck, setEditingDeck] = useState(null);
   const [shareDeck, setShareDeck] = useState(null);
   const [coverDeck, setCoverDeck] = useState(null);
@@ -129,7 +131,7 @@ export default function Home() {
     });
   }, [decks, search, ownershipFilter, ownedIds]);
 
-  const openCreate = () => {setEditingDeck(null);setFormTitle('');setFormDesc('');setShowForm(true);};
+  const openCreate = () => setShowCreate(true);
   const openEdit = (deck) => {setEditingDeck(deck);setFormTitle(deck.title);setFormDesc(deck.description || '');setShowForm(true);};
 
   const saveMutation = useMutation({
@@ -293,6 +295,8 @@ export default function Home() {
       <ShareModal deck={shareDeck} open={!!shareDeck} onClose={() => setShareDeck(null)} />
 
       <AddDeckByLinkDialog open={showAddLink} onClose={() => setShowAddLink(false)} />
+
+      <NewDeckDialog open={showCreate} onClose={() => setShowCreate(false)} />
 
       {coverDeck &&
       <CoverImagePicker
