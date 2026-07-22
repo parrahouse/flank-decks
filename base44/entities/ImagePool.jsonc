@@ -6,6 +6,10 @@
       "type": "string",
       "description": "URL of the stock image available to reuse as a deck cover"
     },
+    "name": {
+      "type": "string",
+      "description": "Optional short label for the image"
+    },
     "tags": {
       "type": "array",
       "description": "User-defined tags describing the image, used for search and AI suggestion matching",

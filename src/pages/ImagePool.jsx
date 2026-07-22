@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Upload, Loader2, Trash2, X, Images, Search } from 'lucide-react';
+import { Upload, Loader2, Trash2, X, Images, Search, Pencil } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,10 @@ export default function ImagePool() {
   const [pendingTags, setPendingTags] = useState('');
   const [tagQuery, setTagQuery] = useState('');
   const [deletingId, setDeletingId] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editName, setEditName] = useState('');
+  const [editTags, setEditTags] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const { data: pool = [], isLoading } = useQuery({
     queryKey: ['image-pool'],
@@ -58,6 +62,35 @@ export default function ImagePool() {
       toast.error('Could not remove image');
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const startEdit = (p) => {
+    setEditingId(p.id);
+    setEditName(p.name || '');
+    setEditTags((p.tags || []).join(', '));
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditName('');
+    setEditTags('');
+  };
+
+  const saveEdit = async (id) => {
+    setSavingEdit(true);
+    try {
+      await base44.entities.ImagePool.update(id, {
+        name: editName.trim(),
+        tags: parseTags(editTags),
+      });
+      qc.invalidateQueries(['image-pool']);
+      toast.success('Image updated');
+      cancelEdit();
+    } catch {
+      toast.error('Could not update image');
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -113,25 +146,68 @@ export default function ImagePool() {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
           {filtered.map((p) => (
-            <div key={p.id} className="group relative rounded-lg overflow-hidden border border-border bg-muted" style={{ aspectRatio: '4 / 3' }}>
-              <img src={p.image_url} alt={p.tags?.[0] || 'pool image'} className="w-full h-full object-cover" />
-              {(p.tags || []).length > 0 && (
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2 flex flex-wrap gap-1">
-                  {p.tags.map((t) => (
-                    <span key={t} className="text-[10px] bg-white/20 text-white px-1.5 py-0.5 rounded">{t}</span>
-                  ))}
+            <div key={p.id} className="group relative rounded-lg overflow-hidden border border-border bg-muted flex flex-col">
+              <div className="relative" style={{ aspectRatio: '4 / 3' }}>
+                <img src={p.image_url} alt={p.tags?.[0] || 'pool image'} className="w-full h-full object-cover" />
+                {p.name && (
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-1">
+                    <span className="text-xs text-white font-medium truncate">{p.name}</span>
+                  </div>
+                )}
+                {(p.tags || []).length > 0 && (
+                  <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/50 to-transparent p-2 flex flex-wrap gap-1">
+                    {p.tags.map((t) => (
+                      <span key={t} className="text-[10px] bg-white/20 text-white px-1.5 py-0.5 rounded">{t}</span>
+                    ))}
+                  </div>
+                )}
+                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => startEdit(p)}
+                    className="bg-black/60 text-white rounded-full p-1.5 hover:bg-primary"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(p.id)}
+                    disabled={deletingId === p.id}
+                    className="bg-black/60 text-white rounded-full p-1.5 hover:bg-destructive transition-colors"
+                  >
+                    {deletingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+              {editingId === p.id && (
+                <div className="p-2 space-y-2 border-t border-border bg-background">
+                  <input
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    placeholder="Name"
+                    className="w-full text-xs border border-border rounded-md px-2 py-1.5 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                  <input
+                    value={editTags}
+                    onChange={(e) => setEditTags(e.target.value)}
+                    placeholder="Tags (comma-separated)"
+                    className="w-full text-xs border border-border rounded-md px-2 py-1.5 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => saveEdit(p.id)}
+                      disabled={savingEdit}
+                      className="flex-1 text-xs bg-primary text-primary-foreground rounded-md py-1.5 font-medium hover:bg-primary/90 disabled:opacity-50"
+                    >
+                      {savingEdit ? <Loader2 className="w-3.5 h-3.5 animate-spin mx-auto" /> : 'Save'}
+                    </button>
+                    <button
+                      onClick={cancelEdit}
+                      className="px-3 text-xs border border-border rounded-md py-1.5 hover:bg-secondary"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
               )}
-              <button
-                onClick={() => handleDelete(p.id)}
-                disabled={deletingId === p.id}
-                className={cn(
-                  'absolute top-2 right-2 bg-black/60 text-white rounded-full p-1.5 hover:bg-destructive transition-colors',
-                  'opacity-0 group-hover:opacity-100'
-                )}
-              >
-                {deletingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-              </button>
             </div>
           ))}
         </div>
