@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Upload, Check, Loader2, X, Pencil } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import ImagePoolGallery from '@/components/deck/ImagePoolGallery';
 import { toast } from 'sonner';
 
 export default function CoverImagePicker({ open, onClose, cards, currentUrl, currentFocalPoint, currentOriginalUrl, onSave, deckTitle, deckDescription }) {
+  const qc = useQueryClient();
   const [selected, setSelected] = useState(currentUrl || null);
   const [originalUrl, setOriginalUrl] = useState(currentOriginalUrl || null);
   const [focalPoint, setFocalPoint] = useState(currentFocalPoint || { x: 50, y: 50 });
@@ -39,6 +41,7 @@ export default function CoverImagePicker({ open, onClose, cards, currentUrl, cur
     if (addToPool) {
       try {
         await base44.entities.ImagePool.create({ image_url: file_url, tags: parseTags(poolTags) });
+        qc.invalidateQueries(['image-pool']);
         toast.success('Image added to pool');
       } catch (e) {
         toast.error('Could not add image to pool');

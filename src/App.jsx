@@ -23,6 +23,7 @@ import SharedCollection from '@/pages/SharedCollection';
 import Groups from '@/pages/Groups';
 import GroupDetail from '@/pages/GroupDetail';
 import Discover from '@/pages/Discover';
+import ImagePool from '@/pages/ImagePool';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -57,6 +58,7 @@ const AuthenticatedApp = () => {
         <Route path="/groups" element={<Groups />} />
         <Route path="/groups/:groupId" element={<GroupDetail />} />
         <Route path="/discover" element={<Discover />} />
+        <Route path="/pool" element={<ImagePool />} />
       </Route>
       <Route path="/shared/:token" element={<SharedDeck />} />
       <Route path="/shared-collection/:token" element={<SharedCollection />} />
