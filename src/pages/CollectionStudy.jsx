@@ -197,6 +197,8 @@ export default function CollectionStudy() {
           filter_mode: 'collection',
           card_count: items.length,
           best_streak: bestStreak,
+          game_mode: gameMode,
+          hearts_remaining: gameMode ? hearts : null,
         });
 
         // Update UserCardStats
