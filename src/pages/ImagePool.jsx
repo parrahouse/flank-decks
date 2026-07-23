@@ -174,7 +174,7 @@ export default function ImagePool() {
                 {(p.tags || []).length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {p.tags.map((t) => (
-                      <span key={t} className="text-[10px] bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded">{t}</span>
+                      <span key={t} className="text-[10px] bg-muted-foreground/20 text-foreground px-2 py-0.5 rounded-full">{t}</span>
                     ))}
                   </div>
                 )}
