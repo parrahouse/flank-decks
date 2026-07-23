@@ -149,18 +149,6 @@ export default function ImagePool() {
             <div key={p.id} className="group relative rounded-lg overflow-hidden border border-border bg-muted flex flex-col">
               <div className="relative" style={{ aspectRatio: '4 / 3' }}>
                 <img src={p.image_url} alt={p.tags?.[0] || 'pool image'} className="w-full h-full object-cover" />
-                {p.name && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-1">
-                    <span className="text-xs text-white font-medium truncate">{p.name}</span>
-                  </div>
-                )}
-                {(p.tags || []).length > 0 && (
-                  <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/50 to-transparent p-2 flex flex-wrap gap-1">
-                    {p.tags.map((t) => (
-                      <span key={t} className="text-[10px] bg-white/20 text-white px-1.5 py-0.5 rounded">{t}</span>
-                    ))}
-                  </div>
-                )}
                 <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => startEdit(p)}
@@ -176,6 +164,20 @@ export default function ImagePool() {
                     {deletingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                   </button>
                 </div>
+              </div>
+              <div className="px-2 pt-2 pb-1 flex-1">
+                {p.name ? (
+                  <p className="text-xs font-medium truncate mb-1">{p.name}</p>
+                ) : (
+                  <p className="text-xs text-muted-foreground/50 italic truncate mb-1">Untitled</p>
+                )}
+                {(p.tags || []).length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {p.tags.map((t) => (
+                      <span key={t} className="text-[10px] bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded">{t}</span>
+                    ))}
+                  </div>
+                )}
               </div>
               {editingId === p.id && (
                 <div className="p-2 space-y-2 border-t border-border bg-background">
