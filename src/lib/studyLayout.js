@@ -32,7 +32,7 @@ export const CARD_GEO = {
   qPadImage:     '1.32cqi 1.32cqi 2.96cqi 1.32cqi', // 16/16/36/16
   qPadNoImage:   '1.65cqi 1.65cqi 3.29cqi 1.65cqi', // 20/20/40/20
   qFontImage:    'clamp(11px, 1.65cqi, 22px)',
-  qFontNoImage:  'clamp(16px, 2.96cqi, 40px)',
+  qFontNoImage:  'clamp(15px, 2.2cqi, 30px)', // ~27px at 1216 — a 1.33x step up from qFontImage
   choiceMaxH:    'clamp(30px, 4.28cqi, 56px)', // 52px
   choiceGap:     '0.41cqi', // 5px
   choicePad:     '0.74cqi 1.15cqi', // 9px 14px

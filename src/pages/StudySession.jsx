@@ -104,12 +104,7 @@ export default function StudySession() {
   const [cardIndex, setCardIndex] = useState(0);
   const [shuffledCards, setShuffledCards] = useState([]);
 
-  // Session-level card geometry inputs — constant for the whole session so the
-  // horizontal card layout never jumps between cards.
-  const reserveImageSlot = useMemo(
-    () => shuffledCards.some((c) => !!c.image_url),
-    [shuffledCards]
-  );
+  // Session-level choice-slot count, so bar height is identical on every card.
   const maxChoices = useMemo(
     () => Math.max(2, ...shuffledCards.map((c) => (c.choices || []).length)),
     [shuffledCards]
@@ -1258,7 +1253,6 @@ export default function StudySession() {
                 onToggleBookmark: handleToggleBookmark,
                 onFirstWrong: handleFirstWrong,
                 introReady,
-                reserveImageSlot,
                 maxChoices
               };
 

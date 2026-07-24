@@ -192,35 +192,6 @@ export default function DeckStats() {
 
   return (
     <div className="max-w-7xl mx-auto">
-
-      {/* TEMP — verification harness. Remove in Stage 2.
-          Visit this deck with ?previewpane=1 appended to the URL. */}
-      {new URLSearchParams(window.location.search).has('previewpane') && (
-        <div className="mb-6 border border-dashed border-border rounded-md p-4 space-y-5">
-          <p className="text-xs text-muted-foreground">
-            CardPreviewPane harness — three widths, same card. The image crop should be identical in all three.
-          </p>
-          {[560, 380, 260].map((w) => (
-            <div key={w} style={{ maxWidth: w }}>
-              <CardPreviewPane
-                imageUrl={activeCards.find((c) => c.image_url)?.image_url || ''}
-                question="Why does Tris jump on the train and leave the Dauntless compound in Chapter 28?"
-                choiceCount={4}
-                counter="1/37"
-              />
-            </div>
-          ))}
-          <div style={{ maxWidth: 560 }}>
-            <CardPreviewPane
-              question="Why does Tris jump on the train and leave the Dauntless compound in Chapter 28?"
-              choiceCount={4}
-              counter="1/37"
-              showImage={false}
-            />
-          </div>
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
         <Link to={`/deck/${deckId}`} className="text-muted-foreground hover:text-foreground transition-colors">

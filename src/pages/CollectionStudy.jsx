@@ -53,11 +53,7 @@ export default function CollectionStudy() {
   const [started, setStarted] = useState(false);
   const [shuffledCards, setShuffledCards] = useState([]);
 
-  // Session-level card geometry inputs — see StudySession.jsx
-  const reserveImageSlot = useMemo(
-    () => shuffledCards.some((c) => !!c.image_url),
-    [shuffledCards]
-  );
+  // Session-level choice-slot count — see StudySession.jsx
   const maxChoices = useMemo(
     () => Math.max(2, ...shuffledCards.map((c) => (c.choices || []).length)),
     [shuffledCards]
@@ -402,7 +398,6 @@ export default function CollectionStudy() {
     onToggleBookmark: async (cardId, newVal) => { await base44.entities.Card.update(cardId, { bookmarked: newVal }); },
     onFirstWrong: handleFirstWrong,
     introReady: questionReady,
-    reserveImageSlot,
     maxChoices,
   };
 

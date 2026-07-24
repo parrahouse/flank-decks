@@ -54,8 +54,7 @@ export default function StudyCardHorizontal({
   secondGuessAllowed = true,
   learningMode = false,
   handedness = 'left', // 'left' = answers on right, 'right' = answers on left
-  reserveImageSlot = false, // session-level: does ANY card in this set have an image?
-  maxChoices = 4,           // session-level: largest choices.length in this set
+  maxChoices = 4, // session-level: largest choices.length in this set
   onFirstWrong = null,
   introReady = true,
   childVariant = null,
@@ -268,23 +267,21 @@ export default function StudyCardHorizontal({
   // ── Left column: image + question ──────────────────────────────────────────
   const ImageQuestionCol = (
     <Pane {...paneProps} style={{ display: 'flex', flexDirection: 'column', flex: '0 0 48%', minWidth: 0, gap: 0 }}>
-      {/* Image region — reserved for the whole session so the layout never jumps.
-          Renders the neutral block when this particular card has no image. */}
-      {reserveImageSlot && (
+      {/* Image region — 75% of the column. Absent entirely on image-less cards,
+          which give the whole column to the question. */}
+      {hasImage && (
         <div style={{ width: '100%', flex: '0 0 75%', minHeight: 0, overflow: 'hidden', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {hasImage && (
-            <img src={card.image_url} alt="card" style={{ width: '100%', height: '100%', objectFit: card.image_fit || 'cover', objectPosition: (card.image_fit !== 'contain' && card.image_focal_point) ? `${card.image_focal_point.x}% ${card.image_focal_point.y}%` : 'center' }} />
-          )}
+          <img src={card.image_url} alt="card" style={{ width: '100%', height: '100%', objectFit: card.image_fit || 'cover', objectPosition: (card.image_fit !== 'contain' && card.image_focal_point) ? `${card.image_focal_point.x}% ${card.image_focal_point.y}%` : 'center' }} />
         </div>
       )}
 
       {/* Question pane — 25% of the column, or the whole column in a no-image session */}
       <div style={{
         width: '100%',
-        flex: reserveImageSlot ? '0 0 25%' : '1 1 0',
+        flex: hasImage ? '0 0 25%' : '1 1 0',
         minHeight: 0,
         backgroundColor: hintVisible ? '#EEFF41' : '#DFEDF5',
-        borderTop: reserveImageSlot ? '1px solid rgba(17,54,86,0.08)' : 'none',
+        borderTop: hasImage ? '1px solid rgba(17,54,86,0.08)' : 'none',
         position: 'relative',
         boxSizing: 'border-box', overflow: 'hidden', transition: 'background-color 0.2s',
       }}>
@@ -292,10 +289,10 @@ export default function StudyCardHorizontal({
         <div style={{
           width: '100%', height: '100%', boxSizing: 'border-box',
           display: 'flex',
-          alignItems: reserveImageSlot ? 'flex-start' : 'center',
-          padding: reserveImageSlot ? GEO.qPadImage : GEO.qPadNoImage,
+          alignItems: hasImage ? 'flex-start' : 'center',
+          padding: hasImage ? GEO.qPadImage : GEO.qPadNoImage,
         }}>
-          <p style={{ color: '#113656', fontSize: reserveImageSlot ? GEO.qFontImage : GEO.qFontNoImage, fontWeight: 500, lineHeight: 1.35, margin: 0, visibility: hintVisible ? 'hidden' : 'visible' }}>
+          <p style={{ color: '#113656', fontSize: hasImage ? GEO.qFontImage : GEO.qFontNoImage, fontWeight: 500, lineHeight: 1.35, margin: 0, visibility: hintVisible ? 'hidden' : 'visible' }}>
             {card.clue || ''}
           </p>
         </div>
