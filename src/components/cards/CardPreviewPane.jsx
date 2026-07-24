@@ -84,7 +84,7 @@ export default function CardPreviewPane({
                 {question}
               </p>
             </div>
-            <span style={{ position: 'absolute', bottom: 8, left: 16, color: '#113656', fontSize: 13, fontWeight: 700 }}>
+            <span style={{ position: 'absolute', bottom: 8, left: 16, color: '#113656', fontSize: 10, fontWeight: 700 }}>
               {counter}
             </span>
           </div>
