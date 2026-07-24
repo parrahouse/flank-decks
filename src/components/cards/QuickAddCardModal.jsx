@@ -73,10 +73,11 @@ export default function QuickAddCardModal({ open, onClose, deckId, deck, activeC
   // Form state
   const [qType, setQType] = useState('multiple_choice');
   const [question, setQuestion] = useState('');
-  const [answer, setAnswer] = useState(''); // still used by true_false + short_answer
+  const [answer, setAnswer] = useState(''); // used by true_false + short_answer
 
   // Answer bank — mirrors CardEditor's allChoicesList + correctSet model, so a
-  // card saved here opens identically in the detail editor.
+  // card saved here opens identically in the detail editor. Persists across
+  // type switches; only cleared on a full modal reset.
   const [choicesList, setChoicesList] = useState(['', '', '', '']);
   const [correctSet, setCorrectSet] = useState(new Set()); // trimmed choice strings
   const [imageUrl, setImageUrl] = useState('');
@@ -353,11 +354,15 @@ Return:
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium">Question Type</label>
                     <Select value={qType} onValueChange={(v) => {
+                      // Narrowing to single-select: keep at most one tick.
+                      if (v === 'multiple_choice' && correctSet.size > 1) {
+                        const first = choicesList.map(c => c.trim()).find(c => correctSet.has(c));
+                        setCorrectSet(new Set(first ? [first] : []));
+                      }
+                      // Clear the single-answer field only when it would be invalid.
+                      if (v === 'true_false' && answer !== 'True' && answer !== 'False') setAnswer('');
+                      else if (v === 'short_answer' && (answer === 'True' || answer === 'False')) setAnswer('');
                       setQType(v);
-                      setAnswer('');
-                      setChoicesList(['', '', '', '']);
-                      // Multiple Choice starts with none ticked; Select All hints at 2.
-                      setCorrectSet(new Set());
                     }}>
                       <SelectTrigger>
                         <SelectValue />
