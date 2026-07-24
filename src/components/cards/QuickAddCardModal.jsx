@@ -1,7 +1,10 @@
 /**
  * QuickAddCardModal — lightweight "add a card" wizard.
  *
- * Order: question type → question/clue → answer → image (optional)
+ * Stage 2: near-full-screen two-column layout. Left column is the form
+ * (what the card says), right column is a live CardPreviewPane capped at
+ * true study size (how the card looks). Header/footer pinned; columns
+ * scroll independently at md+; body scrolls as one below md.
  */
 import { useState, useRef, useEffect } from 'react';
 import {
@@ -22,6 +25,10 @@ import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// True inner width of the study card: max-w-7xl (1280) − page px-4 (32) − card p-4 (32).
+// Capping the preview here makes it 1:1 with study rather than merely proportional.
+const STUDY_CARD_TRUE_W = 1216;
 
 const STYLE_PRESETS = {
   pixel_art:    { label: 'Old School', emoji: '🕹️', enhancer: 'Mid-century retro illustration in vintage halftone print style. No gradients or modern shading. Bold black ink outlines, simplified shapes, matte aged quality.' },
@@ -250,7 +257,7 @@ Return:
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
-      <DialogContent className="max-w-5xl p-0 overflow-hidden">
+      <DialogContent className="w-[96vw] max-w-[1700px] h-[92vh] p-0 overflow-hidden flex flex-col">
         <AnimatePresence mode="wait">
 
           {/* ── STEP: input ───────────────────────────────────────────────── */}
@@ -261,21 +268,22 @@ Return:
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.18 }}
-              className="flex flex-col"
+              className="flex flex-col h-full min-h-0"
               onKeyDown={(e) => {
                 if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && canSave) handleSave();
               }}
             >
-              {/* Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+              {/* Header — pinned */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
                 <h2 className="font-semibold text-base">Create a Card</h2>
               </div>
 
-              {/* Body — what the card says | how the card looks */}
-              <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] max-h-[74vh] overflow-y-auto md:overflow-visible">
+              {/* Body — what the card says | how the card looks.
+                  Columns scroll independently at md+; below that the body scrolls as one. */}
+              <div className="grid grid-cols-1 md:grid-cols-[minmax(360px,420px)_1fr] flex-1 min-h-0 overflow-y-auto md:overflow-hidden">
 
                 {/* ── Left: form ──────────────────────────────────────────── */}
-                <div className="px-6 py-5 space-y-5 md:overflow-y-auto md:max-h-[74vh]">
+                <div className="px-6 py-5 space-y-5 min-h-0 md:overflow-y-auto">
 
                   {/* Question Type */}
                   <div className="space-y-1.5">
@@ -374,114 +382,116 @@ Return:
                 </div>
 
                 {/* ── Right: preview + image sources ──────────────────────── */}
-                <div className="px-6 py-5 md:border-l border-border bg-muted/20 space-y-3 md:overflow-y-auto md:max-h-[74vh]">
-                  <p className="text-sm font-medium">Card Preview</p>
+                <div className="px-6 py-5 md:border-l border-border bg-muted/20 min-h-0 md:overflow-y-auto">
+                  <div className="mx-auto w-full space-y-3" style={{ maxWidth: STUDY_CARD_TRUE_W }}>
+                    <p className="text-sm font-medium">Card Preview</p>
 
-                  <CardPreviewPane
-                    imageUrl={imageCard ? imageUrl : ''}
-                    question={question}
-                    choiceCount={previewChoiceCount}
-                    answerStyle={previewAnswerStyle}
-                    showImage={imageCard}
-                    counter={`${activeCards.length + 1}/${activeCards.length + 1}`}
-                    imageEmpty={
-                      <button
-                        type="button"
-                        onClick={() => fileRef.current?.click()}
-                        className="w-full h-full flex flex-col items-center justify-center gap-1 border-2 border-dashed border-muted-foreground/30 text-muted-foreground hover:border-primary/60 hover:text-primary transition-colors"
-                      >
-                        <ImageIcon className="w-5 h-5" />
-                        <span className="text-xs font-medium">Add Image</span>
-                      </button>
-                    }
-                  />
-
-                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
-
-                  {imageCard && (
-                    <>
-                      <div className="flex items-center gap-4 text-xs flex-wrap">
-                        <button type="button" onClick={() => fileRef.current?.click()} className="flex items-center gap-1 text-primary hover:underline">
-                          <Upload className="w-3 h-3" /> Upload
+                    <CardPreviewPane
+                      imageUrl={imageCard ? imageUrl : ''}
+                      question={question}
+                      choiceCount={previewChoiceCount}
+                      answerStyle={previewAnswerStyle}
+                      showImage={imageCard}
+                      counter={`${activeCards.length + 1}/${activeCards.length + 1}`}
+                      imageEmpty={
+                        <button
+                          type="button"
+                          onClick={() => fileRef.current?.click()}
+                          className="w-full h-full flex flex-col items-center justify-center gap-1 border-2 border-dashed border-muted-foreground/30 text-muted-foreground hover:border-primary/60 hover:text-primary transition-colors"
+                        >
+                          <ImageIcon className="w-6 h-6" />
+                          <span className="text-sm font-medium">Add Image</span>
                         </button>
-                        <button type="button" onClick={() => setImagePanel(v => v === 'pick' ? null : 'pick')} className={cn('flex items-center gap-1 hover:underline text-primary', imagePanel === 'pick' && 'font-semibold')}>
-                          <ImageIcon className="w-3 h-3" /> Pick from decks
-                        </button>
-                        {answer.trim() && (
-                          <button type="button" onClick={() => setImagePanel(v => v === 'search' ? null : 'search')} className={cn('flex items-center gap-1 hover:underline text-primary', imagePanel === 'search' && 'font-semibold')}>
-                            <Search className="w-3 h-3" /> Search
-                          </button>
-                        )}
-                        {answer.trim() && (
-                          <button type="button" onClick={() => setImagePanel(v => v === 'ai' ? null : 'ai')} className={cn('flex items-center gap-1 hover:underline text-primary', imagePanel === 'ai' && 'font-semibold')}>
-                            <Sparkles className="w-3 h-3" /> AI Generate
-                          </button>
-                        )}
-                        {imageUrl && (
-                          <button type="button" onClick={() => setImageUrl('')} className="text-muted-foreground hover:text-destructive ml-auto">
-                            Remove
-                          </button>
-                        )}
-                      </div>
+                      }
+                    />
 
-                      {imagePanel === 'search' && (
-                        <ImageSearchPanel
-                          defaultQuery={answer}
-                          onSelect={(url) => { setImageUrl(url); setImagePanel(null); }}
-                          onClose={() => setImagePanel(null)}
-                        />
-                      )}
-                      {imagePanel === 'pick' && (
-                        <ImagePickerFromDeck
-                          onSelect={(url) => { setImageUrl(url); setImagePanel(null); }}
-                          onClose={() => setImagePanel(null)}
-                        />
-                      )}
-                      {imagePanel === 'ai' && (
-                        <div className="border border-border rounded-lg p-3 space-y-3 bg-background">
-                          <p className="text-xs font-medium">Generate an image with AI</p>
-                          <Textarea
-                            value={aiPrompt}
-                            onChange={e => setAiPrompt(e.target.value)}
-                            placeholder="Describe what the image should show…"
-                            rows={2}
-                            className="resize-none text-sm"
-                          />
-                          <div className="grid grid-cols-2 gap-2">
-                            {Object.entries(STYLE_PRESETS).map(([key, { label, emoji }]) => (
-                              <button
-                                key={key}
-                                type="button"
-                                onClick={() => setAiStyle(key)}
-                                className={cn(
-                                  'flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition-colors text-left',
-                                  aiStyle === key
-                                    ? 'border-primary bg-primary/10 text-primary font-medium'
-                                    : 'border-border hover:border-primary/50 text-muted-foreground'
-                                )}
-                              >
-                                <span>{emoji}</span> {label}
-                              </button>
-                            ))}
-                          </div>
-                          <Button type="button" size="sm" onClick={handleGenerateAiImage} disabled={generatingImage} className="w-full gap-1.5">
-                            {generatingImage
-                              ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating…</>
-                              : <><Sparkles className="w-3.5 h-3.5" /> Generate Image</>}
-                          </Button>
+                    <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+
+                    {imageCard && (
+                      <>
+                        <div className="flex items-center gap-4 text-xs flex-wrap">
+                          <button type="button" onClick={() => fileRef.current?.click()} className="flex items-center gap-1 text-primary hover:underline">
+                            <Upload className="w-3 h-3" /> Upload
+                          </button>
+                          <button type="button" onClick={() => setImagePanel(v => v === 'pick' ? null : 'pick')} className={cn('flex items-center gap-1 hover:underline text-primary', imagePanel === 'pick' && 'font-semibold')}>
+                            <ImageIcon className="w-3 h-3" /> Pick from decks
+                          </button>
+                          {answer.trim() && (
+                            <button type="button" onClick={() => setImagePanel(v => v === 'search' ? null : 'search')} className={cn('flex items-center gap-1 hover:underline text-primary', imagePanel === 'search' && 'font-semibold')}>
+                              <Search className="w-3 h-3" /> Search
+                            </button>
+                          )}
+                          {answer.trim() && (
+                            <button type="button" onClick={() => setImagePanel(v => v === 'ai' ? null : 'ai')} className={cn('flex items-center gap-1 hover:underline text-primary', imagePanel === 'ai' && 'font-semibold')}>
+                              <Sparkles className="w-3 h-3" /> AI Generate
+                            </button>
+                          )}
+                          {imageUrl && (
+                            <button type="button" onClick={() => setImageUrl('')} className="text-muted-foreground hover:text-destructive ml-auto">
+                              Remove
+                            </button>
+                          )}
                         </div>
-                      )}
-                    </>
-                  )}
 
-                  <p className="text-xs text-muted-foreground">
-                    Shows how this card will be framed during study.
-                  </p>
+                        {imagePanel === 'search' && (
+                          <ImageSearchPanel
+                            defaultQuery={answer}
+                            onSelect={(url) => { setImageUrl(url); setImagePanel(null); }}
+                            onClose={() => setImagePanel(null)}
+                          />
+                        )}
+                        {imagePanel === 'pick' && (
+                          <ImagePickerFromDeck
+                            onSelect={(url) => { setImageUrl(url); setImagePanel(null); }}
+                            onClose={() => setImagePanel(null)}
+                          />
+                        )}
+                        {imagePanel === 'ai' && (
+                          <div className="border border-border rounded-lg p-3 space-y-3 bg-background">
+                            <p className="text-xs font-medium">Generate an image with AI</p>
+                            <Textarea
+                              value={aiPrompt}
+                              onChange={e => setAiPrompt(e.target.value)}
+                              placeholder="Describe what the image should show…"
+                              rows={2}
+                              className="resize-none text-sm"
+                            />
+                            <div className="grid grid-cols-2 gap-2 max-w-md">
+                              {Object.entries(STYLE_PRESETS).map(([key, { label, emoji }]) => (
+                                <button
+                                  key={key}
+                                  type="button"
+                                  onClick={() => setAiStyle(key)}
+                                  className={cn(
+                                    'flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition-colors text-left',
+                                    aiStyle === key
+                                      ? 'border-primary bg-primary/10 text-primary font-medium'
+                                      : 'border-border hover:border-primary/50 text-muted-foreground'
+                                  )}
+                                >
+                                  <span>{emoji}</span> {label}
+                                </button>
+                              ))}
+                            </div>
+                            <Button type="button" size="sm" onClick={handleGenerateAiImage} disabled={generatingImage} className="gap-1.5 max-w-md w-full">
+                              {generatingImage
+                                ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating…</>
+                                : <><Sparkles className="w-3.5 h-3.5" /> Generate Image</>}
+                            </Button>
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    <p className="text-xs text-muted-foreground">
+                      Shows how this card will be framed during study.
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              {/* Footer */}
-              <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-2 bg-muted/30">
+              {/* Footer — pinned */}
+              <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-2 bg-muted/30 shrink-0">
                 <Button variant="ghost" onClick={handleClose}>Cancel</Button>
                 <Button onClick={handleSave} disabled={!canSave} className="gap-1.5">
                   <Check className="w-4 h-4" /> Save
@@ -498,7 +508,7 @@ Return:
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.96 }}
               transition={{ duration: 0.2 }}
-              className="flex flex-col items-center justify-center py-24 gap-4"
+              className="flex flex-col items-center justify-center h-full py-24 gap-4"
             >
               <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
                 <Loader2 className="w-7 h-7 text-primary animate-spin" />
@@ -515,7 +525,7 @@ Return:
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.22 }}
-              className="flex flex-col items-center justify-center py-12 px-8 gap-5 text-center"
+              className="flex flex-col items-center justify-center h-full py-12 px-8 gap-5 text-center overflow-y-auto"
             >
               <div className="w-14 h-14 rounded-full bg-success/15 flex items-center justify-center">
                 <Check className="w-7 h-7 text-success" />
