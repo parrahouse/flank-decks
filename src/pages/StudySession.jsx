@@ -102,6 +102,17 @@ export default function StudySession() {
   const [learningModeOverride, setLearningModeOverride] = useState(null); // null = auto, true/false = manual
   const [cardIndex, setCardIndex] = useState(0);
   const [shuffledCards, setShuffledCards] = useState([]);
+
+  // Session-level card geometry inputs — constant for the whole session so the
+  // horizontal card layout never jumps between cards.
+  const reserveImageSlot = useMemo(
+    () => shuffledCards.some((c) => !!c.image_url),
+    [shuffledCards]
+  );
+  const maxChoices = useMemo(
+    () => Math.max(2, ...shuffledCards.map((c) => (c.choices || []).length)),
+    [shuffledCards]
+  );
   const [done, setDone] = useState(false);
   const [scores, setScores] = useState([]);
   const [firstWrongChoices, setFirstWrongChoices] = useState([]);
@@ -1241,7 +1252,9 @@ export default function StudySession() {
                 isBookmarked: !!current.bookmarked,
                 onToggleBookmark: handleToggleBookmark,
                 onFirstWrong: handleFirstWrong,
-                introReady
+                introReady,
+                reserveImageSlot,
+                maxChoices
               };
 
               const childVariant = {

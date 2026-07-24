@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { BarChart2, RotateCcw, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { STUDY_CARD_H } from '@/lib/studyLayout';
+import { STUDY_CARD_H, STUDY_CARD_BOX_H } from '@/lib/studyLayout';
 
 const CORRECT_KEYS = new Set(['correct', 'second_guess', 'correct_after_clue', 'second_guess_after_clue', 'partial']);
 const SECOND_GUESS_KEYS = new Set(['second_guess', 'second_guess_after_clue']);
@@ -87,7 +87,7 @@ export default function SessionStatsPanel({
   // a single fixed-height box, actions pinned at the bottom.
   if (useHorizontal) {
     return (
-      <div style={{ height: STUDY_CARD_H.horizontal }} className="w-full flex flex-col justify-between gap-6 px-6 py-6 overflow-hidden">
+      <div style={STUDY_CARD_BOX_H} className="flex flex-col justify-between gap-6 px-6 py-6 overflow-hidden">
         {header}
         {tiles}
         {actions}
