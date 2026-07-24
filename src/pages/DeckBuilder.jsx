@@ -1,25 +1,49 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, ArrowLeft, Pencil, Trash2, GalleryVerticalEnd, Image as ImageIcon, Cog, X, Upload, RotateCcw, PieChart, Archive, CircleDot, CheckSquare, ToggleRight, Play, Sparkles, Check, FolderOpen, ChevronDown, Loader2 } from 'lucide-react';
-import AiCardSuggestionsModal from '@/components/cards/AiCardSuggestionsModal';
-import QuickAddCardModal from '@/components/cards/QuickAddCardModal';
+import { ArrowLeft, BarChart2, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import CardEditor from '@/components/cards/CardEditor';
-import CsvUploadModal from '@/components/cards/CsvUploadModal';
-import DeckCollectionsDialog from '@/components/collections/DeckCollectionsDialog';
-import CardFilterBar from '@/components/cards/CardFilterBar';
-import BinPanel from '@/components/cards/BinPanel';
-import CardPreviewModal from '@/components/cards/CardPreviewModal';
-import CardPreviewPane from '@/components/cards/CardPreviewPane';
-import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import { CORRECT_KEYS, capped, mean, median } from '@/lib/statsUtils';
+import OverviewTiles from '@/components/stats/OverviewTiles';
+import TrendCharts from '@/components/stats/TrendCharts';
+import MasteryTimelineSection from '@/components/stats/MasteryTimelineSection';
+import PerCardTable from '@/components/stats/PerCardTable';
+import QuestionTypeBreakdown from '@/components/stats/QuestionTypeBreakdown';
+import HabitsSection from '@/components/stats/HabitsSection';
+import SessionLog from '@/components/stats/SessionLog';
 
-export default function DeckBuilder() {
+function ReadinessBar({ pct }) {
+  const level =
+    pct >= 90 ? { label: 'Test Ready', color: 'bg-success', text: 'text-success' } :
+    pct >= 75 ? { label: 'Almost There', color: 'bg-amber-400', text: 'text-amber-600' } :
+    pct >= 50 ? { label: 'Getting There', color: 'bg-orange-400', text: 'text-orange-600' } :
+               { label: 'Needs Practice', color: 'bg-destructive', text: 'text-destructive' };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-muted-foreground">Test Readiness</span>
+        <span className={cn('font-semibold', level.text)}>{level.label}</span>
+      </div>
+      <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+        <div
+          className={cn('h-3 rounded-full transition-all duration-700', level.color)}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <p className="text-xs text-muted-foreground text-right">{Math.round(pct)}% average score</p>
+    </div>
+  );
+}
+
+function SectionHeading({ children }) {
+  return <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">{children}</h2>;
+}
+
+export default function DeckStats() {
   const { deckId } = useParams();
-  const qc = useQueryClient();
 
   const { data: deck } = useQuery({
     queryKey: ['deck', deckId],
@@ -27,18 +51,21 @@ export default function DeckBuilder() {
     enabled: !!deckId,
   });
 
-  const { data: allDeckCards = [], isLoading } = useQuery({
-    queryKey: ['cards', deckId],
-    queryFn: () => base44.entities.Card.filter({ deck_id: deckId }, 'order'),
-    enabled: !!deckId,
-  });
-
-  const activeCards = allDeckCards.filter(c => !c.deleted);
-  const deletedCards = allDeckCards.filter(c => c.deleted === true);
-
   const { data: currentUser } = useQuery({
     queryKey: ['me'],
     queryFn: () => base44.auth.me(),
+  });
+
+  const { data: sessions = [], isLoading } = useQuery({
+    queryKey: ['study-sessions', deckId, currentUser?.email],
+    queryFn: () => base44.entities.StudySession.filter({ deck_id: deckId, created_by: currentUser.email }, '-created_date'),
+    enabled: !!deckId && !!currentUser?.email,
+  });
+
+  const { data: cards = [] } = useQuery({
+    queryKey: ['cards', deckId],
+    queryFn: () => base44.entities.Card.filter({ deck_id: deckId }, 'order').then(r => r.filter(c => !c.deleted)),
+    enabled: !!deckId,
   });
 
   const { data: cardStats = [] } = useQuery({
@@ -47,204 +74,126 @@ export default function DeckBuilder() {
     enabled: !!deckId && !!currentUser?.id,
   });
 
-  const masteredCardIds = useMemo(() => new Set(cardStats.filter(s => s.mastered).map(s => s.card_id)), [cardStats]);
+  const sessionsAsc = useMemo(
+    () => [...sessions].sort((a, b) => new Date(a.created_date) - new Date(b.created_date)),
+    [sessions]
+  );
 
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
-  useEffect(() => {
-    const handler = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handler);
-    return () => window.removeEventListener('resize', handler);
-  }, []);
-
-  // UI state
-  const [showEditor, setShowEditor] = useState(false);
-  const [editingCard, setEditingCard] = useState(null);
-  const [showCsvUpload, setShowCsvUpload] = useState(false);
-  const [editorDirty, setEditorDirty] = useState(false);
-  const [showDiscardDialog, setShowDiscardDialog] = useState(false);
-  const [showBin, setShowBin] = useState(false);
-  const [showAiSuggest, setShowAiSuggest] = useState(false);
-  const [showQuickAdd, setShowQuickAdd] = useState(false);
-  const [showCollections, setShowCollections] = useState(false);
-  const [previewCard, setPreviewCard] = useState(null);
-  const [closeDropdownOpen, setCloseDropdownOpen] = useState(false);
-  const editorSaveRef = useRef(null);
-
-  // Description editing
-  const [editingDesc, setEditingDesc] = useState(false);
-  const [descValue, setDescValue] = useState('');
-  const [draftingDesc, setDraftingDesc] = useState(false);
-
-  const startEditDesc = () => { setDescValue(deck?.description || ''); setEditingDesc(true); };
-  const saveDesc = () => { updateDeckMutation.mutate({ description: descValue }); setEditingDesc(false); };
-  const cancelEditDesc = () => setEditingDesc(false);
-
-  // Title editing
-  const [editingTitle, setEditingTitle] = useState(false);
-  const [titleValue, setTitleValue] = useState('');
-  const startEditTitle = () => { setTitleValue(deck?.title || ''); setEditingTitle(true); };
-  const saveTitle = () => {
-    const trimmed = titleValue.trim();
-    if (!trimmed) return;
-    updateDeckMutation.mutate({ title: trimmed });
-    setEditingTitle(false);
-  };
-  const cancelEditTitle = () => setEditingTitle(false);
-
-  const DESC_MAX = 150;
-
-  const draftDescription = async () => {
-    setDraftingDesc(true);
-    const cardList = activeCards.map(c => c.correct_answers || c.correct_answer).filter(Boolean).slice(0, 60).join(', ');
-    const result = await base44.integrations.Core.InvokeLLM({
-      prompt: `Write a concise description for a flashcard deck titled "${deck?.title}". The deck contains cards about: ${cardList}. Be specific and informative. No fluff. IMPORTANT: the description must be 150 characters or fewer.`,
-    });
-    const draft = typeof result === 'string' ? result : result?.text || '';
-    setDescValue(draft.slice(0, DESC_MAX));
-    setDraftingDesc(false);
-  };
-
-  // Filter / sort state
-  const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState('order');
-  const [masteryFilter, setMasteryFilter] = useState('all');
-  const [tagFilters, setTagFilters] = useState([]);
-
-  const allTags = useMemo(() => {
-    const set = new Set();
-    activeCards.forEach(c => (c.tags || []).forEach(t => set.add(t)));
-    return Array.from(set).sort();
-  }, [activeCards]);
-
-  const displayedCards = useMemo(() => {
-    let cards = [...activeCards];
-
-    // Mastery filter
-    if (masteryFilter === 'mastered') cards = cards.filter(c => masteredCardIds.has(c.id));
-    else if (masteryFilter === 'unmastered') cards = cards.filter(c => !masteredCardIds.has(c.id));
-
-    // Tag filter (multi)
-    if (tagFilters.length > 0) cards = cards.filter(c => tagFilters.some(t => (c.tags || []).includes(t)));
-
-    // Search
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      cards = cards.filter(c =>
-        c.correct_answer?.toLowerCase().includes(q) ||
-        (c.tags || []).some(t => t.toLowerCase().includes(q))
-      );
-    }
-
-    // Sort
-    if (sortBy === 'created_date') cards.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
-    else if (sortBy === 'updated_date') cards.sort((a, b) => new Date(b.updated_date) - new Date(a.updated_date));
-
-    return cards;
-  }, [activeCards, search, sortBy, masteryFilter, tagFilters, masteredCardIds]);
-
-  const exportCsv = () => {
-    const rows = [
-      ['correct_answers', 'question_type', 'choice_2', 'choice_3', 'choice_4', 'choice_5', 'choice_6', 'clue', 'explanation', 'image_url', 'tags'],
-      ...activeCards.map(c => {
-        const correct = (c.correct_answers || c.correct_answer || '').split('|')[0].trim();
-        const decoys = (c.choices || []).filter(ch => ch !== correct);
-        const choiceCols = [decoys[0] || '', decoys[1] || '', decoys[2] || '', decoys[3] || '', decoys[4] || ''];
-        return [
-          c.correct_answers || c.correct_answer || '',
-          c.question_type || 'multiple_choice',
-          ...choiceCols,
-          c.clue || '',
-          c.explanation || '',
-          c.image_url || '',
-          (c.tags || []).join(';'),
-        ];
-      }),
-    ];
-    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${deck?.title || 'deck'}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const openAdd = () => { setShowQuickAdd(true); };
-  const openAddLegacy = () => { setEditingCard(null); setEditorDirty(false); setShowEditor(true); };
-  const openEdit = (card) => { setEditingCard(card); setEditorDirty(false); setShowEditor(true); };
-
-  const requestCloseEditor = () => {
-    if (editorDirty) setShowDiscardDialog(true);
-    else closeEditor();
-  };
-
-  const closeEditor = () => {
-    setShowEditor(false);
-    setEditorDirty(false);
-    setShowDiscardDialog(false);
-    setCloseDropdownOpen(false);
-  };
-
-  const saveMutation = useMutation({
-    mutationFn: async (data) => {
-      if (editingCard) {
-        return base44.entities.Card.update(editingCard.id, data);
-      } else {
-        return base44.entities.Card.create({ ...data, deck_id: deckId, order: activeCards.length });
-      }
-    },
-    onSuccess: () => {
-      qc.invalidateQueries(['cards', deckId]);
-      qc.invalidateQueries(['cards-all']);
-      setShowEditor(false);
-      toast.success(editingCard ? 'Card updated' : 'Card added');
-    },
-  });
-
-  const invalidateCards = () => {
-    qc.invalidateQueries(['cards', deckId]);
-    qc.invalidateQueries(['cards-all']);
-  };
-
-  const deleteMutation = useMutation({
-    mutationFn: (card) => base44.entities.Card.update(card.id, { deleted: true }),
-    onSuccess: (_, card) => {
-      invalidateCards();
-      toast.success('Card moved to bin', {
-        action: { label: 'Undo', onClick: () => restoreMutation.mutate(card) },
+  const perCard = useMemo(() => {
+    const acc = {};
+    sessions.forEach((s) => {
+      (s.card_results || []).forEach((r) => {
+        if (!r.card_id) return;
+        (acc[r.card_id] ||= { results: [] }).results.push({
+          key: r.key,
+          points: r.points,
+          first_wrong: r.first_wrong,
+          time_to_answer_ms: r.time_to_answer_ms,
+          session_created: s.created_date,
+        });
       });
-    },
-  });
+    });
+    return acc;
+  }, [sessions]);
 
-  const restoreMutation = useMutation({
-    mutationFn: (card) => base44.entities.Card.update(card.id, { deleted: false }),
-    onSuccess: () => {
-      invalidateCards();
-      toast.success('Card restored');
-    },
-  });
+  const cardRows = useMemo(() => {
+    const statByCard = Object.fromEntries(cardStats.map((s) => [s.card_id, s]));
+    return cards.map((c) => {
+      const stat = statByCard[c.id];
+      const results = perCard[c.id]?.results || [];
+      const correctResults = results.filter((r) => CORRECT_KEYS.has(r.key));
+      const firstTryCorrect = results.filter((r) => CORRECT_KEYS.has(r.key) && r.first_wrong == null);
+      const firstTryPct = results.length ? firstTryCorrect.length / results.length : null;
+      const timesCapped = results.map((r) => capped(r.time_to_answer_ms)).filter((t) => t != null);
+      const avgTime = timesCapped.length ? mean(timesCapped) : null;
+      const accuracy = stat && stat.total_attempts > 0 ? stat.correct_attempts / stat.total_attempts : null;
+      const attempts = stat?.total_attempts ?? 0;
+      const fastest = stat?.fastest_answer_ms ?? null;
 
-  const permanentDeleteMutation = useMutation({
-    mutationFn: (card) => base44.entities.Card.delete(card.id),
-    onSuccess: () => {
-      invalidateCards();
-      toast.success('Card permanently deleted');
-    },
-  });
+      const ordered = [...results].sort((a, b) => new Date(a.session_created) - new Date(b.session_created));
+      const last5 = ordered.slice(-5);
+      const last5Acc = last5.length ? last5.filter((r) => CORRECT_KEYS.has(r.key)).length / last5.length : null;
+      const overallAcc = results.length ? correctResults.length / results.length : null;
+      let trend = 'flat';
+      if (last5Acc != null && overallAcc != null) {
+        if (last5Acc > overallAcc + 0.1) trend = 'up';
+        else if (last5Acc < overallAcc - 0.1) trend = 'down';
+      }
 
-  const updateDeckMutation = useMutation({
-    mutationFn: (data) => base44.entities.Deck.update(deckId, data),
-    onSuccess: () => { qc.invalidateQueries(['deck', deckId]); toast.success('Deck settings saved'); },
-  });
+      const mastered = !!stat?.mastered;
+      const timeToMasterMs = (stat?.mastered_at && stat?.first_studied_date)
+        ? new Date(stat.mastered_at) - new Date(stat.first_studied_date)
+        : null;
+
+      const missCounts = {};
+      results.forEach((r) => { if (r.first_wrong) missCounts[r.first_wrong] = (missCounts[r.first_wrong] || 0) + 1; });
+      let commonMiss = null;
+      Object.entries(missCounts).forEach(([t, n]) => { if (!commonMiss || n > commonMiss.count) commonMiss = { text: t, count: n }; });
+
+      return { card: c, stat, results, accuracy, attempts, firstTryPct, avgTime, fastest, trend, mastered, timeToMasterMs, commonMiss };
+    });
+  }, [cards, cardStats, perCard]);
+
+  const overview = useMemo(() => {
+    const count = sessions.length;
+    const durations = sessions.map((s) => s.duration_ms).filter((d) => d != null);
+    const totalStudy = durations.reduce((a, b) => a + b, 0);
+    const avgSession = durations.length ? totalStudy / durations.length : null;
+    const scores = sessions.map((s) => s.score_pct);
+    const avgScore = scores.length ? mean(scores) : null;
+    const best = scores.length ? Math.max(...scores) : null;
+    const worst = scores.length ? Math.min(...scores) : null;
+
+    const allTimes = [];
+    sessions.forEach((s) => {
+      (s.card_results || []).forEach((r) => { if (r.time_to_answer_ms != null) allTimes.push(capped(r.time_to_answer_ms)); });
+    });
+    const avgTimePerCard = allTimes.length ? mean(allTimes) : null;
+
+    const activeIds = new Set(cards.map((c) => c.id));
+    const masteredActive = cardStats.filter((s) => s.mastered && activeIds.has(s.card_id));
+    const ttm = masteredActive
+      .map((s) => (s.mastered_at && s.first_studied_date) ? new Date(s.mastered_at) - new Date(s.first_studied_date) : null)
+      .filter((x) => x != null && isFinite(x));
+    const medianTtm = ttm.length ? median(ttm) : null;
+    const atm = cardStats.map((s) => s.attempts_to_master).filter((x) => x != null);
+    const avgAttemptsMaster = atm.length ? mean(atm) : null;
+    const streaks = sessions.map((s) => s.best_streak).filter((x) => x != null);
+    const longestStreak = streaks.length ? Math.max(...streaks) : null;
+
+    let ftTotal = 0, ftFirst = 0;
+    sessions.forEach((s) => {
+      (s.card_results || []).forEach((r) => {
+        ftTotal++;
+        if (CORRECT_KEYS.has(r.key) && r.first_wrong == null) ftFirst++;
+      });
+    });
+    const firstTryAcc = ftTotal ? ftFirst / ftTotal : null;
+
+    return {
+      count, totalStudy, avgSession, durationsCount: durations.length,
+      avgScore, best, worst,
+      avgTimePerCard, timeBasisCount: allTimes.length,
+      masteredCount: masteredActive.length, totalCards: cards.length,
+      medianTtm, ttmCount: ttm.length,
+      avgAttemptsMaster, atmCount: atm.length,
+      longestStreak,
+      firstTryAcc, ftTotal,
+    };
+  }, [sessions, cardStats, cards]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-7 h-7 border-4 border-muted border-t-primary rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
-    <div className="flex min-h-[calc(100vh-3.5rem)]">
-    {/* Main content */}
-    <div className={`flex-1 px-4 py-8 transition-all duration-300 ${showEditor ? 'md:mr-[640px]' : ''}`}>
     <div className="max-w-7xl mx-auto">
 
-      {/* TEMP — Stage 1 verification harness. Delete in Stage 2.
+      {/* TEMP — verification harness. Remove in Stage 2.
           Visit this deck with ?previewpane=1 appended to the URL. */}
       {new URLSearchParams(window.location.search).has('previewpane') && (
         <div className="mb-6 border border-dashed border-border rounded-md p-4 space-y-5">
@@ -273,365 +222,80 @@ export default function DeckBuilder() {
       )}
 
       {/* Header */}
-      <div className="mb-6 bg-card border border-border rounded-md overflow-hidden hover:shadow-md transition-all duration-200">
-        {/* Title + description */}
-        <div className="px-4 pt-4 pb-3">
-          {editingTitle ? (
-            <div className="flex items-center gap-2">
-              <input
-                autoFocus
-                value={titleValue}
-                onChange={e => setTitleValue(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') saveTitle(); if (e.key === 'Escape') cancelEditTitle(); }}
-                placeholder="Deck title"
-                className="text-xl font-bold bg-transparent border-b border-primary focus:outline-none flex-1 min-w-0"
-              />
-              <button onClick={saveTitle} className="flex items-center gap-1 text-xs text-primary hover:underline font-medium shrink-0">
-                <Check className="w-3.5 h-3.5" /> Save
-              </button>
-              <button onClick={cancelEditTitle} className="text-xs text-muted-foreground hover:text-foreground shrink-0">Cancel</button>
-            </div>
-          ) : (
-            <h1 className="text-xl font-bold group/title flex items-center gap-1.5 cursor-text" onClick={startEditTitle} title="Click to edit title">
-              {deck?.title || 'Loading…'}
-              <Pencil className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover/title:opacity-100 transition-opacity" />
-            </h1>
-          )}
-          {editingDesc ? (
-            <div className="mt-1.5 flex flex-col gap-1.5">
-              <div className="relative">
-                <textarea
-                  autoFocus
-                  value={descValue}
-                  onChange={e => setDescValue(e.target.value.slice(0, DESC_MAX))}
-                  placeholder="Add a description…"
-                  rows={2}
-                  maxLength={DESC_MAX}
-                  className="w-full text-sm border border-border rounded-md px-2.5 py-1.5 bg-background text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-ring pr-14"
-                />
-                <span className={`absolute bottom-2 right-2 text-xs tabular-nums ${descValue.length >= DESC_MAX ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
-                  {descValue.length}/{DESC_MAX}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button onClick={saveDesc} className="flex items-center gap-1 text-xs text-primary hover:underline font-medium">
-                  <Check className="w-3.5 h-3.5" /> Save
-                </button>
-                <button onClick={cancelEditDesc} className="text-xs text-muted-foreground hover:text-foreground">Cancel</button>
-                {activeCards.length > 0 && (
-                  <button
-                    onClick={draftDescription}
-                    disabled={draftingDesc}
-                    className="ml-auto flex items-center gap-1 text-xs text-accent-foreground bg-accent hover:bg-accent/80 px-2 py-0.5 rounded-md disabled:opacity-50"
-                  >
-                    <Sparkles className="w-3 h-3" />
-                    {draftingDesc ? 'Drafting…' : 'AI draft'}
-                  </button>
-                )}
-              </div>
-            </div>
-          ) : (
-            <button onClick={startEditDesc} className="group flex items-start gap-1 text-left mt-0.5">
-              {deck?.description
-                ? <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors line-clamp-2">{deck.description}</span>
-                : <span className="text-sm text-muted-foreground/50 italic group-hover:text-muted-foreground transition-colors">Add description…</span>
-              }
-              <Pencil className="w-3 h-3 text-muted-foreground/40 group-hover:text-muted-foreground shrink-0 mt-0.5 transition-colors" />
-            </button>
-          )}
-          <p className="text-muted-foreground text-xs mt-1">{activeCards.length} {activeCards.length === 1 ? 'card' : 'cards'}</p>
+      <div className="flex items-center gap-3 mb-8">
+        <Link to={`/deck/${deckId}`} className="text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft className="w-5 h-5" />
+        </Link>
+        <div className="flex-1">
+          <h1 className="text-xl font-bold">{deck?.title}</h1>
+          <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+            <BarChart2 className="w-3.5 h-3.5" /> Progress & Stats
+          </p>
         </div>
-
-        {/* Action toolbar */}
-        <div className="border-t border-border px-3 py-2 flex items-center gap-1">
-          <Link to={`/stats/${deckId}`}>
-            <Button variant="ghost" size="sm" className="gap-1.5 h-9 text-muted-foreground hover:text-foreground">
-              <PieChart className="w-4 h-4" /> Stats
-            </Button>
-          </Link>
-          <Link to={`/settings/${deckId}`}>
-            <Button variant="ghost" size="sm" className="gap-1.5 h-9 text-muted-foreground hover:text-foreground">
-              <Cog className="w-4 h-4" /> Settings
-            </Button>
-          </Link>
-
-          <Button variant="ghost" size="sm" onClick={openAdd} className="gap-1.5 h-9">
-            <Plus className="w-4 h-4" /> Add Card
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setShowCsvUpload(true)} className="gap-1.5 h-9 text-muted-foreground hover:text-foreground">
-            <Upload className="w-4 h-4" /> Import CSV
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setShowCollections(true)} className="gap-1.5 h-9 text-muted-foreground hover:text-foreground">
-            <FolderOpen className="w-4 h-4" /> Collections
-          </Button>
-          <Link to={`/study/${deckId}`} className="ml-auto flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors">
-            <GalleryVerticalEnd className="w-4 h-4" /> Study
-          </Link>
-        </div>
+        <Link to={`/study/${deckId}`}>
+          <Button size="sm" className="gap-1.5"><BookOpen className="w-4 h-4" /> Study Now</Button>
+        </Link>
       </div>
 
-      {/* Filter bar */}
-      {activeCards.length > 0 && (
-        <CardFilterBar
-          search={search}
-          onSearch={setSearch}
-          sortBy={sortBy}
-          onSort={setSortBy}
-          masteryFilter={masteryFilter}
-          onMasteryFilter={setMasteryFilter}
-          allTags={allTags}
-          tagFilters={tagFilters}
-          onTagFilters={setTagFilters}
-        />
-      )}
-
-      {/* Cards grid */}
-      {isLoading ? (
-        <div className={`grid gap-4 ${showEditor ? 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4'}`}>
-          {[1,2,3,4].map(i => <div key={i} className="h-40 rounded-xl bg-muted animate-pulse" />)}
-        </div>
-      ) : activeCards.length === 0 ? (
+      {!sessions.length ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
           <div className="w-14 h-14 rounded-2xl bg-accent flex items-center justify-center">
-            <ImageIcon className="w-7 h-7 text-accent-foreground" />
+            <BarChart2 className="w-7 h-7 text-accent-foreground" />
           </div>
-          <h2 className="font-semibold">No cards yet</h2>
-          <p className="text-muted-foreground text-sm max-w-xs">Add your first card with an image and word bank choices.</p>
-          <div className="flex gap-2 mt-1">
-            <Button onClick={openAdd} className="gap-1.5"><Plus className="w-4 h-4" /> Add Card</Button>
-            <Button variant="outline" onClick={() => setShowCsvUpload(true)} className="gap-1.5"><Upload className="w-4 h-4" /> Import CSV</Button>
-          </div>
-        </div>
-      ) : displayedCards.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 gap-2 text-center text-muted-foreground">
-          <p className="text-sm font-medium">No cards match your filters</p>
-          <button onClick={() => { setSearch(''); setSortBy('order'); setMasteryFilter('all'); setTagFilters([]); }} className="text-xs text-primary hover:underline">
-            Clear filters
-          </button>
+          <h2 className="font-semibold">No study sessions yet</h2>
+          <p className="text-muted-foreground text-sm max-w-xs">Complete a study session to see your stats here.</p>
+          <Link to={`/study/${deckId}`}><Button className="mt-1 gap-1.5"><BookOpen className="w-4 h-4" /> Start Studying</Button></Link>
         </div>
       ) : (
-        <div className={`grid gap-4 ${showEditor ? 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4'}`}>
-          {displayedCards.map((card, idx) => (
-            <div key={card.id} onClick={() => openEdit(card)} className="group relative bg-card border border-border rounded-xl overflow-hidden hover:shadow-md transition-all cursor-pointer">
-              <div className="bg-muted h-28 flex items-center justify-center overflow-hidden">
-                {card.image_url
-                  ? <img src={card.image_url} alt="" className="w-full h-full object-cover" />
-                  : card.clue
-                    ? <p className="px-3 text-sm font-medium text-foreground line-clamp-4 leading-snug">{card.clue}</p>
-                    : <ImageIcon className="w-6 h-6 text-muted-foreground" />}
-              </div>
-              <div className="p-3">
-                <p className="text-sm font-medium text-foreground truncate">{card.correct_answers || card.correct_answer}</p>
-                <div className="flex items-center gap-1.5 mt-0.5 text-muted-foreground">
-                  {card.question_type === 'select_all'
-                    ? <CheckSquare className="w-3 h-3 shrink-0" />
-                    : card.question_type === 'true_false'
-                    ? <ToggleRight className="w-3 h-3 shrink-0" />
-                    : <CircleDot className="w-3 h-3 shrink-0" />}
-                  <p className="text-xs">{card.choices?.length ?? 0} choices</p>
-                </div>
-                {card.tags?.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-1.5">
-                    {card.tags.map(tag => (
-                      <span key={tag} className="text-xs bg-accent text-accent-foreground px-1.5 py-0.5 rounded-full">{tag}</span>
-                    ))}
-                  </div>
-                )}
-              </div>
-              {masteredCardIds.has(card.id) && (
-                <span className="absolute top-2 right-2 text-xs bg-success/15 text-success px-1.5 py-0.5 rounded font-medium opacity-0 group-hover:opacity-0">Mastered</span>
-              )}
-              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(card); }} className="bg-white/90 hover:bg-white rounded-lg p-1.5 shadow-sm">
-                  <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                </button>
-              </div>
-              <span className="absolute top-2 left-2 bg-black/50 text-white text-xs rounded px-1.5 py-0.5">{idx + 1}</span>
-            </div>
-          ))}
+        <div className="space-y-8">
+          {/* Readiness */}
+          <div className="bg-card border border-border rounded-xl p-5">
+            <ReadinessBar pct={overview.avgScore ?? 0} />
+          </div>
 
-          {/* Bin card */}
-          <button
-            onClick={() => setShowBin(true)}
-            className="group relative bg-card border-2 border-dashed border-border rounded-xl overflow-hidden hover:border-destructive/50 hover:bg-destructive/5 transition-all flex flex-col items-center justify-center gap-2 min-h-[10rem] text-muted-foreground hover:text-destructive"
-          >
-            <Archive className="w-6 h-6" />
-            <span className="text-xs font-medium">Bin</span>
-            {deletedCards.length > 0 && (
-              <span className="absolute top-2 right-2 bg-destructive text-destructive-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
-                {deletedCards.length}
-              </span>
-            )}
-          </button>
+          {/* 1. Overview tiles */}
+          <section className="space-y-3">
+            <SectionHeading>Overview</SectionHeading>
+            <OverviewTiles overview={overview} />
+          </section>
+
+          {/* 2. Score & pace over time */}
+          <section className="space-y-3">
+            <SectionHeading>Score & pace over time</SectionHeading>
+            <TrendCharts sessionsAsc={sessionsAsc} />
+          </section>
+
+          {/* 3. Mastery timeline */}
+          <section className="space-y-3">
+            <SectionHeading>Mastery timeline</SectionHeading>
+            <MasteryTimelineSection cardStats={cardStats} cards={cards} />
+          </section>
+
+          {/* 4. Per-card table */}
+          <section className="space-y-3">
+            <SectionHeading>Per-card breakdown</SectionHeading>
+            <PerCardTable cardRows={cardRows} />
+          </section>
+
+          {/* 5. Question-type breakdown */}
+          <section className="space-y-3">
+            <SectionHeading>Question types</SectionHeading>
+            <QuestionTypeBreakdown cardRows={cardRows} />
+          </section>
+
+          {/* 6. Habits */}
+          <section className="space-y-3">
+            <SectionHeading>Habits</SectionHeading>
+            <HabitsSection sessions={sessions} />
+          </section>
+
+          {/* 7. Session log */}
+          <section className="space-y-3">
+            <SectionHeading>Session log</SectionHeading>
+            <SessionLog sessions={sessions} />
+          </section>
         </div>
       )}
-
-    </div>
-    </div>
-
-    {/* Side panel on large screens, modal on small */}
-    {showEditor && (
-      <>
-        {/* Mobile: modal overlay — only rendered on small screens */}
-        {isMobile && (
-          <Dialog open={showEditor} onOpenChange={(open) => { if (!open) requestCloseEditor(); }}>
-            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>{editingCard ? 'Edit Card' : 'Add Card'}</DialogTitle>
-              </DialogHeader>
-              <CardEditor
-                key={editingCard?.id ?? 'new'}
-                card={editingCard}
-                onSave={(data) => saveMutation.mutate(data)}
-                onCancel={requestCloseEditor}
-                onDirtyChange={setEditorDirty}
-                allTags={allTags}
-                saveRef={editorSaveRef}
-              />
-            </DialogContent>
-          </Dialog>
-        )}
-
-        {/* Desktop: fixed side panel */}
-        {!isMobile && (
-          <div className="flex fixed top-14 right-0 bottom-0 w-[640px] bg-card border-l border-border flex-col z-30 shadow-xl">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-              <h2 className="font-semibold text-base">Card Details</h2>
-              <div className="relative">
-                {!editorDirty ? (
-                  <button
-                    onClick={closeEditor}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors px-1 py-0.5 rounded"
-                  >
-                    Close
-                  </button>
-                ) : (
-                  <>
-                    <div className="flex items-center">
-                      <Button
-                        size="sm"
-                        onClick={() => editorSaveRef.current?.()}
-                        disabled={saveMutation.isPending}
-                        className="h-7 text-xs rounded-r-none pr-3"
-                      >
-                        {saveMutation.isPending ? <><Loader2 className="w-3 h-3 animate-spin" /> Saving…</> : 'Save & Close'}
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => setCloseDropdownOpen(v => !v)}
-                        disabled={saveMutation.isPending}
-                        className="h-7 text-xs rounded-l-none border-l border-primary-foreground/30 px-2"
-                      >
-                        <ChevronDown className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
-                    {closeDropdownOpen && (
-                      <>
-                        <div className="fixed inset-0 z-10" onClick={() => setCloseDropdownOpen(false)} />
-                        <div className="absolute right-0 top-full mt-1 w-44 bg-popover border border-border rounded-md shadow-lg z-20 py-1 text-sm">
-                          <button
-                            onClick={() => { setCloseDropdownOpen(false); closeEditor(); }}
-                            className="w-full text-left px-3 py-2 hover:bg-accent hover:text-accent-foreground transition-colors text-destructive"
-                          >
-                            Revert &amp; Close
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-            <div className="flex-1 overflow-y-auto px-5 pt-5 pb-4">
-              <CardEditor
-                key={editingCard?.id ?? 'new'}
-                card={editingCard}
-                onSave={(data) => saveMutation.mutate(data)}
-                onCancel={requestCloseEditor}
-                onDirtyChange={setEditorDirty}
-                allTags={allTags}
-                saveRef={editorSaveRef}
-              />
-            </div>
-          </div>
-        )}
-      </>
-    )}
-
-    <AlertDialog open={showDiscardDialog} onOpenChange={setShowDiscardDialog}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Discard changes?</AlertDialogTitle>
-          <AlertDialogDescription>
-            You have unsaved changes. If you close now they will be lost.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={() => setShowDiscardDialog(false)}>Keep editing</AlertDialogCancel>
-          <AlertDialogAction onClick={closeEditor} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-            Discard
-          </AlertDialogAction>
-          <AlertDialogAction onClick={() => { setShowDiscardDialog(false); editorSaveRef.current?.(); }}>
-            Save Card
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-
-    <BinPanel
-      open={showBin}
-      onClose={() => setShowBin(false)}
-      deletedCards={deletedCards}
-      onRestore={(card) => restoreMutation.mutate(card)}
-      onPermanentDelete={(card) => permanentDeleteMutation.mutate(card)}
-    />
-
-    <CsvUploadModal
-      open={showCsvUpload}
-      onClose={() => setShowCsvUpload(false)}
-      deckId={deckId}
-      existingCount={activeCards.length}
-      onImported={() => { qc.invalidateQueries(['cards', deckId]); qc.invalidateQueries(['cards-all']); }}
-    />
-
-    <QuickAddCardModal
-      open={showQuickAdd}
-      onClose={() => setShowQuickAdd(false)}
-      deckId={deckId}
-      deck={deck}
-      activeCards={activeCards}
-      onSaved={() => {
-        qc.invalidateQueries(['cards', deckId]);
-        qc.invalidateQueries(['cards-all']);
-      }}
-      onEditDetails={(card) => {
-        setEditingCard(card);
-        setEditorDirty(false);
-        setShowEditor(true);
-      }}
-    />
-
-    <DeckCollectionsDialog
-      open={showCollections}
-      onClose={() => setShowCollections(false)}
-      deckId={deckId}
-      deckTitle={deck?.title}
-    />
-
-    <AiCardSuggestionsModal
-      open={showAiSuggest}
-      onClose={() => setShowAiSuggest(false)}
-      deck={deck}
-      activeCards={activeCards}
-      onAddCards={async (cards) => {
-        await base44.entities.Card.bulkCreate(
-          cards.map((c, i) => ({ ...c, deck_id: deckId, order: activeCards.length + i }))
-        );
-        qc.invalidateQueries(['cards', deckId]);
-        qc.invalidateQueries(['cards-all']);
-        toast.success(`${cards.length} card${cards.length !== 1 ? 's' : ''} added`);
-      }}
-    />
     </div>
   );
 }
