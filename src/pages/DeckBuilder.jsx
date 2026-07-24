@@ -1,88 +1,109 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import {
-  ArrowLeft, Plus, Pencil, Trash2, BookOpen, BarChart2, Settings as SettingsIcon,
-  Share2, Upload, Sparkles, Trash, GripVertical, Image as ImageIcon, Loader2, Check, X,
-} from 'lucide-react';
+import { Plus, ArrowLeft, Pencil, Trash2, GalleryVerticalEnd, Image as ImageIcon, Cog, X, Upload, RotateCcw, PieChart, Archive, CircleDot, CheckSquare, ToggleRight, Play, Sparkles, Check, FolderOpen, ChevronDown, Loader2 } from 'lucide-react';
+import AiCardSuggestionsModal from '@/components/cards/AiCardSuggestionsModal';
+import QuickAddCardModal from '@/components/cards/QuickAddCardModal';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
-
-import CardThumbnail from '@/components/cards/CardThumbnail';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import CardEditor from '@/components/cards/CardEditor';
-import CardPreviewModal from '@/components/cards/CardPreviewModal';
+import CsvUploadModal from '@/components/cards/CsvUploadModal';
+import DeckCollectionsDialog from '@/components/collections/DeckCollectionsDialog';
 import CardFilterBar from '@/components/cards/CardFilterBar';
 import BinPanel from '@/components/cards/BinPanel';
-import QuickAddCardModal from '@/components/cards/QuickAddCardModal';
-import CsvUploadModal from '@/components/cards/CsvUploadModal';
-import AiCardSuggestionsModal from '@/components/cards/AiCardSuggestionsModal';
-import CoverImagePicker from '@/components/deck/CoverImagePicker';
-import ShareModal from '@/components/deck/ShareModal';
+import CardPreviewModal from '@/components/cards/CardPreviewModal';
+import { toast } from 'sonner';
 
 export default function DeckBuilder() {
   const { deckId } = useParams();
   const qc = useQueryClient();
 
-  const { data: deck, isLoading: deckLoading } = useQuery({
+  const { data: deck } = useQuery({
     queryKey: ['deck', deckId],
-    queryFn: () => base44.entities.Deck.filter({ id: deckId }).then((r) => r[0]),
+    queryFn: () => base44.entities.Deck.filter({ id: deckId }).then(r => r[0]),
     enabled: !!deckId,
   });
 
-  const { data: allCards = [], isLoading: cardsLoading } = useQuery({
+  const { data: allDeckCards = [], isLoading } = useQuery({
     queryKey: ['cards', deckId],
     queryFn: () => base44.entities.Card.filter({ deck_id: deckId }, 'order'),
     enabled: !!deckId,
   });
 
-  const { data: cardStats = [] } = useQuery({
-    queryKey: ['card-stats', deckId],
-    queryFn: () => base44.entities.UserCardStats.filter({ deck_id: deckId }),
-    enabled: !!deckId,
+  const activeCards = allDeckCards.filter(c => !c.deleted);
+  const deletedCards = allDeckCards.filter(c => c.deleted === true);
+
+  const { data: currentUser } = useQuery({
+    queryKey: ['me'],
+    queryFn: () => base44.auth.me(),
   });
 
-  const activeCards = useMemo(() => allCards.filter((c) => !c.deleted), [allCards]);
-  const deletedCards = useMemo(() => allCards.filter((c) => c.deleted), [allCards]);
-  const masteredIds = useMemo(() => new Set(cardStats.filter((s) => s.mastered).map((s) => s.card_id)), [cardStats]);
+  const { data: cardStats = [] } = useQuery({
+    queryKey: ['card-stats', deckId, currentUser?.id],
+    queryFn: () => base44.entities.UserCardStats.filter({ deck_id: deckId, user_id: currentUser.id }),
+    enabled: !!deckId && !!currentUser?.id,
+  });
 
-  const isLoading = deckLoading || cardsLoading;
+  const masteredCardIds = useMemo(() => new Set(cardStats.filter(s => s.mastered).map(s => s.card_id)), [cardStats]);
 
-  // Inline title editing
-  const [editingTitle, setEditingTitle] = useState(false);
-  const [titleDraft, setTitleDraft] = useState('');
-  const [savingTitle, setSavingTitle] = useState(false);
-  const startEditTitle = () => { setTitleDraft(deck?.title || ''); setEditingTitle(true); };
-  const saveTitle = async () => {
-    if (!titleDraft.trim()) { toast.error('Title is required'); return; }
-    setSavingTitle(true);
-    try {
-      await base44.entities.Deck.update(deckId, { title: titleDraft.trim() });
-      qc.invalidateQueries(['deck', deckId]);
-      qc.invalidateQueries(['owned-decks']);
-      setEditingTitle(false);
-    } catch (e) { toast.error(e.message || 'Could not save title'); }
-    setSavingTitle(false);
-  };
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
 
-  // Description editing (inline, on blur)
-  const [descDraft, setDescDraft] = useState('');
+  // UI state
+  const [showEditor, setShowEditor] = useState(false);
+  const [editingCard, setEditingCard] = useState(null);
+  const [showCsvUpload, setShowCsvUpload] = useState(false);
+  const [editorDirty, setEditorDirty] = useState(false);
+  const [showDiscardDialog, setShowDiscardDialog] = useState(false);
+  const [showBin, setShowBin] = useState(false);
+  const [showAiSuggest, setShowAiSuggest] = useState(false);
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [showCollections, setShowCollections] = useState(false);
+  const [previewCard, setPreviewCard] = useState(null);
+  const [closeDropdownOpen, setCloseDropdownOpen] = useState(false);
+  const editorSaveRef = useRef(null);
+
+  // Description editing
   const [editingDesc, setEditingDesc] = useState(false);
-  const saveDesc = async () => {
-    setEditingDesc(false);
-    if (descDraft === (deck?.description || '')) return;
-    try {
-      await base44.entities.Deck.update(deckId, { description: descDraft });
-      qc.invalidateQueries(['deck', deckId]);
-    } catch (e) { toast.error(e.message || 'Could not save description'); }
+  const [descValue, setDescValue] = useState('');
+  const [draftingDesc, setDraftingDesc] = useState(false);
+
+  const startEditDesc = () => { setDescValue(deck?.description || ''); setEditingDesc(true); };
+  const saveDesc = () => { updateDeckMutation.mutate({ description: descValue }); setEditingDesc(false); };
+  const cancelEditDesc = () => setEditingDesc(false);
+
+  // Title editing
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleValue, setTitleValue] = useState('');
+  const startEditTitle = () => { setTitleValue(deck?.title || ''); setEditingTitle(true); };
+  const saveTitle = () => {
+    const trimmed = titleValue.trim();
+    if (!trimmed) return;
+    updateDeckMutation.mutate({ title: trimmed });
+    setEditingTitle(false);
+  };
+  const cancelEditTitle = () => setEditingTitle(false);
+
+  const DESC_MAX = 150;
+
+  const draftDescription = async () => {
+    setDraftingDesc(true);
+    const cardList = activeCards.map(c => c.correct_answers || c.correct_answer).filter(Boolean).slice(0, 60).join(', ');
+    const result = await base44.integrations.Core.InvokeLLM({
+      prompt: `Write a concise description for a flashcard deck titled "${deck?.title}". The deck contains cards about: ${cardList}. Be specific and informative. No fluff. IMPORTANT: the description must be 150 characters or fewer.`,
+    });
+    const draft = typeof result === 'string' ? result : result?.text || '';
+    setDescValue(draft.slice(0, DESC_MAX));
+    setDraftingDesc(false);
   };
 
-  // Filtering / sorting
+  // Filter / sort state
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('order');
   const [masteryFilter, setMasteryFilter] = useState('all');
@@ -90,410 +111,498 @@ export default function DeckBuilder() {
 
   const allTags = useMemo(() => {
     const set = new Set();
-    activeCards.forEach((c) => (c.tags || []).forEach((t) => set.add(t)));
-    return [...set].sort();
+    activeCards.forEach(c => (c.tags || []).forEach(t => set.add(t)));
+    return Array.from(set).sort();
   }, [activeCards]);
 
-  const filteredCards = useMemo(() => {
-    let list = activeCards;
+  const displayedCards = useMemo(() => {
+    let cards = [...activeCards];
+
+    // Mastery filter
+    if (masteryFilter === 'mastered') cards = cards.filter(c => masteredCardIds.has(c.id));
+    else if (masteryFilter === 'unmastered') cards = cards.filter(c => !masteredCardIds.has(c.id));
+
+    // Tag filter (multi)
+    if (tagFilters.length > 0) cards = cards.filter(c => tagFilters.some(t => (c.tags || []).includes(t)));
+
+    // Search
     if (search.trim()) {
       const q = search.toLowerCase();
-      list = list.filter((c) =>
-        (c.clue || '').toLowerCase().includes(q) ||
-        (c.correct_answers || c.correct_answer || '').toLowerCase().includes(q) ||
-        (c.choices || []).some((ch) => ch.toLowerCase().includes(q))
+      cards = cards.filter(c =>
+        c.correct_answer?.toLowerCase().includes(q) ||
+        (c.tags || []).some(t => t.toLowerCase().includes(q))
       );
     }
-    if (masteryFilter === 'mastered') list = list.filter((c) => masteredIds.has(c.id));
-    else if (masteryFilter === 'unmastered') list = list.filter((c) => !masteredIds.has(c.id));
-    if (tagFilters.length) list = list.filter((c) => tagFilters.every((t) => (c.tags || []).includes(t)));
 
-    const sorted = [...list];
-    if (sortBy === 'order') sorted.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    else if (sortBy === 'created_date') sorted.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
-    else if (sortBy === 'updated_date') sorted.sort((a, b) => new Date(b.updated_date) - new Date(a.updated_date));
-    return sorted;
-  }, [activeCards, search, masteryFilter, tagFilters, sortBy, masteredIds]);
+    // Sort
+    if (sortBy === 'created_date') cards.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+    else if (sortBy === 'updated_date') cards.sort((a, b) => new Date(b.updated_date) - new Date(a.updated_date));
 
-  // Modals
-  const [quickAddOpen, setQuickAddOpen] = useState(false);
-  const [csvOpen, setCsvOpen] = useState(false);
-  const [aiOpen, setAiOpen] = useState(false);
-  const [binOpen, setBinOpen] = useState(false);
-  const [coverOpen, setCoverOpen] = useState(false);
-  const [shareOpen, setShareOpen] = useState(false);
-  const [previewCard, setPreviewCard] = useState(null);
+    return cards;
+  }, [activeCards, search, sortBy, masteryFilter, tagFilters, masteredCardIds]);
 
-  // Card editor dialog
-  const [editingCard, setEditingCard] = useState(null);
-  const [editorDirty, setEditorDirty] = useState(false);
-  const [closingEditor, setClosingEditor] = useState(false);
-  const editorSaveRef = useRef(null);
+  const exportCsv = () => {
+    const rows = [
+      ['correct_answers', 'question_type', 'choice_2', 'choice_3', 'choice_4', 'choice_5', 'choice_6', 'clue', 'explanation', 'image_url', 'tags'],
+      ...activeCards.map(c => {
+        const correct = (c.correct_answers || c.correct_answer || '').split('|')[0].trim();
+        const decoys = (c.choices || []).filter(ch => ch !== correct);
+        const choiceCols = [decoys[0] || '', decoys[1] || '', decoys[2] || '', decoys[3] || '', decoys[4] || ''];
+        return [
+          c.correct_answers || c.correct_answer || '',
+          c.question_type || 'multiple_choice',
+          ...choiceCols,
+          c.clue || '',
+          c.explanation || '',
+          c.image_url || '',
+          (c.tags || []).join(';'),
+        ];
+      }),
+    ];
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${deck?.title || 'deck'}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
-  const openEditor = (card) => { setEditorDirty(false); setEditingCard(card); };
+  const openAdd = () => { setShowQuickAdd(true); };
+  const openAddLegacy = () => { setEditingCard(null); setEditorDirty(false); setShowEditor(true); };
+  const openEdit = (card) => { setEditingCard(card); setEditorDirty(false); setShowEditor(true); };
+
+  const requestCloseEditor = () => {
+    if (editorDirty) setShowDiscardDialog(true);
+    else closeEditor();
+  };
+
   const closeEditor = () => {
-    if (editorDirty) { setClosingEditor(true); return; }
-    setEditingCard(null);
+    setShowEditor(false);
+    setEditorDirty(false);
+    setShowDiscardDialog(false);
+    setCloseDropdownOpen(false);
   };
-  const confirmCloseEditor = () => { setClosingEditor(false); setEditingCard(null); };
 
-  const handleSaveCard = async (data) => {
-    try {
-      await base44.entities.Card.update(editingCard.id, data);
+  const saveMutation = useMutation({
+    mutationFn: async (data) => {
+      if (editingCard) {
+        return base44.entities.Card.update(editingCard.id, data);
+      } else {
+        return base44.entities.Card.create({ ...data, deck_id: deckId, order: activeCards.length });
+      }
+    },
+    onSuccess: () => {
       qc.invalidateQueries(['cards', deckId]);
-      toast.success('Card saved');
-      setEditingCard(null);
-    } catch (e) { toast.error(e.message || 'Could not save card'); }
-  };
+      qc.invalidateQueries(['cards-all']);
+      setShowEditor(false);
+      toast.success(editingCard ? 'Card updated' : 'Card added');
+    },
+  });
 
-  const handleDeleteCard = async (card) => {
-    try {
-      await base44.entities.Card.update(card.id, { deleted: true });
-      qc.invalidateQueries(['cards', deckId]);
-      toast.success('Card moved to bin');
-    } catch (e) { toast.error(e.message || 'Could not delete card'); }
-  };
-
-  const handleRestore = async (card) => {
-    try {
-      await base44.entities.Card.update(card.id, { deleted: false });
-      qc.invalidateQueries(['cards', deckId]);
-      toast.success('Card restored');
-    } catch (e) { toast.error(e.message || 'Could not restore'); }
-  };
-
-  const handlePermanentDelete = async (card) => {
-    try {
-      await base44.entities.Card.delete(card.id);
-      qc.invalidateQueries(['cards', deckId]);
-      toast.success('Card deleted permanently');
-    } catch (e) { toast.error(e.message || 'Could not delete'); }
-  };
-
-  // Drag-and-drop reorder
-  const onDragEnd = async (result) => {
-    if (!result.destination || result.destination.index === result.source.index) return;
-    const ordered = [...filteredCards];
-    const [moved] = ordered.splice(result.source.index, 1);
-    ordered.splice(result.destination.index, 0, moved);
-    // Persist new order values
-    const updates = ordered.map((c, i) => ({ id: c.id, order: i }));
-    try {
-      await base44.entities.Card.bulkUpdate(updates);
-      qc.invalidateQueries(['cards', deckId]);
-    } catch (e) { toast.error(e.message || 'Could not reorder'); }
-  };
-
-  const handleCoverSave = async (url, focalPoint, originalUrl) => {
-    try {
-      await base44.entities.Deck.update(deckId, {
-        cover_image_url: url,
-        cover_focal_point: focalPoint,
-        cover_image_original_url: originalUrl || null,
-      });
-      qc.invalidateQueries(['deck', deckId]);
-      toast.success('Cover updated');
-    } catch (e) { toast.error(e.message || 'Could not save cover'); }
-  };
-
-  const handleAddAiCards = async (cards) => {
-    const toCreate = cards.map((c, i) => ({
-      deck_id: deckId,
-      order: activeCards.length + i,
-      correct_answers: c.correct_answers,
-      correct_answer: c.correct_answer,
-      question_type: c.question_type || 'multiple_choice',
-      choices: c.choices || [],
-      clue: c.clue || '',
-      point_value: c.point_value ?? 20,
-    }));
-    await base44.entities.Card.bulkCreate(toCreate);
+  const invalidateCards = () => {
     qc.invalidateQueries(['cards', deckId]);
-    toast.success(`${toCreate.length} card${toCreate.length !== 1 ? 's' : ''} added`);
+    qc.invalidateQueries(['cards-all']);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-7 h-7 border-4 border-muted border-t-primary rounded-full animate-spin" />
-      </div>
-    );
-  }
+  const deleteMutation = useMutation({
+    mutationFn: (card) => base44.entities.Card.update(card.id, { deleted: true }),
+    onSuccess: (_, card) => {
+      invalidateCards();
+      toast.success('Card moved to bin', {
+        action: { label: 'Undo', onClick: () => restoreMutation.mutate(card) },
+      });
+    },
+  });
 
-  if (!deck) {
-    return (
-      <div className="max-w-md mx-auto px-4 py-16 text-center">
-        <p className="text-muted-foreground">This deck doesn't exist or isn't visible to your account.</p>
-        <Link to="/"><Button variant="outline" size="sm" className="mt-4">Back home</Button></Link>
-      </div>
-    );
-  }
+  const restoreMutation = useMutation({
+    mutationFn: (card) => base44.entities.Card.update(card.id, { deleted: false }),
+    onSuccess: () => {
+      invalidateCards();
+      toast.success('Card restored');
+    },
+  });
 
-  const masteredCount = activeCards.filter((c) => masteredIds.has(c.id)).length;
+  const permanentDeleteMutation = useMutation({
+    mutationFn: (card) => base44.entities.Card.delete(card.id),
+    onSuccess: () => {
+      invalidateCards();
+      toast.success('Card permanently deleted');
+    },
+  });
+
+  const updateDeckMutation = useMutation({
+    mutationFn: (data) => base44.entities.Deck.update(deckId, data),
+    onSuccess: () => { qc.invalidateQueries(['deck', deckId]); toast.success('Deck settings saved'); },
+  });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="flex min-h-[calc(100vh-3.5rem)]">
+    {/* Main content */}
+    <div className={`flex-1 px-4 py-8 transition-all duration-300 ${showEditor ? 'md:mr-[640px]' : ''}`}>
+    <div className="max-w-7xl mx-auto">
+
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft className="w-5 h-5" />
-        </Link>
-        <div className="flex-1 min-w-0">
+      <div className="mb-6 bg-card border border-border rounded-md overflow-hidden hover:shadow-md transition-all duration-200">
+        {/* Title + description */}
+        <div className="px-4 pt-4 pb-3">
           {editingTitle ? (
             <div className="flex items-center gap-2">
-              <Input
-                value={titleDraft}
-                onChange={(e) => setTitleDraft(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') saveTitle(); if (e.key === 'Escape') setEditingTitle(false); }}
+              <input
                 autoFocus
-                className="h-8 text-xl font-bold"
+                value={titleValue}
+                onChange={e => setTitleValue(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') saveTitle(); if (e.key === 'Escape') cancelEditTitle(); }}
+                placeholder="Deck title"
+                className="text-xl font-bold bg-transparent border-b border-primary focus:outline-none flex-1 min-w-0"
               />
-              <Button size="icon" className="h-8 w-8" onClick={saveTitle} disabled={savingTitle}>
-                {savingTitle ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-              </Button>
-              <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setEditingTitle(false)}>
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold truncate">{deck.title}</h1>
-              <button onClick={startEditTitle} className="text-muted-foreground hover:text-foreground transition-colors shrink-0" title="Edit title">
-                <Pencil className="w-3.5 h-3.5" />
+              <button onClick={saveTitle} className="flex items-center gap-1 text-xs text-primary hover:underline font-medium shrink-0">
+                <Check className="w-3.5 h-3.5" /> Save
               </button>
+              <button onClick={cancelEditTitle} className="text-xs text-muted-foreground hover:text-foreground shrink-0">Cancel</button>
             </div>
-          )}
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {activeCards.length} card{activeCards.length !== 1 ? 's' : ''}
-            {masteredCount > 0 && <span className="ml-2 text-success">{masteredCount} mastered</span>}
-          </p>
-        </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <Link to={`/stats/${deckId}`}><Button variant="ghost" size="sm" className="gap-1.5"><BarChart2 className="w-4 h-4" /> Stats</Button></Link>
-          <Link to={`/settings/${deckId}`}><Button variant="ghost" size="sm" className="gap-1.5"><SettingsIcon className="w-4 h-4" /> Settings</Button></Link>
-          <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => setShareOpen(true)}><Share2 className="w-4 h-4" /> Share</Button>
-          <Link to={`/study/${deckId}`}><Button size="sm" className="gap-1.5"><BookOpen className="w-4 h-4" /> Study</Button></Link>
-        </div>
-      </div>
-
-      {/* Cover + description */}
-      <div className="flex flex-col md:flex-row gap-5 mb-6">
-        <button
-          onClick={() => setCoverOpen(true)}
-          className="relative md:w-64 w-full h-32 rounded-xl overflow-hidden border border-border bg-muted shrink-0 group"
-        >
-          {deck.cover_image_url ? (
-            <img
-              src={deck.cover_image_url}
-              alt="cover"
-              className="w-full h-full object-cover"
-              style={{ objectPosition: deck.cover_focal_point ? `${deck.cover_focal_point.x}% ${deck.cover_focal_point.y}%` : 'center' }}
-            />
           ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 text-muted-foreground">
-              <ImageIcon className="w-6 h-6" />
-              <span className="text-xs">Add cover image</span>
-            </div>
+            <h1 className="text-xl font-bold group/title flex items-center gap-1.5 cursor-text" onClick={startEditTitle} title="Click to edit title">
+              {deck?.title || 'Loading…'}
+              <Pencil className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover/title:opacity-100 transition-opacity" />
+            </h1>
           )}
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-            <span className="opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs font-medium flex items-center gap-1">
-              <Pencil className="w-3 h-3" /> Edit
-            </span>
-          </div>
-        </button>
-
-        <div className="flex-1 min-w-0">
           {editingDesc ? (
-            <Textarea
-              value={descDraft}
-              onChange={(e) => setDescDraft(e.target.value)}
-              onBlur={saveDesc}
-              autoFocus
-              rows={3}
-              placeholder="Add a description…"
-              className="resize-none text-sm"
-            />
+            <div className="mt-1.5 flex flex-col gap-1.5">
+              <div className="relative">
+                <textarea
+                  autoFocus
+                  value={descValue}
+                  onChange={e => setDescValue(e.target.value.slice(0, DESC_MAX))}
+                  placeholder="Add a description…"
+                  rows={2}
+                  maxLength={DESC_MAX}
+                  className="w-full text-sm border border-border rounded-md px-2.5 py-1.5 bg-background text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-ring pr-14"
+                />
+                <span className={`absolute bottom-2 right-2 text-xs tabular-nums ${descValue.length >= DESC_MAX ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
+                  {descValue.length}/{DESC_MAX}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={saveDesc} className="flex items-center gap-1 text-xs text-primary hover:underline font-medium">
+                  <Check className="w-3.5 h-3.5" /> Save
+                </button>
+                <button onClick={cancelEditDesc} className="text-xs text-muted-foreground hover:text-foreground">Cancel</button>
+                {activeCards.length > 0 && (
+                  <button
+                    onClick={draftDescription}
+                    disabled={draftingDesc}
+                    className="ml-auto flex items-center gap-1 text-xs text-accent-foreground bg-accent hover:bg-accent/80 px-2 py-0.5 rounded-md disabled:opacity-50"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    {draftingDesc ? 'Drafting…' : 'AI draft'}
+                  </button>
+                )}
+              </div>
+            </div>
           ) : (
-            <button onClick={() => { setDescDraft(deck.description || ''); setEditingDesc(true); }} className="text-left w-full">
-              {deck.description ? (
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{deck.description}</p>
-              ) : (
-                <p className="text-sm text-muted-foreground italic">Add a description…</p>
-              )}
+            <button onClick={startEditDesc} className="group flex items-start gap-1 text-left mt-0.5">
+              {deck?.description
+                ? <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors line-clamp-2">{deck.description}</span>
+                : <span className="text-sm text-muted-foreground/50 italic group-hover:text-muted-foreground transition-colors">Add description…</span>
+              }
+              <Pencil className="w-3 h-3 text-muted-foreground/40 group-hover:text-muted-foreground shrink-0 mt-0.5 transition-colors" />
             </button>
           )}
+          <p className="text-muted-foreground text-xs mt-1">{activeCards.length} {activeCards.length === 1 ? 'card' : 'cards'}</p>
         </div>
-      </div>
 
-      {/* Action bar */}
-      <div className="flex flex-wrap items-center gap-2 mb-5">
-        <Button size="sm" className="gap-1.5" onClick={() => setQuickAddOpen(true)}>
-          <Plus className="w-4 h-4" /> Add Card
-        </Button>
-        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setCsvOpen(true)}>
-          <Upload className="w-4 h-4" /> Import CSV
-        </Button>
-        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setAiOpen(true)}>
-          <Sparkles className="w-4 h-4" /> AI Suggest
-        </Button>
-        {deletedCards.length > 0 && (
-          <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={() => setBinOpen(true)}>
-            <Trash className="w-4 h-4" /> Bin ({deletedCards.length})
+        {/* Action toolbar */}
+        <div className="border-t border-border px-3 py-2 flex items-center gap-1">
+          <Link to={`/stats/${deckId}`}>
+            <Button variant="ghost" size="sm" className="gap-1.5 h-9 text-muted-foreground hover:text-foreground">
+              <PieChart className="w-4 h-4" /> Stats
+            </Button>
+          </Link>
+          <Link to={`/settings/${deckId}`}>
+            <Button variant="ghost" size="sm" className="gap-1.5 h-9 text-muted-foreground hover:text-foreground">
+              <Cog className="w-4 h-4" /> Settings
+            </Button>
+          </Link>
+
+          <Button variant="ghost" size="sm" onClick={openAdd} className="gap-1.5 h-9">
+            <Plus className="w-4 h-4" /> Add Card
           </Button>
-        )}
+          <Button variant="ghost" size="sm" onClick={() => setShowCsvUpload(true)} className="gap-1.5 h-9 text-muted-foreground hover:text-foreground">
+            <Upload className="w-4 h-4" /> Import CSV
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setShowCollections(true)} className="gap-1.5 h-9 text-muted-foreground hover:text-foreground">
+            <FolderOpen className="w-4 h-4" /> Collections
+          </Button>
+          <Link to={`/study/${deckId}`} className="ml-auto flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors">
+            <GalleryVerticalEnd className="w-4 h-4" /> Study
+          </Link>
+        </div>
       </div>
 
       {/* Filter bar */}
-      <CardFilterBar
-        search={search}
-        onSearch={setSearch}
-        sortBy={sortBy}
-        onSort={setSortBy}
-        masteryFilter={masteryFilter}
-        onMasteryFilter={setMasteryFilter}
-        allTags={allTags}
-        tagFilters={tagFilters}
-        onTagFilters={setTagFilters}
-      />
-
-      {/* Card grid */}
-      {filteredCards.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-accent flex items-center justify-center">
-            <Plus className="w-7 h-7 text-accent-foreground" />
-          </div>
-          <h2 className="font-semibold">{activeCards.length === 0 ? 'No cards yet' : 'No cards match your filters'}</h2>
-          <p className="text-muted-foreground text-sm max-w-xs">
-            {activeCards.length === 0 ? 'Add your first card to get this deck ready for study.' : 'Try clearing the search or filters.'}
-          </p>
-          {activeCards.length === 0 && (
-            <Button className="mt-1 gap-1.5" onClick={() => setQuickAddOpen(true)}><Plus className="w-4 h-4" /> Add Card</Button>
-          )}
-        </div>
-      ) : (
-        <DragDropContext onDragEnd={onDragEnd}>
-          <Droppable droppableId="cards" direction="horizontal" isDropDisabled={sortBy !== 'order' || search.trim() || masteryFilter !== 'all' || tagFilters.length > 0}>
-            {(provided) => (
-              <div ref={provided.innerRef} {...provided.droppableProps} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {filteredCards.map((card, index) => (
-                  <Draggable key={card.id} draggableId={card.id} index={index}>
-                    {(p) => (
-                      <div
-                        ref={p.innerRef}
-                        {...p.draggableProps}
-                        className="group relative bg-card border border-border rounded-xl p-3 hover:border-primary/40 transition-colors"
-                      >
-                        <div {...p.dragHandleProps} className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 text-muted-foreground cursor-grab active:cursor-grabbing z-10">
-                          <GripVertical className="w-4 h-4" />
-                        </div>
-                        <div className="flex justify-end gap-1 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => openEditor(card)} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground" title="Edit">
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                          <button onClick={() => setPreviewCard(card)} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground" title="Preview">
-                            <BookOpen className="w-3.5 h-3.5" />
-                          </button>
-                          <button onClick={() => handleDeleteCard(card)} className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive" title="Move to bin">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                        <div className="min-h-[60px]">
-                          <CardThumbnail card={card} />
-                        </div>
-                      </div>
-                    )}
-                  </Draggable>
-                ))}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-        </DragDropContext>
+      {activeCards.length > 0 && (
+        <CardFilterBar
+          search={search}
+          onSearch={setSearch}
+          sortBy={sortBy}
+          onSort={setSortBy}
+          masteryFilter={masteryFilter}
+          onMasteryFilter={setMasteryFilter}
+          allTags={allTags}
+          tagFilters={tagFilters}
+          onTagFilters={setTagFilters}
+        />
       )}
 
-      {/* Modals */}
-      <QuickAddCardModal
-        open={quickAddOpen}
-        onClose={() => setQuickAddOpen(false)}
-        deckId={deckId}
-        deck={deck}
-        activeCards={activeCards}
-        onSaved={() => qc.invalidateQueries(['cards', deckId])}
-        onEditDetails={(card) => { setQuickAddOpen(false); openEditor(card); }}
-      />
-      <CsvUploadModal
-        open={csvOpen}
-        onClose={() => setCsvOpen(false)}
-        deckId={deckId}
-        existingCount={activeCards.length}
-        onImported={() => qc.invalidateQueries(['cards', deckId])}
-      />
-      <AiCardSuggestionsModal
-        open={aiOpen}
-        onClose={() => setAiOpen(false)}
-        deck={deck}
-        activeCards={activeCards}
-        onAddCards={handleAddAiCards}
-      />
-      <BinPanel
-        open={binOpen}
-        onClose={() => setBinOpen(false)}
-        deletedCards={deletedCards}
-        onRestore={handleRestore}
-        onPermanentDelete={handlePermanentDelete}
-      />
-      <CoverImagePicker
-        open={coverOpen}
-        onClose={() => setCoverOpen(false)}
-        cards={activeCards}
-        currentUrl={deck.cover_image_url}
-        currentFocalPoint={deck.cover_focal_point}
-        currentOriginalUrl={deck.cover_image_original_url}
-        onSave={handleCoverSave}
-        deckTitle={deck.title}
-        deckDescription={deck.description}
-      />
-      <ShareModal deck={deck} open={shareOpen} onClose={() => setShareOpen(false)} />
-      <CardPreviewModal card={previewCard} deck={deck} open={!!previewCard} onClose={() => setPreviewCard(null)} />
+      {/* Cards grid */}
+      {isLoading ? (
+        <div className={`grid gap-4 ${showEditor ? 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4'}`}>
+          {[1,2,3,4].map(i => <div key={i} className="h-40 rounded-xl bg-muted animate-pulse" />)}
+        </div>
+      ) : activeCards.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-accent flex items-center justify-center">
+            <ImageIcon className="w-7 h-7 text-accent-foreground" />
+          </div>
+          <h2 className="font-semibold">No cards yet</h2>
+          <p className="text-muted-foreground text-sm max-w-xs">Add your first card with an image and word bank choices.</p>
+          <div className="flex gap-2 mt-1">
+            <Button onClick={openAdd} className="gap-1.5"><Plus className="w-4 h-4" /> Add Card</Button>
+            <Button variant="outline" onClick={() => setShowCsvUpload(true)} className="gap-1.5"><Upload className="w-4 h-4" /> Import CSV</Button>
+          </div>
+        </div>
+      ) : displayedCards.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 gap-2 text-center text-muted-foreground">
+          <p className="text-sm font-medium">No cards match your filters</p>
+          <button onClick={() => { setSearch(''); setSortBy('order'); setMasteryFilter('all'); setTagFilters([]); }} className="text-xs text-primary hover:underline">
+            Clear filters
+          </button>
+        </div>
+      ) : (
+        <div className={`grid gap-4 ${showEditor ? 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4'}`}>
+          {displayedCards.map((card, idx) => (
+            <div key={card.id} onClick={() => openEdit(card)} className="group relative bg-card border border-border rounded-xl overflow-hidden hover:shadow-md transition-all cursor-pointer">
+              <div className="bg-muted h-28 flex items-center justify-center overflow-hidden">
+                {card.image_url
+                  ? <img src={card.image_url} alt="" className="w-full h-full object-cover" />
+                  : card.clue
+                    ? <p className="px-3 text-sm font-medium text-foreground line-clamp-4 leading-snug">{card.clue}</p>
+                    : <ImageIcon className="w-6 h-6 text-muted-foreground" />}
+              </div>
+              <div className="p-3">
+                <p className="text-sm font-medium text-foreground truncate">{card.correct_answers || card.correct_answer}</p>
+                <div className="flex items-center gap-1.5 mt-0.5 text-muted-foreground">
+                  {card.question_type === 'select_all'
+                    ? <CheckSquare className="w-3 h-3 shrink-0" />
+                    : card.question_type === 'true_false'
+                    ? <ToggleRight className="w-3 h-3 shrink-0" />
+                    : <CircleDot className="w-3 h-3 shrink-0" />}
+                  <p className="text-xs">{card.choices?.length ?? 0} choices</p>
+                </div>
+                {card.tags?.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {card.tags.map(tag => (
+                      <span key={tag} className="text-xs bg-accent text-accent-foreground px-1.5 py-0.5 rounded-full">{tag}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {masteredCardIds.has(card.id) && (
+                <span className="absolute top-2 right-2 text-xs bg-success/15 text-success px-1.5 py-0.5 rounded font-medium opacity-0 group-hover:opacity-0">Mastered</span>
+              )}
+              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(card); }} className="bg-white/90 hover:bg-white rounded-lg p-1.5 shadow-sm">
+                  <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                </button>
+              </div>
+              <span className="absolute top-2 left-2 bg-black/50 text-white text-xs rounded px-1.5 py-0.5">{idx + 1}</span>
+            </div>
+          ))}
 
-      {/* Card editor dialog */}
-      <Dialog open={!!editingCard} onOpenChange={(v) => { if (!v) closeEditor(); }}>
-        <DialogContent className="max-w-3xl max-h-[88vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Card</DialogTitle>
-          </DialogHeader>
-          {editingCard && (
-            <CardEditor
-              card={editingCard}
-              onSave={handleSaveCard}
-              onCancel={closeEditor}
-              onDirtyChange={setEditorDirty}
-              allTags={allTags}
-              saveRef={editorSaveRef}
-            />
-          )}
-          <DialogFooter className="sticky bottom-0 bg-card pt-3 border-t border-border">
-            <Button variant="ghost" onClick={closeEditor}>{editorDirty ? 'Cancel' : 'Close'}</Button>
-            <Button onClick={() => editorSaveRef.current?.()} className="gap-1.5">
-              <Check className="w-4 h-4" /> Save Card
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          {/* Bin card */}
+          <button
+            onClick={() => setShowBin(true)}
+            className="group relative bg-card border-2 border-dashed border-border rounded-xl overflow-hidden hover:border-destructive/50 hover:bg-destructive/5 transition-all flex flex-col items-center justify-center gap-2 min-h-[10rem] text-muted-foreground hover:text-destructive"
+          >
+            <Archive className="w-6 h-6" />
+            <span className="text-xs font-medium">Bin</span>
+            {deletedCards.length > 0 && (
+              <span className="absolute top-2 right-2 bg-destructive text-destructive-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+                {deletedCards.length}
+              </span>
+            )}
+          </button>
+        </div>
+      )}
 
-      {/* Unsaved-changes confirm */}
-      <Dialog open={closingEditor} onOpenChange={(v) => { if (!v) setClosingEditor(false); }}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Discard changes?</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">You have unsaved edits that will be lost.</p>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setClosingEditor(false)}>Keep editing</Button>
-            <Button variant="destructive" onClick={confirmCloseEditor}>Discard</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+    </div>
+    </div>
+
+    {/* Side panel on large screens, modal on small */}
+    {showEditor && (
+      <>
+        {/* Mobile: modal overlay — only rendered on small screens */}
+        {isMobile && (
+          <Dialog open={showEditor} onOpenChange={(open) => { if (!open) requestCloseEditor(); }}>
+            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>{editingCard ? 'Edit Card' : 'Add Card'}</DialogTitle>
+              </DialogHeader>
+              <CardEditor
+                key={editingCard?.id ?? 'new'}
+                card={editingCard}
+                onSave={(data) => saveMutation.mutate(data)}
+                onCancel={requestCloseEditor}
+                onDirtyChange={setEditorDirty}
+                allTags={allTags}
+                saveRef={editorSaveRef}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {/* Desktop: fixed side panel */}
+        {!isMobile && (
+          <div className="flex fixed top-14 right-0 bottom-0 w-[640px] bg-card border-l border-border flex-col z-30 shadow-xl">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+              <h2 className="font-semibold text-base">Card Details</h2>
+              <div className="relative">
+                {!editorDirty ? (
+                  <button
+                    onClick={closeEditor}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors px-1 py-0.5 rounded"
+                  >
+                    Close
+                  </button>
+                ) : (
+                  <>
+                    <div className="flex items-center">
+                      <Button
+                        size="sm"
+                        onClick={() => editorSaveRef.current?.()}
+                        disabled={saveMutation.isPending}
+                        className="h-7 text-xs rounded-r-none pr-3"
+                      >
+                        {saveMutation.isPending ? <><Loader2 className="w-3 h-3 animate-spin" /> Saving…</> : 'Save & Close'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => setCloseDropdownOpen(v => !v)}
+                        disabled={saveMutation.isPending}
+                        className="h-7 text-xs rounded-l-none border-l border-primary-foreground/30 px-2"
+                      >
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                    {closeDropdownOpen && (
+                      <>
+                        <div className="fixed inset-0 z-10" onClick={() => setCloseDropdownOpen(false)} />
+                        <div className="absolute right-0 top-full mt-1 w-44 bg-popover border border-border rounded-md shadow-lg z-20 py-1 text-sm">
+                          <button
+                            onClick={() => { setCloseDropdownOpen(false); closeEditor(); }}
+                            className="w-full text-left px-3 py-2 hover:bg-accent hover:text-accent-foreground transition-colors text-destructive"
+                          >
+                            Revert &amp; Close
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto px-5 pt-5 pb-4">
+              <CardEditor
+                key={editingCard?.id ?? 'new'}
+                card={editingCard}
+                onSave={(data) => saveMutation.mutate(data)}
+                onCancel={requestCloseEditor}
+                onDirtyChange={setEditorDirty}
+                allTags={allTags}
+                saveRef={editorSaveRef}
+              />
+            </div>
+          </div>
+        )}
+      </>
+    )}
+
+    <AlertDialog open={showDiscardDialog} onOpenChange={setShowDiscardDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+          <AlertDialogDescription>
+            You have unsaved changes. If you close now they will be lost.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => setShowDiscardDialog(false)}>Keep editing</AlertDialogCancel>
+          <AlertDialogAction onClick={closeEditor} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            Discard
+          </AlertDialogAction>
+          <AlertDialogAction onClick={() => { setShowDiscardDialog(false); editorSaveRef.current?.(); }}>
+            Save Card
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    <BinPanel
+      open={showBin}
+      onClose={() => setShowBin(false)}
+      deletedCards={deletedCards}
+      onRestore={(card) => restoreMutation.mutate(card)}
+      onPermanentDelete={(card) => permanentDeleteMutation.mutate(card)}
+    />
+
+    <CsvUploadModal
+      open={showCsvUpload}
+      onClose={() => setShowCsvUpload(false)}
+      deckId={deckId}
+      existingCount={activeCards.length}
+      onImported={() => { qc.invalidateQueries(['cards', deckId]); qc.invalidateQueries(['cards-all']); }}
+    />
+
+    <QuickAddCardModal
+      open={showQuickAdd}
+      onClose={() => setShowQuickAdd(false)}
+      deckId={deckId}
+      deck={deck}
+      activeCards={activeCards}
+      onSaved={() => {
+        qc.invalidateQueries(['cards', deckId]);
+        qc.invalidateQueries(['cards-all']);
+      }}
+      onEditDetails={(card) => {
+        setEditingCard(card);
+        setEditorDirty(false);
+        setShowEditor(true);
+      }}
+    />
+
+    <DeckCollectionsDialog
+      open={showCollections}
+      onClose={() => setShowCollections(false)}
+      deckId={deckId}
+      deckTitle={deck?.title}
+    />
+
+    <AiCardSuggestionsModal
+      open={showAiSuggest}
+      onClose={() => setShowAiSuggest(false)}
+      deck={deck}
+      activeCards={activeCards}
+      onAddCards={async (cards) => {
+        await base44.entities.Card.bulkCreate(
+          cards.map((c, i) => ({ ...c, deck_id: deckId, order: activeCards.length + i }))
+        );
+        qc.invalidateQueries(['cards', deckId]);
+        qc.invalidateQueries(['cards-all']);
+        toast.success(`${cards.length} card${cards.length !== 1 ? 's' : ''} added`);
+      }}
+    />
     </div>
   );
 }
