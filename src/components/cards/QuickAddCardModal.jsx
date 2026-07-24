@@ -3,10 +3,10 @@
  *
  * Order: question type → question/clue → answer → image (optional)
  */
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
-  Upload, Sparkles, Search, Image as ImageIcon, X, Loader2,
-  Plus, Pencil, Check, Zap,
+  Upload, Sparkles, Search, Image as ImageIcon, Loader2,
+  Plus, Pencil, Check, Zap, Lightbulb,
 } from 'lucide-react';
 import { computeCardDifficulty } from '@/lib/computeCardDifficulty';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -16,6 +16,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ImageSearchPanel from './ImageSearchPanel';
 import ImagePickerFromDeck from './ImagePickerFromDeck';
+import CardPreviewPane from './CardPreviewPane';
+import { Checkbox } from '@/components/ui/checkbox';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -67,6 +69,11 @@ export default function QuickAddCardModal({ open, onClose, deckId, deck, activeC
   const [answer, setAnswer] = useState('');
   const [imageUrl, setImageUrl] = useState('');
 
+  // Whether this card gets an image region at all. Defaults to whatever the
+  // deck already does — an empty deck defaults to yes.
+  const deckUsesImages = activeCards.length === 0 || activeCards.some(c => !!c.image_url);
+  const [imageCard, setImageCard] = useState(deckUsesImages);
+
   // Image sub-panels
   const [imagePanel, setImagePanel] = useState(null); // null | 'search' | 'pick' | 'ai'
   const [aiPrompt, setAiPrompt] = useState('');
@@ -78,6 +85,9 @@ export default function QuickAddCardModal({ open, onClose, deckId, deck, activeC
 
   const fileRef = useRef();
 
+  // Re-derive the default each time the modal opens
+  useEffect(() => { if (open) setImageCard(deckUsesImages); }, [open]);
+
   const meta = QTYPE_META[qType];
 
   const reset = () => {
@@ -87,6 +97,7 @@ export default function QuickAddCardModal({ open, onClose, deckId, deck, activeC
     setQuestion('');
     setAnswer('');
     setImageUrl('');
+    setImageCard(deckUsesImages);
     setImagePanel(null);
     setAiPrompt('');
     setSuggestingCard(false);
@@ -112,7 +123,7 @@ export default function QuickAddCardModal({ open, onClose, deckId, deck, activeC
     if (!aiPrompt.trim()) { toast.error('Enter a description first'); return; }
     setGeneratingImage(true);
     const enhancer = STYLE_PRESETS[aiStyle]?.enhancer || '';
-    const fullPrompt = `${aiPrompt.trim()}, ${enhancer}. Do not render any text or words. Compose for 4:3 landscape, subject centered, generous margins.`;
+    const fullPrompt = `${aiPrompt.trim()}, ${enhancer}. Do not render any text or words. Compose for 3:2 landscape, subject centered, generous margins.`;
     const { url } = await base44.integrations.Core.GenerateImage({ prompt: fullPrompt });
     setImageUrl(url);
     setImagePanel(null);
@@ -147,7 +158,6 @@ Return:
       setQuestion(result.question || '');
       setAnswer(result.answer || '');
       setAiPrompt(result.image_prompt || result.answer || '');
-      setImagePanel('ai');
     } else {
       toast.error('Could not generate a suggestion');
     }
@@ -159,8 +169,8 @@ Return:
     if (!answer.trim()) { toast.error('Answer is required'); return; }
     setStep('saving');
 
-    let finalImageUrl = imageUrl;
-    if (imageUrl?.startsWith('data:')) {
+    let finalImageUrl = imageCard ? imageUrl : '';
+    if (finalImageUrl?.startsWith('data:')) {
       const blob = await (await fetch(imageUrl)).blob();
       const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
@@ -225,6 +235,13 @@ Return:
   };
 
   const selectAllAnswers = answer.split('|').map(s => s.trim()).filter(Boolean);
+
+  // Placeholder arrangement for the preview — shapes only, no answer text
+  const previewChoiceCount =
+    qType === 'true_false' ? 2
+    : qType === 'select_all' ? Math.max(2, selectAllAnswers.length)
+    : 4;
+  const previewAnswerStyle = qType === 'short_answer' ? 'field' : 'bars';
   const canSave = qType === 'true_false'
     ? !!answer
     : qType === 'select_all'
@@ -233,7 +250,7 @@ Return:
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
-      <DialogContent className="max-w-2xl p-0 overflow-hidden">
+      <DialogContent className="max-w-5xl p-0 overflow-hidden">
         <AnimatePresence mode="wait">
 
           {/* ── STEP: input ───────────────────────────────────────────────── */}
@@ -245,188 +262,221 @@ Return:
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.18 }}
               className="flex flex-col"
+              onKeyDown={(e) => {
+                if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && canSave) handleSave();
+              }}
             >
               {/* Header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-                <h2 className="font-semibold text-base">New Card</h2>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleAiSuggest}
-                  disabled={suggestingCard}
-                  className="gap-1.5 text-primary h-8 text-xs"
-                >
-                  {suggestingCard
-                    ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Thinking…</>
-                    : <><Sparkles className="w-3.5 h-3.5" /> AI Suggest</>}
-                </Button>
+                <h2 className="font-semibold text-base">Create a Card</h2>
               </div>
 
-              {/* Body */}
-              <div className="px-6 py-5 space-y-5 overflow-y-auto max-h-[75vh]">
+              {/* Body — what the card says | how the card looks */}
+              <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] max-h-[74vh] overflow-y-auto md:overflow-visible">
 
-                {/* Question Type */}
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Question Type</label>
-                  <Select value={qType} onValueChange={(v) => { setQType(v); setAnswer(''); }}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="multiple_choice">Multiple Choice</SelectItem>
-                      <SelectItem value="true_false">True / False</SelectItem>
-                      <SelectItem value="select_all">Select All That Apply</SelectItem>
-                      <SelectItem value="short_answer">Short Answer</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground min-h-[1rem]">
-                    {qType === 'multiple_choice' && 'Students pick one correct answer from a list of choices.'}
-                    {qType === 'select_all' && 'Students must select every correct answer to earn full credit.'}
-                    {qType === 'true_false' && 'Write a statement in the question field — students decide if it\'s True or False.'}
-                    {qType === 'short_answer' && 'Students type a free-text response graded by exact match then AI fallback.'}
-                  </p>
-                </div>
+                {/* ── Left: form ──────────────────────────────────────────── */}
+                <div className="px-6 py-5 space-y-5 md:overflow-y-auto md:max-h-[74vh]">
 
-                {/* Question / Clue */}
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium">
-                    {qType === 'true_false' ? 'Statement' : 'Question / Clue'}
-                  </label>
-                  <Textarea
-                    value={question}
-                    onChange={e => setQuestion(e.target.value)}
-                    placeholder={
-                      qType === 'true_false'
-                        ? 'e.g. "The Earth is the third planet from the Sun."'
-                        : 'e.g. "This is the largest planet in the solar system."'
-                    }
-                    rows={2}
-                    className="resize-none text-sm"
-                  />
-                </div>
-
-                {/* Answer */}
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium">
-                    {meta.answerLabel} <span className="text-destructive">*</span>
-                  </label>
-                  {qType === 'true_false' ? (
-                    <Select value={answer} onValueChange={setAnswer}>
+                  {/* Question Type */}
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">Question Type</label>
+                    <Select value={qType} onValueChange={(v) => { setQType(v); setAnswer(''); }}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select the correct answer…" />
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="True">True</SelectItem>
-                        <SelectItem value="False">False</SelectItem>
+                        <SelectItem value="multiple_choice">Multiple Choice</SelectItem>
+                        <SelectItem value="true_false">True / False</SelectItem>
+                        <SelectItem value="select_all">Select All That Apply</SelectItem>
+                        <SelectItem value="short_answer">Short Answer</SelectItem>
                       </SelectContent>
                     </Select>
-                  ) : (
-                    <Input
-                      value={answer}
-                      onChange={e => setAnswer(e.target.value)}
-                      placeholder={meta.answerPlaceholder}
-                      onKeyDown={e => { if (e.key === 'Enter' && answer.trim()) handleSave(); }}
-                    />
-                  )}
-                  <p className="text-xs text-muted-foreground">{meta.answerHelper}</p>
-                  {qType === 'select_all' && answer.trim() && selectAllAnswers.length < 2 && (
-                    <p className="text-xs text-amber-600">Add at least one more answer separated by "|".</p>
-                  )}
-                </div>
+                    <p className="text-xs text-muted-foreground min-h-[1rem]">
+                      {qType === 'multiple_choice' && 'Students pick one correct answer from a list of choices.'}
+                      {qType === 'select_all' && 'Students must select every correct answer to earn full credit.'}
+                      {qType === 'true_false' && 'Write a statement in the question field — students decide if it\'s True or False.'}
+                      {qType === 'short_answer' && 'Students type a free-text response graded by exact match then AI fallback.'}
+                    </p>
+                  </div>
 
-                {/* Image (optional, at the bottom) */}
-                <div className="space-y-2 pt-1">
-                  <label className="text-sm font-medium">Image <span className="text-xs text-muted-foreground font-normal">(optional)</span></label>
-
-                  {imageUrl ? (
-                    <div className="relative h-48 rounded-lg overflow-hidden border border-border">
-                      <img src={imageUrl} alt="card" className="w-full h-full object-cover" />
-                      <button
-                        onClick={() => setImageUrl('')}
-                        className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div
-                      className="h-28 rounded-lg border border-dashed border-border flex flex-col items-center justify-center gap-1.5 text-muted-foreground cursor-pointer hover:border-primary/50 transition-colors"
-                      onClick={() => fileRef.current?.click()}
+                  {/* Draft with AI + Image Card */}
+                  <div className="flex items-center justify-between gap-4">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleAiSuggest}
+                      disabled={suggestingCard}
+                      className="gap-1.5 h-8 text-xs"
                     >
-                      <ImageIcon className="w-5 h-5" />
-                      <span className="text-xs">Click to upload</span>
-                    </div>
-                  )}
+                      {suggestingCard
+                        ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Thinking…</>
+                        : <><Sparkles className="w-3.5 h-3.5" /> Draft with AI</>}
+                    </Button>
 
-                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+                    <label className="flex items-center gap-2 text-sm font-medium cursor-pointer select-none">
+                      <Checkbox checked={imageCard} onCheckedChange={(v) => setImageCard(!!v)} />
+                      Image Card
+                    </label>
+                  </div>
 
-                  {/* Image source links */}
-                  <div className="flex items-center gap-4 text-xs">
-                    <button type="button" onClick={() => fileRef.current?.click()} className="flex items-center gap-1 text-primary hover:underline">
-                      <Upload className="w-3 h-3" /> Upload
-                    </button>
-                    <button type="button" onClick={() => setImagePanel(v => v === 'pick' ? null : 'pick')} className={cn('flex items-center gap-1 hover:underline text-primary', imagePanel === 'pick' && 'font-semibold')}>
-                      <ImageIcon className="w-3 h-3" /> Pick from decks
-                    </button>
-                    {answer.trim() && (
-                      <button type="button" onClick={() => setImagePanel(v => v === 'search' ? null : 'search')} className={cn('flex items-center gap-1 hover:underline text-primary', imagePanel === 'search' && 'font-semibold')}>
-                        <Search className="w-3 h-3" /> Search
-                      </button>
+                  {/* Question / Clue */}
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">
+                      {qType === 'true_false' ? 'Statement' : 'Question / Clue'}
+                    </label>
+                    <Textarea
+                      value={question}
+                      onChange={e => setQuestion(e.target.value)}
+                      placeholder={
+                        qType === 'true_false'
+                          ? 'e.g. "The Earth is the third planet from the Sun."'
+                          : 'e.g. "This is the largest planet in the solar system."'
+                      }
+                      rows={3}
+                      className="resize-none text-sm"
+                    />
+                  </div>
+
+                  {/* Answer */}
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">
+                      {meta.answerLabel} <span className="text-destructive">*</span>
+                    </label>
+                    {qType === 'true_false' ? (
+                      <Select value={answer} onValueChange={setAnswer}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select the correct answer…" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="True">True</SelectItem>
+                          <SelectItem value="False">False</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input
+                        value={answer}
+                        onChange={e => setAnswer(e.target.value)}
+                        placeholder={meta.answerPlaceholder}
+                        onKeyDown={e => { if (e.key === 'Enter' && answer.trim()) handleSave(); }}
+                      />
                     )}
-                    {answer.trim() && (
-                      <button type="button" onClick={() => setImagePanel(v => v === 'ai' ? null : 'ai')} className={cn('flex items-center gap-1 hover:underline text-primary', imagePanel === 'ai' && 'font-semibold')}>
-                        <Sparkles className="w-3 h-3" /> AI Generate
-                      </button>
+                    <p className="text-xs text-muted-foreground">{meta.answerHelper}</p>
+                    {qType === 'select_all' && answer.trim() && selectAllAnswers.length < 2 && (
+                      <p className="text-xs text-amber-600">Add at least one more answer separated by "|".</p>
                     )}
                   </div>
 
-                  {imagePanel === 'search' && (
-                    <ImageSearchPanel
-                      defaultQuery={answer}
-                      onSelect={(url) => { setImageUrl(url); setImagePanel(null); }}
-                      onClose={() => setImagePanel(null)}
-                    />
-                  )}
-                  {imagePanel === 'pick' && (
-                    <ImagePickerFromDeck
-                      onSelect={(url) => { setImageUrl(url); setImagePanel(null); }}
-                      onClose={() => setImagePanel(null)}
-                    />
-                  )}
-                  {imagePanel === 'ai' && (
-                    <div className="border border-border rounded-lg p-3 space-y-3 bg-accent/20">
-                      <p className="text-xs font-medium">Generate an image with AI</p>
-                      <Textarea
-                        value={aiPrompt}
-                        onChange={e => setAiPrompt(e.target.value)}
-                        placeholder="Describe what the image should show…"
-                        rows={2}
-                        className="resize-none text-sm"
-                      />
-                      <div className="grid grid-cols-2 gap-2">
-                        {Object.entries(STYLE_PRESETS).map(([key, { label, emoji }]) => (
-                          <button
-                            key={key}
-                            type="button"
-                            onClick={() => setAiStyle(key)}
-                            className={cn(
-                              'flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition-colors text-left',
-                              aiStyle === key
-                                ? 'border-primary bg-primary/10 text-primary font-medium'
-                                : 'border-border hover:border-primary/50 text-muted-foreground'
-                            )}
-                          >
-                            <span>{emoji}</span> {label}
+                  {/* Footnote */}
+                  <div className="flex items-start gap-2 pt-1 text-xs text-muted-foreground">
+                    <Lightbulb className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                    <p>Distractor choices, clues, tags and other details can be added in the full editor.</p>
+                  </div>
+                </div>
+
+                {/* ── Right: preview + image sources ──────────────────────── */}
+                <div className="px-6 py-5 md:border-l border-border bg-muted/20 space-y-3 md:overflow-y-auto md:max-h-[74vh]">
+                  <p className="text-sm font-medium">Card Preview</p>
+
+                  <CardPreviewPane
+                    imageUrl={imageCard ? imageUrl : ''}
+                    question={question}
+                    choiceCount={previewChoiceCount}
+                    answerStyle={previewAnswerStyle}
+                    showImage={imageCard}
+                    counter={`${activeCards.length + 1}/${activeCards.length + 1}`}
+                    imageEmpty={
+                      <button
+                        type="button"
+                        onClick={() => fileRef.current?.click()}
+                        className="w-full h-full flex flex-col items-center justify-center gap-1 border-2 border-dashed border-muted-foreground/30 text-muted-foreground hover:border-primary/60 hover:text-primary transition-colors"
+                      >
+                        <ImageIcon className="w-5 h-5" />
+                        <span className="text-xs font-medium">Add Image</span>
+                      </button>
+                    }
+                  />
+
+                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+
+                  {imageCard && (
+                    <>
+                      <div className="flex items-center gap-4 text-xs flex-wrap">
+                        <button type="button" onClick={() => fileRef.current?.click()} className="flex items-center gap-1 text-primary hover:underline">
+                          <Upload className="w-3 h-3" /> Upload
+                        </button>
+                        <button type="button" onClick={() => setImagePanel(v => v === 'pick' ? null : 'pick')} className={cn('flex items-center gap-1 hover:underline text-primary', imagePanel === 'pick' && 'font-semibold')}>
+                          <ImageIcon className="w-3 h-3" /> Pick from decks
+                        </button>
+                        {answer.trim() && (
+                          <button type="button" onClick={() => setImagePanel(v => v === 'search' ? null : 'search')} className={cn('flex items-center gap-1 hover:underline text-primary', imagePanel === 'search' && 'font-semibold')}>
+                            <Search className="w-3 h-3" /> Search
                           </button>
-                        ))}
+                        )}
+                        {answer.trim() && (
+                          <button type="button" onClick={() => setImagePanel(v => v === 'ai' ? null : 'ai')} className={cn('flex items-center gap-1 hover:underline text-primary', imagePanel === 'ai' && 'font-semibold')}>
+                            <Sparkles className="w-3 h-3" /> AI Generate
+                          </button>
+                        )}
+                        {imageUrl && (
+                          <button type="button" onClick={() => setImageUrl('')} className="text-muted-foreground hover:text-destructive ml-auto">
+                            Remove
+                          </button>
+                        )}
                       </div>
-                      <Button type="button" size="sm" onClick={handleGenerateAiImage} disabled={generatingImage} className="w-full gap-1.5">
-                        {generatingImage
-                          ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating…</>
-                          : <><Sparkles className="w-3.5 h-3.5" /> Generate Image</>}
-                      </Button>
-                    </div>
+
+                      {imagePanel === 'search' && (
+                        <ImageSearchPanel
+                          defaultQuery={answer}
+                          onSelect={(url) => { setImageUrl(url); setImagePanel(null); }}
+                          onClose={() => setImagePanel(null)}
+                        />
+                      )}
+                      {imagePanel === 'pick' && (
+                        <ImagePickerFromDeck
+                          onSelect={(url) => { setImageUrl(url); setImagePanel(null); }}
+                          onClose={() => setImagePanel(null)}
+                        />
+                      )}
+                      {imagePanel === 'ai' && (
+                        <div className="border border-border rounded-lg p-3 space-y-3 bg-background">
+                          <p className="text-xs font-medium">Generate an image with AI</p>
+                          <Textarea
+                            value={aiPrompt}
+                            onChange={e => setAiPrompt(e.target.value)}
+                            placeholder="Describe what the image should show…"
+                            rows={2}
+                            className="resize-none text-sm"
+                          />
+                          <div className="grid grid-cols-2 gap-2">
+                            {Object.entries(STYLE_PRESETS).map(([key, { label, emoji }]) => (
+                              <button
+                                key={key}
+                                type="button"
+                                onClick={() => setAiStyle(key)}
+                                className={cn(
+                                  'flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition-colors text-left',
+                                  aiStyle === key
+                                    ? 'border-primary bg-primary/10 text-primary font-medium'
+                                    : 'border-border hover:border-primary/50 text-muted-foreground'
+                                )}
+                              >
+                                <span>{emoji}</span> {label}
+                              </button>
+                            ))}
+                          </div>
+                          <Button type="button" size="sm" onClick={handleGenerateAiImage} disabled={generatingImage} className="w-full gap-1.5">
+                            {generatingImage
+                              ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating…</>
+                              : <><Sparkles className="w-3.5 h-3.5" /> Generate Image</>}
+                          </Button>
+                        </div>
+                      )}
+                    </>
                   )}
+
+                  <p className="text-xs text-muted-foreground">
+                    Shows how this card will be framed during study.
+                  </p>
                 </div>
               </div>
 
@@ -434,7 +484,7 @@ Return:
               <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-2 bg-muted/30">
                 <Button variant="ghost" onClick={handleClose}>Cancel</Button>
                 <Button onClick={handleSave} disabled={!canSave} className="gap-1.5">
-                  <Check className="w-4 h-4" /> Save Card
+                  <Check className="w-4 h-4" /> Save
                 </Button>
               </div>
             </motion.div>

@@ -32,7 +32,9 @@ export default function CardPreviewPane({
   focalPoint = null,      // { x, y } percentages, or null for centered
   question = '',
   choiceCount = 4,
+  answerStyle = 'bars',   // 'bars' | 'field' — 'field' is the short-answer input
   showImage = true,       // false collapses to the text-only layout
+  imageEmpty = null,      // node rendered in the image region when imageUrl is empty
   counter = '1/1',
   variant = 'horizontal', // reserved; vertical needs its own geometry pass
 }) {
@@ -50,14 +52,14 @@ export default function CardPreviewPane({
 
           {showImage && (
             <div style={{ width: '100%', flex: '0 0 75%', minHeight: 0, overflow: 'hidden', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {imageUrl && (
+              {imageUrl ? (
                 <img
                   src={imageUrl}
                   alt=""
                   draggable={false}
                   style={{ width: '100%', height: '100%', objectFit: imageFit, objectPosition }}
                 />
-              )}
+              ) : imageEmpty}
             </div>
           )}
 
@@ -97,14 +99,20 @@ export default function CardPreviewPane({
             <div style={{ width: '18%', height: '1.6cqi', borderRadius: 999, backgroundColor: SHAPE }} />
           </div>
 
-          {/* Choice bars */}
-          <div style={{ flex: 1, minHeight: 0, padding: '0 8px', display: 'flex', flexDirection: 'column', gap: GEO.choiceGap }}>
-            {Array.from({ length: choiceCount }).map((_, i) => (
-              <div key={i} style={{ width: '100%', flex: '1 1 0', minHeight: 0, maxHeight: GEO.choiceMaxH, borderRadius: 8, backgroundColor: SHAPE, display: 'flex', alignItems: 'center', gap: 8, padding: GEO.choicePad, boxSizing: 'border-box' }}>
-                <div style={{ width: '2.1cqi', height: '2.1cqi', borderRadius: 5, flexShrink: 0, backgroundColor: SHAPE_DARK }} />
-              </div>
-            ))}
-          </div>
+          {/* Answer region — choice bars, or a single field for short answer */}
+          {answerStyle === 'field' ? (
+            <div style={{ flex: 1, minHeight: 0, padding: '0 8px' }}>
+              <div style={{ width: '100%', height: '42%', borderRadius: 8, backgroundColor: SHAPE }} />
+            </div>
+          ) : (
+            <div style={{ flex: 1, minHeight: 0, padding: '0 8px', display: 'flex', flexDirection: 'column', gap: GEO.choiceGap }}>
+              {Array.from({ length: choiceCount }).map((_, i) => (
+                <div key={i} style={{ width: '100%', flex: '1 1 0', minHeight: 0, maxHeight: GEO.choiceMaxH, borderRadius: 8, backgroundColor: SHAPE, display: 'flex', alignItems: 'center', gap: 8, padding: GEO.choicePad, boxSizing: 'border-box' }}>
+                  <div style={{ width: '2.1cqi', height: '2.1cqi', borderRadius: 5, flexShrink: 0, backgroundColor: SHAPE_DARK }} />
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Secondary action row — reserved, empty */}
           <div style={{ marginTop: GEO.ansRowGap, height: GEO.ansSecondaryH, flexShrink: 0 }} />
