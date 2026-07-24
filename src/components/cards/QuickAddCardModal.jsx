@@ -80,6 +80,11 @@ export default function QuickAddCardModal({ open, onClose, deckId, deck, activeC
   // type switches; only cleared on a full modal reset.
   const [choicesList, setChoicesList] = useState(['', '', '', '']);
   const [correctSet, setCorrectSet] = useState(new Set()); // trimmed choice strings
+
+  // Short-answer fields — mirror CardEditor; grader reads all three.
+  const [acceptedVariants, setAcceptedVariants] = useState([]);
+  const [newVariant, setNewVariant] = useState('');
+  const [gradingGuidance, setGradingGuidance] = useState('');
   const [imageUrl, setImageUrl] = useState('');
 
   // Whether this card gets an image region at all. Defaults to whatever the
@@ -161,6 +166,9 @@ export default function QuickAddCardModal({ open, onClose, deckId, deck, activeC
     setAnswer('');
     setChoicesList(['', '', '', '']);
     setCorrectSet(new Set());
+    setAcceptedVariants([]);
+    setNewVariant('');
+    setGradingGuidance('');
     setImageUrl('');
     setImageCard(deckUsesImages);
     setImagePanel(null);
@@ -288,7 +296,11 @@ Return:
       point_value: diffResult.point_value,
       difficulty_tier: diffResult.difficulty_tier,
       difficulty_overridden: false,
-      ...(isShortAnswer && { canonical_answer: answer.trim(), accepted_variants: [], grading_guidance: '' }),
+      ...(isShortAnswer && {
+        canonical_answer: answer.trim(),
+        accepted_variants: acceptedVariants.map(v => v.trim()).filter(Boolean),
+        grading_guidance: gradingGuidance.trim(),
+      }),
     };
 
     const created = await base44.entities.Card.create(cardData);
@@ -445,6 +457,64 @@ Return:
                         />
                       )}
                       <p className="text-xs text-muted-foreground">{meta.answerHelper}</p>
+
+                      {qType === 'short_answer' && (
+                        <div className="space-y-4 border border-border rounded-lg p-4 bg-accent/10 mt-2">
+                          {/* Accepted variants */}
+                          <div className="space-y-1.5">
+                            <label className="text-sm font-medium">
+                              Accepted Variants <span className="text-xs text-muted-foreground font-normal">(optional)</span>
+                            </label>
+                            <div className="flex gap-2">
+                              <Input
+                                value={newVariant}
+                                onChange={e => setNewVariant(e.target.value)}
+                                placeholder="Add an alternate acceptable answer…"
+                                onKeyDown={e => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    if (newVariant.trim()) { setAcceptedVariants(prev => [...prev, newVariant.trim()]); setNewVariant(''); }
+                                  }
+                                }}
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => { if (newVariant.trim()) { setAcceptedVariants(prev => [...prev, newVariant.trim()]); setNewVariant(''); } }}
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                            {acceptedVariants.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5 mt-1">
+                                {acceptedVariants.map((v, i) => (
+                                  <span key={i} className="flex items-center gap-1 bg-secondary text-secondary-foreground px-2 py-0.5 rounded text-xs">
+                                    {v}
+                                    <button type="button" onClick={() => setAcceptedVariants(prev => prev.filter((_, idx) => idx !== i))}>
+                                      <X className="w-3 h-3" />
+                                    </button>
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Grading guidance */}
+                          <div className="space-y-1.5">
+                            <label className="text-sm font-medium">
+                              Grading Guidance <span className="text-xs text-muted-foreground font-normal">(optional AI rubric)</span>
+                            </label>
+                            <Textarea
+                              value={gradingGuidance}
+                              onChange={e => setGradingGuidance(e.target.value)}
+                              placeholder='e.g. "Must mention both photosynthesis and chlorophyll for full credit; one alone is partial"'
+                              rows={2}
+                              className="resize-none text-sm"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="space-y-2">
