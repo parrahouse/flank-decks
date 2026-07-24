@@ -8,6 +8,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cardLabel } from '@/lib/utils';
 import StudyCard from '@/components/cards/StudyCard';
 import StudyCardHorizontal from '@/components/cards/StudyCardHorizontal';
+import { CARD_MIN_W, STUDY_MIN_VH } from '@/lib/studyLayout';
 import ContactSheet from '@/components/cards/ContactSheet';
 import ProgressGameBand from '@/components/cards/ProgressGameBand';
 import HeartsHud from '@/components/cards/HeartsHud';
@@ -132,7 +133,9 @@ export default function StudySession() {
   // Layout defaults: seeded from user profile, then overrideable per-session
   const [layoutMode, setLayoutMode] = useState(() => localStorage.getItem('flashdeck_layout') || 'auto');
   const [handedness, setHandedness] = useState(() => localStorage.getItem('flashdeck_handedness') || 'left');
-  const [isWide, setIsWide] = useState(() => window.innerWidth >= 900);
+  const [isWide, setIsWide] = useState(
+    () => window.innerWidth >= CARD_MIN_W && window.innerHeight >= STUDY_MIN_VH
+  );
   const SCENE_FLOOR_H = 150; // px of sky+ground the scene gets BELOW the header line
   const [savingDefaults, setSavingDefaults] = useState(false);
   const [introPhase, setIntroPhase] = useState('intro'); // 'intro' | 'ready'
@@ -154,7 +157,9 @@ export default function StudySession() {
   };
 
   useEffect(() => {
-    const onResize = () => setIsWide(window.innerWidth >= 900);
+    const onResize = () => setIsWide(
+      window.innerWidth >= CARD_MIN_W && window.innerHeight >= STUDY_MIN_VH
+    );
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);

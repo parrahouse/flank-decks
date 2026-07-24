@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { ArrowLeft } from 'lucide-react';
 import StudyCard from '@/components/cards/StudyCard';
 import StudyCardHorizontal from '@/components/cards/StudyCardHorizontal';
+import { CARD_MIN_W, STUDY_MIN_VH } from '@/lib/studyLayout';
 import SessionStatsPanel from '@/components/cards/SessionStatsPanel';
 import ProgressGameBand from '@/components/cards/ProgressGameBand';
 import HeartsHud from '@/components/cards/HeartsHud';
@@ -45,7 +46,9 @@ export default function CollectionStudy() {
   const [hearts, setHearts] = useState(MAX_HEARTS);
   const [layoutMode] = useState(() => localStorage.getItem('flashdeck_layout') || 'auto');
   const [handedness] = useState(() => localStorage.getItem('flashdeck_handedness') || 'left');
-  const [isWide, setIsWide] = useState(() => window.innerWidth >= 900);
+  const [isWide, setIsWide] = useState(
+    () => window.innerWidth >= CARD_MIN_W && window.innerHeight >= STUDY_MIN_VH
+  );
 
   const [started, setStarted] = useState(false);
   const [shuffledCards, setShuffledCards] = useState([]);
@@ -78,7 +81,9 @@ export default function CollectionStudy() {
   const { playLevelStart } = useSound(soundEnabled);
 
   useEffect(() => {
-    const onResize = () => setIsWide(window.innerWidth >= 900);
+    const onResize = () => setIsWide(
+      window.innerWidth >= CARD_MIN_W && window.innerHeight >= STUDY_MIN_VH
+    );
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);

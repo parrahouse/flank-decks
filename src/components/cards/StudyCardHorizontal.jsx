@@ -47,16 +47,21 @@ const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 // in comments are the px equivalent at a 1216px-wide card.
 const GEO = {
   colGap:        '1.32cqi', // 16px — between the two columns
-  paneGap:       '0.66cqi', // 8px  — between image and question pane
+  // paneGap removed — the image/question split is now an exact percentage
   qPadImage:     '1.32cqi 1.32cqi 2.96cqi 1.32cqi', // 16/16/36/16
   qPadNoImage:   '1.65cqi 1.65cqi 3.29cqi 1.65cqi', // 20/20/40/20
   qFontImage:    'clamp(11px, 1.65cqi, 22px)',      // was clamp(13px, 1.8vw, 20px)
   qFontNoImage:  'clamp(16px, 2.96cqi, 40px)',      // was clamp(20px, 3vw, 36px)
-  choiceMaxH:    '4.28cqi', // 52px
+  choiceMaxH:    'clamp(30px, 4.28cqi, 56px)', // 52px — floor matches the font floor
   choiceGap:     '0.41cqi', // 5px
   choicePad:     '0.74cqi 1.15cqi', // 9px 14px
   choiceFont:    'clamp(12px, 1.65cqi, 21px)', // was 15–20px, content-dependent
-  tfMaxH:        '4.61cqi', // 56px
+  tfMaxH:        'clamp(32px, 4.61cqi, 60px)', // 56px
+  // Answer-column chrome — structural, must scale with the card
+  ansTopGap:     '1.48cqi', // 18px — below the type-label row
+  ansSecondaryH: '2.96cqi', // 36px — secondary action row
+  ansActionH:    '3.62cqi', // 44px — bottom action row
+  ansRowGap:     '0.82cqi', // 10px — margin above each of those rows
 };
 
 export default function StudyCardHorizontal({
@@ -283,11 +288,11 @@ export default function StudyCardHorizontal({
 
   // ── Left column: image + question ──────────────────────────────────────────
   const ImageQuestionCol = (
-    <Pane {...paneProps} style={{ display: 'flex', flexDirection: 'column', flex: '0 0 48%', minWidth: 0, gap: GEO.paneGap }}>
+    <Pane {...paneProps} style={{ display: 'flex', flexDirection: 'column', flex: '0 0 48%', minWidth: 0, gap: 0 }}>
       {/* Image region — reserved for the whole session so the layout never jumps.
           Renders the neutral block when this particular card has no image. */}
       {reserveImageSlot && (
-        <div style={{ width: '100%', flex: '3 1 0', minHeight: 0, overflow: 'hidden', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: '100%', flex: '0 0 75%', minHeight: 0, overflow: 'hidden', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {hasImage && (
             <img src={card.image_url} alt="card" style={{ width: '100%', height: '100%', objectFit: card.image_fit || 'cover', objectPosition: (card.image_fit !== 'contain' && card.image_focal_point) ? `${card.image_focal_point.x}% ${card.image_focal_point.y}%` : 'center' }} />
           )}
@@ -297,18 +302,24 @@ export default function StudyCardHorizontal({
       {/* Question pane — 25% of the column, or the whole column in a no-image session */}
       <div style={{
         width: '100%',
-        flex: '1 1 0',
+        flex: reserveImageSlot ? '0 0 25%' : '1 1 0',
         minHeight: 0,
-        display: 'flex',
-        alignItems: reserveImageSlot ? 'flex-start' : 'center',
-        padding: reserveImageSlot ? GEO.qPadImage : GEO.qPadNoImage,
         backgroundColor: hintVisible ? '#EEFF41' : '#DFEDF5',
+        borderTop: reserveImageSlot ? '1px solid rgba(17,54,86,0.08)' : 'none',
         position: 'relative',
         boxSizing: 'border-box', overflow: 'hidden', transition: 'background-color 0.2s',
       }}>
-        <p style={{ color: '#113656', fontSize: reserveImageSlot ? GEO.qFontImage : GEO.qFontNoImage, fontWeight: 500, lineHeight: 1.35, margin: 0, visibility: hintVisible ? 'hidden' : 'visible' }}>
-          {card.clue || ''}
-        </p>
+        {/* Padding lives on an inner wrapper so it can't inflate the flex item */}
+        <div style={{
+          width: '100%', height: '100%', boxSizing: 'border-box',
+          display: 'flex',
+          alignItems: reserveImageSlot ? 'flex-start' : 'center',
+          padding: reserveImageSlot ? GEO.qPadImage : GEO.qPadNoImage,
+        }}>
+          <p style={{ color: '#113656', fontSize: reserveImageSlot ? GEO.qFontImage : GEO.qFontNoImage, fontWeight: 500, lineHeight: 1.35, margin: 0, visibility: hintVisible ? 'hidden' : 'visible' }}>
+            {card.clue || ''}
+          </p>
+        </div>
         {hintVisible && note && (
           <div style={{ position: 'absolute', inset: 0, padding: '16px 16px 36px 16px', display: 'flex', alignItems: 'flex-start' }}>
             <p style={{ color: '#1a237e', fontSize: 'clamp(13px, 1.6vw, 18px)', fontWeight: 500, lineHeight: 1.35, margin: 0 }}>{note}</p>
@@ -352,7 +363,7 @@ export default function StudyCardHorizontal({
         display: 'flex', flexDirection: 'column', overflow: 'hidden',
       }}>
         {/* Top row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: GEO.ansTopGap, flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#00A842', fontSize: 20, fontWeight: 500 }}>
             <span>{qtLabel}</span>
             {isTrueFalse ? <ToggleLeft style={{ width: 24, height: 24 }} />
@@ -411,7 +422,7 @@ export default function StudyCardHorizontal({
                     return (
                       <button key={choice} disabled={answered} onClick={() => handleSelect(choice)}
                         className={cn('choice-btn', shakingChoice === choice && 'animate-shake')}
-                        style={{ flex: 1, height: GEO.tfMaxH, borderRadius: 10, border: `2px solid ${choiceBorderColor(state)}`, backgroundColor: choiceBgColor(state), display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', cursor: answered ? 'default' : 'pointer', fontSize: GEO.choiceFont, fontWeight: 500, textAlign: 'left', transition: state === 'correct' ? 'none' : 'border-color 0.4s ease 0.15s, background-color 0.4s ease 0.15s' }}
+                        style={{ flex: 1, height: GEO.tfMaxH, boxSizing: 'border-box', overflow: 'hidden', borderRadius: 10, border: `2px solid ${choiceBorderColor(state)}`, backgroundColor: choiceBgColor(state), display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', cursor: answered ? 'default' : 'pointer', fontSize: GEO.choiceFont, fontWeight: 500, textAlign: 'left', transition: state === 'correct' ? 'none' : 'border-color 0.4s ease 0.15s, background-color 0.4s ease 0.15s' }}
                       >
                         <span style={{ width: 26, height: 26, borderRadius: 5, flexShrink: 0, backgroundColor: state === 'correct' ? '#00A842' : state === 'wrong-final' ? '#dc2626' : '#000', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>
                           {state === 'correct' ? <Check style={{ width: 14, height: 14 }} /> : state === 'wrong-final' ? <X style={{ width: 13, height: 13 }} /> : LETTERS[idx]}
@@ -428,7 +439,7 @@ export default function StudyCardHorizontal({
                     return (
                       <button key={choice} disabled={state === 'eliminated' || answered} onClick={() => handleSelect(choice)}
                         className={cn('choice-btn', shakingChoice === choice && 'animate-shake')}
-                        style={{ width: '100%', flex: '1 1 0', minHeight: 0, maxHeight: GEO.choiceMaxH, borderRadius: 8, border: `2px solid ${choiceBorderColor(state)}`, backgroundColor: choiceBgColor(state), opacity: state === 'eliminated' || state === 'dim' ? 0.4 : 1, display: 'flex', alignItems: 'center', gap: 8, padding: GEO.choicePad, cursor: answered || state === 'eliminated' ? 'default' : 'pointer', fontSize: GEO.choiceFont, fontWeight: 500, textAlign: 'left', transition: state === 'correct' ? 'none' : 'border-color 0.4s ease 0.15s, background-color 0.4s ease 0.15s, opacity 0.4s ease 0.15s' }}
+                        style={{ width: '100%', flex: '1 1 0', minHeight: 0, maxHeight: GEO.choiceMaxH, boxSizing: 'border-box', overflow: 'hidden', borderRadius: 8, border: `2px solid ${choiceBorderColor(state)}`, backgroundColor: choiceBgColor(state), opacity: state === 'eliminated' || state === 'dim' ? 0.4 : 1, display: 'flex', alignItems: 'center', gap: 8, padding: GEO.choicePad, cursor: answered || state === 'eliminated' ? 'default' : 'pointer', fontSize: GEO.choiceFont, fontWeight: 500, textAlign: 'left', transition: state === 'correct' ? 'none' : 'border-color 0.4s ease 0.15s, background-color 0.4s ease 0.15s, opacity 0.4s ease 0.15s' }}
                       >
                         <span style={{ width: 26, height: 26, borderRadius: 5, flexShrink: 0, backgroundColor: state === 'correct' ? '#00A842' : state === 'wrong-final' ? '#dc2626' : state === 'missed-correct' ? '#0165fc' : state === 'selected-pending' ? '#0165fc' : '#000', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>
                           {state === 'correct' || state === 'missed-correct' ? <Check style={{ width: 13, height: 13 }} /> : state === 'wrong-final' ? <X style={{ width: 13, height: 13 }} /> : (isSelectAll && state === 'first-wrong') ? <X style={{ width: 13, height: 13 }} /> : LETTERS[idx]}
@@ -446,7 +457,7 @@ export default function StudyCardHorizontal({
             </div>
 
             {/* Secondary actions — reserved fixed slot; contents toggle (empty after answer) */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: 10, height: 36, flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: GEO.ansRowGap, height: GEO.ansSecondaryH, flexShrink: 0 }}>
               {!answered && (
                 isSelectAll ? (
                   selectAllPending.size >= 2 && (
@@ -466,7 +477,7 @@ export default function StudyCardHorizontal({
             </div>
 
             {/* Action row — reserved fixed slot; Learn More space reserved via visibility */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 10, paddingTop: 10, borderTop: '1px solid #E5E5E5', height: 44, flexShrink: 0, boxSizing: 'border-box', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: GEO.ansRowGap, paddingTop: GEO.ansRowGap, borderTop: '1px solid #E5E5E5', height: GEO.ansActionH, flexShrink: 0, boxSizing: 'border-box', overflow: 'hidden' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, backgroundColor: '#F5F5F0', borderRadius: 18, padding: '5px 12px', fontSize: 12, flexShrink: 0 }}>
                 <Glasses style={{ width: 17, height: 17, flexShrink: 0 }} />
                 <span>Mastery: <strong>{masteryPct !== null ? `${masteryPct}%` : '--'}</strong></span>

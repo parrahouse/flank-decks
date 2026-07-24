@@ -12,6 +12,12 @@ export const CARD_ASPECT = 2.4; // width : height
 // bottom on a short window, raise this; if there is dead space below, lower it.
 export const STUDY_CHROME_PX = 260;
 
+// Below this card width the type hits its px floors and the proportions break.
+// Study pages use it to fall back to the vertical card. Keep in sync with the
+// isWide check in StudySession.jsx / CollectionStudy.jsx.
+export const CARD_MIN_W = 900;
+export const STUDY_MIN_VH = Math.round(CARD_MIN_W / CARD_ASPECT + STUDY_CHROME_PX); // 635
+
 // Drop-in style for the horizontal card box and for anything that must match
 // its height exactly (SessionStatsPanel). `containerType` makes `cqi` units
 // inside resolve against card width.
