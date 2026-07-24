@@ -18,6 +18,32 @@ export const STUDY_CHROME_PX = 260;
 export const CARD_MIN_W = 900;
 export const STUDY_MIN_VH = Math.round(CARD_MIN_W / CARD_ASPECT + STUDY_CHROME_PX); // 635
 
+// Region fractions. The image slot's aspect ratio falls out of these and is
+// constant at every card width — which is what makes an honest preview possible.
+export const CARD_COL_W = 0.48;   // left column share of card WIDTH
+export const CARD_IMAGE_H = 0.75; // image share of left column HEIGHT
+export const IMAGE_ASPECT = (CARD_COL_W * CARD_ASPECT) / CARD_IMAGE_H; // 1.536
+
+// Structural dimensions as a percentage of card width (cqi). Shared by
+// StudyCardHorizontal and CardPreviewPane so the two cannot drift apart.
+// Reference values in comments are px at a 1216px-wide card.
+export const CARD_GEO = {
+  colGap:        '1.32cqi', // 16px — between the two columns
+  qPadImage:     '1.32cqi 1.32cqi 2.96cqi 1.32cqi', // 16/16/36/16
+  qPadNoImage:   '1.65cqi 1.65cqi 3.29cqi 1.65cqi', // 20/20/40/20
+  qFontImage:    'clamp(11px, 1.65cqi, 22px)',
+  qFontNoImage:  'clamp(16px, 2.96cqi, 40px)',
+  choiceMaxH:    'clamp(30px, 4.28cqi, 56px)', // 52px
+  choiceGap:     '0.41cqi', // 5px
+  choicePad:     '0.74cqi 1.15cqi', // 9px 14px
+  choiceFont:    'clamp(12px, 1.65cqi, 21px)',
+  tfMaxH:        'clamp(32px, 4.61cqi, 60px)', // 56px
+  ansTopGap:     '1.48cqi', // 18px
+  ansSecondaryH: '2.96cqi', // 36px
+  ansActionH:    '3.62cqi', // 44px
+  ansRowGap:     '0.82cqi', // 10px
+};
+
 // Drop-in style for the horizontal card box and for anything that must match
 // its height exactly (SessionStatsPanel). `containerType` makes `cqi` units
 // inside resolve against card width.

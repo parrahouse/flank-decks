@@ -14,6 +14,7 @@ import DeckCollectionsDialog from '@/components/collections/DeckCollectionsDialo
 import CardFilterBar from '@/components/cards/CardFilterBar';
 import BinPanel from '@/components/cards/BinPanel';
 import CardPreviewModal from '@/components/cards/CardPreviewModal';
+import CardPreviewPane from '@/components/cards/CardPreviewPane';
 import { toast } from 'sonner';
 
 export default function DeckBuilder() {
@@ -242,6 +243,34 @@ export default function DeckBuilder() {
     {/* Main content */}
     <div className={`flex-1 px-4 py-8 transition-all duration-300 ${showEditor ? 'md:mr-[640px]' : ''}`}>
     <div className="max-w-7xl mx-auto">
+
+      {/* TEMP — Stage 1 verification harness. Delete in Stage 2.
+          Visit this deck with ?previewpane=1 appended to the URL. */}
+      {new URLSearchParams(window.location.search).has('previewpane') && (
+        <div className="mb-6 border border-dashed border-border rounded-md p-4 space-y-5">
+          <p className="text-xs text-muted-foreground">
+            CardPreviewPane harness — three widths, same card. The image crop should be identical in all three.
+          </p>
+          {[560, 380, 260].map((w) => (
+            <div key={w} style={{ maxWidth: w }}>
+              <CardPreviewPane
+                imageUrl={activeCards.find((c) => c.image_url)?.image_url || ''}
+                question="Why does Tris jump on the train and leave the Dauntless compound in Chapter 28?"
+                choiceCount={4}
+                counter="1/37"
+              />
+            </div>
+          ))}
+          <div style={{ maxWidth: 560 }}>
+            <CardPreviewPane
+              question="Why does Tris jump on the train and leave the Dauntless compound in Chapter 28?"
+              choiceCount={4}
+              counter="1/37"
+              showImage={false}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div className="mb-6 bg-card border border-border rounded-md overflow-hidden hover:shadow-md transition-all duration-200">

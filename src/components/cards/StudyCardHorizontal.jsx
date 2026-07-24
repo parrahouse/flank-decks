@@ -16,7 +16,7 @@ import {
   X, MessageCircleQuestion, Check, PlusCircle,
 } from 'lucide-react';
 import CardNoteEditor from './CardNoteEditor';
-import { STUDY_CARD_BOX_H } from '@/lib/studyLayout';
+import { STUDY_CARD_BOX_H, CARD_GEO as GEO } from '@/lib/studyLayout';
 import ShortAnswerInput from './ShortAnswerInput';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -42,27 +42,6 @@ const SCORE = {
 };
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
-
-// Structural dimensions as a percentage of card width (cqi). Reference values
-// in comments are the px equivalent at a 1216px-wide card.
-const GEO = {
-  colGap:        '1.32cqi', // 16px — between the two columns
-  // paneGap removed — the image/question split is now an exact percentage
-  qPadImage:     '1.32cqi 1.32cqi 2.96cqi 1.32cqi', // 16/16/36/16
-  qPadNoImage:   '1.65cqi 1.65cqi 3.29cqi 1.65cqi', // 20/20/40/20
-  qFontImage:    'clamp(11px, 1.65cqi, 22px)',      // was clamp(13px, 1.8vw, 20px)
-  qFontNoImage:  'clamp(16px, 2.96cqi, 40px)',      // was clamp(20px, 3vw, 36px)
-  choiceMaxH:    'clamp(30px, 4.28cqi, 56px)', // 52px — floor matches the font floor
-  choiceGap:     '0.41cqi', // 5px
-  choicePad:     '0.74cqi 1.15cqi', // 9px 14px
-  choiceFont:    'clamp(12px, 1.65cqi, 21px)', // was 15–20px, content-dependent
-  tfMaxH:        'clamp(32px, 4.61cqi, 60px)', // 56px
-  // Answer-column chrome — structural, must scale with the card
-  ansTopGap:     '1.48cqi', // 18px — below the type-label row
-  ansSecondaryH: '2.96cqi', // 36px — secondary action row
-  ansActionH:    '3.62cqi', // 44px — bottom action row
-  ansRowGap:     '0.82cqi', // 10px — margin above each of those rows
-};
 
 export default function StudyCardHorizontal({
   card, deck, onNext, onPrev, isFirst, isLast, onScore, onSkip, canSkip = true,
