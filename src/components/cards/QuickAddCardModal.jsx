@@ -9,7 +9,7 @@
 import { useState, useRef, useEffect } from 'react';
 import {
   Upload, Sparkles, Search, Image as ImageIcon, Loader2,
-  Plus, Pencil, Check, Zap, Lightbulb,
+  Plus, Pencil, Check, Zap, Lightbulb, AlertTriangle, X,
 } from 'lucide-react';
 import { computeCardDifficulty } from '@/lib/computeCardDifficulty';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -73,7 +73,12 @@ export default function QuickAddCardModal({ open, onClose, deckId, deck, activeC
   // Form state
   const [qType, setQType] = useState('multiple_choice');
   const [question, setQuestion] = useState('');
-  const [answer, setAnswer] = useState('');
+  const [answer, setAnswer] = useState(''); // still used by true_false + short_answer
+
+  // Answer bank — mirrors CardEditor's allChoicesList + correctSet model, so a
+  // card saved here opens identically in the detail editor.
+  const [choicesList, setChoicesList] = useState(['', '', '', '']);
+  const [correctSet, setCorrectSet] = useState(new Set()); // trimmed choice strings
   const [imageUrl, setImageUrl] = useState('');
 
   // Whether this card gets an image region at all. Defaults to whatever the
@@ -97,12 +102,64 @@ export default function QuickAddCardModal({ open, onClose, deckId, deck, activeC
 
   const meta = QTYPE_META[qType];
 
+  const usesBank = qType === 'multiple_choice' || qType === 'select_all';
+
+  const updateChoice = (i, val) => {
+    setChoicesList(prev => {
+      const next = [...prev];
+      const old = next[i].trim();
+      next[i] = val;
+      // keep correctSet in step with a renamed choice
+      if (old && correctSet.has(old)) {
+        setCorrectSet(cs => {
+          const n = new Set(cs); n.delete(old);
+          if (val.trim()) n.add(val.trim());
+          return n;
+        });
+      }
+      return next;
+    });
+  };
+
+  const addChoice = () => setChoicesList(prev => prev.length < 6 ? [...prev, ''] : prev);
+
+  const removeChoice = (i) => {
+    setChoicesList(prev => {
+      if (prev.length <= 2) return prev;
+      const removed = prev[i].trim();
+      if (removed) setCorrectSet(cs => { const n = new Set(cs); n.delete(removed); return n; });
+      return prev.filter((_, idx) => idx !== i);
+    });
+  };
+
+  const toggleCorrect = (choice) => {
+    const t = choice.trim();
+    if (!t) return;
+    setCorrectSet(prev => {
+      const n = new Set(prev);
+      if (qType === 'multiple_choice') {
+        // single-select: exactly one
+        n.clear();
+        n.add(t);
+      } else {
+        n.has(t) ? n.delete(t) : n.add(t);
+      }
+      return n;
+    });
+  };
+
+  // Filled choices and how many are marked correct — drives validation + preview
+  const filledChoices = choicesList.map(c => c.trim()).filter(Boolean);
+  const correctFilled = filledChoices.filter(c => correctSet.has(c));
+
   const reset = () => {
     setStep('input');
     setSavedCard(null);
     setQType('multiple_choice');
     setQuestion('');
     setAnswer('');
+    setChoicesList(['', '', '', '']);
+    setCorrectSet(new Set());
     setImageUrl('');
     setImageCard(deckUsesImages);
     setImagePanel(null);
@@ -173,7 +230,13 @@ Return:
 
   // ── Save ─────────────────────────────────────────────────────────────────
   const handleSave = async () => {
-    if (!answer.trim()) { toast.error('Answer is required'); return; }
+    if (usesBank) {
+      if (filledChoices.length < 2) { toast.error('Add at least two choices'); return; }
+      if (correctFilled.length === 0) { toast.error('Mark the correct answer'); return; }
+      if (qType === 'select_all' && correctFilled.length < 2) { toast.error('Select All needs at least two correct answers'); return; }
+    } else if (!answer.trim()) {
+      toast.error('Answer is required'); return;
+    }
     setStep('saving');
 
     let finalImageUrl = imageCard ? imageUrl : '';
@@ -186,15 +249,18 @@ Return:
 
     const isShortAnswer = qType === 'short_answer';
 
-    const correctList = qType === 'select_all'
-      ? answer.split('|').map(s => s.trim()).filter(Boolean)
+    // correctList = the correct answers; choices = every filled option.
+    const correctList = usesBank
+      ? correctFilled
+      : isShortAnswer
+      ? [answer.trim()]
       : [answer.trim()];
 
     const choices = qType === 'true_false'
       ? ['True', 'False']
       : isShortAnswer
       ? []
-      : [...correctList, '', '', ''].slice(0, Math.max(4, correctList.length));
+      : filledChoices;
 
     // Compute difficulty (non-blocking — failure defaults to tier 2 / 20 pts)
     let diffResult = { point_value: 20, difficulty_tier: 2, difficulty_overridden: false, _reason: '' };
@@ -241,19 +307,17 @@ Return:
     onEditDetails(card);
   };
 
-  const selectAllAnswers = answer.split('|').map(s => s.trim()).filter(Boolean);
-
   // Placeholder arrangement for the preview — shapes only, no answer text
   const previewChoiceCount =
     qType === 'true_false' ? 2
-    : qType === 'select_all' ? Math.max(2, selectAllAnswers.length)
+    : usesBank ? Math.max(2, filledChoices.length)
     : 4;
   const previewAnswerStyle = qType === 'short_answer' ? 'field' : 'bars';
-  const canSave = qType === 'true_false'
-    ? !!answer
-    : qType === 'select_all'
-    ? selectAllAnswers.length >= 2
-    : !!answer.trim();
+  const canSave = usesBank
+    ? (filledChoices.length >= 2
+        && correctFilled.length >= 1
+        && (qType !== 'select_all' || correctFilled.length >= 2))
+    : answer.trim().length > 0;
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
@@ -288,7 +352,13 @@ Return:
                   {/* Question Type */}
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium">Question Type</label>
-                    <Select value={qType} onValueChange={(v) => { setQType(v); setAnswer(''); }}>
+                    <Select value={qType} onValueChange={(v) => {
+                      setQType(v);
+                      setAnswer('');
+                      setChoicesList(['', '', '', '']);
+                      // Multiple Choice starts with none ticked; Select All hints at 2.
+                      setCorrectSet(new Set());
+                    }}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -345,39 +415,98 @@ Return:
                     />
                   </div>
 
-                  {/* Answer */}
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium">
-                      {meta.answerLabel} <span className="text-destructive">*</span>
-                    </label>
-                    {qType === 'true_false' ? (
-                      <Select value={answer} onValueChange={setAnswer}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select the correct answer…" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="True">True</SelectItem>
-                          <SelectItem value="False">False</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <Input
-                        value={answer}
-                        onChange={e => setAnswer(e.target.value)}
-                        placeholder={meta.answerPlaceholder}
-                        onKeyDown={e => { if (e.key === 'Enter' && answer.trim()) handleSave(); }}
-                      />
-                    )}
-                    <p className="text-xs text-muted-foreground">{meta.answerHelper}</p>
-                    {qType === 'select_all' && answer.trim() && selectAllAnswers.length < 2 && (
-                      <p className="text-xs text-amber-600">Add at least one more answer separated by "|".</p>
-                    )}
-                  </div>
+                  {/* Answer — single field for true_false / short_answer, bank otherwise */}
+                  {!usesBank ? (
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium">
+                        {meta.answerLabel} <span className="text-destructive">*</span>
+                      </label>
+                      {qType === 'true_false' ? (
+                        <Select value={answer} onValueChange={setAnswer}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select the correct answer…" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="True">True</SelectItem>
+                            <SelectItem value="False">False</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          value={answer}
+                          onChange={e => setAnswer(e.target.value)}
+                          placeholder={meta.answerPlaceholder}
+                          onKeyDown={e => { if (e.key === 'Enter' && answer.trim()) handleSave(); }}
+                        />
+                      )}
+                      <p className="text-xs text-muted-foreground">{meta.answerHelper}</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium">Answer Bank</label>
+                        {filledChoices.length >= 2 && choicesList.length < 6 && (
+                          <Button type="button" variant="outline" size="sm" onClick={addChoice} className="h-7 text-xs gap-1">
+                            <Plus className="w-3 h-3" /> Add
+                          </Button>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {qType === 'select_all'
+                          ? 'Fill at least two options and tick every correct one. Untick the distractors.'
+                          : 'Fill at least two options and tick the single correct one. Leave the rest as distractors.'}
+                      </p>
+
+                      <div className="space-y-2">
+                        {choicesList.map((c, i) => {
+                          const isCorrect = correctSet.has(c.trim());
+                          return (
+                            <div key={i} className="flex gap-2 items-center">
+                              <button
+                                type="button"
+                                onClick={() => toggleCorrect(c)}
+                                disabled={!c.trim()}
+                                title={isCorrect ? 'Correct answer' : 'Mark as correct'}
+                                className={cn(
+                                  'shrink-0 w-7 h-7 rounded border-2 flex items-center justify-center transition-colors text-xs font-bold',
+                                  isCorrect ? 'bg-success border-success text-white' : 'border-border text-muted-foreground hover:border-primary',
+                                  !c.trim() && 'opacity-30 cursor-not-allowed'
+                                )}
+                              >
+                                {isCorrect && '✓'}
+                              </button>
+                              <Input
+                                value={c}
+                                onChange={e => updateChoice(i, e.target.value)}
+                                placeholder={i === 0 ? 'Correct answer (required)' : `Option ${i + 1}`}
+                                className={cn(isCorrect && 'border-success/60 bg-success/5')}
+                              />
+                              {choicesList.length > 2 && (
+                                <Button type="button" variant="ghost" size="icon" onClick={() => removeChoice(i)} className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive">
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {filledChoices.length >= 2 && correctFilled.length === 0 && (
+                        <p className="text-xs text-destructive">Tick the correct answer{qType === 'select_all' ? 's' : ''}.</p>
+                      )}
+                      {qType === 'select_all' && correctFilled.length === 1 && (
+                        <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-amber-800">
+                          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
+                          <p className="text-xs font-medium leading-snug">Select All with one correct answer behaves like Multiple Choice. Tick at least two, or switch the type.</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Footnote */}
                   <div className="flex items-start gap-2 pt-1 text-xs text-muted-foreground">
                     <Lightbulb className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                    <p>Distractor choices, clues, tags and other details can be added in the full editor.</p>
+                    <p>Clues, tags, explanations and image cropping can be refined in the full editor.</p>
                   </div>
                 </div>
 
