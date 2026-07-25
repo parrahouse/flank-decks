@@ -4,8 +4,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
-export default function ImageSearchPanel({ defaultQuery, onSelect, onClose, columns = 4, maxHeightClass = 'max-h-64' }) {
+export default function ImageSearchPanel({ defaultQuery, onSelect, onClose, columns = 4, maxHeightClass = 'max-h-64', className = '' }) {
   const [query, setQuery] = useState(defaultQuery || '');
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -23,7 +24,7 @@ export default function ImageSearchPanel({ defaultQuery, onSelect, onClose, colu
   }, []);
 
   return (
-    <div className="border border-border rounded-xl overflow-hidden bg-background">
+    <div className={cn("border border-border rounded-xl overflow-hidden bg-background", className)}>
       {/* Header */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-muted/40">
         <Search className="w-4 h-4 text-muted-foreground shrink-0" />

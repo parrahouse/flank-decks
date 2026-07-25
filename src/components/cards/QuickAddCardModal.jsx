@@ -592,11 +592,10 @@ Return:
                 </div>
 
                 {/* ── Right: preview + image sources ──────────────────────── */}
-                <div className="px-6 py-5 md:border-l border-border bg-muted/20 min-h-0 md:overflow-y-auto">
+                <div className="relative px-6 py-5 md:border-l border-border bg-muted/20 min-h-0 md:overflow-y-auto">
                   <div className="mx-auto w-full space-y-3" style={{ maxWidth: STUDY_CARD_TRUE_W }}>
                     <p className="text-sm font-medium">Card Preview</p>
 
-                    <div className="relative">
                     <CardPreviewPane
                       imageUrl={imageCard ? imageUrl : ''}
                       question={question}
@@ -635,66 +634,6 @@ Return:
                       }
                     />
 
-                    {/* ── Overlay: search / AI, covering the preview ────────── */}
-                    {imageCard && (imagePanel === 'search' || imagePanel === 'ai') && (
-                      <div className="absolute inset-0 z-10 rounded-lg border border-border bg-background shadow-xl flex flex-col overflow-hidden">
-                        <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/40 shrink-0">
-                          <p className="text-sm font-medium">
-                            {imagePanel === 'search' ? 'Search Images' : 'Create with AI'}
-                          </p>
-                          <button type="button" onClick={() => setImagePanel(null)} className="text-muted-foreground hover:text-foreground">
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-
-                        <div className="flex-1 min-h-0 overflow-y-auto p-3">
-                          {imagePanel === 'search' && (
-                            <ImageSearchPanel
-                              defaultQuery={imageSeed}
-                              columns={3}
-                              maxHeightClass="max-h-[60vh]"
-                              onSelect={(url) => { setImageUrl(url); setImagePanel(null); }}
-                              onClose={() => setImagePanel(null)}
-                            />
-                          )}
-                          {imagePanel === 'ai' && (
-                            <div className="space-y-3">
-                              <Textarea
-                                value={aiPrompt}
-                                onChange={e => setAiPrompt(e.target.value)}
-                                placeholder="Describe what the image should show…"
-                                rows={3}
-                                className="resize-none text-sm"
-                              />
-                              <div className="grid grid-cols-2 gap-2 max-w-lg">
-                                {Object.entries(STYLE_PRESETS).map(([key, { label, emoji }]) => (
-                                  <button
-                                    key={key}
-                                    type="button"
-                                    onClick={() => setAiStyle(key)}
-                                    className={cn(
-                                      'flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition-colors text-left',
-                                      aiStyle === key
-                                        ? 'border-primary bg-primary/10 text-primary font-medium'
-                                        : 'border-border hover:border-primary/50 text-muted-foreground'
-                                    )}
-                                  >
-                                    <span>{emoji}</span> {label}
-                                  </button>
-                                ))}
-                              </div>
-                              <Button type="button" size="sm" onClick={handleGenerateAiImage} disabled={generatingImage} className="gap-1.5 max-w-lg w-full">
-                                {generatingImage
-                                  ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating…</>
-                                  : <><Sparkles className="w-3.5 h-3.5" /> Generate Image</>}
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    </div>{/* /relative preview wrapper */}
-
                     <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
 
                     {/* Toolbar once an image is set */}
@@ -723,6 +662,66 @@ Return:
                       Shows how this card will be framed during study.
                     </p>
                   </div>
+
+                  {/* ── Full-pane overlay: search / AI ──────────────────────── */}
+                  {imageCard && (imagePanel === 'search' || imagePanel === 'ai') && (
+                    <div className="absolute inset-0 z-20 bg-background flex flex-col">
+                      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/40 shrink-0">
+                        <p className="text-sm font-semibold">
+                          {imagePanel === 'search' ? 'Search Images' : 'Create with AI'}
+                        </p>
+                        <button type="button" onClick={() => setImagePanel(null)} className="text-muted-foreground hover:text-foreground">
+                          <X className="w-5 h-5" />
+                        </button>
+                      </div>
+
+                      <div className="flex-1 min-h-0 p-4">
+                        {imagePanel === 'search' && (
+                          <ImageSearchPanel
+                            defaultQuery={imageSeed}
+                            columns={5}
+                            maxHeightClass="flex-1 min-h-0"
+                            className="h-full border-0 rounded-none flex flex-col"
+                            onSelect={(url) => { setImageUrl(url); setImagePanel(null); }}
+                            onClose={() => setImagePanel(null)}
+                          />
+                        )}
+                        {imagePanel === 'ai' && (
+                          <div className="space-y-4 max-w-2xl mx-auto">
+                            <Textarea
+                              value={aiPrompt}
+                              onChange={e => setAiPrompt(e.target.value)}
+                              placeholder="Describe what the image should show…"
+                              rows={3}
+                              className="resize-none text-sm"
+                            />
+                            <div className="grid grid-cols-2 gap-2">
+                              {Object.entries(STYLE_PRESETS).map(([key, { label, emoji }]) => (
+                                <button
+                                  key={key}
+                                  type="button"
+                                  onClick={() => setAiStyle(key)}
+                                  className={cn(
+                                    'flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition-colors text-left',
+                                    aiStyle === key
+                                      ? 'border-primary bg-primary/10 text-primary font-medium'
+                                      : 'border-border hover:border-primary/50 text-muted-foreground'
+                                  )}
+                                >
+                                  <span>{emoji}</span> {label}
+                                </button>
+                              ))}
+                            </div>
+                            <Button type="button" size="sm" onClick={handleGenerateAiImage} disabled={generatingImage} className="gap-1.5 w-full">
+                              {generatingImage
+                                ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating…</>
+                                : <><Sparkles className="w-3.5 h-3.5" /> Generate Image</>}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
