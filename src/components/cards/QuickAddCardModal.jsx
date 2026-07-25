@@ -563,7 +563,7 @@ Return:
                                 className={cn(isCorrect && 'border-success/60 bg-success/5')}
                               />
                               {choicesList.length > 2 && (
-                                <Button type="button" variant="ghost" size="sm" tabIndex={-1} onClick={() => removeChoice(i)} className="h-7 w-7 shrink-0 p-0 text-muted-foreground hover:text-destructive hover:bg-red-50">
+                                <Button type="button" variant="ghost" size="md" tabIndex={-1} onClick={() => removeChoice(i)} className="h-7 w-7 shrink-0 p-0 text-muted-foreground hover:text-destructive hover:bg-red-50">
                                   <Delete className="w-8 h-8" />
                                 </Button>
                               )}
