@@ -324,6 +324,13 @@ Return:
     qType === 'true_false' ? 2
     : usesBank ? Math.max(2, filledChoices.length)
     : 4;
+
+  // Text to seed image search / AI from. Bank types keep the answer in the bank,
+  // not in `answer`, so fall back to the first correct choice (then any filled
+  // choice) for them.
+  const imageSeed = usesBank
+    ? (correctFilled[0] || filledChoices[0] || '')
+    : answer.trim();
   const previewAnswerStyle = qType === 'short_answer' ? 'field' : 'bars';
   const canSave = usesBank
     ? (filledChoices.length >= 2
@@ -606,7 +613,7 @@ Return:
                           >
                             <Upload className="w-4 h-4" /> Upload a File
                           </button>
-                          {answer.trim() && (
+                          {imageSeed && (
                             <button
                               type="button"
                               onClick={() => setImagePanel('search')}
@@ -615,7 +622,7 @@ Return:
                               <Search className="w-4 h-4" /> Search Images
                             </button>
                           )}
-                          {answer.trim() && (
+                          {imageSeed && (
                             <button
                               type="button"
                               onClick={() => setImagePanel('ai')}
@@ -643,7 +650,7 @@ Return:
                         <div className="flex-1 min-h-0 overflow-y-auto p-3">
                           {imagePanel === 'search' && (
                             <ImageSearchPanel
-                              defaultQuery={answer}
+                              defaultQuery={imageSeed}
                               columns={3}
                               maxHeightClass="max-h-[60vh]"
                               onSelect={(url) => { setImageUrl(url); setImagePanel(null); }}
@@ -696,12 +703,12 @@ Return:
                         <button type="button" onClick={() => fileRef.current?.click()} className="flex items-center gap-1 text-primary hover:underline">
                           <Upload className="w-3 h-3" /> Replace
                         </button>
-                        {answer.trim() && (
+                        {imageSeed && (
                           <button type="button" onClick={() => setImagePanel('search')} className="flex items-center gap-1 text-primary hover:underline">
                             <Search className="w-3 h-3" /> Search
                           </button>
                         )}
-                        {answer.trim() && (
+                        {imageSeed && (
                           <button type="button" onClick={() => setImagePanel('ai')} className="flex items-center gap-1 text-primary hover:underline">
                             <Sparkles className="w-3 h-3" /> AI
                           </button>
