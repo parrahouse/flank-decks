@@ -696,7 +696,7 @@ Return:
                             value={explanation}
                             onChange={setExplanation}
                             placeholder="Optional long-form explanation shown after answering (supports markdown)…"
-                            modules={{ toolbar: [['bold', 'italic', 'underline'], [{ list: 'ordered' }, { list: 'bullet' }], ['link'], ['clean']] }}
+                            modules={{ toolbar: [[{ header: [1, 2, 3, false] }], ['bold', 'italic', 'underline'], [{ list: 'ordered' }, { list: 'bullet' }], ['blockquote', 'code-block'], ['link'], ['clean']] }}
                             style={{ minHeight: 160 }}
                           />
                         </div>
