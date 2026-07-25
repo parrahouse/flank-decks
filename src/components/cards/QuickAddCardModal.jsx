@@ -564,7 +564,7 @@ Return:
                               />
                               {choicesList.length > 2 && (
                                 <Button type="button" variant="ghost" size="md" tabIndex={-1} onClick={() => removeChoice(i)} className="h-7 w-7 shrink-0 p-0 text-muted-foreground hover:text-destructive hover:bg-red-50">
-                                  <Delete className="w-8 h-8" />
+                                  <Delete className="w-3.5 h-3.5" />
                                 </Button>
                               )}
                             </div>
