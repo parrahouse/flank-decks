@@ -24,6 +24,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import ReactQuill from 'react-quill';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // True inner width of the study card: max-w-7xl (1280) − page px-4 (32) − card p-4 (32).
@@ -689,13 +690,16 @@ Return:
                     {previewLayout === 'horizontal' && (
                       <div className="space-y-1.5">
                         <label className="text-sm font-medium">Explanation</label>
-                        <Textarea
-                          value={explanation}
-                          onChange={e => setExplanation(e.target.value)}
-                          placeholder="Optional long-form explanation shown after answering (supports markdown)…"
-                          rows={3}
-                          className="resize-none text-sm"
-                        />
+                        <div className="quill-wrapper border border-input overflow-hidden" style={{ borderRadius: 0 }}>
+                          <ReactQuill
+                            theme="snow"
+                            value={explanation}
+                            onChange={setExplanation}
+                            placeholder="Optional long-form explanation shown after answering (supports markdown)…"
+                            modules={{ toolbar: [['bold', 'italic', 'underline'], [{ list: 'ordered' }, { list: 'bullet' }], ['link'], ['clean']] }}
+                            style={{ minHeight: 160 }}
+                          />
+                        </div>
                       </div>
                     )}
                   </div>
