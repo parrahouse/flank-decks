@@ -18,7 +18,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ImageSearchPanel from './ImageSearchPanel';
-import ImagePickerFromDeck from './ImagePickerFromDeck';
 import CardPreviewPane from './CardPreviewPane';
 import { Checkbox } from '@/components/ui/checkbox';
 import { base44 } from '@/api/base44Client';
@@ -590,6 +589,7 @@ Return:
                   <div className="mx-auto w-full space-y-3" style={{ maxWidth: STUDY_CARD_TRUE_W }}>
                     <p className="text-sm font-medium">Card Preview</p>
 
+                    <div className="relative">
                     <CardPreviewPane
                       imageUrl={imageCard ? imageUrl : ''}
                       question={question}
@@ -598,93 +598,118 @@ Return:
                       showImage={imageCard}
                       counter={`${activeCards.length + 1}/${activeCards.length + 1}`}
                       imageEmpty={
-                        <button
-                          type="button"
-                          onClick={() => fileRef.current?.click()}
-                          className="w-full h-full flex flex-col items-center justify-center gap-1 border-2 border-dashed border-muted-foreground/30 text-muted-foreground hover:border-primary/60 hover:text-primary transition-colors"
-                        >
-                          <ImageIcon className="w-6 h-6" />
-                          <span className="text-sm font-medium">Add Image</span>
-                        </button>
-                      }
-                    />
-
-                    <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
-
-                    {imageCard && (
-                      <>
-                        <div className="flex items-center gap-4 text-xs flex-wrap">
-                          <button type="button" onClick={() => fileRef.current?.click()} className="flex items-center gap-1 text-primary hover:underline">
-                            <Upload className="w-3 h-3" /> Upload
-                          </button>
-                          <button type="button" onClick={() => setImagePanel(v => v === 'pick' ? null : 'pick')} className={cn('flex items-center gap-1 hover:underline text-primary', imagePanel === 'pick' && 'font-semibold')}>
-                            <ImageIcon className="w-3 h-3" /> Pick from decks
+                        <div className="w-full h-full flex flex-col items-center justify-center gap-2 border-2 border-dashed border-muted-foreground/30 p-4">
+                          <button
+                            type="button"
+                            onClick={() => fileRef.current?.click()}
+                            className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary/10 text-primary hover:bg-primary/15 transition-colors text-sm font-medium"
+                          >
+                            <Upload className="w-4 h-4" /> Upload a File
                           </button>
                           {answer.trim() && (
-                            <button type="button" onClick={() => setImagePanel(v => v === 'search' ? null : 'search')} className={cn('flex items-center gap-1 hover:underline text-primary', imagePanel === 'search' && 'font-semibold')}>
-                              <Search className="w-3 h-3" /> Search
+                            <button
+                              type="button"
+                              onClick={() => setImagePanel('search')}
+                              className="flex items-center gap-2 px-4 py-2 rounded-md bg-muted hover:bg-muted/70 transition-colors text-sm font-medium"
+                            >
+                              <Search className="w-4 h-4" /> Search Images
                             </button>
                           )}
                           {answer.trim() && (
-                            <button type="button" onClick={() => setImagePanel(v => v === 'ai' ? null : 'ai')} className={cn('flex items-center gap-1 hover:underline text-primary', imagePanel === 'ai' && 'font-semibold')}>
-                              <Sparkles className="w-3 h-3" /> AI Generate
-                            </button>
-                          )}
-                          {imageUrl && (
-                            <button type="button" onClick={() => setImageUrl('')} className="text-muted-foreground hover:text-destructive ml-auto">
-                              Remove
+                            <button
+                              type="button"
+                              onClick={() => setImagePanel('ai')}
+                              className="flex items-center gap-2 px-4 py-2 rounded-md bg-muted hover:bg-muted/70 transition-colors text-sm font-medium"
+                            >
+                              <Sparkles className="w-4 h-4" /> Create with AI
                             </button>
                           )}
                         </div>
+                      }
+                    />
 
-                        {imagePanel === 'search' && (
-                          <ImageSearchPanel
-                            defaultQuery={answer}
-                            onSelect={(url) => { setImageUrl(url); setImagePanel(null); }}
-                            onClose={() => setImagePanel(null)}
-                          />
-                        )}
-                        {imagePanel === 'pick' && (
-                          <ImagePickerFromDeck
-                            onSelect={(url) => { setImageUrl(url); setImagePanel(null); }}
-                            onClose={() => setImagePanel(null)}
-                          />
-                        )}
-                        {imagePanel === 'ai' && (
-                          <div className="border border-border rounded-lg p-3 space-y-3 bg-background">
-                            <p className="text-xs font-medium">Generate an image with AI</p>
-                            <Textarea
-                              value={aiPrompt}
-                              onChange={e => setAiPrompt(e.target.value)}
-                              placeholder="Describe what the image should show…"
-                              rows={2}
-                              className="resize-none text-sm"
+                    {/* ── Overlay: search / AI, covering the preview ────────── */}
+                    {imageCard && (imagePanel === 'search' || imagePanel === 'ai') && (
+                      <div className="absolute inset-0 z-10 rounded-lg border border-border bg-background shadow-xl flex flex-col overflow-hidden">
+                        <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/40 shrink-0">
+                          <p className="text-sm font-medium">
+                            {imagePanel === 'search' ? 'Search Images' : 'Create with AI'}
+                          </p>
+                          <button type="button" onClick={() => setImagePanel(null)} className="text-muted-foreground hover:text-foreground">
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        <div className="flex-1 min-h-0 overflow-y-auto p-3">
+                          {imagePanel === 'search' && (
+                            <ImageSearchPanel
+                              defaultQuery={answer}
+                              columns={3}
+                              maxHeightClass="max-h-[60vh]"
+                              onSelect={(url) => { setImageUrl(url); setImagePanel(null); }}
+                              onClose={() => setImagePanel(null)}
                             />
-                            <div className="grid grid-cols-2 gap-2 max-w-md">
-                              {Object.entries(STYLE_PRESETS).map(([key, { label, emoji }]) => (
-                                <button
-                                  key={key}
-                                  type="button"
-                                  onClick={() => setAiStyle(key)}
-                                  className={cn(
-                                    'flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition-colors text-left',
-                                    aiStyle === key
-                                      ? 'border-primary bg-primary/10 text-primary font-medium'
-                                      : 'border-border hover:border-primary/50 text-muted-foreground'
-                                  )}
-                                >
-                                  <span>{emoji}</span> {label}
-                                </button>
-                              ))}
+                          )}
+                          {imagePanel === 'ai' && (
+                            <div className="space-y-3">
+                              <Textarea
+                                value={aiPrompt}
+                                onChange={e => setAiPrompt(e.target.value)}
+                                placeholder="Describe what the image should show…"
+                                rows={3}
+                                className="resize-none text-sm"
+                              />
+                              <div className="grid grid-cols-2 gap-2 max-w-lg">
+                                {Object.entries(STYLE_PRESETS).map(([key, { label, emoji }]) => (
+                                  <button
+                                    key={key}
+                                    type="button"
+                                    onClick={() => setAiStyle(key)}
+                                    className={cn(
+                                      'flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition-colors text-left',
+                                      aiStyle === key
+                                        ? 'border-primary bg-primary/10 text-primary font-medium'
+                                        : 'border-border hover:border-primary/50 text-muted-foreground'
+                                    )}
+                                  >
+                                    <span>{emoji}</span> {label}
+                                  </button>
+                                ))}
+                              </div>
+                              <Button type="button" size="sm" onClick={handleGenerateAiImage} disabled={generatingImage} className="gap-1.5 max-w-lg w-full">
+                                {generatingImage
+                                  ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating…</>
+                                  : <><Sparkles className="w-3.5 h-3.5" /> Generate Image</>}
+                              </Button>
                             </div>
-                            <Button type="button" size="sm" onClick={handleGenerateAiImage} disabled={generatingImage} className="gap-1.5 max-w-md w-full">
-                              {generatingImage
-                                ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating…</>
-                                : <><Sparkles className="w-3.5 h-3.5" /> Generate Image</>}
-                            </Button>
-                          </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    </div>{/* /relative preview wrapper */}
+
+                    <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+
+                    {/* Toolbar once an image is set */}
+                    {imageCard && imageUrl && (
+                      <div className="flex items-center gap-4 text-xs">
+                        <button type="button" onClick={() => fileRef.current?.click()} className="flex items-center gap-1 text-primary hover:underline">
+                          <Upload className="w-3 h-3" /> Replace
+                        </button>
+                        {answer.trim() && (
+                          <button type="button" onClick={() => setImagePanel('search')} className="flex items-center gap-1 text-primary hover:underline">
+                            <Search className="w-3 h-3" /> Search
+                          </button>
                         )}
-                      </>
+                        {answer.trim() && (
+                          <button type="button" onClick={() => setImagePanel('ai')} className="flex items-center gap-1 text-primary hover:underline">
+                            <Sparkles className="w-3 h-3" /> AI
+                          </button>
+                        )}
+                        <button type="button" onClick={() => setImageUrl('')} className="text-muted-foreground hover:text-destructive ml-auto">
+                          Remove
+                        </button>
+                      </div>
                     )}
 
                     <p className="text-xs text-muted-foreground">

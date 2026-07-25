@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
-export default function ImageSearchPanel({ defaultQuery, onSelect, onClose }) {
+export default function ImageSearchPanel({ defaultQuery, onSelect, onClose, columns = 4, maxHeightClass = 'max-h-64' }) {
   const [query, setQuery] = useState(defaultQuery || '');
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -46,7 +46,7 @@ export default function ImageSearchPanel({ defaultQuery, onSelect, onClose }) {
       </div>
 
       {/* Results grid */}
-      <div className="p-2 max-h-64 overflow-y-auto">
+      <div className={`p-2 ${maxHeightClass} overflow-y-auto`}>
         {loading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
@@ -54,7 +54,7 @@ export default function ImageSearchPanel({ defaultQuery, onSelect, onClose }) {
         ) : images.length === 0 ? (
           <p className="text-center text-sm text-muted-foreground py-8">No results. Try a different search term.</p>
         ) : (
-          <div className="grid grid-cols-4 gap-1.5">
+          <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
             {images.map((img, i) => (
               <button
                 key={i}
