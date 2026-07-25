@@ -589,28 +589,30 @@ Return:
                 {/* ── Right: preview + image sources ──────────────────────── */}
                 <div className="relative px-6 py-5 md:border-l border-border bg-muted/20 min-h-0 md:overflow-y-auto">
                   <div className="mx-auto w-full space-y-3" style={{ maxWidth: previewLayout === 'horizontal' ? STUDY_CARD_TRUE_W : 480 }}>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
                       <p className="text-sm font-medium">Card Preview</p>
                       <div className="flex rounded-md border border-border overflow-hidden">
                         <button
                           type="button"
                           onClick={() => setPreviewLayout('horizontal')}
+                          title="Horizontal"
                           className={cn(
-                            'px-2.5 py-1 flex items-center gap-1.5 text-xs',
-                            previewLayout === 'horizontal' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'
+                            'px-2 py-1 flex items-center text-xs',
+                            previewLayout === 'horizontal' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent'
                           )}
                         >
-                          <PanelLeft className="w-3.5 h-3.5" /> Horizontal
+                          <PanelLeft className="w-3.5 h-3.5" />
                         </button>
                         <button
                           type="button"
                           onClick={() => setPreviewLayout('vertical')}
+                          title="Vertical"
                           className={cn(
-                            'px-2.5 py-1 flex items-center gap-1.5 text-xs',
-                            previewLayout === 'vertical' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'
+                            'px-2 py-1 flex items-center text-xs',
+                            previewLayout === 'vertical' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent'
                           )}
                         >
-                          <PanelTop className="w-3.5 h-3.5" /> Vertical
+                          <PanelTop className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
