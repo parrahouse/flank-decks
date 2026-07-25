@@ -588,7 +588,7 @@ Return:
 
                 {/* ── Right: preview + image sources ──────────────────────── */}
                 <div className="relative px-6 py-5 md:border-l border-border bg-muted/20 min-h-0 md:overflow-y-auto">
-                  <div className="mx-auto w-full space-y-3" style={{ maxWidth: STUDY_CARD_TRUE_W }}>
+                  <div className="mx-auto w-full space-y-3" style={{ maxWidth: previewLayout === 'horizontal' ? STUDY_CARD_TRUE_W : 480 }}>
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium">Card Preview</p>
                       <div className="flex rounded-md border border-border overflow-hidden">

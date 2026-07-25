@@ -151,10 +151,10 @@ export default function CardThumbnail({ card, imageEmpty = null, imageOverlay = 
     <div className="flex flex-col gap-2 w-full">
       {mediaInner && (
         hasImage
-          ? <div className="relative w-full overflow-hidden rounded" style={{ aspectRatio: '4/3' }}>{mediaInner}{imageOverlay}</div>
+          ? <div className="relative w-full overflow-hidden rounded" style={{ height: 'min(360px, 40vh)' }}>{mediaInner}{imageOverlay}</div>
           : imageEmpty
-            ? <div className="relative w-full" style={{ aspectRatio: '4/3' }}>{mediaInner}{imageOverlay}</div>
-            : <div className="relative w-full rounded px-3 py-2 flex items-center" style={{ backgroundColor: '#DFEDF5', aspectRatio: '4/3' }}>{mediaInner}{imageOverlay}</div>
+            ? <div className="relative w-full" style={{ height: 'min(360px, 40vh)' }}>{mediaInner}{imageOverlay}</div>
+            : <div className="relative w-full rounded px-3 py-2 flex items-center" style={{ backgroundColor: '#DFEDF5', height: 'min(360px, 40vh)' }}>{mediaInner}{imageOverlay}</div>
       )}
       {questionPane}
       {renderAnswers(false)}
