@@ -361,7 +361,7 @@ Return:
               </div>
 
               {/* Body — what the card says | how the card looks.
-                Columns scroll independently at md+; below that the body scrolls as one. */}
+               Columns scroll independently at md+; below that the body scrolls as one. */}
               <div className="grid grid-cols-1 md:grid-cols-[minmax(360px,420px)_1fr] flex-1 min-h-0 overflow-y-auto md:overflow-hidden">
 
                 {/* ── Left: form ──────────────────────────────────────────── */}
@@ -563,7 +563,7 @@ Return:
                             className={cn(isCorrect && 'border-success/60 bg-success/5')} />
                           
                               {choicesList.length > 2 &&
-                          <Button type="button" variant="ghost" size="icon" tabIndex={-1} onClick={() => removeChoice(i)} className="w-7 shrink-0 p-0 text-muted-foreground hover:text-destructive [&_svg]:size-6 h-7">
+                          <Button type="button" variant="ghost" size="icon" tabIndex={-1} onClick={() => removeChoice(i)} className="shrink-0 p-0 text-muted-foreground hover:text-destructive [&_svg]:size-6 h-7 hover:bg-none w-7">
                                   <Delete className="w-3.5 h-3.5" />
                                 </Button>
                           }
