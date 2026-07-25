@@ -26,23 +26,17 @@ export default function CardThumbnail({ card, imageEmpty = null, imageOverlay = 
   };
 
   const hasImage = !!card.image_url;
-  const hasClue = !hasImage && !imageEmpty && !!card.clue;
 
   const mediaInner = hasImage
     ? <img src={card.image_url} alt="card" className="w-full h-full" style={imgStyle} draggable={false} />
-    : imageEmpty
-      ? imageEmpty
-      : hasClue
-        ? <MathRenderer text={card.clue} style={{ color: '#113656', fontSize: 15, fontWeight: 500, lineHeight: 1.4 }} />
-        : null;
+    : imageEmpty;
 
-  // Compact question pane shown whenever the media area is an image or placeholder
-  // (the no-media case already shows the clue in the media box, so we skip it there).
-  const questionPane = (hasImage || imageEmpty) ? (
+  // Question pane — always present, holds its space (blank until a clue is typed).
+  const questionPane = (
     <div className="w-full rounded px-3 py-2 flex items-center" style={{ backgroundColor: '#DFEDF5', minHeight: 44 }}>
       {card.clue && <MathRenderer text={card.clue} style={{ color: '#113656', fontSize: 14, fontWeight: 500, lineHeight: 1.4 }} />}
     </div>
-  ) : null;
+  );
 
   // ── Answer section (shared by both layouts) ─────────────────────────────
   const renderAnswers = (fill) => (
@@ -147,11 +141,11 @@ export default function CardThumbnail({ card, imageEmpty = null, imageOverlay = 
                 {card.clue && <MathRenderer text={card.clue} style={{ color: '#113656', fontSize: 14, fontWeight: 500, lineHeight: 1.4 }} />}
               </div>
             </>
-          ) : card.clue ? (
+          ) : (
             <div className="rounded px-3 py-2 flex items-center w-full h-full" style={{ backgroundColor: '#DFEDF5' }}>
-              <MathRenderer text={card.clue} style={{ color: '#113656', fontSize: 15, fontWeight: 500, lineHeight: 1.4 }} />
+              {card.clue && <MathRenderer text={card.clue} style={{ color: '#113656', fontSize: 15, fontWeight: 500, lineHeight: 1.4 }} />}
             </div>
-          ) : null}
+          )}
         </div>
         <div className="min-w-0" style={{ flex: '1 1 0' }}>
           {renderAnswers(true)}
@@ -163,12 +157,10 @@ export default function CardThumbnail({ card, imageEmpty = null, imageOverlay = 
   // ── Vertical layout (default): image top, answers below ─────────────────
   return (
     <div className="flex flex-col gap-2 w-full">
-      {mediaInner && (
+      {(hasImage || imageEmpty) && (
         hasImage
           ? <div className="relative w-full overflow-hidden rounded" style={{ height: 'min(360px, 40vh)' }}>{mediaInner}{imageOverlay}</div>
-          : imageEmpty
-            ? <div className="relative w-full" style={{ height: 'min(360px, 40vh)' }}>{mediaInner}{imageOverlay}</div>
-            : <div className="relative w-full rounded px-3 py-2 flex items-center" style={{ backgroundColor: '#DFEDF5', height: 'min(360px, 40vh)' }}>{mediaInner}{imageOverlay}</div>
+          : <div className="relative w-full" style={{ height: 'min(360px, 40vh)' }}>{mediaInner}{imageOverlay}</div>
       )}
       {questionPane}
       {renderAnswers(false)}
