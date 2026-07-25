@@ -59,15 +59,13 @@ export default function MarkdownQuill({
         if (match) {
           const prefixLen = match[0].length;
           const lineStart = sel.index - offset;
-          // Run as 'api' so this handler ignores the resulting events.
+          const lineLen = line.length();
+          // Format the whole line FIRST, while it still has content — so Quill
+          // targets this line and doesn't collapse an empty line into the
+          // previous one. Then strip the markdown prefix.
+          quill.formatLine(lineStart, lineLen, p.format, 'api');
           quill.deleteText(lineStart, prefixLen, 'api');
-          // Collapse to the line start, then apply each block format to the
-          // current line. quill.format with a collapsed selection targets the
-          // whole line — reliable even when the line is now empty.
           quill.setSelection(lineStart, 0, 'api');
-          Object.entries(p.format).forEach(([name, value]) => {
-            quill.format(name, value, 'api');
-          });
           break;
         }
       }
