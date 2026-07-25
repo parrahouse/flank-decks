@@ -10,7 +10,7 @@ import { useState, useRef, useEffect } from 'react';
 import {
   Upload, Sparkles, Search, Image as ImageIcon, Loader2,
   Plus, Pencil, Check, Zap, Lightbulb, AlertTriangle, X, Trash2,
-  PanelLeft, PanelTop,
+  PanelLeft, PanelTop, Delete,
 } from 'lucide-react';
 import { computeCardDifficulty } from '@/lib/computeCardDifficulty';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -559,8 +559,8 @@ Return:
                                 className={cn(isCorrect && 'border-success/60 bg-success/5')}
                               />
                               {choicesList.length > 2 && (
-                                <Button type="button" variant="ghost" size="icon" tabIndex={-1} onClick={() => removeChoice(i)} className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive">
-                                  <X className="w-4 h-4" />
+                                <Button type="button" variant="ghost" size="icon" tabIndex={-1} onClick={() => removeChoice(i)} className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive hover:bg-red-50 hover:rounded-md">
+                                  <Delete className="w-4 h-4" />
                                 </Button>
                               )}
                             </div>
