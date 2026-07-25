@@ -9,7 +9,7 @@
 import { useState, useRef, useEffect } from 'react';
 import {
   Upload, Sparkles, Search, Image as ImageIcon, Loader2,
-  Plus, Pencil, Check, Zap, Lightbulb, AlertTriangle, X,
+  Plus, Pencil, Check, Zap, Lightbulb, AlertTriangle, X, Trash2,
 } from 'lucide-react';
 import { computeCardDifficulty } from '@/lib/computeCardDifficulty';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -596,6 +596,7 @@ Return:
                   <div className="mx-auto w-full space-y-3" style={{ maxWidth: STUDY_CARD_TRUE_W }}>
                     <p className="text-sm font-medium">Card Preview</p>
 
+                    <div className="relative">
                     <CardPreviewPane
                       imageUrl={imageCard ? imageUrl : ''}
                       question={question}
@@ -633,30 +634,19 @@ Return:
                         </div>
                       }
                     />
+                    {imageCard && imageUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setImageUrl('')}
+                        title="Remove image"
+                        className="absolute top-2 right-2 z-10 w-8 h-8 rounded-full bg-white shadow-md border border-border flex items-center justify-center hover:scale-105 transition-transform"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-600" />
+                      </button>
+                    )}
+                    </div>
 
                     <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
-
-                    {/* Toolbar once an image is set */}
-                    {imageCard && imageUrl && (
-                      <div className="flex items-center gap-4 text-xs">
-                        <button type="button" onClick={() => fileRef.current?.click()} className="flex items-center gap-1 text-primary hover:underline">
-                          <Upload className="w-3 h-3" /> Replace
-                        </button>
-                        {imageSeed && (
-                          <button type="button" onClick={() => setImagePanel('search')} className="flex items-center gap-1 text-primary hover:underline">
-                            <Search className="w-3 h-3" /> Search
-                          </button>
-                        )}
-                        {imageSeed && (
-                          <button type="button" onClick={() => setImagePanel('ai')} className="flex items-center gap-1 text-primary hover:underline">
-                            <Sparkles className="w-3 h-3" /> AI
-                          </button>
-                        )}
-                        <button type="button" onClick={() => setImageUrl('')} className="text-muted-foreground hover:text-destructive ml-auto">
-                          Remove
-                        </button>
-                      </div>
-                    )}
 
                     <p className="text-xs text-muted-foreground">
                       Shows how this card will be framed during study.
