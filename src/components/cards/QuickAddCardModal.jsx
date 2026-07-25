@@ -24,7 +24,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import ReactQuill from 'react-quill';
+import MarkdownQuill from './MarkdownQuill';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // True inner width of the study card: max-w-7xl (1280) − page px-4 (32) − card p-4 (32).
@@ -690,14 +690,12 @@ Return:
                     {previewLayout === 'horizontal' && (
                       <div className="space-y-1.5">
                         <label className="text-sm font-medium">Explanation</label>
-                        <div className="quill-wrapper border border-input overflow-hidden" style={{ borderRadius: 0 }}>
-                          <ReactQuill
-                            theme="snow"
+                        <div className="quill-wrapper border border-input overflow-visible" style={{ borderRadius: 0 }}>
+                          <MarkdownQuill
                             value={explanation}
                             onChange={setExplanation}
                             placeholder="Optional long-form explanation shown after answering (supports markdown)…"
-                            modules={{ toolbar: [[{ header: [1, 2, 3, false] }], ['bold', 'italic', 'underline'], [{ list: 'ordered' }, { list: 'bullet' }], ['blockquote', 'code-block'], ['link'], ['clean']] }}
-                            style={{ minHeight: 160 }}
+                            style={{ minHeight: 300 }}
                           />
                         </div>
                       </div>
