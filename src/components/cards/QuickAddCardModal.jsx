@@ -681,10 +681,6 @@ Return:
                     </AnimatePresence>
 
                     <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
-
-                    <p className="text-xs text-muted-foreground">
-                      Shows how this card will be framed during study.
-                    </p>
                   </div>
 
                   {/* ── Full-pane overlay: search / AI ──────────────────────── */}
