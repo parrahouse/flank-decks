@@ -1,5 +1,6 @@
 import { Check, SquareCheck, ToggleLeft, PencilLine } from 'lucide-react';
 import MathRenderer from '@/components/ui/MathRenderer';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
@@ -37,9 +38,9 @@ export default function CardThumbnail({ card, imageEmpty = null, imageOverlay = 
 
   // Compact question pane shown whenever the media area is an image or placeholder
   // (the no-media case already shows the clue in the media box, so we skip it there).
-  const questionPane = card.clue && (hasImage || imageEmpty) ? (
-    <div className="w-full rounded px-3 py-2" style={{ backgroundColor: '#DFEDF5' }}>
-      <MathRenderer text={card.clue} style={{ color: '#113656', fontSize: 14, fontWeight: 500, lineHeight: 1.4 }} />
+  const questionPane = (hasImage || imageEmpty) ? (
+    <div className="w-full rounded px-3 py-2 flex items-center" style={{ backgroundColor: '#DFEDF5', minHeight: 44 }}>
+      {card.clue && <MathRenderer text={card.clue} style={{ color: '#113656', fontSize: 14, fontWeight: 500, lineHeight: 1.4 }} />}
     </div>
   ) : null;
 
@@ -66,49 +67,64 @@ export default function CardThumbnail({ card, imageEmpty = null, imageOverlay = 
           <div style={{ border: '2px solid #000', borderRadius: 8, padding: '8px 12px', backgroundColor: '#fff', fontSize: 13, color: '#9ca3af' }}>
             Type your answer…
           </div>
-          {card.canonical_answer && (
-            <div style={{ padding: '6px 10px', borderRadius: 7, backgroundColor: '#f0fdf4', border: '1.5px solid #00A842', fontSize: 12 }}>
-              <span style={{ color: '#15803d', fontWeight: 600 }}>✓ </span>
-              <span style={{ color: '#166534' }}>{card.canonical_answer}</span>
-              {card.accepted_variants?.length > 0 && (
-                <span style={{ color: '#6b7280', marginLeft: 6 }}>
-                  (also: {card.accepted_variants.join(', ')})
-                </span>
-              )}
-            </div>
-          )}
+          <AnimatePresence initial={false}>
+            {card.canonical_answer && (
+              <motion.div
+                key="canonical"
+                initial={{ opacity: 0, y: -6, height: 0 }}
+                animate={{ opacity: 1, y: 0, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+                style={{ overflow: 'hidden', padding: '6px 10px', borderRadius: 7, backgroundColor: '#f0fdf4', border: '1.5px solid #00A842', fontSize: 12 }}
+              >
+                <span style={{ color: '#15803d', fontWeight: 600 }}>✓ </span>
+                <span style={{ color: '#166534' }}>{card.canonical_answer}</span>
+                {card.accepted_variants?.length > 0 && (
+                  <span style={{ color: '#6b7280', marginLeft: 6 }}>
+                    (also: {card.accepted_variants.join(', ')})
+                  </span>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       ) : (
         /* Choices */
         <div className="flex flex-col gap-1.5">
-          {choices.map((choice, idx) => {
-            const isCorrect = correctAnswers.includes(choice);
-            return (
-              <div
-                key={idx}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  borderRadius: 8,
-                  border: `1.5px solid ${isCorrect ? '#00A842' : '#000'}`,
-                  backgroundColor: isCorrect ? '#f0fdf4' : '#fff',
-                  padding: '5px 10px',
-                  fontSize: 13,
-                  fontWeight: 500,
-                }}
-              >
-                <span style={{
-                  width: 22, height: 22, borderRadius: 4, flexShrink: 0,
-                  backgroundColor: isCorrect ? '#00A842' : '#000',
-                  color: '#fff',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 11, fontWeight: 700,
-                }}>
-                  {isCorrect ? <Check style={{ width: 12, height: 12 }} /> : LETTERS[idx]}
-                </span>
-                <MathRenderer text={choice} />
-              </div>
-            );
-          })}
+          <AnimatePresence initial={false}>
+            {choices.map((choice, idx) => {
+              const isCorrect = correctAnswers.includes(choice);
+              return (
+                <motion.div
+                  key={choice + '-' + idx}
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    borderRadius: 8,
+                    border: `1.5px solid ${isCorrect ? '#00A842' : '#000'}`,
+                    backgroundColor: isCorrect ? '#f0fdf4' : '#fff',
+                    padding: '5px 10px',
+                    fontSize: 13,
+                    fontWeight: 500,
+                  }}
+                >
+                  <span style={{
+                    width: 22, height: 22, borderRadius: 4, flexShrink: 0,
+                    backgroundColor: isCorrect ? '#00A842' : '#000',
+                    color: '#fff',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 11, fontWeight: 700,
+                  }}>
+                    {isCorrect ? <Check style={{ width: 12, height: 12 }} /> : LETTERS[idx]}
+                  </span>
+                  <MathRenderer text={choice} />
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
         </div>
       )}
     </div>
@@ -121,17 +137,15 @@ export default function CardThumbnail({ card, imageEmpty = null, imageOverlay = 
         <div className="flex flex-col gap-2 min-h-0" style={{ flex: '0 0 48%', minWidth: 0 }}>
           {hasImage || imageEmpty ? (
             <>
-              <div className="relative overflow-hidden rounded min-h-0" style={{ flex: card.clue ? '0 0 75%' : '1 1 0' }}>
+              <div className="relative overflow-hidden rounded min-h-0" style={{ flex: '0 0 75%' }}>
                 {hasImage
                   ? <img src={card.image_url} alt="card" className="w-full h-full" style={imgStyle} draggable={false} />
                   : imageEmpty}
                 {imageOverlay}
               </div>
-              {card.clue && (
-                <div className="rounded px-3 py-2 flex items-center min-h-0" style={{ flex: '1 1 0', backgroundColor: '#DFEDF5' }}>
-                  <MathRenderer text={card.clue} style={{ color: '#113656', fontSize: 14, fontWeight: 500, lineHeight: 1.4 }} />
-                </div>
-              )}
+              <div className="rounded px-3 py-2 flex items-center min-h-0" style={{ flex: '1 1 0', backgroundColor: '#DFEDF5' }}>
+                {card.clue && <MathRenderer text={card.clue} style={{ color: '#113656', fontSize: 14, fontWeight: 500, lineHeight: 1.4 }} />}
+              </div>
             </>
           ) : card.clue ? (
             <div className="rounded px-3 py-2 flex items-center w-full h-full" style={{ backgroundColor: '#DFEDF5' }}>
