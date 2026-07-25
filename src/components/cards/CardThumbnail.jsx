@@ -44,9 +44,9 @@ export default function CardThumbnail({ card, imageEmpty = null, imageOverlay = 
   ) : null;
 
   // ── Answer section (shared by both layouts) ─────────────────────────────
-  const answersBlock = (
+  const renderAnswers = (fill) => (
     <div
-      className="w-full rounded px-3 py-2"
+      className={"w-full rounded px-3 py-2" + (fill ? " h-full" : "")}
       style={{ backgroundColor: '#FAFAFA', border: '1.5px solid #D9D9D9' }}
     >
       {/* Question type label */}
@@ -114,24 +114,33 @@ export default function CardThumbnail({ card, imageEmpty = null, imageOverlay = 
     </div>
   );
 
-  // ── Horizontal layout: image left, answers right ────────────────────────
+  // ── Horizontal layout: image + question left, answers right (full height) ─
   if (layout === 'horizontal') {
     return (
       <div className="flex gap-3 w-full" style={{ aspectRatio: '2.4' }}>
-        <div className="flex items-stretch" style={{ flex: '0 0 48%', minWidth: 0 }}>
-          {mediaInner && (
-            <div
-              className="relative w-full h-full overflow-hidden rounded flex items-center justify-center"
-              style={hasClue ? { backgroundColor: '#DFEDF5', padding: '0 12px' } : {}}
-            >
-              {mediaInner}
-              {imageOverlay}
+        <div className="flex flex-col gap-2 min-h-0" style={{ flex: '0 0 48%', minWidth: 0 }}>
+          {hasImage || imageEmpty ? (
+            <>
+              <div className="relative overflow-hidden rounded min-h-0" style={{ flex: card.clue ? '0 0 75%' : '1 1 0' }}>
+                {hasImage
+                  ? <img src={card.image_url} alt="card" className="w-full h-full" style={imgStyle} draggable={false} />
+                  : imageEmpty}
+                {imageOverlay}
+              </div>
+              {card.clue && (
+                <div className="rounded px-3 py-2 flex items-center min-h-0" style={{ flex: '1 1 0', backgroundColor: '#DFEDF5' }}>
+                  <MathRenderer text={card.clue} style={{ color: '#113656', fontSize: 14, fontWeight: 500, lineHeight: 1.4 }} />
+                </div>
+              )}
+            </>
+          ) : card.clue ? (
+            <div className="rounded px-3 py-2 flex items-center w-full h-full" style={{ backgroundColor: '#DFEDF5' }}>
+              <MathRenderer text={card.clue} style={{ color: '#113656', fontSize: 15, fontWeight: 500, lineHeight: 1.4 }} />
             </div>
-          )}
+          ) : null}
         </div>
-        <div className="flex flex-col justify-center gap-2 min-w-0" style={{ flex: '1 1 0' }}>
-          {questionPane}
-          {answersBlock}
+        <div className="min-w-0" style={{ flex: '1 1 0' }}>
+          {renderAnswers(true)}
         </div>
       </div>
     );
@@ -148,7 +157,7 @@ export default function CardThumbnail({ card, imageEmpty = null, imageOverlay = 
             : <div className="relative w-full rounded px-3 py-2 flex items-center" style={{ backgroundColor: '#DFEDF5', aspectRatio: '4/3' }}>{mediaInner}{imageOverlay}</div>
       )}
       {questionPane}
-      {answersBlock}
+      {renderAnswers(false)}
     </div>
   );
 }
