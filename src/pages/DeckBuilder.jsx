@@ -410,7 +410,7 @@ export default function DeckBuilder() {
                 )}
               </div>
               {masteredCardIds.has(card.id) && (
-                className="absolute top-2 right-2 text-xs bg-success/15 text-success px-1.5 py-0.5 rounded font-medium opacity-100 group-hover:opacity-0 transition-opacity"
+                <span className="absolute top-2 right-2 text-xs bg-success/15 text-success px-1.5 py-0.5 rounded font-medium opacity-100 group-hover:opacity-0 transition-opacity">Mastered</span>
               )}
               <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(card); }} className="bg-white/90 hover:bg-white rounded-lg p-1.5 shadow-sm">
