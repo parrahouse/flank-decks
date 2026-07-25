@@ -10,7 +10,7 @@ import { useState, useRef, useEffect } from 'react';
 import {
   Upload, Sparkles, Search, Image as ImageIcon, Loader2,
   Plus, Pencil, Check, Zap, Lightbulb, AlertTriangle, X, Trash2,
-  PanelLeft, PanelTop,
+  PanelLeft, PanelTop, Delete,
 } from 'lucide-react';
 import { computeCardDifficulty } from '@/lib/computeCardDifficulty';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -556,28 +556,17 @@ Return:
                               >
                                 {isCorrect && '✓'}
                               </button>
-                              <div className="flex items-center flex-1">
-                                <Input
-                                  value={c}
-                                  onChange={e => updateChoice(i, e.target.value)}
-                                  placeholder={i === 0 ? 'Correct answer (required)' : `Option ${i + 1}`}
-                                  className={cn(
-                                    'flex-1 rounded-l-md rounded-r-none',
-                                    isCorrect && 'border-success/60 bg-success/5'
-                                  )}
-                                />
-                                {choicesList.length > 2 && (
-                                  <button
-                                    type="button"
-                                    tabIndex={-1}
-                                    onClick={() => removeChoice(i)}
-                                    title="Remove option"
-                                    className="shrink-0 w-9 h-9 rounded-full border border-input bg-background flex items-center justify-center text-foreground hover:bg-destructive hover:text-white hover:border-destructive transition-colors"
-                                  >
-                                    <X className="w-4 h-4" />
-                                  </button>
-                                )}
-                              </div>
+                              <Input
+                                value={c}
+                                onChange={e => updateChoice(i, e.target.value)}
+                                placeholder={i === 0 ? 'Correct answer (required)' : `Option ${i + 1}`}
+                                className={cn(isCorrect && 'border-success/60 bg-success/5')}
+                              />
+                              {choicesList.length > 2 && (
+                                <Button type="button" variant="ghost" size="icon" tabIndex={-1} onClick={() => removeChoice(i)} className="h-7 w-7 shrink-0 p-0 text-muted-foreground hover:text-destructive hover:bg-red-50">
+                                  <Delete className="w-4 h-4" />
+                                </Button>
+                              )}
                             </div>
                           );
                         })}
