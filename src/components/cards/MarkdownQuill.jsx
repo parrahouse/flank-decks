@@ -61,8 +61,13 @@ export default function MarkdownQuill({
           const lineStart = sel.index - offset;
           // Run as 'api' so this handler ignores the resulting events.
           quill.deleteText(lineStart, prefixLen, 'api');
-          quill.formatLine(lineStart, 1, p.format, 'api');
+          // Collapse to the line start, then apply each block format to the
+          // current line. quill.format with a collapsed selection targets the
+          // whole line — reliable even when the line is now empty.
           quill.setSelection(lineStart, 0, 'api');
+          Object.entries(p.format).forEach(([name, value]) => {
+            quill.format(name, value, 'api');
+          });
           break;
         }
       }
