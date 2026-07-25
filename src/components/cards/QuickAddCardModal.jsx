@@ -85,6 +85,7 @@ export default function QuickAddCardModal({ open, onClose, deckId, deck, activeC
   const [acceptedVariants, setAcceptedVariants] = useState([]);
   const [newVariant, setNewVariant] = useState('');
   const [gradingGuidance, setGradingGuidance] = useState('');
+  const [explanation, setExplanation] = useState('');
   const [imageUrl, setImageUrl] = useState('');
 
   // Whether this card gets an image region at all. Defaults to whatever the
@@ -170,6 +171,7 @@ export default function QuickAddCardModal({ open, onClose, deckId, deck, activeC
     setAcceptedVariants([]);
     setNewVariant('');
     setGradingGuidance('');
+    setExplanation('');
     setImageUrl('');
     setImageCard(deckUsesImages);
     setImagePanel(null);
@@ -302,6 +304,7 @@ Return:
         accepted_variants: acceptedVariants.map(v => v.trim()).filter(Boolean),
         grading_guidance: gradingGuidance.trim(),
       }),
+      explanation: explanation.trim(),
     };
 
     const created = await base44.entities.Card.create(cardData);
@@ -682,6 +685,19 @@ Return:
                     </AnimatePresence>
 
                     <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+
+                    {previewLayout === 'horizontal' && (
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-medium">Explanation</label>
+                        <Textarea
+                          value={explanation}
+                          onChange={e => setExplanation(e.target.value)}
+                          placeholder="Optional long-form explanation shown after answering (supports markdown)…"
+                          rows={3}
+                          className="resize-none text-sm"
+                        />
+                      </div>
+                    )}
                   </div>
 
                   {/* ── Full-pane overlay: search / AI ──────────────────────── */}
