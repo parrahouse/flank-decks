@@ -35,8 +35,9 @@ export default function CardThumbnail({ card, imageEmpty = null, imageOverlay = 
         ? <MathRenderer text={card.clue} style={{ color: '#113656', fontSize: 15, fontWeight: 500, lineHeight: 1.4 }} />
         : null;
 
-  // Compact question pane shown beneath / beside the image when the card has both.
-  const questionPane = hasImage && card.clue ? (
+  // Compact question pane shown whenever the media area is an image or placeholder
+  // (the no-media case already shows the clue in the media box, so we skip it there).
+  const questionPane = card.clue && (hasImage || imageEmpty) ? (
     <div className="w-full rounded px-3 py-2" style={{ backgroundColor: '#DFEDF5' }}>
       <MathRenderer text={card.clue} style={{ color: '#113656', fontSize: 14, fontWeight: 500, lineHeight: 1.4 }} />
     </div>
