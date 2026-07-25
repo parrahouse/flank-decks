@@ -10,8 +10,8 @@ import { useState, useRef, useEffect } from 'react';
 import {
   Upload, Sparkles, Search, Image as ImageIcon, Loader2,
   Plus, Pencil, Check, Zap, Lightbulb, AlertTriangle, X, Trash2,
-  PanelLeft, PanelTop, Delete,
-} from 'lucide-react';
+  PanelLeft, PanelTop, Delete } from
+'lucide-react';
 import { computeCardDifficulty } from '@/lib/computeCardDifficulty';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -32,10 +32,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 const STUDY_CARD_TRUE_W = 1216;
 
 const STYLE_PRESETS = {
-  pixel_art:    { label: 'Old School', emoji: '🕹️', enhancer: 'Mid-century retro illustration in vintage halftone print style. No gradients or modern shading. Bold black ink outlines, simplified shapes, matte aged quality.' },
+  pixel_art: { label: 'Old School', emoji: '🕹️', enhancer: 'Mid-century retro illustration in vintage halftone print style. No gradients or modern shading. Bold black ink outlines, simplified shapes, matte aged quality.' },
   oil_painting: { label: 'Oil Painting', emoji: '🖼️', enhancer: 'classic oil painting style, visible brushstrokes, rich textures, warm lighting' },
-  minimalist:   { label: 'Minimalist', emoji: '◻️', enhancer: 'minimalist vector art, clean flat design, simple shapes, limited color palette' },
-  watercolor:   { label: 'Watercolor', emoji: '🎨', enhancer: 'soft watercolor painting, ethereal feel, gentle color bleeds, artistic style' },
+  minimalist: { label: 'Minimalist', emoji: '◻️', enhancer: 'minimalist vector art, clean flat design, simple shapes, limited color palette' },
+  watercolor: { label: 'Watercolor', emoji: '🎨', enhancer: 'soft watercolor painting, ethereal feel, gentle color bleeds, artistic style' }
 };
 
 const QTYPE_META = {
@@ -43,26 +43,26 @@ const QTYPE_META = {
     label: 'Multiple Choice',
     answerLabel: 'Correct Answer',
     answerHelper: 'One correct answer. Distractor choices can be added in the detail editor.',
-    answerPlaceholder: 'e.g. Jupiter',
+    answerPlaceholder: 'e.g. Jupiter'
   },
   true_false: {
     label: 'True / False',
     answerLabel: 'Correct Answer',
     answerHelper: 'The statement in the question is…',
-    answerPlaceholder: null,
+    answerPlaceholder: null
   },
   select_all: {
     label: 'Select All That Apply',
     answerLabel: 'Correct Answers',
     answerHelper: 'Separate each correct answer with "|" — e.g. Mitosis|Meiosis|Binary Fission. At least 2 required.',
-    answerPlaceholder: 'e.g. Mitosis|Meiosis|Binary Fission',
+    answerPlaceholder: 'e.g. Mitosis|Meiosis|Binary Fission'
   },
   short_answer: {
     label: 'Short Answer',
     answerLabel: 'Canonical Answer',
     answerHelper: 'The authoritative correct answer — variants and grading guidance can be added in the detail editor.',
-    answerPlaceholder: 'e.g. Photosynthesis',
-  },
+    answerPlaceholder: 'e.g. Photosynthesis'
+  }
 };
 
 export default function QuickAddCardModal({ open, onClose, deckId, deck, activeCards, onSaved, onEditDetails }) {
@@ -91,7 +91,7 @@ export default function QuickAddCardModal({ open, onClose, deckId, deck, activeC
 
   // Whether this card gets an image region at all. Defaults to whatever the
   // deck already does — an empty deck defaults to yes.
-  const deckUsesImages = activeCards.length === 0 || activeCards.some(c => !!c.image_url);
+  const deckUsesImages = activeCards.length === 0 || activeCards.some((c) => !!c.image_url);
   const [imageCard, setImageCard] = useState(deckUsesImages);
   const [previewLayout, setPreviewLayout] = useState('horizontal');
 
@@ -107,21 +107,21 @@ export default function QuickAddCardModal({ open, onClose, deckId, deck, activeC
   const fileRef = useRef();
 
   // Re-derive the default each time the modal opens
-  useEffect(() => { if (open) setImageCard(deckUsesImages); }, [open]);
+  useEffect(() => {if (open) setImageCard(deckUsesImages);}, [open]);
 
   const meta = QTYPE_META[qType];
 
   const usesBank = qType === 'multiple_choice' || qType === 'select_all';
 
   const updateChoice = (i, val) => {
-    setChoicesList(prev => {
+    setChoicesList((prev) => {
       const next = [...prev];
       const old = next[i].trim();
       next[i] = val;
       // keep correctSet in step with a renamed choice
       if (old && correctSet.has(old)) {
-        setCorrectSet(cs => {
-          const n = new Set(cs); n.delete(old);
+        setCorrectSet((cs) => {
+          const n = new Set(cs);n.delete(old);
           if (val.trim()) n.add(val.trim());
           return n;
         });
@@ -130,13 +130,13 @@ export default function QuickAddCardModal({ open, onClose, deckId, deck, activeC
     });
   };
 
-  const addChoice = () => setChoicesList(prev => prev.length < 6 ? [...prev, ''] : prev);
+  const addChoice = () => setChoicesList((prev) => prev.length < 6 ? [...prev, ''] : prev);
 
   const removeChoice = (i) => {
-    setChoicesList(prev => {
+    setChoicesList((prev) => {
       if (prev.length <= 2) return prev;
       const removed = prev[i].trim();
-      if (removed) setCorrectSet(cs => { const n = new Set(cs); n.delete(removed); return n; });
+      if (removed) setCorrectSet((cs) => {const n = new Set(cs);n.delete(removed);return n;});
       return prev.filter((_, idx) => idx !== i);
     });
   };
@@ -144,7 +144,7 @@ export default function QuickAddCardModal({ open, onClose, deckId, deck, activeC
   const toggleCorrect = (choice) => {
     const t = choice.trim();
     if (!t) return;
-    setCorrectSet(prev => {
+    setCorrectSet((prev) => {
       const n = new Set(prev);
       if (qType === 'multiple_choice') {
         // single-select: exactly one
@@ -158,8 +158,8 @@ export default function QuickAddCardModal({ open, onClose, deckId, deck, activeC
   };
 
   // Filled choices and how many are marked correct — drives validation + preview
-  const filledChoices = choicesList.map(c => c.trim()).filter(Boolean);
-  const correctFilled = filledChoices.filter(c => correctSet.has(c));
+  const filledChoices = choicesList.map((c) => c.trim()).filter(Boolean);
+  const correctFilled = filledChoices.filter((c) => correctSet.has(c));
 
   const reset = () => {
     setStep('input');
@@ -182,14 +182,14 @@ export default function QuickAddCardModal({ open, onClose, deckId, deck, activeC
     setOverrideValue('');
   };
 
-  const handleClose = () => { reset(); onClose(); };
+  const handleClose = () => {reset();onClose();};
 
   // ── Image helpers ────────────────────────────────────────────────────────
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size < 10 * 1024) { toast.error('Image too small (min 10 KB)'); return; }
-    if (file.size > 10 * 1024 * 1024) { toast.error('Image too large (max 10 MB)'); return; }
+    if (file.size < 10 * 1024) {toast.error('Image too small (min 10 KB)');return;}
+    if (file.size > 10 * 1024 * 1024) {toast.error('Image too large (max 10 MB)');return;}
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
     setImageUrl(file_url);
     setImagePanel(null);
@@ -197,7 +197,7 @@ export default function QuickAddCardModal({ open, onClose, deckId, deck, activeC
   };
 
   const handleGenerateAiImage = async () => {
-    if (!aiPrompt.trim()) { toast.error('Enter a description first'); return; }
+    if (!aiPrompt.trim()) {toast.error('Enter a description first');return;}
     setGeneratingImage(true);
     const enhancer = STYLE_PRESETS[aiStyle]?.enhancer || '';
     const fullPrompt = `${aiPrompt.trim()}, ${enhancer}. Do not render any text or words. Compose for 3:2 landscape, subject centered, generous margins.`;
@@ -210,7 +210,7 @@ export default function QuickAddCardModal({ open, onClose, deckId, deck, activeC
 
   // ── AI suggest whole card ────────────────────────────────────────────────
   const handleAiSuggest = async () => {
-    const existingAnswers = activeCards.map(c => c.correct_answers || c.correct_answer).filter(Boolean).slice(0, 40);
+    const existingAnswers = activeCards.map((c) => c.correct_answers || c.correct_answer).filter(Boolean).slice(0, 40);
     setSuggestingCard(true);
     const result = await base44.integrations.Core.InvokeLLM({
       prompt: `You are helping build a flashcard deck titled "${deck?.title || 'Untitled'}".
@@ -227,7 +227,7 @@ Return:
         properties: {
           question: { type: 'string' },
           answer: { type: 'string' },
-          image_prompt: { type: 'string' },
+          image_prompt: { type: 'string' }
         }
       }
     });
@@ -244,11 +244,11 @@ Return:
   // ── Save ─────────────────────────────────────────────────────────────────
   const handleSave = async () => {
     if (usesBank) {
-      if (filledChoices.length < 2) { toast.error('Add at least two choices'); return; }
-      if (correctFilled.length === 0) { toast.error('Mark the correct answer'); return; }
-      if (qType === 'select_all' && correctFilled.length < 2) { toast.error('Select All needs at least two correct answers'); return; }
+      if (filledChoices.length < 2) {toast.error('Add at least two choices');return;}
+      if (correctFilled.length === 0) {toast.error('Mark the correct answer');return;}
+      if (qType === 'select_all' && correctFilled.length < 2) {toast.error('Select All needs at least two correct answers');return;}
     } else if (!answer.trim()) {
-      toast.error('Answer is required'); return;
+      toast.error('Answer is required');return;
     }
     setStep('saving');
 
@@ -263,17 +263,17 @@ Return:
     const isShortAnswer = qType === 'short_answer';
 
     // correctList = the correct answers; choices = every filled option.
-    const correctList = usesBank
-      ? correctFilled
-      : isShortAnswer
-      ? [answer.trim()]
-      : [answer.trim()];
+    const correctList = usesBank ?
+    correctFilled :
+    isShortAnswer ?
+    [answer.trim()] :
+    [answer.trim()];
 
-    const choices = qType === 'true_false'
-      ? ['True', 'False']
-      : isShortAnswer
-      ? []
-      : filledChoices;
+    const choices = qType === 'true_false' ?
+    ['True', 'False'] :
+    isShortAnswer ?
+    [] :
+    filledChoices;
 
     // Compute difficulty (non-blocking — failure defaults to tier 2 / 20 pts)
     let diffResult = { point_value: 20, difficulty_tier: 2, difficulty_overridden: false, _reason: '' };
@@ -282,9 +282,9 @@ Return:
         question_type: qType,
         clue: question.trim(),
         correct_answer: correctList[0] || answer.trim(),
-        concept_id: null,
+        concept_id: null
       });
-    } catch { /* keep defaults */ }
+    } catch {/* keep defaults */}
 
     const cardData = {
       deck_id: deckId,
@@ -302,10 +302,10 @@ Return:
       difficulty_overridden: false,
       ...(isShortAnswer && {
         canonical_answer: answer.trim(),
-        accepted_variants: acceptedVariants.map(v => v.trim()).filter(Boolean),
-        grading_guidance: gradingGuidance.trim(),
+        accepted_variants: acceptedVariants.map((v) => v.trim()).filter(Boolean),
+        grading_guidance: gradingGuidance.trim()
       }),
-      explanation: explanation.trim(),
+      explanation: explanation.trim()
     };
 
     const created = await base44.entities.Card.create(cardData);
@@ -328,40 +328,40 @@ Return:
   // Text to seed image search / AI from. Bank types keep the answer in the bank,
   // not in `answer`, so fall back to the first correct choice (then any filled
   // choice) for them.
-  const imageSeed = usesBank
-    ? (correctFilled[0] || filledChoices[0] || '')
-    : answer.trim();
-  const canSave = usesBank
-    ? (filledChoices.length >= 2
-        && correctFilled.length >= 1
-        && (qType !== 'select_all' || correctFilled.length >= 2))
-    : answer.trim().length > 0;
+  const imageSeed = usesBank ?
+  correctFilled[0] || filledChoices[0] || '' :
+  answer.trim();
+  const canSave = usesBank ?
+  filledChoices.length >= 2 &&
+  correctFilled.length >= 1 && (
+  qType !== 'select_all' || correctFilled.length >= 2) :
+  answer.trim().length > 0;
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
+    <Dialog open={open} onOpenChange={(v) => {if (!v) handleClose();}}>
       <DialogContent className="w-[96vw] max-w-[1700px] h-[92vh] p-0 overflow-hidden flex flex-col">
         <AnimatePresence mode="wait">
 
           {/* ── STEP: input ───────────────────────────────────────────────── */}
-          {step === 'input' && (
-            <motion.div
-              key="input"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.18 }}
-              className="flex flex-col h-full min-h-0"
-              onKeyDown={(e) => {
-                if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && canSave) handleSave();
-              }}
-            >
+          {step === 'input' &&
+          <motion.div
+            key="input"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.18 }}
+            className="flex flex-col h-full min-h-0"
+            onKeyDown={(e) => {
+              if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && canSave) handleSave();
+            }}>
+            
               {/* Header — pinned */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
                 <h2 className="font-semibold text-base">Create a Card</h2>
               </div>
 
               {/* Body — what the card says | how the card looks.
-                  Columns scroll independently at md+; below that the body scrolls as one. */}
+                 Columns scroll independently at md+; below that the body scrolls as one. */}
               <div className="grid grid-cols-1 md:grid-cols-[minmax(360px,420px)_1fr] flex-1 min-h-0 overflow-y-auto md:overflow-hidden">
 
                 {/* ── Left: form ──────────────────────────────────────────── */}
@@ -371,16 +371,16 @@ Return:
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium">Question Type</label>
                     <Select value={qType} onValueChange={(v) => {
-                      // Narrowing to single-select: keep at most one tick.
-                      if (v === 'multiple_choice' && correctSet.size > 1) {
-                        const first = choicesList.map(c => c.trim()).find(c => correctSet.has(c));
-                        setCorrectSet(new Set(first ? [first] : []));
-                      }
-                      // Clear the single-answer field only when it would be invalid.
-                      if (v === 'true_false' && answer !== 'True' && answer !== 'False') setAnswer('');
-                      else if (v === 'short_answer' && (answer === 'True' || answer === 'False')) setAnswer('');
-                      setQType(v);
-                    }}>
+                    // Narrowing to single-select: keep at most one tick.
+                    if (v === 'multiple_choice' && correctSet.size > 1) {
+                      const first = choicesList.map((c) => c.trim()).find((c) => correctSet.has(c));
+                      setCorrectSet(new Set(first ? [first] : []));
+                    }
+                    // Clear the single-answer field only when it would be invalid.
+                    if (v === 'true_false' && answer !== 'True' && answer !== 'False') setAnswer('');else
+                    if (v === 'short_answer' && (answer === 'True' || answer === 'False')) setAnswer('');
+                    setQType(v);
+                  }}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -402,15 +402,15 @@ Return:
                   {/* Draft with AI + Image Card */}
                   <div className="flex items-center justify-between gap-4">
                     <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={handleAiSuggest}
-                      disabled={suggestingCard}
-                      className="gap-1.5 h-8 text-xs"
-                    >
-                      {suggestingCard
-                        ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Thinking…</>
-                        : <><Sparkles className="w-3.5 h-3.5" /> Draft with AI</>}
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleAiSuggest}
+                    disabled={suggestingCard}
+                    className="gap-1.5 h-8 text-xs">
+                    
+                      {suggestingCard ?
+                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Thinking…</> :
+                    <><Sparkles className="w-3.5 h-3.5" /> Draft with AI</>}
                     </Button>
 
                     <label className="flex items-center gap-2 text-sm font-medium cursor-pointer select-none">
@@ -425,26 +425,26 @@ Return:
                       {qType === 'true_false' ? 'Statement' : 'Question / Clue'}
                     </label>
                     <Textarea
-                      value={question}
-                      onChange={e => setQuestion(e.target.value)}
-                      placeholder={
-                        qType === 'true_false'
-                          ? 'e.g. "The Earth is the third planet from the Sun."'
-                          : 'e.g. "This is the largest planet in the solar system."'
-                      }
-                      rows={3}
-                      className="resize-none text-sm"
-                    />
+                    value={question}
+                    onChange={(e) => setQuestion(e.target.value)}
+                    placeholder={
+                    qType === 'true_false' ?
+                    'e.g. "The Earth is the third planet from the Sun."' :
+                    'e.g. "This is the largest planet in the solar system."'
+                    }
+                    rows={3}
+                    className="resize-none text-sm" />
+                  
                   </div>
 
                   {/* Answer — single field for true_false / short_answer, bank otherwise */}
-                  {!usesBank ? (
-                    <div className="space-y-1.5">
+                  {!usesBank ?
+                <div className="space-y-1.5">
                       <label className="text-sm font-medium">
                         {meta.answerLabel} <span className="text-destructive">*</span>
                       </label>
-                      {qType === 'true_false' ? (
-                        <Select value={answer} onValueChange={setAnswer}>
+                      {qType === 'true_false' ?
+                  <Select value={answer} onValueChange={setAnswer}>
                           <SelectTrigger>
                             <SelectValue placeholder="Select the correct answer…" />
                           </SelectTrigger>
@@ -452,19 +452,19 @@ Return:
                             <SelectItem value="True">True</SelectItem>
                             <SelectItem value="False">False</SelectItem>
                           </SelectContent>
-                        </Select>
-                      ) : (
-                        <Input
-                          value={answer}
-                          onChange={e => setAnswer(e.target.value)}
-                          placeholder={meta.answerPlaceholder}
-                          onKeyDown={e => { if (e.key === 'Enter' && answer.trim()) handleSave(); }}
-                        />
-                      )}
+                        </Select> :
+
+                  <Input
+                    value={answer}
+                    onChange={(e) => setAnswer(e.target.value)}
+                    placeholder={meta.answerPlaceholder}
+                    onKeyDown={(e) => {if (e.key === 'Enter' && answer.trim()) handleSave();}} />
+
+                  }
                       <p className="text-xs text-muted-foreground">{meta.answerHelper}</p>
 
-                      {qType === 'short_answer' && (
-                        <div className="space-y-4 border border-border rounded-lg p-4 bg-accent/10 mt-2">
+                      {qType === 'short_answer' &&
+                  <div className="space-y-4 border border-border rounded-lg p-4 bg-accent/10 mt-2">
                           {/* Accepted variants */}
                           <div className="space-y-1.5">
                             <label className="text-sm font-medium">
@@ -472,37 +472,37 @@ Return:
                             </label>
                             <div className="flex gap-2">
                               <Input
-                                value={newVariant}
-                                onChange={e => setNewVariant(e.target.value)}
-                                placeholder="Add an alternate acceptable answer…"
-                                onKeyDown={e => {
-                                  if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    if (newVariant.trim()) { setAcceptedVariants(prev => [...prev, newVariant.trim()]); setNewVariant(''); }
-                                  }
-                                }}
-                              />
+                          value={newVariant}
+                          onChange={(e) => setNewVariant(e.target.value)}
+                          placeholder="Add an alternate acceptable answer…"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (newVariant.trim()) {setAcceptedVariants((prev) => [...prev, newVariant.trim()]);setNewVariant('');}
+                            }
+                          }} />
+                        
                               <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => { if (newVariant.trim()) { setAcceptedVariants(prev => [...prev, newVariant.trim()]); setNewVariant(''); } }}
-                              >
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {if (newVariant.trim()) {setAcceptedVariants((prev) => [...prev, newVariant.trim()]);setNewVariant('');}}}>
+                          
                                 <Plus className="w-3.5 h-3.5" />
                               </Button>
                             </div>
-                            {acceptedVariants.length > 0 && (
-                              <div className="flex flex-wrap gap-1.5 mt-1">
-                                {acceptedVariants.map((v, i) => (
-                                  <span key={i} className="flex items-center gap-1 bg-secondary text-secondary-foreground px-2 py-0.5 rounded text-xs">
+                            {acceptedVariants.length > 0 &&
+                      <div className="flex flex-wrap gap-1.5 mt-1">
+                                {acceptedVariants.map((v, i) =>
+                        <span key={i} className="flex items-center gap-1 bg-secondary text-secondary-foreground px-2 py-0.5 rounded text-xs">
                                     {v}
-                                    <button type="button" onClick={() => setAcceptedVariants(prev => prev.filter((_, idx) => idx !== i))}>
+                                    <button type="button" onClick={() => setAcceptedVariants((prev) => prev.filter((_, idx) => idx !== i))}>
                                       <X className="w-3 h-3" />
                                     </button>
                                   </span>
-                                ))}
+                        )}
                               </div>
-                            )}
+                      }
                           </div>
 
                           {/* Grading guidance */}
@@ -511,78 +511,78 @@ Return:
                               Grading Guidance <span className="text-xs text-muted-foreground font-normal">(optional AI rubric)</span>
                             </label>
                             <Textarea
-                              value={gradingGuidance}
-                              onChange={e => setGradingGuidance(e.target.value)}
-                              placeholder='e.g. "Must mention both photosynthesis and chlorophyll for full credit; one alone is partial"'
-                              rows={2}
-                              className="resize-none text-sm"
-                            />
+                        value={gradingGuidance}
+                        onChange={(e) => setGradingGuidance(e.target.value)}
+                        placeholder='e.g. "Must mention both photosynthesis and chlorophyll for full credit; one alone is partial"'
+                        rows={2}
+                        className="resize-none text-sm" />
+                      
                           </div>
                         </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
+                  }
+                    </div> :
+
+                <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <label className="text-sm font-medium">Answer Bank</label>
-                        {filledChoices.length >= 2 && choicesList.length < 6 && (
-                          <Button type="button" variant="outline" size="sm" onClick={addChoice} className="h-7 text-xs gap-1">
+                        {filledChoices.length >= 2 && choicesList.length < 6 &&
+                    <Button type="button" variant="outline" size="sm" onClick={addChoice} className="h-7 text-xs gap-1">
                             <Plus className="w-3 h-3" /> Add
                           </Button>
-                        )}
+                    }
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {qType === 'select_all'
-                          ? 'Fill at least two options and tick every correct one. Untick the distractors.'
-                          : 'Fill at least two options and tick the single correct one. Leave the rest as distractors.'}
+                        {qType === 'select_all' ?
+                    'Fill at least two options and tick every correct one. Untick the distractors.' :
+                    'Fill at least two options and tick the single correct one. Leave the rest as distractors.'}
                       </p>
 
                       <div className="space-y-2">
                         {choicesList.map((c, i) => {
-                          const isCorrect = correctSet.has(c.trim());
-                          return (
-                            <div key={i} className="flex gap-2 items-center">
+                      const isCorrect = correctSet.has(c.trim());
+                      return (
+                        <div key={i} className="flex gap-2 items-center">
                               <button
-                                type="button"
-                                tabIndex={-1}
-                                onClick={() => toggleCorrect(c)}
-                                disabled={!c.trim()}
-                                title={isCorrect ? 'Correct answer' : 'Mark as correct'}
-                                className={cn(
-                                  'shrink-0 w-7 h-7 rounded border-2 flex items-center justify-center transition-colors text-xs font-bold',
-                                  isCorrect ? 'bg-success border-success text-white' : 'border-border text-muted-foreground hover:border-primary',
-                                  !c.trim() && 'opacity-30 cursor-not-allowed'
-                                )}
-                              >
+                            type="button"
+                            tabIndex={-1}
+                            onClick={() => toggleCorrect(c)}
+                            disabled={!c.trim()}
+                            title={isCorrect ? 'Correct answer' : 'Mark as correct'}
+                            className={cn(
+                              'shrink-0 w-7 h-7 rounded border-2 flex items-center justify-center transition-colors text-xs font-bold',
+                              isCorrect ? 'bg-success border-success text-white' : 'border-border text-muted-foreground hover:border-primary',
+                              !c.trim() && 'opacity-30 cursor-not-allowed'
+                            )}>
+                            
                                 {isCorrect && '✓'}
                               </button>
                               <Input
-                                value={c}
-                                onChange={e => updateChoice(i, e.target.value)}
-                                placeholder={i === 0 ? 'Correct answer (required)' : `Option ${i + 1}`}
-                                className={cn(isCorrect && 'border-success/60 bg-success/5')}
-                              />
-                              {choicesList.length > 2 && (
-                                <Button type="button" variant="ghost" size="icon" tabIndex={-1} onClick={() => removeChoice(i)} className="h-7 w-7 shrink-0 p-0 text-muted-foreground hover:text-destructive">
+                            value={c}
+                            onChange={(e) => updateChoice(i, e.target.value)}
+                            placeholder={i === 0 ? 'Correct answer (required)' : `Option ${i + 1}`}
+                            className={cn(isCorrect && 'border-success/60 bg-success/5')} />
+                          
+                              {choicesList.length > 2 &&
+                          <Button type="button" variant="ghost" size="icon" tabIndex={-1} onClick={() => removeChoice(i)} className="h-7 w-7 shrink-0 p-0 text-muted-foreground hover:text-destructive [&_svg]:size-6">
                                   <Delete className="w-3.5 h-3.5" />
                                 </Button>
-                              )}
-                            </div>
-                          );
-                        })}
+                          }
+                            </div>);
+
+                    })}
                       </div>
 
-                      {filledChoices.length >= 2 && correctFilled.length === 0 && (
-                        <p className="text-xs text-destructive">Tick the correct answer{qType === 'select_all' ? 's' : ''}.</p>
-                      )}
-                      {qType === 'select_all' && correctFilled.length === 1 && (
-                        <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-amber-800">
+                      {filledChoices.length >= 2 && correctFilled.length === 0 &&
+                  <p className="text-xs text-destructive">Tick the correct answer{qType === 'select_all' ? 's' : ''}.</p>
+                  }
+                      {qType === 'select_all' && correctFilled.length === 1 &&
+                  <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-amber-800">
                           <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
                           <p className="text-xs font-medium leading-snug">Select All with one correct answer behaves like Multiple Choice. Tick at least two, or switch the type.</p>
                         </div>
-                      )}
+                  }
                     </div>
-                  )}
+                }
 
                   {/* Footnote */}
                   <div className="flex items-start gap-2 pt-1 text-xs text-muted-foreground">
@@ -597,25 +597,25 @@ Return:
                     <p className="text-sm font-medium">Card Preview</p>
                     <div className="flex rounded-md border border-border overflow-hidden">
                       <button
-                        type="button"
-                        onClick={() => setPreviewLayout('horizontal')}
-                        title="Horizontal"
-                        className={cn(
-                          'px-2 py-1 flex items-center text-xs',
-                          previewLayout === 'horizontal' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent'
-                        )}
-                      >
+                      type="button"
+                      onClick={() => setPreviewLayout('horizontal')}
+                      title="Horizontal"
+                      className={cn(
+                        'px-2 py-1 flex items-center text-xs',
+                        previewLayout === 'horizontal' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent'
+                      )}>
+                      
                         <PanelLeft className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        type="button"
-                        onClick={() => setPreviewLayout('vertical')}
-                        title="Vertical"
-                        className={cn(
-                          'px-2 py-1 flex items-center text-xs',
-                          previewLayout === 'vertical' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent'
-                        )}
-                      >
+                      type="button"
+                      onClick={() => setPreviewLayout('vertical')}
+                      title="Vertical"
+                      className={cn(
+                        'px-2 py-1 flex items-center text-xs',
+                        previewLayout === 'vertical' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent'
+                      )}>
+                      
                         <PanelTop className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -627,84 +627,84 @@ Return:
                       initial={{ opacity: 0, scale: 0.98 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.98 }}
-                      transition={{ duration: 0.2 }}
-                    >
+                      transition={{ duration: 0.2 }}>
+                      
                     <CardThumbnail
-                      card={{
-                        image_url: imageCard ? imageUrl : '',
-                        image_fit: 'cover',
-                        image_focal_point: null,
-                        clue: question,
-                        question_type: qType,
-                        choices: qType === 'true_false' ? ['True', 'False'] : usesBank ? filledChoices : [],
-                        correct_answers: usesBank ? correctFilled.join('|') : answer.trim(),
-                        canonical_answer: qType === 'short_answer' ? answer.trim() : '',
-                        accepted_variants: qType === 'short_answer' ? acceptedVariants : [],
-                      }}
-                      layout={previewLayout}
-                      imageEmpty={imageCard && !imageUrl ? (
+                        card={{
+                          image_url: imageCard ? imageUrl : '',
+                          image_fit: 'cover',
+                          image_focal_point: null,
+                          clue: question,
+                          question_type: qType,
+                          choices: qType === 'true_false' ? ['True', 'False'] : usesBank ? filledChoices : [],
+                          correct_answers: usesBank ? correctFilled.join('|') : answer.trim(),
+                          canonical_answer: qType === 'short_answer' ? answer.trim() : '',
+                          accepted_variants: qType === 'short_answer' ? acceptedVariants : []
+                        }}
+                        layout={previewLayout}
+                        imageEmpty={imageCard && !imageUrl ?
                         <div className="w-full h-full flex flex-col items-center justify-center gap-2 border-2 border-dashed border-muted-foreground/30 rounded p-4">
                           <button
                             type="button"
                             onClick={() => fileRef.current?.click()}
-                            className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary/10 text-primary hover:bg-primary/15 transition-colors text-sm font-medium"
-                          >
+                            className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary/10 text-primary hover:bg-primary/15 transition-colors text-sm font-medium">
+                            
                             <Upload className="w-4 h-4" /> Upload a File
                           </button>
-                          {imageSeed && (
-                            <button
-                              type="button"
-                              onClick={() => setImagePanel('search')}
-                              className="flex items-center gap-2 px-4 py-2 rounded-md bg-muted hover:bg-muted/70 transition-colors text-sm font-medium"
-                            >
+                          {imageSeed &&
+                          <button
+                            type="button"
+                            onClick={() => setImagePanel('search')}
+                            className="flex items-center gap-2 px-4 py-2 rounded-md bg-muted hover:bg-muted/70 transition-colors text-sm font-medium">
+                            
                               <Search className="w-4 h-4" /> Search Images
                             </button>
-                          )}
-                          {imageSeed && (
-                            <button
-                              type="button"
-                              onClick={() => setImagePanel('ai')}
-                              className="flex items-center gap-2 px-4 py-2 rounded-md bg-muted hover:bg-muted/70 transition-colors text-sm font-medium"
-                            >
+                          }
+                          {imageSeed &&
+                          <button
+                            type="button"
+                            onClick={() => setImagePanel('ai')}
+                            className="flex items-center gap-2 px-4 py-2 rounded-md bg-muted hover:bg-muted/70 transition-colors text-sm font-medium">
+                            
                               <Sparkles className="w-4 h-4" /> Create with AI
                             </button>
-                          )}
-                        </div>
-                      ) : null}
-                      imageOverlay={imageCard && imageUrl ? (
+                          }
+                        </div> :
+                        null}
+                        imageOverlay={imageCard && imageUrl ?
                         <button
                           type="button"
                           onClick={() => setImageUrl('')}
                           title="Remove image"
-                          className="absolute top-2 right-2 z-10 w-8 h-8 rounded-full bg-white shadow-md border border-border flex items-center justify-center hover:scale-105 transition-transform"
-                        >
+                          className="absolute top-2 right-2 z-10 w-8 h-8 rounded-full bg-white shadow-md border border-border flex items-center justify-center hover:scale-105 transition-transform">
+                          
                           <Trash2 className="w-4 h-4 text-red-600" />
-                        </button>
-                      ) : null}
-                    />
+                        </button> :
+                        null} />
+                      
                     </motion.div>
                     </AnimatePresence>
 
                     <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
 
-                    {previewLayout === 'horizontal' && (
-                      <div className="space-y-1.5">
+                    {previewLayout === 'horizontal' &&
+                  <div className="space-y-1.5">
                         <label className="text-sm font-medium">Explanation</label>
                         <div className="quill-wrapper border border-input overflow-visible" style={{ borderRadius: 0 }}>
                           <MarkdownQuill
-                            value={explanation}
-                            onChange={setExplanation}
-                            placeholder="Optional long-form explanation shown after answering (supports markdown)…"
-                            style={{ minHeight: 300 }}
-                          />
+                        value={explanation}
+                        onChange={setExplanation}
+                        placeholder="Optional long-form explanation shown after answering (supports markdown)…"
+                        style={{ minHeight: 300 }} />
+                      
                         </div>
                       </div>
-                    )}
+                  }
                   </div>
 
                   {/* ── Full-pane overlay: search / AI ──────────────────────── */}
-                  {imageCard && (imagePanel === 'search' || imagePanel === 'ai') && (
-                    <div className="absolute inset-0 z-20 bg-background flex flex-col">
+                  {imageCard && (imagePanel === 'search' || imagePanel === 'ai') &&
+                <div className="absolute inset-0 z-20 bg-background flex flex-col">
                       <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/40 shrink-0">
                         <p className="text-sm font-semibold">
                           {imagePanel === 'search' ? 'Search Images' : 'Create with AI'}
@@ -715,52 +715,52 @@ Return:
                       </div>
 
                       <div className="flex-1 min-h-0 p-4">
-                        {imagePanel === 'search' && (
-                          <ImageSearchPanel
-                            defaultQuery={imageSeed}
-                            columns={5}
-                            maxHeightClass="flex-1 min-h-0"
-                            className="h-full border-0 rounded-none flex flex-col"
-                            onSelect={(url) => { setImageUrl(url); setImagePanel(null); }}
-                            onClose={() => setImagePanel(null)}
-                          />
-                        )}
-                        {imagePanel === 'ai' && (
-                          <div className="space-y-4 max-w-2xl mx-auto">
+                        {imagePanel === 'search' &&
+                    <ImageSearchPanel
+                      defaultQuery={imageSeed}
+                      columns={5}
+                      maxHeightClass="flex-1 min-h-0"
+                      className="h-full border-0 rounded-none flex flex-col"
+                      onSelect={(url) => {setImageUrl(url);setImagePanel(null);}}
+                      onClose={() => setImagePanel(null)} />
+
+                    }
+                        {imagePanel === 'ai' &&
+                    <div className="space-y-4 max-w-2xl mx-auto">
                             <Textarea
-                              value={aiPrompt}
-                              onChange={e => setAiPrompt(e.target.value)}
-                              placeholder="Describe what the image should show…"
-                              rows={3}
-                              className="resize-none text-sm"
-                            />
+                        value={aiPrompt}
+                        onChange={(e) => setAiPrompt(e.target.value)}
+                        placeholder="Describe what the image should show…"
+                        rows={3}
+                        className="resize-none text-sm" />
+                      
                             <div className="grid grid-cols-2 gap-2">
-                              {Object.entries(STYLE_PRESETS).map(([key, { label, emoji }]) => (
-                                <button
-                                  key={key}
-                                  type="button"
-                                  onClick={() => setAiStyle(key)}
-                                  className={cn(
-                                    'flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition-colors text-left',
-                                    aiStyle === key
-                                      ? 'border-primary bg-primary/10 text-primary font-medium'
-                                      : 'border-border hover:border-primary/50 text-muted-foreground'
-                                  )}
-                                >
+                              {Object.entries(STYLE_PRESETS).map(([key, { label, emoji }]) =>
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setAiStyle(key)}
+                          className={cn(
+                            'flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition-colors text-left',
+                            aiStyle === key ?
+                            'border-primary bg-primary/10 text-primary font-medium' :
+                            'border-border hover:border-primary/50 text-muted-foreground'
+                          )}>
+                          
                                   <span>{emoji}</span> {label}
                                 </button>
-                              ))}
+                        )}
                             </div>
                             <Button type="button" size="sm" onClick={handleGenerateAiImage} disabled={generatingImage} className="gap-1.5 w-full">
-                              {generatingImage
-                                ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating…</>
-                                : <><Sparkles className="w-3.5 h-3.5" /> Generate Image</>}
+                              {generatingImage ?
+                        <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating…</> :
+                        <><Sparkles className="w-3.5 h-3.5" /> Generate Image</>}
                             </Button>
                           </div>
-                        )}
+                    }
                       </div>
                     </div>
-                  )}
+                }
                 </div>
               </div>
 
@@ -772,89 +772,89 @@ Return:
                 </Button>
               </div>
             </motion.div>
-          )}
+          }
 
           {/* ── STEP: saving ─────────────────────────────────────────────── */}
-          {step === 'saving' && (
-            <motion.div
-              key="saving"
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.96 }}
-              transition={{ duration: 0.2 }}
-              className="flex flex-col items-center justify-center h-full py-24 gap-4"
-            >
+          {step === 'saving' &&
+          <motion.div
+            key="saving"
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.96 }}
+            transition={{ duration: 0.2 }}
+            className="flex flex-col items-center justify-center h-full py-24 gap-4">
+            
               <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
                 <Loader2 className="w-7 h-7 text-primary animate-spin" />
               </div>
               <p className="text-sm font-medium text-muted-foreground">Saving card…</p>
             </motion.div>
-          )}
+          }
 
           {/* ── STEP: done ───────────────────────────────────────────────── */}
-          {step === 'done' && (
-            <motion.div
-              key="done"
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.22 }}
-              className="flex flex-col items-center justify-center h-full py-12 px-8 gap-5 text-center overflow-y-auto"
-            >
+          {step === 'done' &&
+          <motion.div
+            key="done"
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22 }}
+            className="flex flex-col items-center justify-center h-full py-12 px-8 gap-5 text-center overflow-y-auto">
+            
               <div className="w-14 h-14 rounded-full bg-success/15 flex items-center justify-center">
                 <Check className="w-7 h-7 text-success" />
               </div>
               <div>
                 <h3 className="font-semibold text-lg">Card saved!</h3>
                 <p className="text-muted-foreground text-sm mt-1">
-                  {savedCard?.clue
-                    ? <span className="italic">"{savedCard.clue}"</span>
-                    : <span className="font-medium">{savedCard?.correct_answers}</span>
-                  }
+                  {savedCard?.clue ?
+                <span className="italic">"{savedCard.clue}"</span> :
+                <span className="font-medium">{savedCard?.correct_answers}</span>
+                }
                 </p>
               </div>
 
               {/* Difficulty result */}
-              {difficultyResult && (
-                <div className="w-full max-w-xs border border-border rounded-lg p-3 bg-accent/20 text-left space-y-2">
+              {difficultyResult &&
+            <div className="w-full max-w-xs border border-border rounded-lg p-3 bg-accent/20 text-left space-y-2">
                   <div className="flex items-center gap-2">
                     <Zap className="w-4 h-4 text-amber-500 shrink-0" />
                     <span className="text-sm font-medium">Point Value: Tier {difficultyResult.difficulty_tier}</span>
                   </div>
-                  {difficultyResult._reason && (
-                    <p className="text-xs text-muted-foreground">{difficultyResult._reason}</p>
-                  )}
+                  {difficultyResult._reason &&
+              <p className="text-xs text-muted-foreground">{difficultyResult._reason}</p>
+              }
                   <div className="flex items-center gap-2 pt-1">
                     <label className="text-xs font-medium shrink-0">Override points:</label>
                     <input
-                      type="number"
-                      min={10}
-                      max={50}
-                      step={10}
-                      value={overrideValue}
-                      onChange={e => setOverrideValue(e.target.value)}
-                      className="w-20 border border-input rounded px-2 py-1 text-sm text-center"
-                    />
+                  type="number"
+                  min={10}
+                  max={50}
+                  step={10}
+                  value={overrideValue}
+                  onChange={(e) => setOverrideValue(e.target.value)}
+                  className="w-20 border border-input rounded px-2 py-1 text-sm text-center" />
+                
                     <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs"
-                      onClick={async () => {
-                        const v = parseInt(overrideValue, 10);
-                        if (!isNaN(v) && v > 0 && savedCard?.id) {
-                          await base44.entities.Card.update(savedCard.id, {
-                            point_value: v,
-                            difficulty_overridden: true,
-                          });
-                          toast.success(`Point value set to ${v}`);
-                        }
-                      }}
-                    >
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs"
+                  onClick={async () => {
+                    const v = parseInt(overrideValue, 10);
+                    if (!isNaN(v) && v > 0 && savedCard?.id) {
+                      await base44.entities.Card.update(savedCard.id, {
+                        point_value: v,
+                        difficulty_overridden: true
+                      });
+                      toast.success(`Point value set to ${v}`);
+                    }
+                  }}>
+                  
                       Set
                     </Button>
                   </div>
                 </div>
-              )}
+            }
 
               <div className="flex flex-col gap-2 w-full max-w-xs">
                 <Button onClick={handleAddAnother} className="gap-2 w-full">
@@ -868,10 +868,10 @@ Return:
                 </Button>
               </div>
             </motion.div>
-          )}
+          }
 
         </AnimatePresence>
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>);
+
 }
