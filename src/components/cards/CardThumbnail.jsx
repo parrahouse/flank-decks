@@ -35,6 +35,13 @@ export default function CardThumbnail({ card, imageEmpty = null, imageOverlay = 
         ? <MathRenderer text={card.clue} style={{ color: '#113656', fontSize: 15, fontWeight: 500, lineHeight: 1.4 }} />
         : null;
 
+  // Compact question pane shown beneath / beside the image when the card has both.
+  const questionPane = hasImage && card.clue ? (
+    <div className="w-full rounded px-3 py-2" style={{ backgroundColor: '#DFEDF5' }}>
+      <MathRenderer text={card.clue} style={{ color: '#113656', fontSize: 14, fontWeight: 500, lineHeight: 1.4 }} />
+    </div>
+  ) : null;
+
   // ── Answer section (shared by both layouts) ─────────────────────────────
   const answersBlock = (
     <div
@@ -121,7 +128,8 @@ export default function CardThumbnail({ card, imageEmpty = null, imageOverlay = 
             </div>
           )}
         </div>
-        <div className="flex flex-col justify-center min-w-0" style={{ flex: '1 1 0' }}>
+        <div className="flex flex-col justify-center gap-2 min-w-0" style={{ flex: '1 1 0' }}>
+          {questionPane}
           {answersBlock}
         </div>
       </div>
@@ -138,6 +146,7 @@ export default function CardThumbnail({ card, imageEmpty = null, imageOverlay = 
             ? <div className="relative w-full" style={{ aspectRatio: '4/3' }}>{mediaInner}{imageOverlay}</div>
             : <div className="relative w-full rounded px-3 py-2 flex items-center" style={{ backgroundColor: '#DFEDF5', aspectRatio: '4/3' }}>{mediaInner}{imageOverlay}</div>
       )}
+      {questionPane}
       {answersBlock}
     </div>
   );
