@@ -96,7 +96,7 @@ export default function CardThumbnail({ card, imageEmpty = null, imageOverlay = 
               const isCorrect = correctAnswers.includes(choice);
               return (
                 <motion.div
-                  key={choice + '-' + idx}
+                  key={idx}
                   initial={{ opacity: 0, y: -6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
