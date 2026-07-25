@@ -540,6 +540,7 @@ Return:
                             <div key={i} className="flex gap-2 items-center">
                               <button
                                 type="button"
+                                tabIndex={-1}
                                 onClick={() => toggleCorrect(c)}
                                 disabled={!c.trim()}
                                 title={isCorrect ? 'Correct answer' : 'Mark as correct'}
@@ -558,7 +559,7 @@ Return:
                                 className={cn(isCorrect && 'border-success/60 bg-success/5')}
                               />
                               {choicesList.length > 2 && (
-                                <Button type="button" variant="ghost" size="icon" onClick={() => removeChoice(i)} className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive">
+                                <Button type="button" variant="ghost" size="icon" tabIndex={-1} onClick={() => removeChoice(i)} className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive">
                                   <X className="w-4 h-4" />
                                 </Button>
                               )}
