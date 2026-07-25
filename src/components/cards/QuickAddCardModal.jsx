@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ImageSearchPanel from './ImageSearchPanel';
-import CardPreviewPane from './CardPreviewPane';
+import CardThumbnail from './CardThumbnail';
 import { Checkbox } from '@/components/ui/checkbox';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
@@ -319,19 +319,12 @@ Return:
     onEditDetails(card);
   };
 
-  // Placeholder arrangement for the preview — shapes only, no answer text
-  const previewChoiceCount =
-    qType === 'true_false' ? 2
-    : usesBank ? Math.max(2, filledChoices.length)
-    : 4;
-
   // Text to seed image search / AI from. Bank types keep the answer in the bank,
   // not in `answer`, so fall back to the first correct choice (then any filled
   // choice) for them.
   const imageSeed = usesBank
     ? (correctFilled[0] || filledChoices[0] || '')
     : answer.trim();
-  const previewAnswerStyle = qType === 'short_answer' ? 'field' : 'bars';
   const canSave = usesBank
     ? (filledChoices.length >= 2
         && correctFilled.length >= 1
@@ -597,15 +590,20 @@ Return:
                     <p className="text-sm font-medium">Card Preview</p>
 
                     <div className="relative">
-                    <CardPreviewPane
-                      imageUrl={imageCard ? imageUrl : ''}
-                      question={question}
-                      choiceCount={previewChoiceCount}
-                      answerStyle={previewAnswerStyle}
-                      showImage={imageCard}
-                      counter={`${activeCards.length + 1}/${activeCards.length + 1}`}
-                      imageEmpty={
-                        <div className="w-full h-full flex flex-col items-center justify-center gap-2 border-2 border-dashed border-muted-foreground/30 p-4">
+                    <CardThumbnail
+                      card={{
+                        image_url: imageCard ? imageUrl : '',
+                        image_fit: 'cover',
+                        image_focal_point: null,
+                        clue: question,
+                        question_type: qType,
+                        choices: qType === 'true_false' ? ['True', 'False'] : usesBank ? filledChoices : [],
+                        correct_answers: usesBank ? correctFilled.join('|') : answer.trim(),
+                        canonical_answer: qType === 'short_answer' ? answer.trim() : '',
+                        accepted_variants: qType === 'short_answer' ? acceptedVariants : [],
+                      }}
+                      imageEmpty={imageCard && !imageUrl ? (
+                        <div className="w-full h-full flex flex-col items-center justify-center gap-2 border-2 border-dashed border-muted-foreground/30 rounded p-4">
                           <button
                             type="button"
                             onClick={() => fileRef.current?.click()}
@@ -632,7 +630,7 @@ Return:
                             </button>
                           )}
                         </div>
-                      }
+                      ) : null}
                     />
                     {imageCard && imageUrl && (
                       <button

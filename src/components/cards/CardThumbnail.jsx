@@ -3,7 +3,7 @@ import MathRenderer from '@/components/ui/MathRenderer';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
-export default function CardThumbnail({ card }) {
+export default function CardThumbnail({ card, imageEmpty = null }) {
   if (!card) return null;
 
   const correctAnswers = (card.correct_answers || card.correct_answer || '')
@@ -34,6 +34,8 @@ export default function CardThumbnail({ card }) {
             }}
           />
         </div>
+      ) : imageEmpty ? (
+        <div className="w-full" style={{ aspectRatio: '4/3' }}>{imageEmpty}</div>
       ) : card.clue ? (
         <div
           className="w-full rounded px-3 py-2"
