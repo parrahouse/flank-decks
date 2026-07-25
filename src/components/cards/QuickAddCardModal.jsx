@@ -10,6 +10,7 @@ import { useState, useRef, useEffect } from 'react';
 import {
   Upload, Sparkles, Search, Image as ImageIcon, Loader2,
   Plus, Pencil, Check, Zap, Lightbulb, AlertTriangle, X, Trash2,
+  PanelLeft, PanelTop,
 } from 'lucide-react';
 import { computeCardDifficulty } from '@/lib/computeCardDifficulty';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -90,6 +91,7 @@ export default function QuickAddCardModal({ open, onClose, deckId, deck, activeC
   // deck already does — an empty deck defaults to yes.
   const deckUsesImages = activeCards.length === 0 || activeCards.some(c => !!c.image_url);
   const [imageCard, setImageCard] = useState(deckUsesImages);
+  const [previewLayout, setPreviewLayout] = useState('horizontal');
 
   // Image sub-panels
   const [imagePanel, setImagePanel] = useState(null); // null | 'search' | 'pick' | 'ai'
@@ -587,9 +589,32 @@ Return:
                 {/* ── Right: preview + image sources ──────────────────────── */}
                 <div className="relative px-6 py-5 md:border-l border-border bg-muted/20 min-h-0 md:overflow-y-auto">
                   <div className="mx-auto w-full space-y-3" style={{ maxWidth: STUDY_CARD_TRUE_W }}>
-                    <p className="text-sm font-medium">Card Preview</p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium">Card Preview</p>
+                      <div className="flex rounded-md border border-border overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={() => setPreviewLayout('horizontal')}
+                          className={cn(
+                            'px-2.5 py-1 flex items-center gap-1.5 text-xs',
+                            previewLayout === 'horizontal' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'
+                          )}
+                        >
+                          <PanelLeft className="w-3.5 h-3.5" /> Horizontal
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPreviewLayout('vertical')}
+                          className={cn(
+                            'px-2.5 py-1 flex items-center gap-1.5 text-xs',
+                            previewLayout === 'vertical' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'
+                          )}
+                        >
+                          <PanelTop className="w-3.5 h-3.5" /> Vertical
+                        </button>
+                      </div>
+                    </div>
 
-                    <div className="relative">
                     <CardThumbnail
                       card={{
                         image_url: imageCard ? imageUrl : '',
@@ -602,6 +627,7 @@ Return:
                         canonical_answer: qType === 'short_answer' ? answer.trim() : '',
                         accepted_variants: qType === 'short_answer' ? acceptedVariants : [],
                       }}
+                      layout={previewLayout}
                       imageEmpty={imageCard && !imageUrl ? (
                         <div className="w-full h-full flex flex-col items-center justify-center gap-2 border-2 border-dashed border-muted-foreground/30 rounded p-4">
                           <button
@@ -631,18 +657,17 @@ Return:
                           )}
                         </div>
                       ) : null}
+                      imageOverlay={imageCard && imageUrl ? (
+                        <button
+                          type="button"
+                          onClick={() => setImageUrl('')}
+                          title="Remove image"
+                          className="absolute top-2 right-2 z-10 w-8 h-8 rounded-full bg-white shadow-md border border-border flex items-center justify-center hover:scale-105 transition-transform"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-600" />
+                        </button>
+                      ) : null}
                     />
-                    {imageCard && imageUrl && (
-                      <button
-                        type="button"
-                        onClick={() => setImageUrl('')}
-                        title="Remove image"
-                        className="absolute top-2 right-2 z-10 w-8 h-8 rounded-full bg-white shadow-md border border-border flex items-center justify-center hover:scale-105 transition-transform"
-                      >
-                        <Trash2 className="w-4 h-4 text-red-600" />
-                      </button>
-                    )}
-                    </div>
 
                     <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
 

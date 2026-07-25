@@ -3,7 +3,7 @@ import MathRenderer from '@/components/ui/MathRenderer';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
-export default function CardThumbnail({ card, imageEmpty = null }) {
+export default function CardThumbnail({ card, imageEmpty = null, imageOverlay = null, layout = 'vertical' }) {
   if (!card) return null;
 
   const correctAnswers = (card.correct_answers || card.correct_answer || '')
@@ -16,103 +16,129 @@ export default function CardThumbnail({ card, imageEmpty = null }) {
 
   const choices = card.choices || [];
 
+  // ── Media content (image / placeholder / clue) ──────────────────────────
+  const imgStyle = {
+    objectFit: card.image_fit || 'cover',
+    objectPosition: (card.image_fit !== 'contain' && card.image_focal_point)
+      ? `${card.image_focal_point.x}% ${card.image_focal_point.y}%`
+      : 'center'
+  };
+
+  const hasImage = !!card.image_url;
+  const hasClue = !hasImage && !imageEmpty && !!card.clue;
+
+  const mediaInner = hasImage
+    ? <img src={card.image_url} alt="card" className="w-full h-full" style={imgStyle} draggable={false} />
+    : imageEmpty
+      ? imageEmpty
+      : hasClue
+        ? <MathRenderer text={card.clue} style={{ color: '#113656', fontSize: 15, fontWeight: 500, lineHeight: 1.4 }} />
+        : null;
+
+  // ── Answer section (shared by both layouts) ─────────────────────────────
+  const answersBlock = (
+    <div
+      className="w-full rounded px-3 py-2"
+      style={{ backgroundColor: '#FAFAFA', border: '1.5px solid #D9D9D9' }}
+    >
+      {/* Question type label */}
+      <div className="flex items-center gap-1.5 mb-2" style={{ color: '#00A842', fontSize: 12, fontWeight: 500 }}>
+        {isTrueFalse
+          ? <ToggleLeft style={{ width: 14, height: 14 }} />
+          : isShortAnswer
+            ? <PencilLine style={{ width: 14, height: 14 }} />
+            : <SquareCheck style={{ width: 14, height: 14 }} />
+        }
+        <span>{qtLabel}</span>
+      </div>
+
+      {/* Short answer preview */}
+      {isShortAnswer ? (
+        <div className="space-y-1.5">
+          <div style={{ border: '2px solid #000', borderRadius: 8, padding: '8px 12px', backgroundColor: '#fff', fontSize: 13, color: '#9ca3af' }}>
+            Type your answer…
+          </div>
+          {card.canonical_answer && (
+            <div style={{ padding: '6px 10px', borderRadius: 7, backgroundColor: '#f0fdf4', border: '1.5px solid #00A842', fontSize: 12 }}>
+              <span style={{ color: '#15803d', fontWeight: 600 }}>✓ </span>
+              <span style={{ color: '#166534' }}>{card.canonical_answer}</span>
+              {card.accepted_variants?.length > 0 && (
+                <span style={{ color: '#6b7280', marginLeft: 6 }}>
+                  (also: {card.accepted_variants.join(', ')})
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Choices */
+        <div className="flex flex-col gap-1.5">
+          {choices.map((choice, idx) => {
+            const isCorrect = correctAnswers.includes(choice);
+            return (
+              <div
+                key={idx}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  borderRadius: 8,
+                  border: `1.5px solid ${isCorrect ? '#00A842' : '#000'}`,
+                  backgroundColor: isCorrect ? '#f0fdf4' : '#fff',
+                  padding: '5px 10px',
+                  fontSize: 13,
+                  fontWeight: 500,
+                }}
+              >
+                <span style={{
+                  width: 22, height: 22, borderRadius: 4, flexShrink: 0,
+                  backgroundColor: isCorrect ? '#00A842' : '#000',
+                  color: '#fff',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 11, fontWeight: 700,
+                }}>
+                  {isCorrect ? <Check style={{ width: 12, height: 12 }} /> : LETTERS[idx]}
+                </span>
+                <MathRenderer text={choice} />
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+
+  // ── Horizontal layout: image left, answers right ────────────────────────
+  if (layout === 'horizontal') {
+    return (
+      <div className="flex gap-3 w-full" style={{ aspectRatio: '2.4' }}>
+        <div className="flex items-stretch" style={{ flex: '0 0 48%', minWidth: 0 }}>
+          {mediaInner && (
+            <div
+              className="relative w-full h-full overflow-hidden rounded flex items-center justify-center"
+              style={hasClue ? { backgroundColor: '#DFEDF5', padding: '0 12px' } : {}}
+            >
+              {mediaInner}
+              {imageOverlay}
+            </div>
+          )}
+        </div>
+        <div className="flex flex-col justify-center min-w-0" style={{ flex: '1 1 0' }}>
+          {answersBlock}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Vertical layout (default): image top, answers below ─────────────────
   return (
     <div className="flex flex-col gap-2 w-full">
-
-      {/* Image or written question fallback */}
-      {card.image_url ? (
-        <div className="w-full overflow-hidden rounded" style={{ aspectRatio: '4/3' }}>
-          <img
-            src={card.image_url}
-            alt="card"
-            className="w-full h-full"
-            style={{
-              objectFit: card.image_fit || 'cover',
-              objectPosition: (card.image_fit !== 'contain' && card.image_focal_point)
-                ? `${card.image_focal_point.x}% ${card.image_focal_point.y}%`
-                : 'center'
-            }}
-          />
-        </div>
-      ) : imageEmpty ? (
-        <div className="w-full" style={{ aspectRatio: '4/3' }}>{imageEmpty}</div>
-      ) : card.clue ? (
-        <div
-          className="w-full rounded px-3 py-2"
-          style={{ backgroundColor: '#DFEDF5', aspectRatio: '4/3', display: 'flex', alignItems: 'center' }}
-        >
-          <MathRenderer text={card.clue} style={{ color: '#113656', fontSize: 15, fontWeight: 500, lineHeight: 1.4 }} />
-        </div>
-      ) : null}
-
-      {/* Answer section */}
-      <div
-        className="w-full rounded px-3 py-2"
-        style={{ backgroundColor: '#FAFAFA', border: '1.5px solid #D9D9D9' }}
-      >
-        {/* Question type label */}
-        <div className="flex items-center gap-1.5 mb-2" style={{ color: '#00A842', fontSize: 12, fontWeight: 500 }}>
-          {isTrueFalse
-            ? <ToggleLeft style={{ width: 14, height: 14 }} />
-            : isShortAnswer
-              ? <PencilLine style={{ width: 14, height: 14 }} />
-              : <SquareCheck style={{ width: 14, height: 14 }} />
-          }
-          <span>{qtLabel}</span>
-        </div>
-
-        {/* Short answer preview */}
-        {isShortAnswer ? (
-          <div className="space-y-1.5">
-            <div style={{ border: '2px solid #000', borderRadius: 8, padding: '8px 12px', backgroundColor: '#fff', fontSize: 13, color: '#9ca3af' }}>
-              Type your answer…
-            </div>
-            {card.canonical_answer && (
-              <div style={{ padding: '6px 10px', borderRadius: 7, backgroundColor: '#f0fdf4', border: '1.5px solid #00A842', fontSize: 12 }}>
-                <span style={{ color: '#15803d', fontWeight: 600 }}>✓ </span>
-                <span style={{ color: '#166534' }}>{card.canonical_answer}</span>
-                {card.accepted_variants?.length > 0 && (
-                  <span style={{ color: '#6b7280', marginLeft: 6 }}>
-                    (also: {card.accepted_variants.join(', ')})
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        ) : (
-          /* Choices */
-          <div className="flex flex-col gap-1.5">
-            {choices.map((choice, idx) => {
-              const isCorrect = correctAnswers.includes(choice);
-              return (
-                <div
-                  key={idx}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    borderRadius: 8,
-                    border: `1.5px solid ${isCorrect ? '#00A842' : '#000'}`,
-                    backgroundColor: isCorrect ? '#f0fdf4' : '#fff',
-                    padding: '5px 10px',
-                    fontSize: 13,
-                    fontWeight: 500,
-                  }}
-                >
-                  <span style={{
-                    width: 22, height: 22, borderRadius: 4, flexShrink: 0,
-                    backgroundColor: isCorrect ? '#00A842' : '#000',
-                    color: '#fff',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 11, fontWeight: 700,
-                  }}>
-                    {isCorrect ? <Check style={{ width: 12, height: 12 }} /> : LETTERS[idx]}
-                  </span>
-                  <MathRenderer text={choice} />
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+      {mediaInner && (
+        hasImage
+          ? <div className="relative w-full overflow-hidden rounded" style={{ aspectRatio: '4/3' }}>{mediaInner}{imageOverlay}</div>
+          : imageEmpty
+            ? <div className="relative w-full" style={{ aspectRatio: '4/3' }}>{mediaInner}{imageOverlay}</div>
+            : <div className="relative w-full rounded px-3 py-2 flex items-center" style={{ backgroundColor: '#DFEDF5', aspectRatio: '4/3' }}>{mediaInner}{imageOverlay}</div>
+      )}
+      {answersBlock}
     </div>
   );
 }
