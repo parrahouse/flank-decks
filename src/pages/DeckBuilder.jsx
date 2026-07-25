@@ -244,7 +244,7 @@ export default function DeckBuilder() {
     <div className="max-w-7xl mx-auto">
 
       {/* Header */}
-      <div className="mb-6 bg-card border border-border rounded-md overflow-hidden hover:shadow-md transition-all duration-200">
+      <div className="mb-6 bg-card border border-border rounded-md overflow-hidden">
         {/* Title + description */}
         <div className="px-4 pt-4 pb-3">
           {editingTitle ? (
