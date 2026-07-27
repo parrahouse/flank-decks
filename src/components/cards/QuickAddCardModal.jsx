@@ -189,7 +189,7 @@ export default function QuickAddCardModal({ open, onClose, deckId, deck, activeC
     const file = e.target.files[0];
     if (!file) return;
     if (file.size < 10 * 1024) { toast.error('Image too small (min 10 KB)'); return; }
-    if (file.size > 10 * 1024 * 1024) { toast.error('Image too large (max 10 MB)'); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error('Image too large (max 5 MB)'); return; }
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
     setImageUrl(file_url);
     setImagePanel(null);
