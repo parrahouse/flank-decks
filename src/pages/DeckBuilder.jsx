@@ -314,7 +314,7 @@ export default function DeckBuilder() {
         </div>
 
         {/* Action toolbar */}
-        <div className="border-t border-border px-3 py-2 flex items-center gap-1">
+        <div className="border-t border-border px-3 py-2 flex flex-wrap items-center gap-1">
           <Link to={`/stats/${deckId}`}>
             <Button variant="ghost" size="sm" className="gap-1.5 h-9 text-muted-foreground hover:text-foreground">
               <PieChart className="w-4 h-4" /> Stats
