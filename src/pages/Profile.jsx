@@ -51,7 +51,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-10">
+    <>
       <div className="flex items-center gap-3 mb-8">
         <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center">
           <User className="w-5 h-5 text-accent-foreground" />
@@ -137,6 +137,6 @@ export default function Profile() {
           </Button>
         </div>
       </div>
-    </div>
+    </>
   );
 }

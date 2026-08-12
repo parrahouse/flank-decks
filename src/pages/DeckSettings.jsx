@@ -69,7 +69,7 @@ export default function DeckSettings() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
+    <>
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
         <Link to={`/deck/${deckId}`} className="text-muted-foreground hover:text-foreground transition-colors">
@@ -175,7 +175,7 @@ export default function DeckSettings() {
           </Row>
         </Section>
       </div>
-    </div>
+    </>
   );
 }
 

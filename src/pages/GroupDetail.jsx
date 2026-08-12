@@ -88,15 +88,15 @@ export default function GroupDetail() {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-10">
+      <>
         <div className="h-40 rounded-xl bg-muted animate-pulse" />
-      </div>
+      </>
     );
   }
 
   if (isError || !group) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-10">
+      <>
         <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
           <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center">
             <Users className="w-8 h-8 text-accent-foreground" />
@@ -107,12 +107,12 @@ export default function GroupDetail() {
             <Link to="/groups"><ArrowLeft className="w-4 h-4" /> Back to groups</Link>
           </Button>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-10">
+    <>
       <Link to="/groups" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-4">
         <ArrowLeft className="w-4 h-4" /> All groups
       </Link>
@@ -306,6 +306,6 @@ export default function GroupDetail() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
 }

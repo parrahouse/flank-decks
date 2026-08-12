@@ -1132,7 +1132,7 @@ export default function StudySession() {
   const useHorizontal = layoutMode === 'horizontal' || layoutMode === 'auto' && isWide;
 
   return (
-    <div className={cn('mx-auto px-4 py-8 min-h-screen bg-background', useHorizontal ? 'max-w-7xl' : 'max-w-6xl')}>
+    <div className="min-h-screen bg-background">
       {/* Stage: header controls + game scene share one positioned parent so the scene sits behind the controls */}
       <motion.div
         className="relative mb-1"

@@ -95,7 +95,7 @@ export default function ImagePool() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
+    <>
       <div className="flex items-center gap-2 mb-1">
         <Images className="w-6 h-6 text-primary" />
         <h1 className="text-2xl font-semibold tracking-tight">Image Pool</h1>
@@ -214,6 +214,6 @@ export default function ImagePool() {
           ))}
         </div>
       )}
-    </div>
+    </>
   );
 }

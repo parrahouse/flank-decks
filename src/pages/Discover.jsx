@@ -21,7 +21,7 @@ export default function Discover() {
   const onSubmit = (e) => { e.preventDefault(); setSubmitted(query); };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-10">
+    <>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Discover</h1>
@@ -93,6 +93,6 @@ export default function Discover() {
       )}
 
       <AddDeckByLinkDialog open={showAddLink} onClose={() => setShowAddLink(false)} />
-    </div>
+    </>
   );
 }

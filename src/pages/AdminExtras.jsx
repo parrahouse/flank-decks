@@ -211,7 +211,7 @@ export default function AdminExtras() {
   );
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8 space-y-8">
+    <div className="space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Extras</h1>
         <Button onClick={() => setDialog({ mode: 'create' })} className="gap-1.5">

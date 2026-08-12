@@ -307,7 +307,7 @@ export default function CollectionStudy() {
   if (!started) {
     const gameModeAvailable = allCards.length >= GAME_MODE_MIN_CARDS && canZombify(getSkin(DEFAULT_SKIN_ID));
     return (
-      <div className="max-w-5xl mx-auto px-4 py-8">
+      <>
         <div className="flex items-center gap-3 mb-8">
           <button onClick={() => navigate(`/collections/${collectionId}`)} className="text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="w-5 h-5" />
@@ -358,7 +358,7 @@ export default function CollectionStudy() {
             />
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -402,7 +402,7 @@ export default function CollectionStudy() {
   };
 
   return (
-    <div className={cn('mx-auto px-4 py-8 min-h-screen bg-background', useHorizontal ? 'max-w-7xl' : 'max-w-6xl')}>
+    <div className="min-h-screen bg-background">
       <motion.div className="relative mb-1" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, ease: 'easeOut' }}>
         <ProgressGameBand
           zombified={gameMode && hearts === 0}

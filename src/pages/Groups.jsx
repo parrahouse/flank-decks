@@ -22,7 +22,7 @@ export default function Groups() {
   const groups = data?.groups || [];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-10">
+    <>
       <div className="flex items-center justify-between mb-8 gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Groups</h1>
@@ -88,6 +88,6 @@ export default function Groups() {
 
       <GroupFormDialog open={formOpen} onClose={() => setFormOpen(false)} />
       <JoinGroupDialog open={joinOpen} onClose={() => setJoinOpen(false)} />
-    </div>
+    </>
   );
 }
