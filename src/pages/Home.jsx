@@ -188,7 +188,7 @@ export default function Home() {
 
   return (
     <>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">My Decks</h1>
           <p className="text-muted-foreground text-sm mt-0.5">Create, study and share image flashcard decks.</p>
