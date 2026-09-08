@@ -1,0 +1,37 @@
+{
+  "name": "Link Card to Concept",
+  "description": "When a card is created (create only \u2014 never updates/deletes), analyze its content with LLM to find or create the concept it tests, link the card, and infer concept relationships. The function refuses to run for any non-create event and warns instead.",
+  "trigger": {
+    "condition": "${ (.trigger.data.deleted != true) }",
+    "config": {
+      "trigger_type": "entity",
+      "events": [
+        "create"
+      ],
+      "entity_name": "Card"
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "link_card_to_concept",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "linkCardToConcept",
+            "args": {}
+          },
+          "then": "end"
+        }
+      }
+    ]
+  },
+  "x-base44-migrated-from-automation": {
+    "legacy_payload_function": "linkCardToConcept"
+  }
+}
