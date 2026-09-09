@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Send, Loader2, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import MessageBubble from '@/components/quiz/MessageBubble';
+import QuizMasterControls from '@/components/quiz/QuizMasterControls';
 
 export default function QuizMaster() {
   const [conversation, setConversation] = useState(null);
@@ -12,6 +14,11 @@ export default function QuizMaster() {
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const bottomRef = useRef(null);
+
+  const { data: decks = [] } = useQuery({
+    queryKey: ['quiz-decks'],
+    queryFn: () => base44.entities.Deck.list('-updated_date', 100),
+  });
 
   // Create a new conversation on mount
   useEffect(() => {
@@ -38,13 +45,18 @@ export default function QuizMaster() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const sendCommand = async (text) => {
+    if (!conversation || sending) return;
+    setSending(true);
+    await base44.agents.addMessage(conversation, { role: 'user', content: text });
+    setSending(false);
+  };
+
   const handleSend = async () => {
     const text = input.trim();
     if (!text || !conversation || sending) return;
     setInput('');
-    setSending(true);
-    await base44.agents.addMessage(conversation, { role: 'user', content: text });
-    setSending(false);
+    await sendCommand(text);
   };
 
   const handleKeyDown = (e) => {
@@ -70,6 +82,9 @@ export default function QuizMaster() {
           </div>
         </div>
       </div>
+
+      {/* Controls panel */}
+      <QuizMasterControls decks={decks} onSendCommand={sendCommand} disabled={sending || !conversation} />
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
