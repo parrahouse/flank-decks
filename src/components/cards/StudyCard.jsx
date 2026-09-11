@@ -217,7 +217,11 @@ export default function StudyCard({
         if (!firstWrong) onFirstWrong && onFirstWrong(choice, { retry: false });
         setFinalAnswer(choice);
         onScore && onScore(SCORE.wrong, 'wrong');
-        if (learningMode && hasExplanation) setTimeout(() => onShowLearnMore && onShowLearnMore(card.explanation, correctAnswers.join(', ')), 400);
+        // Arm the speaking gate in the SAME batch as the score commit so the
+        // progress walk is buffered before it starts. The bubble's own
+        // SHOW_DELAY_MS (400ms) still delays its visual fade-in so the
+        // wrong-answer flinch plays first.
+        if (learningMode && hasExplanation) onShowLearnMore && onShowLearnMore(card.explanation, correctAnswers.join(', '));
       }
     }
   };
