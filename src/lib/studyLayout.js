@@ -33,14 +33,14 @@ export const CARD_GEO = {
   qPadNoImage:   '1.65cqi 1.65cqi 3.29cqi 1.65cqi', // 20/20/40/20
   qFontImage:    'clamp(11px, 1.65cqi, 22px)',
   qFontNoImage:  'clamp(15px, 2.2cqi, 30px)', // ~27px at 1216 — a 1.33x step up from qFontImage
-  choiceMaxH:    'clamp(30px, 4.28cqi, 56px)', // 52px
+  choiceMaxH:    'clamp(40px, 6.5cqi, 84px)', // 79px — room for 2 lines + padding
   choiceGap:     '0.41cqi', // 5px
-  choicePad:     '0.74cqi 1.15cqi', // 9px 14px
+  choicePad:     '0.99cqi 1.15cqi', // 12px 14px — vertical breathing room for multi-line
   choiceFont:    'clamp(12px, 1.65cqi, 21px)',
   tfMaxH:        'clamp(32px, 4.61cqi, 60px)', // 56px
-  ansTopGap:     '1.48cqi', // 18px
-  ansSecondaryH: '2.96cqi', // 36px
-  ansActionH:    '3.62cqi', // 44px
+  ansTopGap:     '1.15cqi', // 14px
+  ansSecondaryH: '2.63cqi', // 32px
+  ansActionH:    '3.29cqi', // 40px
   ansRowGap:     '0.82cqi', // 10px
 };
 
