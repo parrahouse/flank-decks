@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { splitHtmlSentences } from '@/lib/splitHtmlSentences';
 
 const SHOW_DELAY_MS = 700;    // pause before the bubble appears — lets the wrong-answer sound & shake play
-const DISMISS_LOCK_MS = 3000;  // "Got it" not tappable for this long after appearing
+const TYPE_TICK_MS = 16;      // ms per revealed character (classic typewriter cadence)
+const BUTTON_SETTLE_MS = 350; // pause after the text finishes before GOT IT appears
 
 const CONTENT_CSS = `
 .swabbie-bubble-content p { margin: 0 0 6px; }
@@ -12,42 +13,123 @@ const CONTENT_CSS = `
 .swabbie-bubble-content li { margin: 2px 0; }
 .swabbie-bubble-content strong { font-weight: 700; }
 .swabbie-bubble-content em { font-style: italic; }
-.swabbie-bubble-content code { background: #f3f4f6; padding: 1px 4px; border-radius: 3px; font-size: 12px; }
+.swabbie-bubble-content code { background: #f0f0f0; padding: 1px 4px; border-radius: 3px; font-size: 12px; }
+.swabbie-cursor { display: inline-block; width: 7px; height: 13px; background: #000; margin-left: 3px; vertical-align: -2px; animation: swabbie-blink 0.7s steps(2, start) infinite; }
+@keyframes swabbie-blink { 50% { opacity: 0; } }
 `;
+
+// Parse an HTML string into a list of DOM child nodes (preserves inline/block markup).
+function parseHtml(html) {
+  const host = document.createElement('div');
+  host.innerHTML = html || '';
+  return Array.from(host.childNodes);
+}
+
+function countText(node) {
+  if (node.nodeType === Node.TEXT_NODE) return node.textContent.length;
+  if (node.nodeType === Node.ELEMENT_NODE) {
+    return Array.from(node.childNodes).reduce((s, c) => s + countText(c), 0);
+  }
+  return 0;
+}
+
+function totalTextLength(nodes) {
+  return nodes.reduce((s, n) => s + countText(n), 0);
+}
+
+// Render DOM nodes into React elements, revealing only `budget.remaining` text characters.
+// Tags are preserved (so bold/italic/lists render correctly) while their text streams in.
+function renderNodes(nodes, budget) {
+  const out = [];
+  nodes.forEach((node, i) => {
+    const el = renderNode(node, budget, i);
+    if (el !== null && el !== '' && el !== undefined) out.push(el);
+  });
+  return out;
+}
+
+function renderNode(node, budget, key) {
+  if (budget.remaining <= 0) return null;
+  if (node.nodeType === Node.TEXT_NODE) {
+    const text = node.textContent;
+    const take = Math.min(text.length, budget.remaining);
+    budget.remaining -= take;
+    return text.slice(0, take);
+  }
+  if (node.nodeType === Node.ELEMENT_NODE) {
+    const tag = node.tagName.toLowerCase();
+    const props = { key: String(key) };
+    for (const attr of node.attributes) {
+      props[attr.name === 'class' ? 'className' : attr.name] = attr.value;
+    }
+    const children = renderNodes(Array.from(node.childNodes), budget);
+    return React.createElement(tag, props, ...children);
+  }
+  return null;
+}
 
 /**
  * SwabbieSpeechBubble — Learn More explanation spoken by the Swabbie character.
  * Floats above the character in the progress band, anchored to its screen x.
- * Paginates multi-sentence explanations with "NEXT..." steps and a "GOT IT" close.
+ * The explanation is typed out character-by-character (classic video game style),
+ * paginated across sentences with a "NEXT…" step and a "GOT IT" close. Black & white.
  */
-export default function SwabbieSpeechBubble({ open, onClose, explanation, title, anchorX, anchorBottom }) {
+export default function SwabbieSpeechBubble({ open, onClose, explanation, anchorX, anchorBottom }) {
   const [visible, setVisible] = useState(false);
-  const [canDismiss, setCanDismiss] = useState(false);
   const [step, setStep] = useState(0);
+  const [revealed, setRevealed] = useState(0);
+  const [textDone, setTextDone] = useState(false);
+  const [canDismiss, setCanDismiss] = useState(false);
 
   const chunks = useMemo(() => splitHtmlSentences(explanation), [explanation]);
   const steps = chunks.length;
   const isLast = step >= steps - 1;
 
+  // Parse the current chunk + compute its visible character count.
+  const parsed = useMemo(() => {
+    const nodes = parseHtml(chunks[step] || '');
+    return { nodes, total: totalTextLength(nodes) };
+  }, [chunks, step]);
+
   // Pre-show delay so the wrong-answer feedback can play first.
   useEffect(() => {
-    if (!open) { setVisible(false); setCanDismiss(false); setStep(0); return; }
+    if (!open) {
+      setVisible(false); setStep(0); setRevealed(0); setTextDone(false); setCanDismiss(false);
+      return;
+    }
     const t = setTimeout(() => setVisible(true), SHOW_DELAY_MS);
     return () => clearTimeout(t);
   }, [open]);
 
-  // Dismiss lock starts once the bubble is actually visible.
+  // Reset the typewriter when the page changes.
   useEffect(() => {
-    if (!visible) { setCanDismiss(false); return; }
-    const t = setTimeout(() => setCanDismiss(true), DISMISS_LOCK_MS);
-    return () => clearTimeout(t);
-  }, [visible]);
+    setRevealed(0);
+    setTextDone(false);
+    setCanDismiss(false);
+  }, [step]);
 
-  // Reset to the first sentence when the explanation changes.
+  // Reset to the first page when the explanation changes.
   useEffect(() => { setStep(0); }, [explanation]);
+
+  // Typewriter ticker — one character per tick until the whole chunk is shown.
+  useEffect(() => {
+    if (!visible || textDone) return;
+    if (revealed >= parsed.total) { setTextDone(true); return; }
+    const t = setTimeout(() => setRevealed((r) => Math.min(parsed.total, r + 1)), TYPE_TICK_MS);
+    return () => clearTimeout(t);
+  }, [visible, revealed, textDone, parsed.total]);
+
+  // GOT IT appears only on the last page, after the text finishes + a brief settle.
+  useEffect(() => {
+    if (!textDone || !isLast) { setCanDismiss(false); return; }
+    const t = setTimeout(() => setCanDismiss(true), BUTTON_SETTLE_MS);
+    return () => clearTimeout(t);
+  }, [textDone, isLast, step]);
 
   if (!open) return null;
 
+  const budget = { remaining: revealed };
+  const rendered = renderNodes(parsed.nodes, budget);
   const clampedLeft = `clamp(150px, ${anchorX || 0}px, calc(100% - 150px))`;
 
   return (
@@ -77,7 +159,7 @@ export default function SwabbieSpeechBubble({ open, onClose, explanation, title,
               position: 'absolute', bottom: -10, left: '50%', transform: 'translateX(-50%)',
               width: 0, height: 0,
               borderLeft: '10px solid transparent', borderRight: '10px solid transparent',
-              borderTop: '10px solid #113656',
+              borderTop: '10px solid #000',
             }} />
             <div aria-hidden style={{
               position: 'absolute', bottom: -7, left: '50%', transform: 'translateX(-50%)',
@@ -92,73 +174,67 @@ export default function SwabbieSpeechBubble({ open, onClose, explanation, title,
                 width: 300,
                 maxWidth: 'calc(100vw - 24px)',
                 backgroundColor: '#fff',
-                border: '2px solid #113656',
+                border: '2px solid #000',
                 borderRadius: 8,
-                boxShadow: '0 4px 0 rgba(17,54,86,0.18)',
-                padding: '10px 12px 8px',
+                boxShadow: '0 4px 0 rgba(0,0,0,0.25)',
+                padding: '12px 14px 10px',
                 display: 'flex',
                 flexDirection: 'column',
                 flex: '1 1 auto',
                 minHeight: 0,
               }}
             >
-              {title && (
-                <div style={{
-                  fontSize: 10, color: '#113656', fontWeight: 700,
-                  borderBottom: '1.5px dashed rgba(17,54,86,0.25)',
-                  paddingBottom: 5, marginBottom: 6, lineHeight: 1.2,
-                  flexShrink: 0,
-                }}>
-                  {title}
-                </div>
-              )}
               <div
                 className="swabbie-bubble-content"
                 style={{
-                  fontSize: 13, lineHeight: 1.4, color: '#1f2937',
+                  fontSize: 13, lineHeight: 1.4, color: '#000',
                   flex: '1 1 auto', minHeight: 0, overflowY: 'auto',
                 }}
-                dangerouslySetInnerHTML={{ __html: chunks[step] || '' }}
-              />
-              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginTop: 8, gap: 8, flexShrink: 0 }}>
+              >
+                {rendered}
+                {!textDone && <span className="swabbie-cursor" />}
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginTop: 8, gap: 8, flexShrink: 0, minHeight: 22 }}>
                 {steps > 1 && (
-                  <span style={{ fontSize: 9, color: '#6b7280' }}>
+                  <span style={{ fontSize: 9, color: '#000' }}>
                     {step + 1}/{steps}
                   </span>
                 )}
-                {isLast ? (
-                  <button
-                    onClick={() => { if (canDismiss) onClose(); }}
-                    disabled={!canDismiss}
-                    className="pixel-ui"
-                    style={{
-                      fontSize: 10,
-                      border: '2px solid',
-                      borderColor: canDismiss ? '#00A842' : '#9ca3af',
-                      backgroundColor: canDismiss ? '#00A842' : '#e5e7eb',
-                      color: canDismiss ? '#fff' : '#9ca3af',
-                      padding: '5px 14px',
-                      cursor: canDismiss ? 'pointer' : 'not-allowed',
-                      transition: 'background-color 0.2s, color 0.2s',
-                    }}
-                  >
-                    {canDismiss ? 'GOT IT' : 'GOT IT…'}
-                  </button>
+                {!isLast ? (
+                  textDone && (
+                    <button
+                      onClick={() => setStep((s) => Math.min(steps - 1, s + 1))}
+                      className="pixel-ui"
+                      style={{
+                        fontSize: 10,
+                        border: '2px solid #000',
+                        backgroundColor: '#000',
+                        color: '#fff',
+                        padding: '5px 14px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      NEXT…
+                    </button>
+                  )
                 ) : (
-                  <button
-                    onClick={() => setStep((s) => Math.min(steps - 1, s + 1))}
-                    className="pixel-ui"
-                    style={{
-                      fontSize: 10,
-                      border: '2px solid #113656',
-                      backgroundColor: '#113656',
-                      color: '#fff',
-                      padding: '5px 14px',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    NEXT…
-                  </button>
+                  canDismiss && (
+                    <button
+                      onClick={onClose}
+                      className="pixel-ui"
+                      style={{
+                        fontSize: 10,
+                        border: '2px solid #000',
+                        backgroundColor: '#fff',
+                        color: '#000',
+                        padding: '5px 14px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      GOT IT
+                    </button>
+                  )
                 )}
               </div>
             </div>
