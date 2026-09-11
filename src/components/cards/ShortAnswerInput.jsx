@@ -70,7 +70,8 @@ export default function ShortAnswerInput({
   onShowExplanation,
   cardStats = null,
   // For the action bar
-  introReady = true
+  introReady = true,
+  characterIdle = true
 }) {
   const [response, setResponse] = useState('');
   const [grading, setGrading] = useState(false);
@@ -287,7 +288,7 @@ export default function ShortAnswerInput({
         </p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           {committed && hasExplanation &&
-          <button onClick={onShowExplanation} style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
+          <button onClick={() => { if (!characterIdle) return; onShowExplanation && onShowExplanation(); }} disabled={!characterIdle} style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: characterIdle ? 'pointer' : 'not-allowed', opacity: characterIdle ? 1 : 0.4, transition: 'opacity 0.3s' }}>
               <GraduationCap style={{ width: 14, height: 14 }} />
               <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 1 }}>Learn More</span>
             </button>

@@ -139,6 +139,7 @@ export default function StudySession() {
   const [showExitWarning, setShowExitWarning] = useState(false);
   const [learnMore, setLearnMore] = useState(null); // { explanation, title } | null
   const [characterAnchor, setCharacterAnchor] = useState({ x: 0, bottom: 0 });
+  const [characterIdle, setCharacterIdle] = useState(true);
   const speaking = learnMore != null;
   const handleCharacterAnchor = useCallback((anchor) => {
     setCharacterAnchor((prev) => (prev.x === anchor.x && prev.bottom === anchor.bottom ? prev : anchor));
@@ -1166,6 +1167,7 @@ export default function StudySession() {
           wrongTick={wrongTick}
           speaking={speaking}
           onCharacterAnchor={handleCharacterAnchor}
+          onIdleChange={setCharacterIdle}
           onEntryComplete={() => setTimeout(() => setIntroPhase('ready'), 0)} />
 
         }
@@ -1280,7 +1282,8 @@ export default function StudySession() {
                 onFirstWrong: handleFirstWrong,
                 onShowLearnMore: handleShowLearnMore,
                 introReady,
-                maxChoices
+                maxChoices,
+                characterIdle
               };
 
               const childVariant = {

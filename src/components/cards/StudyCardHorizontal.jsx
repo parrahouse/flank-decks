@@ -59,6 +59,7 @@ export default function StudyCardHorizontal({
   onFirstWrong = null,
   onShowLearnMore = null,
   introReady = true,
+  characterIdle = true,
   childVariant = null,
 }) {
   const { playCorrect, playWrong } = useSound(soundEnabled);
@@ -382,7 +383,8 @@ export default function StudyCardHorizontal({
               clueManuallyRevealed={clueManuallyRevealed}
               learningMode={learningMode}
               hasExplanation={hasExplanation}
-              onShowExplanation={() => onShowLearnMore && onShowLearnMore(card.explanation, correctAnswers.join(', '))}
+              onShowExplanation={() => { if (!characterIdle) return; onShowLearnMore && onShowLearnMore(card.explanation, correctAnswers.join(', ')); }}
+              characterIdle={characterIdle}
               cardStats={cardStats}
               introReady={introReady}
             />
@@ -464,7 +466,7 @@ export default function StudyCardHorizontal({
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
                 {hasExplanation && (
                   <div style={{ visibility: answered ? 'visible' : 'hidden', display: 'flex', alignItems: 'center' }}>
-                    <button onClick={() => { onShowLearnMore && onShowLearnMore(card.explanation, correctAnswers.join(', ')); cancelCountdown(); }} style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
+                    <button onClick={() => { if (!characterIdle) return; onShowLearnMore && onShowLearnMore(card.explanation, correctAnswers.join(', ')); cancelCountdown(); }} disabled={!characterIdle} style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: characterIdle ? 'pointer' : 'not-allowed', opacity: characterIdle ? 1 : 0.4, transition: 'opacity 0.3s' }}>
                       <GraduationCap style={{ width: 14, height: 14, flexShrink: 0 }} />
                       <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2 }}>Learn More</span>
                     </button>

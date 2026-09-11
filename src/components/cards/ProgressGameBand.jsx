@@ -171,6 +171,7 @@ export default function ProgressGameBand({
   zombified = false,
   speaking = false,
   onCharacterAnchor,
+  onIdleChange,
   onEntryComplete,
 }) {
   // ── Zombie overlay — after death, the zombie sub-skin replaces the base ────
@@ -334,6 +335,7 @@ export default function ProgressGameBand({
 
   const processCommitRef = useRef(null);
   const commitCancelRef = useRef(null);         // cleanup of the in-flight processCommit
+  const pendingCommitRef = useRef(null);        // commit buffered while the Learn More bubble is open
   const pendingDeathRef = useRef(false);        // death queued behind the in-flight walk
   const deathCancelRef  = useRef(null);         // cancels the death → enter timers
   const startDeathRef   = useRef(null);         // latest-render startDeath closure
@@ -524,9 +526,6 @@ export default function ProgressGameBand({
     if (completed === prevCompleted.current) return;
     prevCompleted.current = completed;
 
-    // While the Learn More bubble is open, snap to the new position without animating.
-    if (speakingRef.current) { setShownCompleted(completed); return; }
-
     // Read the just-committed key by diffing the committed-index map.
     const nonEmpty = {};
     scores.forEach((s, i) => { if (s) nonEmpty[i] = s.key; });
@@ -547,21 +546,29 @@ export default function ProgressGameBand({
     const isMilestone = streakNow > 0 && streakNow % 5 === 0 && streakNow > prevStreakRef.current;
     prevStreakRef.current = streakNow;
 
+    // While the Learn More bubble is open, buffer the commit and hold the character
+    // in place — no snap, no walk. The buffered walk fires when the bubble closes.
+    if (speakingRef.current) {
+      pendingCommitRef.current = { completedVal: completed, commitKey, isMilestone };
+      return;
+    }
+
     commitCancelRef.current?.();
     commitCancelRef.current = processCommitRef.current(completed, commitKey, isMilestone);
   }, [completed]);
 
   useEffect(() => () => { commitCancelRef.current?.(); }, []);
 
-  // ── Speaking: while the Learn More bubble is open, freeze the character ────
+  // ── Speaking: while the Learn More bubble is open, the character stays put.
+  //    On close, release any commit buffered while the bubble was open so the
+  //    progress walk fires only after the user dismisses the explanation.
   useEffect(() => {
-    if (!speaking) return;
+    if (speaking) return;                 // bubble just opened — leave the character be
+    const pending = pendingCommitRef.current;
+    pendingCommitRef.current = null;
+    if (!pending) return;
     commitCancelRef.current?.();
-    stopWalking();
-    setNudgeOffset(0);
-    setIdleVariant('happy');
-    phaseRef.current = 'idle'; setPhase('idle');
-    setShownCompleted(completed);
+    commitCancelRef.current = processCommitRef.current(pending.completedVal, pending.commitKey, pending.isMilestone);
   }, [speaking]);
 
   // ── Death → rise choreography ──────────────────────────────────────────────
@@ -679,6 +686,17 @@ export default function ProgressGameBand({
     if (!onCharacterAnchor) return;
     onCharacterAnchor({ x: charScreenX, bottom: anchorBottom });
   }, [charScreenX, anchorBottom, speaking, onCharacterAnchor]);
+
+  // Report idle/not-idle so the parent can gate the manual 'Learn More' link —
+  // it's only active when the character is stationary (no walk/reaction in flight).
+  const prevIdleRef = useRef(false);
+  useEffect(() => {
+    const isIdle = !entering && phase === 'idle';
+    if (isIdle !== prevIdleRef.current) {
+      prevIdleRef.current = isIdle;
+      onIdleChange && onIdleChange(isIdle);
+    }
+  }, [phase, entering, onIdleChange]);
   // World must hold every card + buffer (incl. accumulated reveal) so nothing clips:
   const worldWidth = LEAD_IN + total * STEP_PX + bandW;
 
@@ -990,7 +1008,7 @@ export default function ProgressGameBand({
           width: W,
           height: W,
           transform: `translateX(${charScreenX}px)`,
-          transition: speaking ? 'none' : `transform ${STEP_MS}ms linear`,
+          transition: `transform ${STEP_MS}ms linear`,
           willChange: 'transform',
         }}>
           <motion.div

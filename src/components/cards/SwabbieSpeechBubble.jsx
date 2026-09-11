@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
-const SHOW_DELAY_MS = 700;    // pause before the bubble appears — lets the wrong-answer sound & shake play
+const SHOW_DELAY_MS = 400;    // pause before the bubble appears — lets the wrong-answer flinch & sound play
 const TYPE_TICK_MS = 16;      // ms per revealed character (classic typewriter cadence)
 const BUTTON_SETTLE_MS = 350; // pause after the text finishes before the action button appears
 const EXIT_MS = 220;           // fade-up-and-out dismissal duration (matches the exit transition)
