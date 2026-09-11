@@ -3,33 +3,48 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { GraduationCap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const DELAY_MS = 4500;
+const SHOW_DELAY_MS = 700;   // pause before the dialog appears — lets the wrong-answer sound & shake animation play
+const DISMISS_DELAY_MS = 3000; // not dismissible for this long after appearing
 
 /**
  * "Learn More" explanation dialog.
  * - No X close button; dismissed via a "Got it" button in the lower-right.
- * - Not dismissible (click-outside, escape, or button) for the first 3 seconds.
+ * - Delays appearing so the wrong-answer feedback can play first.
+ * - Not dismissible (click-outside, escape, or button) for the first 3 seconds after it appears.
  * - Soft green overlay with a subtle dot pattern.
  */
 export default function LearnMoreDialog({ open, onOpenChange, title, explanation }) {
+  const [visible, setVisible] = useState(false);
   const [canDismiss, setCanDismiss] = useState(false);
 
+  // Delay showing the dialog so the wrong-answer sound/animation can play first
   useEffect(() => {
     if (!open) {
+      setVisible(false);
       setCanDismiss(false);
       return;
     }
-    const t = setTimeout(() => setCanDismiss(true), DELAY_MS);
-    return () => clearTimeout(t);
+    const showTimer = setTimeout(() => setVisible(true), SHOW_DELAY_MS);
+    return () => clearTimeout(showTimer);
   }, [open]);
 
+  // Dismiss lock starts once the dialog is actually visible
+  useEffect(() => {
+    if (!visible) {
+      setCanDismiss(false);
+      return;
+    }
+    const t = setTimeout(() => setCanDismiss(true), DISMISS_DELAY_MS);
+    return () => clearTimeout(t);
+  }, [visible]);
+
   const handleOpenChange = (next) => {
-    if (!next && !canDismiss) return; // block close during delay
+    if (!next && !canDismiss) return; // block close during dismiss delay
     if (!next) onOpenChange(false);
   };
 
   return (
-    <DialogPrimitive.Root open={open} onOpenChange={handleOpenChange}>
+    <DialogPrimitive.Root open={visible} onOpenChange={handleOpenChange}>
       <DialogPrimitive.Portal>
         {/* Soft green overlay with subtle dot pattern */}
         <DialogPrimitive.Overlay
