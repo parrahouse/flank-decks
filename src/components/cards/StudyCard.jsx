@@ -236,13 +236,11 @@ export default function StudyCard({
       onScore && onScore(cardPoints * SCORE[scoreKey], scoreKey);
       if (autoAdvance && !isLast) startCountdown();
     } else {
-      // Partial credit: (correct hits - wrong picks) / total, floored at 0
+      // Partial credit: (correct hits - wrong picks) / total, floored at 0.
+      // But any miss or wrong pick means the answer is NOT "correct" — play the
+      // wrong sound so the feedback matches the outcome. Points are still awarded.
       const partialScore = Math.max(0, (numCorrect - numWrong) / total);
-      if (partialScore > 0) {
-        playCorrect();
-      } else {
-        playWrong();
-      }
+      playWrong();
       setFinalAnswer('__select_all_partial__');
       onScore && onScore(cardPoints * partialScore, 'partial');
     }
