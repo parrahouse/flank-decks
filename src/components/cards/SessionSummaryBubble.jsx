@@ -64,7 +64,10 @@ export default function SessionSummaryBubble({ open, onClose, anchorX, anchorBot
   }, [textDone]);
 
   const clampedLeft = `clamp(150px, ${anchorX || 0}px, calc(100% - 150px))`;
-  const bottomPx = (anchorBottom || 0) - 30;
+  // Lift the bubble ABOVE the character's head (anchorBottom = top of sprite).
+  // The speech bubble uses -30 (overlaps slightly, offset to the right); the
+  // summary needs to clear the finish line and character entirely.
+  const bottomPx = (anchorBottom || 0) + 12;
 
   const buttonStyle = {
     fontFamily: "'VT323', monospace",
@@ -95,7 +98,7 @@ export default function SessionSummaryBubble({ open, onClose, anchorX, anchorBot
             style={{
               left: clampedLeft,
               bottom: bottomPx,
-              transform: 'translateX(-15%)',
+              transform: 'translateX(-50%)',
               width: 300,
               maxWidth: 'calc(100vw - 24px)',
               display: 'flex',
@@ -143,7 +146,7 @@ export default function SessionSummaryBubble({ open, onClose, anchorX, anchorBot
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6, minHeight: 28 }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 6, minHeight: 28 }}>
               <AnimatePresence>
                 {canDismiss && (
                   <motion.div
@@ -152,7 +155,7 @@ export default function SessionSummaryBubble({ open, onClose, anchorX, anchorBot
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 8 }}
                     transition={{ duration: 0.3, ease: 'easeOut' }}
-                    style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}
+                    style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}
                   >
                     <button onClick={onGetNerdy} style={buttonStyle}>
                       Get nerdy
