@@ -291,7 +291,7 @@ export default function SwabbieSpeechBubble({ open, onClose, explanation, anchor
                   letterSpacing: 'normal',
                   color: '#000',
                   textAlign: 'justify',
-                  textAlignLast: textDone ? 'justify' : 'start',
+                  textAlignLast: 'start',
                   wordBreak: 'normal',
                   overflowWrap: 'normal',
                   whiteSpace: 'normal',
