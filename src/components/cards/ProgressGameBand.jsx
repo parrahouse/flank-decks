@@ -693,7 +693,7 @@ export default function ProgressGameBand({
   // it's only active when the character is stationary (no walk/reaction in flight).
   const prevIdleRef = useRef(false);
   useEffect(() => {
-    const isIdle = !entering && phase === 'idle';
+    const isIdle = !entering && (phase === 'idle' || phase === 'celebrate');
     if (isIdle !== prevIdleRef.current) {
       prevIdleRef.current = isIdle;
       onIdleChange && onIdleChange(isIdle);
