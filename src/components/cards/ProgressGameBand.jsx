@@ -169,6 +169,8 @@ export default function ProgressGameBand({
   entering = false,
   wrongTick = 0,
   zombified = false,
+  speaking = false,
+  onCharacterAnchor,
   onEntryComplete,
 }) {
   // ── Zombie overlay — after death, the zombie sub-skin replaces the base ────
@@ -322,6 +324,8 @@ export default function ProgressGameBand({
   const [nudgeOffset, setNudgeOffset] = useState(() => (total > 0 && scores.filter(Boolean).length >= total) ? FINISH_PUSH_PX : 0);
   const [nudgeDurMs, setNudgeDurMs] = useState(STEP_MS);    // duration of the current nudge animation
   const phaseRef = useRef('idle');
+  const speakingRef = useRef(speaking);
+  speakingRef.current = speaking;
   const reactEndRef = useRef(0); // wall-clock ms when the in-flight reaction ends
   const prevStreakRef = useRef(correctStreak); // streak before the latest commit
 
@@ -389,6 +393,7 @@ export default function ProgressGameBand({
   useEffect(() => {
     if (wrongTick === prevWrongTick.current) return;
     prevWrongTick.current = wrongTick;
+    if (speakingRef.current) return;
     if (WRONG_FRAMES === 0 || !wrongSprite?.src) return;
 
     setReactKey((k) => k + 1);
@@ -519,6 +524,9 @@ export default function ProgressGameBand({
     if (completed === prevCompleted.current) return;
     prevCompleted.current = completed;
 
+    // While the Learn More bubble is open, snap to the new position without animating.
+    if (speakingRef.current) { setShownCompleted(completed); return; }
+
     // Read the just-committed key by diffing the committed-index map.
     const nonEmpty = {};
     scores.forEach((s, i) => { if (s) nonEmpty[i] = s.key; });
@@ -544,6 +552,17 @@ export default function ProgressGameBand({
   }, [completed]);
 
   useEffect(() => () => { commitCancelRef.current?.(); }, []);
+
+  // ── Speaking: while the Learn More bubble is open, freeze the character ────
+  useEffect(() => {
+    if (!speaking) return;
+    commitCancelRef.current?.();
+    stopWalking();
+    setNudgeOffset(0);
+    setIdleVariant('happy');
+    phaseRef.current = 'idle'; setPhase('idle');
+    setShownCompleted(completed);
+  }, [speaking]);
 
   // ── Death → rise choreography ──────────────────────────────────────────────
   // death one-shot (ends transparent) → enter one-shot (starts transparent,
@@ -652,6 +671,14 @@ export default function ProgressGameBand({
   const dpr = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
   const snapPx = (v) => Math.round(v * dpr) / dpr;
   const cameraXSnapped = snapPx(cameraX);
+  const charScreenX = snapPx(charWorldX - cameraX);
+  const anchorBottom = CHAR_BOTTOM + W;
+
+  // Report the character's screen position so the Learn More bubble can anchor to it.
+  useEffect(() => {
+    if (!onCharacterAnchor) return;
+    onCharacterAnchor({ x: charScreenX, bottom: anchorBottom });
+  }, [charScreenX, anchorBottom, speaking, onCharacterAnchor]);
   // World must hold every card + buffer (incl. accumulated reveal) so nothing clips:
   const worldWidth = LEAD_IN + total * STEP_PX + bandW;
 
@@ -962,8 +989,8 @@ export default function ProgressGameBand({
           left: 0,
           width: W,
           height: W,
-          transform: `translateX(${snapPx(charWorldX - cameraX)}px)`,
-          transition: `transform ${STEP_MS}ms linear`,
+          transform: `translateX(${charScreenX}px)`,
+          transition: speaking ? 'none' : `transform ${STEP_MS}ms linear`,
           willChange: 'transform',
         }}>
           <motion.div

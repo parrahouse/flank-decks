@@ -19,7 +19,7 @@ import { STUDY_CARD_H } from '@/lib/studyLayout';
 import ShortAnswerInput from './ShortAnswerInput';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import LearnMoreDialog from './LearnMoreDialog';
+
 import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/useSound';
 import MathRenderer from '@/components/ui/MathRenderer';
@@ -88,6 +88,7 @@ export default function StudyCard({
   secondGuessAllowed = true,
   learningMode = false,
   onFirstWrong = null,
+  onShowLearnMore = null,
   introReady = true,
   childVariant = null,
 }) {
@@ -98,7 +99,7 @@ export default function StudyCard({
   const [eliminated, setEliminated] = useState([]);
   const [questionRevealed] = useState(true);
   const [clueManuallyRevealed, setClueManuallyRevealed] = useState(false);
-  const [flipped, setFlipped] = useState(false);
+
   const [shakingChoice, setShakingChoice] = useState(null);
   const shakeTimerRef = useRef(null);
 
@@ -148,7 +149,6 @@ export default function StudyCard({
     setFinalAnswer(null);
     setEliminated([]);
     setClueManuallyRevealed(false);
-    setFlipped(false);
     setShakingChoice(null);
     clearTimeout(shakeTimerRef.current);
     setNoteEditing(false);
@@ -216,6 +216,7 @@ export default function StudyCard({
         if (!firstWrong) onFirstWrong && onFirstWrong(choice, { retry: false });
         setFinalAnswer(choice);
         onScore && onScore(SCORE.wrong, 'wrong');
+        if (learningMode && hasExplanation) setTimeout(() => onShowLearnMore && onShowLearnMore(card.explanation, correctAnswers.join(', ')), 400);
       }
     }
   };
@@ -482,7 +483,7 @@ export default function StudyCard({
               clueManuallyRevealed={clueManuallyRevealed}
               learningMode={learningMode}
               hasExplanation={hasExplanation}
-              onShowExplanation={() => setFlipped(true)}
+              onShowExplanation={() => onShowLearnMore && onShowLearnMore(card.explanation, correctAnswers.join(', '))}
               cardStats={cardStats}
               introReady={introReady}
             />
@@ -623,7 +624,7 @@ export default function StudyCard({
                 <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
                   {hasExplanation && (
                     <button
-                      onClick={() => { setFlipped(true); cancelCountdown(); }}
+                      onClick={() => { onShowLearnMore && onShowLearnMore(card.explanation, correctAnswers.join(', ')); cancelCountdown(); }}
                       style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}
                     >
                       <GraduationCap style={{ width: 14, height: 14, flexShrink: 0 }} />
@@ -728,13 +729,7 @@ export default function StudyCard({
         </DialogContent>
       </Dialog>
 
-      {/* Learn More modal */}
-      <LearnMoreDialog
-        open={flipped && hasExplanation}
-        onOpenChange={(open) => { if (!open) setFlipped(false); }}
-        title={correctAnswers.join(', ')}
-        explanation={card.explanation}
-      />
+
 
     </div>
   );

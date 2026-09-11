@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -11,6 +11,7 @@ import StudyCardHorizontal from '@/components/cards/StudyCardHorizontal';
 import { CARD_MIN_W, STUDY_MIN_VH } from '@/lib/studyLayout';
 import ContactSheet from '@/components/cards/ContactSheet';
 import ProgressGameBand from '@/components/cards/ProgressGameBand';
+import SwabbieSpeechBubble from '@/components/cards/SwabbieSpeechBubble';
 import HeartsHud from '@/components/cards/HeartsHud';
 import { getSkin, DEFAULT_SKIN_ID, canZombify } from '@/components/cards/skins';
 import SessionStatsPanel from '@/components/cards/SessionStatsPanel';
@@ -136,6 +137,15 @@ export default function StudySession() {
   const [introPhase, setIntroPhase] = useState('intro'); // 'intro' | 'ready'
   const [wrongTick, setWrongTick] = useState(0); // increments each time a wrong answer is picked
   const [showExitWarning, setShowExitWarning] = useState(false);
+  const [learnMore, setLearnMore] = useState(null); // { explanation, title } | null
+  const [characterAnchor, setCharacterAnchor] = useState({ x: 0, bottom: 0 });
+  const speaking = learnMore != null;
+  const handleCharacterAnchor = useCallback((anchor) => {
+    setCharacterAnchor((prev) => (prev.x === anchor.x && prev.bottom === anchor.bottom ? prev : anchor));
+  }, []);
+  const handleShowLearnMore = useCallback((explanation, title) => {
+    setLearnMore({ explanation, title });
+  }, []);
   const pendingExitRef = useRef(null); // stores the path to navigate to after exit decision
   const { playLevelStart } = useSound(soundEnabled);
   const [questionReady, setQuestionReady] = useState(false);
@@ -160,6 +170,9 @@ export default function StudySession() {
   }, []);
 
   useEffect(() => () => clearTimeout(levelStartTimerRef.current), []);
+
+  // Close any open Learn More bubble when the card changes or the session ends.
+  useEffect(() => { setLearnMore(null); }, [cardIndex, done]);
 
   // Timing origin: the moment the current question becomes answerable.
   // shuffledCards is a dep because a DEFER swaps the card at the same index.
@@ -1151,6 +1164,8 @@ export default function StudySession() {
           soundEnabled={soundEnabled}
           entering={introPhase === 'intro'}
           wrongTick={wrongTick}
+          speaking={speaking}
+          onCharacterAnchor={handleCharacterAnchor}
           onEntryComplete={() => setTimeout(() => setIntroPhase('ready'), 0)} />
 
         }
@@ -1202,6 +1217,17 @@ export default function StudySession() {
 
         {/* Floor space: extends the stage downward so the absolute scene has room for sky + ground below the controls */}
         {filterChosen && <div aria-hidden style={{ height: SCENE_FLOOR_H }} />}
+
+        {filterChosen && (
+          <SwabbieSpeechBubble
+            open={speaking}
+            onClose={() => setLearnMore(null)}
+            explanation={learnMore?.explanation}
+            title={learnMore?.title}
+            anchorX={characterAnchor.x}
+            anchorBottom={characterAnchor.bottom}
+          />
+        )}
       </motion.div>
 
       <AnimatePresence mode="wait">
@@ -1252,6 +1278,7 @@ export default function StudySession() {
                 isBookmarked: !!current.bookmarked,
                 onToggleBookmark: handleToggleBookmark,
                 onFirstWrong: handleFirstWrong,
+                onShowLearnMore: handleShowLearnMore,
                 introReady,
                 maxChoices
               };

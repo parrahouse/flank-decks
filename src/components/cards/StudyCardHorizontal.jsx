@@ -20,7 +20,7 @@ import { STUDY_CARD_BOX_H, CARD_GEO as GEO } from '@/lib/studyLayout';
 import ShortAnswerInput from './ShortAnswerInput';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import LearnMoreDialog from './LearnMoreDialog';
+
 import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/useSound';
 import { motion } from 'framer-motion';
@@ -57,6 +57,7 @@ export default function StudyCardHorizontal({
   handedness = 'left', // 'left' = answers on right, 'right' = answers on left
   maxChoices = 4, // session-level: largest choices.length in this set
   onFirstWrong = null,
+  onShowLearnMore = null,
   introReady = true,
   childVariant = null,
 }) {
@@ -66,7 +67,7 @@ export default function StudyCardHorizontal({
   const [finalAnswer, setFinalAnswer] = useState(null);
   const [eliminated, setEliminated] = useState([]);
   const [clueManuallyRevealed, setClueManuallyRevealed] = useState(false);
-  const [flipped, setFlipped] = useState(false);
+
   const [shakingChoice, setShakingChoice] = useState(null);
   const shakeTimerRef = useRef(null);
   const [countdown, setCountdown] = useState(null);
@@ -114,7 +115,7 @@ export default function StudyCardHorizontal({
   useEffect(() => {
     setShuffledChoices(shuffle(card.choices || []));
     setFirstWrong(null); setFinalAnswer(null); setEliminated([]);
-    setClueManuallyRevealed(false); setFlipped(false); setShakingChoice(null); clearTimeout(shakeTimerRef.current);
+    setClueManuallyRevealed(false); setShakingChoice(null); clearTimeout(shakeTimerRef.current);
     setNoteEditing(false); setEliminateShake(false); setEliminateUsed(false);
     setHintVisible(false); setBookmarked(isBookmarked); setSelectAllPending(new Set());
     cancelCountdown(); clearTimeout(idleTimerRef.current);
@@ -150,7 +151,7 @@ export default function StudyCardHorizontal({
       } else {
         if (!firstWrong) onFirstWrong && onFirstWrong(choice, { retry: false });
         setFinalAnswer(choice); onScore && onScore(SCORE.wrong, 'wrong');
-        if (learningMode && hasExplanation) setTimeout(() => setFlipped(true), 400);
+        if (learningMode && hasExplanation) setTimeout(() => onShowLearnMore && onShowLearnMore(card.explanation, correctAnswers.join(', ')), 400);
       }
     }
   };
@@ -381,7 +382,7 @@ export default function StudyCardHorizontal({
               clueManuallyRevealed={clueManuallyRevealed}
               learningMode={learningMode}
               hasExplanation={hasExplanation}
-              onShowExplanation={() => setFlipped(true)}
+              onShowExplanation={() => onShowLearnMore && onShowLearnMore(card.explanation, correctAnswers.join(', '))}
               cardStats={cardStats}
               introReady={introReady}
             />
@@ -463,7 +464,7 @@ export default function StudyCardHorizontal({
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
                 {hasExplanation && (
                   <div style={{ visibility: answered ? 'visible' : 'hidden', display: 'flex', alignItems: 'center' }}>
-                    <button onClick={() => { setFlipped(true); cancelCountdown(); }} style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
+                    <button onClick={() => { onShowLearnMore && onShowLearnMore(card.explanation, correctAnswers.join(', ')); cancelCountdown(); }} style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
                       <GraduationCap style={{ width: 14, height: 14, flexShrink: 0 }} />
                       <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2 }}>Learn More</span>
                     </button>
@@ -517,13 +518,7 @@ export default function StudyCardHorizontal({
         </DialogContent>
       </Dialog>
 
-      {/* Learn More modal */}
-      <LearnMoreDialog
-        open={flipped && hasExplanation}
-        onOpenChange={(open) => { if (!open) setFlipped(false); }}
-        title={correctAnswers.join(', ')}
-        explanation={card.explanation}
-      />
+
       </div>
     </div>
   );
