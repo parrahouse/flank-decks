@@ -525,7 +525,7 @@ export default function StudyCardHorizontal({
             </div>
             <h3 className="font-semibold text-lg">{correctAnswers.join(', ')}</h3>
           </div>
-          <div className="prose prose-sm max-w-none text-muted-foreground" dangerouslySetInnerHTML={{ __html: card.explanation }} />
+          <div className="prose max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: card.explanation }} />
         </DialogContent>
       </Dialog>
       </div>

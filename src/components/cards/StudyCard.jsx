@@ -52,10 +52,10 @@ function getChoiceStyle(choices) {
   // More choices or longer text → smaller font + less padding
   let fontSize = 18;
   let minHeight = 52;
-  let padding = '8px 14px';
-  if (count >= 5 || maxLen > 60) { fontSize = 13; minHeight = 36; padding = '5px 10px'; }
-  else if (count >= 4 || maxLen > 40) { fontSize = 14; minHeight = 42; padding = '6px 12px'; }
-  else if (maxLen > 25) { fontSize = 16; minHeight = 46; padding = '7px 12px'; }
+  let padding = '12px 14px';
+  if (count >= 5 || maxLen > 60) { fontSize = 13; minHeight = 36; padding = '8px 10px'; }
+  else if (count >= 4 || maxLen > 40) { fontSize = 14; minHeight = 42; padding = '10px 12px'; }
+  else if (maxLen > 25) { fontSize = 16; minHeight = 46; padding = '11px 12px'; }
   return { fontSize, minHeight, padding };
 }
 
@@ -736,7 +736,7 @@ export default function StudyCard({
             </div>
             <h3 className="font-semibold text-lg">{correctAnswers.join(', ')}</h3>
           </div>
-          <div className="prose prose-sm max-w-none text-muted-foreground" dangerouslySetInnerHTML={{ __html: card.explanation }} />
+          <div className="prose max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: card.explanation }} />
         </DialogContent>
       </Dialog>
 
