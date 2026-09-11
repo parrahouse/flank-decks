@@ -255,7 +255,7 @@ export default function SwabbieSpeechBubble({ open, onClose, explanation, anchor
             key="swabbie-bubble"
             initial={{ opacity: 0, y: 8, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 6, scale: 0.97 }}
+            exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
             className="absolute z-20"
             style={{
@@ -270,13 +270,6 @@ export default function SwabbieSpeechBubble({ open, onClose, explanation, anchor
               pointerEvents: 'auto',
             }}
           >
-            {/* Tail — solid black pixel triangle pointing down at the character */}
-            <div aria-hidden style={{
-              position: 'absolute', bottom: -8, left: '15%', transform: 'translateX(-50%)',
-              width: 12, height: 8, backgroundColor: '#000',
-              clipPath: 'polygon(50% 100%, 0 0, 100% 0)',
-            }} />
-
             <div
               className="pixel-ui"
               style={{
