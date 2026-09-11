@@ -63,11 +63,12 @@ export default function SessionSummaryBubble({ open, onClose, anchorX, anchorBot
     return () => clearTimeout(t);
   }, [textDone]);
 
-  const clampedLeft = `clamp(150px, ${anchorX || 0}px, calc(100% - 150px))`;
-  // Lift the bubble ABOVE the character's head (anchorBottom = top of sprite).
-  // The speech bubble uses -30 (overlaps slightly, offset to the right); the
-  // summary needs to clear the finish line and character entirely.
-  const bottomPx = (anchorBottom || 0) + 12;
+  // Position to the RIGHT of the character, vertically centered on it.
+  // anchorBottom = top of the character sprite; the band container is too short
+  // to fit the bubble above (it breaks out the top of the window), so we use
+  // the open space to the right where the user confirmed there's room.
+  const leftPx = (anchorX || 0) + 48;
+  const bottomPx = (anchorBottom || 0) - 40;
 
   const buttonStyle = {
     fontFamily: "'VT323', monospace",
@@ -96,9 +97,8 @@ export default function SessionSummaryBubble({ open, onClose, anchorX, anchorBot
             transition={{ duration: 0.2, ease: 'easeOut' }}
             className="absolute z-20"
             style={{
-              left: clampedLeft,
+              left: `clamp(16px, ${leftPx}px, calc(100% - 316px))`,
               bottom: bottomPx,
-              transform: 'translateX(-50%)',
               width: 300,
               maxWidth: 'calc(100vw - 24px)',
               display: 'flex',
