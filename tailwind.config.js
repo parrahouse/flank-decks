@@ -7,7 +7,7 @@ module.exports = {
       fontFamily: {
         inter: ['var(--font-inter)'],
         bricolage: ['var(--font-bricolage)'],
-        'host-grotesk': ['var(--font-host-grotesk)'],
+        'fraunces': ['var(--font-fraunces)'],
       },
   		borderRadius: {
   			lg: 'var(--radius)',
