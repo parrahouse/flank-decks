@@ -12,9 +12,9 @@ import { CARD_MIN_W, STUDY_MIN_VH } from '@/lib/studyLayout';
 import ContactSheet from '@/components/cards/ContactSheet';
 import ProgressGameBand from '@/components/cards/ProgressGameBand';
 import SwabbieSpeechBubble from '@/components/cards/SwabbieSpeechBubble';
+import SessionSummaryBubble from '@/components/cards/SessionSummaryBubble';
 import HeartsHud from '@/components/cards/HeartsHud';
 import { getSkin, DEFAULT_SKIN_ID, canZombify } from '@/components/cards/skins';
-import SessionStatsPanel from '@/components/cards/SessionStatsPanel';
 import StreakCounter from '@/components/cards/StreakCounter';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -138,6 +138,7 @@ export default function StudySession() {
   const [wrongTick, setWrongTick] = useState(0); // increments each time a wrong answer is picked
   const [showExitWarning, setShowExitWarning] = useState(false);
   const [learnMore, setLearnMore] = useState(null); // { explanation, title } | null
+  const [summaryDismissed, setSummaryDismissed] = useState(false);
   const [characterAnchor, setCharacterAnchor] = useState({ x: 0, bottom: 0 });
   const [characterIdle, setCharacterIdle] = useState(true);
   const speaking = learnMore != null;
@@ -174,6 +175,9 @@ export default function StudySession() {
 
   // Close any open Learn More bubble when the card changes or the session ends.
   useEffect(() => {setLearnMore(null);}, [cardIndex, done]);
+
+  // Re-arm the summary bubble for the next session whenever a new one starts.
+  useEffect(() => { if (!done) setSummaryDismissed(false); }, [done]);
 
   // Timing origin: the moment the current question becomes answerable.
   // shuffledCards is a dep because a DEFER swaps the card at the same index.
@@ -705,6 +709,7 @@ export default function StudySession() {
   const totalPoints = scores.reduce((s, r) => s + (r?.points || 0), 0);
   const maxPoints = shuffledCards.reduce((s, c) => s + (c.point_value ?? 20), 0);
   const pct = maxPoints > 0 ? Math.round(totalPoints / maxPoints * 100) : 0;
+  const missedCount = shuffledCards.filter((c, i) => !(scores[i] && CORRECT_KEYS.has(scores[i].key))).length;
   const highScore = pastSessions.length > 0 ?
   Math.max(...pastSessions.map((s) => s.total_points || 0)) :
   0;
@@ -1230,6 +1235,19 @@ export default function StudySession() {
           anchorBottom={characterAnchor.bottom} />
 
         }
+
+        {filterChosen &&
+        <SessionSummaryBubble
+          open={done && characterIdle && !summaryDismissed}
+          onClose={() => setSummaryDismissed(true)}
+          anchorX={characterAnchor.x}
+          anchorBottom={characterAnchor.bottom}
+          stats={{ pct, totalPoints, maxPoints, bestStreak, durationMs: completionDurationMs }}
+          onGetNerdy={() => navigate(`/stats/${deckId}`)}
+          onReviewMissed={reviewMissed}
+          hasMissed={missedCount > 0} />
+
+        }
       </motion.div>
 
       <AnimatePresence mode="wait">
@@ -1241,14 +1259,16 @@ export default function StudySession() {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.45, ease: 'easeOut' }}
           className="relative bg-card border border-border rounded-lg p-4 mt-4">
-            <SessionStatsPanel
-            shuffledCards={shuffledCards} scores={scores} answerTimes={answerTimes}
-            firstWrongChoices={firstWrongChoices} cardStats={cardStats}
-            totalPoints={totalPoints} maxPoints={maxPoints} pct={pct}
-            bestStreak={bestStreak} streak={streak}
-            durationMs={completionDurationMs} skipsUsed={skipsUsed}
-            deckId={deckId} onRestart={restart} onReviewMissed={reviewMissed}
-            useHorizontal={useHorizontal} />
+            <div className="flex items-center justify-center gap-3 py-8">
+              <Button onClick={restart} variant="outline" size="lg" className="gap-2">
+                <RotateCcw className="w-5 h-5" /> Study again
+              </Button>
+              <Link to={`/stats/${deckId}`}>
+                <Button variant="outline" size="lg" className="gap-2">
+                  <BarChart2 className="w-5 h-5" /> Full stats
+                </Button>
+              </Link>
+            </div>
           </motion.div> :
 
         <motion.div key="study-area" initial={false} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
