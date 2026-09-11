@@ -77,20 +77,20 @@ function SessionNotice({ title, body, deckId, onRetry }) {
       <p className="text-sm text-muted-foreground mb-6">{body}</p>
       <div className="flex items-center justify-center gap-2">
         {onRetry &&
-          <Button size="sm" className="gap-1.5" onClick={onRetry}>
+        <Button size="sm" className="gap-1.5" onClick={onRetry}>
             <RefreshCw className="w-3.5 h-3.5" /> Try again
           </Button>
         }
         {deckId &&
-          <Link to={`/deck/${deckId}`}>
+        <Link to={`/deck/${deckId}`}>
             <Button variant="outline" size="sm" className="gap-1.5">
               <ArrowLeft className="w-3.5 h-3.5" /> Back to deck
             </Button>
           </Link>
         }
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 export default function StudySession() {
@@ -113,7 +113,7 @@ export default function StudySession() {
   const [done, setDone] = useState(false);
   const [scores, setScores] = useState([]);
   const [firstWrongChoices, setFirstWrongChoices] = useState([]);
-  const [answerTimes, setAnswerTimes] = useState([]);  // ms per card, parallel to scores
+  const [answerTimes, setAnswerTimes] = useState([]); // ms per card, parallel to scores
   const [correctStreak, setCorrectStreak] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
   const [sessionStartTime, setSessionStartTime] = useState(null);
@@ -123,8 +123,8 @@ export default function StudySession() {
   const [selectedPool, setSelectedPool] = useState('all'); // 'all' | 'unmastered' | 'bookmarked'
   const [gameModeWanted, setGameModeWanted] = useState(() => localStorage.getItem('flashdeck_gamemode') === '1');
   const [gameMode, setGameMode] = useState(false); // engaged for the running session only
-  const [skipsUsed, setSkipsUsed] = useState(0);   // deferrals used this session (display only)
-  const [hearts, setHearts] = useState(3);         // Game Mode hearts remaining (0..MAX_HEARTS)
+  const [skipsUsed, setSkipsUsed] = useState(0); // deferrals used this session (display only)
+  const [hearts, setHearts] = useState(3); // Game Mode hearts remaining (0..MAX_HEARTS)
   const [contactSheetOpen, setContactSheetOpen] = useState(false);
   // Layout defaults: seeded from user profile, then overrideable per-session
   const [layoutMode, setLayoutMode] = useState(() => localStorage.getItem('flashdeck_layout') || 'auto');
@@ -142,7 +142,7 @@ export default function StudySession() {
   const [characterIdle, setCharacterIdle] = useState(true);
   const speaking = learnMore != null;
   const handleCharacterAnchor = useCallback((anchor) => {
-    setCharacterAnchor((prev) => (prev.x === anchor.x && prev.bottom === anchor.bottom ? prev : anchor));
+    setCharacterAnchor((prev) => prev.x === anchor.x && prev.bottom === anchor.bottom ? prev : anchor);
   }, []);
   const handleShowLearnMore = useCallback((explanation, title) => {
     setLearnMore({ explanation, title });
@@ -152,8 +152,8 @@ export default function StudySession() {
   const [questionReady, setQuestionReady] = useState(false);
   const levelStartTimerRef = useRef(null);
   // Timing capture — per-card answer time + session origin (preserved across resume)
-  const cardShownAtRef = useRef(null);                  // when the current card became interactive
-  const sessionStartedAtRef = useRef(null);             // ISO string of the original session start
+  const cardShownAtRef = useRef(null); // when the current card became interactive
+  const sessionStartedAtRef = useRef(null); // ISO string of the original session start
   // Play the level-start fanfare and hold the first question inactive for 3s so the track can finish
   const beginIntro = () => {
     setQuestionReady(false);
@@ -173,7 +173,7 @@ export default function StudySession() {
   useEffect(() => () => clearTimeout(levelStartTimerRef.current), []);
 
   // Close any open Learn More bubble when the card changes or the session ends.
-  useEffect(() => { setLearnMore(null); }, [cardIndex, done]);
+  useEffect(() => {setLearnMore(null);}, [cardIndex, done]);
 
   // Timing origin: the moment the current question becomes answerable.
   // shuffledCards is a dep because a DEFER swaps the card at the same index.
@@ -266,11 +266,11 @@ export default function StudySession() {
   const GAME_MODE_MIN_CARDS = 20;
   const MAX_HEARTS = 3;
   const poolFor = (mode) =>
-    mode === 'unmastered' ? unmasteredCards : mode === 'bookmarked' ? bookmarkedCards : activeCards;
+  mode === 'unmastered' ? unmasteredCards : mode === 'bookmarked' ? bookmarkedCards : activeCards;
   const selectedQualifies =
-    selectedPool != null &&
-    poolFor(selectedPool).length >= GAME_MODE_MIN_CARDS &&
-    canZombify(getSkin(DEFAULT_SKIN_ID));
+  selectedPool != null &&
+  poolFor(selectedPool).length >= GAME_MODE_MIN_CARDS &&
+  canZombify(getSkin(DEFAULT_SKIN_ID));
 
   const handleToggleBookmark = async (cardId, newVal) => {
     // Bookmarking writes to the card record, which only the deck owner may do.
@@ -341,7 +341,7 @@ export default function StudySession() {
     setAnswerTimes(savedSession.answer_times || []);
     setFilterMode(savedSession.filter_mode || 'all');
     setGameMode(false); // saved sessions don't carry game-mode state yet (later stage)
-    setSkipsUsed(0);    // defer count isn't persisted yet (later stage)
+    setSkipsUsed(0); // defer count isn't persisted yet (later stage)
     setHearts(MAX_HEARTS);
     setFilterChosen(true);
     setCorrectStreak(0);
@@ -408,7 +408,7 @@ export default function StudySession() {
         total_points: total,
         max_points: max,
         card_count: shuffledCards.length,
-        duration_ms: durationMs,
+        duration_ms: durationMs
       }).catch(() => {});
 
       // Update streak
@@ -424,9 +424,9 @@ export default function StudySession() {
 
 
 
+
           // already studied today, no change
-        } else if (last === yesterday) {newStreak = streak.current_streak + 1;} else {newStreak = 1;}const newLongest = Math.max(streak.longest_streak || 0, newStreak);
-        const newMilestone = [3, 7, 14, 30, 60, 100].filter((m) => newStreak >= m).pop() || 0;
+        } else if (last === yesterday) {newStreak = streak.current_streak + 1;} else {newStreak = 1;}const newLongest = Math.max(streak.longest_streak || 0, newStreak);const newMilestone = [3, 7, 14, 30, 60, 100].filter((m) => newStreak >= m).pop() || 0;
         await base44.entities.Streak.update(streak.id, {
           current_streak: newStreak,
           longest_streak: newLongest,
@@ -469,13 +469,13 @@ export default function StudySession() {
 
         const answerMs = result.time_to_answer_ms;
         const newTotalTime = (existing?.total_time_ms ?? 0) + (answerMs ?? 0);
-        const newFastest = answerMs != null
-          ? Math.min(existing?.fastest_answer_ms ?? Infinity, answerMs)
-          : (existing?.fastest_answer_ms ?? null);
+        const newFastest = answerMs != null ?
+        Math.min(existing?.fastest_answer_ms ?? Infinity, answerMs) :
+        existing?.fastest_answer_ms ?? null;
         const nowIso = new Date().toISOString();
 
         // Mastery-moment snapshot: only on the FIRST flip to true, never overwritten.
-        const firstMastery = nowMastered && !existing?.mastered_at && !(existing?.mastered);
+        const firstMastery = nowMastered && !existing?.mastered_at && !existing?.mastered;
         const masteryFields = firstMastery ? {
           mastered_at: nowIso,
           attempts_to_master: newTotal,
@@ -648,7 +648,7 @@ export default function StudySession() {
         if (key === 'wrong') {
           setHearts((h) => Math.max(0, h - 1));
         } else if (key === 'correct' && (correctStreak + 1) % 5 === 0) {
-          setHearts((h) => (h > 0 ? Math.min(MAX_HEARTS, h + 1) : h)); // death is permanent
+          setHearts((h) => h > 0 ? Math.min(MAX_HEARTS, h + 1) : h); // death is permanent
         }
       }
     }
@@ -665,8 +665,8 @@ export default function StudySession() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="w-7 h-7 border-4 border-muted border-t-primary rounded-full animate-spin" />
-      </div>
-    );
+      </div>);
+
   }
 
   if (deckError || cardsError) {
@@ -675,16 +675,16 @@ export default function StudySession() {
         title="Couldn't load this deck"
         body="Something went wrong fetching this deck. Try again, or head back and pick another."
         deckId={deckId}
-        onRetry={() => refetchCards()} />
-    );
+        onRetry={() => refetchCards()} />);
+
   }
 
   if (!deck) {
     return (
       <SessionNotice
         title="Deck not found"
-        body="This deck doesn't exist, or it isn't visible to your account." />
-    );
+        body="This deck doesn't exist, or it isn't visible to your account." />);
+
   }
 
   if (!activeCards.length) {
@@ -696,10 +696,10 @@ export default function StudySession() {
       <SessionNotice
         title={canSeeAll ? 'This deck has no cards yet' : 'No cards available'}
         body={canSeeAll ?
-          "Add some cards to this deck and it'll be ready to study." :
-          "This deck has no cards you can view. If you expected to see cards here, your account may not have access to them."}
-        deckId={deckId} />
-    );
+        "Add some cards to this deck and it'll be ready to study." :
+        "This deck has no cards you can view. If you expected to see cards here, your account may not have access to them."}
+        deckId={deckId} />);
+
   }
 
   const totalPoints = scores.reduce((s, r) => s + (r?.points || 0), 0);
@@ -747,81 +747,81 @@ export default function StudySession() {
           {/* Left: study mode selection */}
           <div className="flex-1 flex flex-col items-center gap-6">
           <div className="text-center">
-            <h2 className="text-xl font-bold">What would you like to study?</h2>
+            <h2 className="text-xl [font-family:'Fraunces',_serif] font-medium">What would you like to study?</h2>
           </div>
 
           <div className="flex flex-col gap-3 w-full max-w-sm">
             <button
-              onClick={() => setSelectedPool('all')}
-              className={cn(
-                'w-full border-2 rounded-[4px] p-4 text-left transition-all',
-                selectedPool === 'all'
-                  ? 'border-primary bg-accent/40'
-                  : 'border-border hover:border-primary hover:bg-accent/40'
-              )}>
+                onClick={() => setSelectedPool('all')}
+                className={cn(
+                  'w-full border-2 rounded-[4px] p-4 text-left transition-all',
+                  selectedPool === 'all' ?
+                  'border-primary bg-accent/40' :
+                  'border-border hover:border-primary hover:bg-accent/40'
+                )}>
               
               <div className="font-semibold" style={{ fontSize: '18px' }}>All cards</div>
               <div className="text-sm text-muted-foreground mt-0.5">{activeCards.length} cards</div>
             </button>
 
             <button
-              onClick={() => setSelectedPool('unmastered')}
-              disabled={allMastered}
-              className={cn(
-                'w-full border-2 rounded-[4px] p-4 text-left transition-all',
-                allMastered ?
-                'border-border opacity-50 cursor-not-allowed' :
-                selectedPool === 'unmastered' ?
-                'border-primary bg-accent/40' :
-                'border-border hover:border-primary hover:bg-accent/40'
-              )}>
+                onClick={() => setSelectedPool('unmastered')}
+                disabled={allMastered}
+                className={cn(
+                  'w-full border-2 rounded-[4px] p-4 text-left transition-all',
+                  allMastered ?
+                  'border-border opacity-50 cursor-not-allowed' :
+                  selectedPool === 'unmastered' ?
+                  'border-primary bg-accent/40' :
+                  'border-border hover:border-primary hover:bg-accent/40'
+                )}>
               
               <div className="font-semibold flex items-center gap-2" style={{ fontSize: '18px' }}>
                 Unmastered only
                 {unmasteredCards.length < activeCards.length &&
-                <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">
+                  <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">
                     {unmasteredCards.length} remaining
                   </span>
-                }
+                  }
               </div>
               <div className="text-sm text-muted-foreground mt-0.5 flex items-center gap-1.5">
                 {allMastered ?
-                '🎉 All cards mastered!' :
+                  '🎉 All cards mastered!' :
 
-                <>
+                  <>
                      {unmasteredCards.length} card{unmasteredCards.length !== 1 ? 's' : ''} not yet mastered
                      <MasteryTooltip minSessions={deck?.mastery_min_sessions ?? 3} masteryPct={deck?.mastery_pct ?? 90} />
                    </>
-                }
+                  }
               </div>
             </button>
 
             <button
-              onClick={() => setSelectedPool('bookmarked')}
-              disabled={bookmarkedCards.length < 10}
-              className={cn(
-                'w-full border-2 rounded-[4px] p-4 text-left transition-all',
-                bookmarkedCards.length < 10 ?
-                'border-border opacity-50 cursor-not-allowed' :
-                selectedPool === 'bookmarked' ?
-                'border-primary bg-accent/40' :
-                'border-border hover:border-primary hover:bg-accent/40'
-              )}>
+                onClick={() => setSelectedPool('bookmarked')}
+                disabled={bookmarkedCards.length < 10}
+                className={cn(
+                  'w-full border-2 rounded-[4px] p-4 text-left transition-all',
+                  bookmarkedCards.length < 10 ?
+                  'border-border opacity-50 cursor-not-allowed' :
+                  selectedPool === 'bookmarked' ?
+                  'border-primary bg-accent/40' :
+                  'border-border hover:border-primary hover:bg-accent/40'
+                )}>
               
               <div className="font-semibold flex items-center gap-2" style={{ fontSize: '18px' }}>
                 Bookmarked only
                 {bookmarkedCards.length >= 10 &&
-                <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">
+                  <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">
                     {bookmarkedCards.length} card{bookmarkedCards.length !== 1 ? 's' : ''}
                   </span>
-                }
+                  }
               </div>
               <div className="text-sm text-muted-foreground mt-0.5">
-                {bookmarkedCards.length === 0
-                  ? 'No bookmarked cards yet'
-                  : bookmarkedCards.length < 10
-                    ? `Need 10 bookmarked cards (${bookmarkedCards.length} so far)`
-                    : 'Study only your bookmarked cards'}
+                {bookmarkedCards.length === 0 ?
+                  'No bookmarked cards yet' :
+                  bookmarkedCards.length < 10 ?
+                  `Need 10 bookmarked cards (${bookmarkedCards.length} so far)` :
+                  'Study only your bookmarked cards'}
               </div>
             </button>
 
@@ -835,51 +835,51 @@ export default function StudySession() {
                 </p>
               </div>
               <button
-                onClick={() => setLearningModeOverride(!learningMode)}
-                className={cn(
-                  'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer ml-4',
-                  learningMode ? 'bg-primary' : 'bg-muted'
-                )}>
+                  onClick={() => setLearningModeOverride(!learningMode)}
+                  className={cn(
+                    'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer ml-4',
+                    learningMode ? 'bg-primary' : 'bg-muted'
+                  )}>
                 <span className={cn(
-                  'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform',
-                  learningMode ? 'translate-x-5' : 'translate-x-0'
-                )} />
+                    'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform',
+                    learningMode ? 'translate-x-5' : 'translate-x-0'
+                  )} />
               </button>
             </div>
 
             {selectedQualifies &&
-            <div className="flex items-center justify-between px-1 pt-2">
+              <div className="flex items-center justify-between px-1 pt-2">
               <div>
                 <p className="text-sm font-medium">Game Mode</p>
                 <p className="text-xs text-muted-foreground">Three hearts on the line ({GAME_MODE_MIN_CARDS}+ cards)</p>
               </div>
               <button
-                onClick={() => {
-                  const next = !gameModeWanted;
-                  setGameModeWanted(next);
-                  localStorage.setItem('flashdeck_gamemode', next ? '1' : '0');
-                }}
-                className={cn(
-                  'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer ml-4',
-                  gameModeWanted ? 'bg-primary' : 'bg-muted'
-                )}>
+                  onClick={() => {
+                    const next = !gameModeWanted;
+                    setGameModeWanted(next);
+                    localStorage.setItem('flashdeck_gamemode', next ? '1' : '0');
+                  }}
+                  className={cn(
+                    'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer ml-4',
+                    gameModeWanted ? 'bg-primary' : 'bg-muted'
+                  )}>
                 <span className={cn(
-                  'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform',
-                  gameModeWanted ? 'translate-x-5' : 'translate-x-0'
-                )} />
+                    'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform',
+                    gameModeWanted ? 'translate-x-5' : 'translate-x-0'
+                  )} />
               </button>
             </div>
-            }
+              }
 
             <button
-              onClick={() => selectedPool && startSession(selectedPool)}
-              disabled={!selectedPool}
-              className={cn(
-                'w-full border-2 rounded-[4px] p-3 text-center font-semibold transition-all',
-                selectedPool
-                  ? 'border-primary bg-primary text-primary-foreground hover:opacity-90'
-                  : 'border-border text-muted-foreground opacity-50 cursor-not-allowed'
-              )}>
+                onClick={() => selectedPool && startSession(selectedPool)}
+                disabled={!selectedPool}
+                className={cn(
+                  'w-full border-2 rounded-[4px] p-3 text-center font-semibold transition-all',
+                  selectedPool ?
+                  'border-primary bg-primary text-primary-foreground hover:opacity-90' :
+                  'border-border text-muted-foreground opacity-50 cursor-not-allowed'
+                )}>
               Start session
             </button>
           </div>
@@ -901,20 +901,20 @@ export default function StudySession() {
                 <p className="text-xs text-muted-foreground">Let a wrong first pick be retried once</p>
               </div>
               <button
-                onClick={() => {
-                  const next = !secondGuessAllowed;
-                  setSecondGuessAllowed(next);
-                  localStorage.setItem('flashdeck_secondguess', next ? '1' : '0');
-                }}
-                className={cn(
-                  'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer ml-4',
-                  secondGuessAllowed ? 'bg-primary' : 'bg-muted'
-                )}>
+                  onClick={() => {
+                    const next = !secondGuessAllowed;
+                    setSecondGuessAllowed(next);
+                    localStorage.setItem('flashdeck_secondguess', next ? '1' : '0');
+                  }}
+                  className={cn(
+                    'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer ml-4',
+                    secondGuessAllowed ? 'bg-primary' : 'bg-muted'
+                  )}>
                 
                 <span className={cn(
-                  'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform',
-                  secondGuessAllowed ? 'translate-x-5' : 'translate-x-0'
-                )} />
+                    'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform',
+                    secondGuessAllowed ? 'translate-x-5' : 'translate-x-0'
+                  )} />
               </button>
             </div>
 
@@ -925,20 +925,20 @@ export default function StudySession() {
                 <p className="text-xs text-muted-foreground">Show the clue toggle on each card</p>
               </div>
               <button
-                onClick={() => {
-                  const next = !hintsAllowed;
-                  setHintsAllowed(next);
-                  localStorage.setItem('flashdeck_hints', next ? '1' : '0');
-                }}
-                className={cn(
-                  'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer ml-4',
-                  hintsAllowed ? 'bg-primary' : 'bg-muted'
-                )}>
+                  onClick={() => {
+                    const next = !hintsAllowed;
+                    setHintsAllowed(next);
+                    localStorage.setItem('flashdeck_hints', next ? '1' : '0');
+                  }}
+                  className={cn(
+                    'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer ml-4',
+                    hintsAllowed ? 'bg-primary' : 'bg-muted'
+                  )}>
                 
                 <span className={cn(
-                  'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform',
-                  hintsAllowed ? 'translate-x-5' : 'translate-x-0'
-                )} />
+                    'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform',
+                    hintsAllowed ? 'translate-x-5' : 'translate-x-0'
+                  )} />
               </button>
             </div>
 
@@ -949,19 +949,19 @@ export default function StudySession() {
                 <p className="text-xs text-muted-foreground">Let the sparkle button remove a wrong answer choice</p>
               </div>
               <button
-                onClick={() => {
-                  const next = !eliminateAllowed;
-                  setEliminateAllowed(next);
-                  localStorage.setItem('flashdeck_eliminate', next ? '1' : '0');
-                }}
-                className={cn(
-                  'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer ml-4',
-                  eliminateAllowed ? 'bg-primary' : 'bg-muted'
-                )}>
+                  onClick={() => {
+                    const next = !eliminateAllowed;
+                    setEliminateAllowed(next);
+                    localStorage.setItem('flashdeck_eliminate', next ? '1' : '0');
+                  }}
+                  className={cn(
+                    'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer ml-4',
+                    eliminateAllowed ? 'bg-primary' : 'bg-muted'
+                  )}>
                 <span className={cn(
-                  'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform',
-                  eliminateAllowed ? 'translate-x-5' : 'translate-x-0'
-                )} />
+                    'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform',
+                    eliminateAllowed ? 'translate-x-5' : 'translate-x-0'
+                  )} />
               </button>
             </div>
 
@@ -977,20 +977,20 @@ export default function StudySession() {
                 <p className="text-xs text-muted-foreground">Move to next card automatically after a correct answer</p>
               </div>
               <button
-                onClick={() => {
-                  const next = !autoAdvance;
-                  setAutoAdvance(next);
-                  localStorage.setItem('flashdeck_autoadvance', next ? '1' : '0');
-                }}
-                className={cn(
-                  'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer ml-4',
-                  autoAdvance ? 'bg-primary' : 'bg-muted'
-                )}>
+                  onClick={() => {
+                    const next = !autoAdvance;
+                    setAutoAdvance(next);
+                    localStorage.setItem('flashdeck_autoadvance', next ? '1' : '0');
+                  }}
+                  className={cn(
+                    'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer ml-4',
+                    autoAdvance ? 'bg-primary' : 'bg-muted'
+                  )}>
                 
                 <span className={cn(
-                  'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform',
-                  autoAdvance ? 'translate-x-5' : 'translate-x-0'
-                )} />
+                    'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform',
+                    autoAdvance ? 'translate-x-5' : 'translate-x-0'
+                  )} />
               </button>
             </div>
 
@@ -1002,20 +1002,20 @@ export default function StudySession() {
               </div>
               <div className="flex gap-1 ml-4">
                 {['auto', 'vertical', 'horizontal'].map((mode) =>
-                <button
-                  key={mode}
-                  onClick={() => {
-                    setLayoutMode(mode);
-                    localStorage.setItem('flashdeck_layout', mode);
-                  }}
-                  className={cn(
-                    'px-2.5 py-1 rounded text-xs font-medium border transition-colors',
-                    layoutMode === mode ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground'
-                  )}>
+                  <button
+                    key={mode}
+                    onClick={() => {
+                      setLayoutMode(mode);
+                      localStorage.setItem('flashdeck_layout', mode);
+                    }}
+                    className={cn(
+                      'px-2.5 py-1 rounded text-xs font-medium border transition-colors',
+                      layoutMode === mode ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground'
+                    )}>
                   
                     {mode.charAt(0).toUpperCase() + mode.slice(1)}
                   </button>
-                )}
+                  )}
               </div>
             </div>
 
@@ -1027,34 +1027,34 @@ export default function StudySession() {
               </div>
               <div className="flex gap-1 ml-4">
                 {[{ value: 'left', label: 'Left' }, { value: 'right', label: 'Right' }].map(({ value, label }) =>
-                <button
-                  key={value}
-                  onClick={() => {
-                    setHandedness(value);
-                    localStorage.setItem('flashdeck_handedness', value);
-                  }}
-                  className={cn(
-                    'px-2.5 py-1 rounded text-xs font-medium border transition-colors',
-                    handedness === value ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground'
-                  )}>
+                  <button
+                    key={value}
+                    onClick={() => {
+                      setHandedness(value);
+                      localStorage.setItem('flashdeck_handedness', value);
+                    }}
+                    className={cn(
+                      'px-2.5 py-1 rounded text-xs font-medium border transition-colors',
+                      handedness === value ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground'
+                    )}>
                   
                     {label}
                   </button>
-                )}
+                  )}
               </div>
             </div>
 
             {/* Save as default */}
             <div className="flex justify-end px-1 pt-1">
               <button
-                onClick={async () => {
-                  setSavingDefaults(true);
-                  await base44.auth.updateMe({ default_layout_mode: layoutMode, default_handedness: handedness });
-                  refetchMe();
-                  setSavingDefaults(false);
-                }}
-                className="text-xs text-primary hover:underline disabled:opacity-50"
-                disabled={savingDefaults}>
+                  onClick={async () => {
+                    setSavingDefaults(true);
+                    await base44.auth.updateMe({ default_layout_mode: layoutMode, default_handedness: handedness });
+                    refetchMe();
+                    setSavingDefaults(false);
+                  }}
+                  className="text-xs text-primary hover:underline disabled:opacity-50"
+                  disabled={savingDefaults}>
                 
                 {savingDefaults ? 'Saving…' : 'Save as my default'}
               </button>
@@ -1220,99 +1220,99 @@ export default function StudySession() {
         {/* Floor space: extends the stage downward so the absolute scene has room for sky + ground below the controls */}
         {filterChosen && <div aria-hidden style={{ height: SCENE_FLOOR_H }} />}
 
-        {filterChosen && (
-          <SwabbieSpeechBubble
-            open={speaking}
-            onClose={() => setLearnMore(null)}
-            explanation={learnMore?.explanation}
-            title={learnMore?.title}
-            anchorX={characterAnchor.x}
-            anchorBottom={characterAnchor.bottom}
-          />
-        )}
+        {filterChosen &&
+        <SwabbieSpeechBubble
+          open={speaking}
+          onClose={() => setLearnMore(null)}
+          explanation={learnMore?.explanation}
+          title={learnMore?.title}
+          anchorX={characterAnchor.x}
+          anchorBottom={characterAnchor.bottom} />
+
+        }
       </motion.div>
 
       <AnimatePresence mode="wait">
-        {done ? (
-          <motion.div
-            key="session-stats"
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.45, ease: 'easeOut' }}
-            className="relative bg-card border border-border rounded-lg p-4 mt-4">
+        {done ?
+        <motion.div
+          key="session-stats"
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.45, ease: 'easeOut' }}
+          className="relative bg-card border border-border rounded-lg p-4 mt-4">
             <SessionStatsPanel
-              shuffledCards={shuffledCards} scores={scores} answerTimes={answerTimes}
-              firstWrongChoices={firstWrongChoices} cardStats={cardStats}
-              totalPoints={totalPoints} maxPoints={maxPoints} pct={pct}
-              bestStreak={bestStreak} streak={streak}
-              durationMs={completionDurationMs} skipsUsed={skipsUsed}
-              deckId={deckId} onRestart={restart} onReviewMissed={reviewMissed}
-              useHorizontal={useHorizontal} />
-          </motion.div>
-        ) : (
-          <motion.div key="study-area" initial={false} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+            shuffledCards={shuffledCards} scores={scores} answerTimes={answerTimes}
+            firstWrongChoices={firstWrongChoices} cardStats={cardStats}
+            totalPoints={totalPoints} maxPoints={maxPoints} pct={pct}
+            bestStreak={bestStreak} streak={streak}
+            durationMs={completionDurationMs} skipsUsed={skipsUsed}
+            deckId={deckId} onRestart={restart} onReviewMissed={reviewMissed}
+            useHorizontal={useHorizontal} />
+          </motion.div> :
+
+        <motion.div key="study-area" initial={false} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
             {contactSheetOpen ?
-            <div className="mt-4"><ContactSheet
-                cards={shuffledCards}
-                scores={scores}
-                cardIndex={cardIndex}
-                onJump={(i) => {setCardIndex(i);setContactSheetOpen(false);}} /></div> :
+          <div className="mt-4"><ContactSheet
+              cards={shuffledCards}
+              scores={scores}
+              cardIndex={cardIndex}
+              onJump={(i) => {setCardIndex(i);setContactSheetOpen(false);}} /></div> :
 
-            (() => {
-              const useHorizontal = layoutMode === 'horizontal' || layoutMode === 'auto' && isWide;
-              const introReady = questionReady;
-              const sharedProps = {
-                key: `${current.id}-${cardIndex}`,
-                card: current, deck,
-                onNext: handleNext, onPrev: handlePrev, onSkip: handleSkip, canSkip,
-                isFirst: cardIndex === 0, isLast: cardIndex === shuffledCards.length - 1,
-                onScore: handleScore, soundEnabled, autoAdvance,
-                note: notesByCardId[current.id] || null,
-                cardIndex, total: shuffledCards.length,
-                sessionStartTime, correctStreak, bestStreak, pastSessions,
-                masteredCount: cardStats.filter((s) => s.mastered).length,
-                totalCards: activeCards.length,
-                cardStats: cardStats.find((s) => s.card_id === current.id) || null,
-                eliminateAllowed,
-                secondGuessAllowed,
-                learningMode,
-                isBookmarked: !!current.bookmarked,
-                onToggleBookmark: handleToggleBookmark,
-                onFirstWrong: handleFirstWrong,
-                onShowLearnMore: handleShowLearnMore,
-                introReady,
-                maxChoices,
-                characterIdle
-              };
+          (() => {
+            const useHorizontal = layoutMode === 'horizontal' || layoutMode === 'auto' && isWide;
+            const introReady = questionReady;
+            const sharedProps = {
+              key: `${current.id}-${cardIndex}`,
+              card: current, deck,
+              onNext: handleNext, onPrev: handlePrev, onSkip: handleSkip, canSkip,
+              isFirst: cardIndex === 0, isLast: cardIndex === shuffledCards.length - 1,
+              onScore: handleScore, soundEnabled, autoAdvance,
+              note: notesByCardId[current.id] || null,
+              cardIndex, total: shuffledCards.length,
+              sessionStartTime, correctStreak, bestStreak, pastSessions,
+              masteredCount: cardStats.filter((s) => s.mastered).length,
+              totalCards: activeCards.length,
+              cardStats: cardStats.find((s) => s.card_id === current.id) || null,
+              eliminateAllowed,
+              secondGuessAllowed,
+              learningMode,
+              isBookmarked: !!current.bookmarked,
+              onToggleBookmark: handleToggleBookmark,
+              onFirstWrong: handleFirstWrong,
+              onShowLearnMore: handleShowLearnMore,
+              introReady,
+              maxChoices,
+              characterIdle
+            };
 
-              const childVariant = {
-                hidden: { opacity: 0, y: 14 },
-                visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: 'easeOut' } }
-              };
-              const containerVariant = {
-                hidden: {},
-                visible: { transition: { staggerChildren: INTRO_STAGGER_MS } }
-              };
+            const childVariant = {
+              hidden: { opacity: 0, y: 14 },
+              visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: 'easeOut' } }
+            };
+            const containerVariant = {
+              hidden: {},
+              visible: { transition: { staggerChildren: INTRO_STAGGER_MS } }
+            };
 
-              return (
-                <motion.div
-                  className="relative bg-card border border-border rounded-lg p-4 mt-4"
-                  variants={containerVariant}
-                  initial="hidden"
-                  animate="visible">
+            return (
+              <motion.div
+                className="relative bg-card border border-border rounded-lg p-4 mt-4"
+                variants={containerVariant}
+                initial="hidden"
+                animate="visible">
                   
                   {RestartWarningOverlay}
                   {ExitWarningOverlay}
                   {useHorizontal ?
-                  <StudyCardHorizontal {...sharedProps} handedness={handedness} childVariant={childVariant} /> :
-                  <StudyCard {...sharedProps} hintsAllowed={hintsAllowed} childVariant={childVariant} />
-                  }
+                <StudyCardHorizontal {...sharedProps} handedness={handedness} childVariant={childVariant} /> :
+                <StudyCard {...sharedProps} hintsAllowed={hintsAllowed} childVariant={childVariant} />
+                }
                 </motion.div>);
 
-            })()}
+          })()}
           </motion.div>
-        )}
+        }
       </AnimatePresence>
 
 
