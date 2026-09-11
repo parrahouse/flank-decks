@@ -426,13 +426,13 @@ export default function StudySession() {
 
 
 
+
           // already studied today, no change
-        } else if (last === yesterday) {newStreak = streak.current_streak + 1;} else {newStreak = 1;}const newLongest = Math.max(streak.longest_streak || 0, newStreak);const newMilestone = [3, 7, 14, 30, 60, 100].filter((m) => newStreak >= m).pop() || 0;await base44.entities.Streak.update(streak.id, {
-          current_streak: newStreak,
-          longest_streak: newLongest,
-          last_study_date: today,
-          milestone_reached: Math.max(streak.milestone_reached || 0, newMilestone)
-        });
+        } else if (last === yesterday) {newStreak = streak.current_streak + 1;} else {newStreak = 1;}const newLongest = Math.max(streak.longest_streak || 0, newStreak);const newMilestone = [3, 7, 14, 30, 60, 100].filter((m) => newStreak >= m).pop() || 0;await base44.entities.Streak.update(streak.id, { current_streak: newStreak,
+            longest_streak: newLongest,
+            last_study_date: today,
+            milestone_reached: Math.max(streak.milestone_reached || 0, newMilestone)
+          });
       } else if (currentUser?.id) {
         await base44.entities.Streak.create({
           user_id: currentUser.id,
@@ -747,7 +747,7 @@ export default function StudySession() {
           {/* Left: study mode selection */}
           <div className="flex-1 flex flex-col items-center gap-6">
           <div className="text-center">
-            <h2 className="[font-family:'Fraunces',_serif] font-medium text-3xl">What would you like to study?</h2>
+            <h2 className="[font-family:'Fraunces',_serif] font-medium text-2xl">What would you like to study?</h2>
           </div>
 
           <div className="flex flex-col gap-3 w-full max-w-sm">
