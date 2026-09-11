@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { splitHtmlSentences } from '@/lib/splitHtmlSentences';
 
 const SHOW_DELAY_MS = 700;    // pause before the bubble appears — lets the wrong-answer sound & shake play
 const TYPE_TICK_MS = 16;      // ms per revealed character (classic typewriter cadence)
-const BUTTON_SETTLE_MS = 350; // pause after the text finishes before GOT IT appears
+const BUTTON_SETTLE_MS = 350; // pause after the text finishes before the action button appears
+const LINES_PER_PAGE = 3;
+const ELLIPSIS = '...';
+
+// Inline tags are rendered with their wrapper; block tags are flattened so the text
+// flows as one inline stream (no paragraph margins) — this keeps the monospace
+// character-per-line calculation exact so 3 lines never overflow.
+const INLINE_TAGS = new Set(['STRONG', 'EM', 'B', 'I', 'U', 'S', 'CODE', 'SPAN', 'A', 'SUB', 'SUP', 'MARK']);
 
 const CONTENT_CSS = `
-.swabbie-bubble-content p { margin: 0 0 6px; }
-.swabbie-bubble-content p:last-child { margin-bottom: 0; }
-.swabbie-bubble-content ul, .swabbie-bubble-content ol { margin: 0 0 6px; padding-left: 18px; }
-.swabbie-bubble-content li { margin: 2px 0; }
 .swabbie-bubble-content strong { font-weight: 700; }
 .swabbie-bubble-content em { font-style: italic; }
 .swabbie-bubble-content code { background: #f0f0f0; padding: 1px 4px; border-radius: 3px; font-size: 12px; }
@@ -18,7 +20,9 @@ const CONTENT_CSS = `
 @keyframes swabbie-blink { 50% { opacity: 0; } }
 `;
 
-// Parse an HTML string into a list of DOM child nodes (preserves inline/block markup).
+// Pixel-art 2px chamfered corners (replaces smooth border-radius).
+const PIXEL_CLIP = 'polygon(0 2px, 2px 2px, 2px 0, calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px))';
+
 function parseHtml(html) {
   const host = document.createElement('div');
   host.innerHTML = html || '';
@@ -33,37 +37,53 @@ function countText(node) {
   return 0;
 }
 
-function totalTextLength(nodes) {
-  return nodes.reduce((s, n) => s + countText(n), 0);
-}
-
-// Render DOM nodes into React elements, revealing only `budget.remaining` text characters.
-// Tags are preserved (so bold/italic/lists render correctly) while their text streams in.
-function renderNodes(nodes, budget) {
+// Render the DOM tree as inline React elements, revealing only the character window
+// [state.from, state.to). Tags are preserved so bold/italic/code render correctly
+// while their text streams in; block wrappers are flattened (children only).
+function renderNodes(nodes, state) {
   const out = [];
-  nodes.forEach((node, i) => {
-    const el = renderNode(node, budget, i);
-    if (el !== null && el !== '' && el !== undefined) out.push(el);
-  });
-  return out;
+  let produced = false;
+  for (const node of nodes) {
+    const els = renderNode(node, state);
+    if (els == null) continue;
+    if (Array.isArray(els)) {
+      if (els.length) { out.push(...els); produced = true; }
+    } else {
+      out.push(els); produced = true;
+    }
+  }
+  return { out, produced };
 }
 
-function renderNode(node, budget, key) {
-  if (budget.remaining <= 0) return null;
+function renderNode(node, state) {
+  if (state.pos >= state.to) return null;
   if (node.nodeType === Node.TEXT_NODE) {
     const text = node.textContent;
-    const take = Math.min(text.length, budget.remaining);
-    budget.remaining -= take;
-    return text.slice(0, take);
+    const len = text.length;
+    const nodeStart = state.pos;
+    const nodeEnd = state.pos + len;
+    state.pos = nodeEnd;
+    if (nodeEnd <= state.from) return null;
+    const start = Math.max(0, state.from - nodeStart);
+    const end = Math.min(len, state.to - nodeStart);
+    if (end <= start) return null;
+    return text.slice(start, end);
   }
   if (node.nodeType === Node.ELEMENT_NODE) {
     const tag = node.tagName.toLowerCase();
-    const props = { key: String(key) };
-    for (const attr of node.attributes) {
-      props[attr.name === 'class' ? 'className' : attr.name] = attr.value;
+    if (tag === 'br') return null; // skip forced breaks — text flows inline
+    if (INLINE_TAGS.has(node.tagName)) {
+      const props = { key: state.keyCounter++ };
+      for (const attr of node.attributes) {
+        props[attr.name === 'class' ? 'className' : attr.name] = attr.value;
+      }
+      const { out, produced } = renderNodes(Array.from(node.childNodes), state);
+      if (!produced) return null;
+      return React.createElement(tag, props, ...out);
     }
-    const children = renderNodes(Array.from(node.childNodes), budget);
-    return React.createElement(tag, props, ...children);
+    // Block tag: flatten its children inline (no wrapper, no margins).
+    const { out, produced } = renderNodes(Array.from(node.childNodes), state);
+    return produced ? out : null;
   }
   return null;
 }
@@ -71,8 +91,10 @@ function renderNode(node, budget, key) {
 /**
  * SwabbieSpeechBubble — Learn More explanation spoken by the Swabbie character.
  * Floats above the character in the progress band, anchored to its screen x.
- * The explanation is typed out character-by-character (classic video game style),
- * paginated across sentences with a "NEXT…" step and a "GOT IT" close. Black & white.
+ * The explanation is typed out character-by-character (classic video game style)
+ * and paginated by character count: each page fills 3 lines, then shows "..."
+ * and a NEXT… control; the last page shows GOT IT. Black & white, pixel corners,
+ * no drop shadow, no vertical scroll.
  */
 export default function SwabbieSpeechBubble({ open, onClose, explanation, anchorX, anchorBottom }) {
   const [visible, setVisible] = useState(false);
@@ -80,16 +102,28 @@ export default function SwabbieSpeechBubble({ open, onClose, explanation, anchor
   const [revealed, setRevealed] = useState(0);
   const [textDone, setTextDone] = useState(false);
   const [canDismiss, setCanDismiss] = useState(false);
+  const [charsPerPage, setCharsPerPage] = useState(0);
 
-  const chunks = useMemo(() => splitHtmlSentences(explanation), [explanation]);
-  const steps = chunks.length;
-  const isLast = step >= steps - 1;
-
-  // Parse the current chunk + compute its visible character count.
   const parsed = useMemo(() => {
-    const nodes = parseHtml(chunks[step] || '');
-    return { nodes, total: totalTextLength(nodes) };
-  }, [chunks, step]);
+    const nodes = parseHtml(explanation || '');
+    return { nodes, total: nodes.reduce((s, n) => s + countText(n), 0) };
+  }, [explanation]);
+
+  const pages = useMemo(() => {
+    if (!charsPerPage || !parsed.total) return [{ from: 0, to: 0 }];
+    const out = [];
+    for (let pos = 0; pos < parsed.total; pos += charsPerPage) {
+      out.push({ from: pos, to: Math.min(parsed.total, pos + charsPerPage) });
+    }
+    return out;
+  }, [charsPerPage, parsed.total]);
+
+  const safeStep = Math.min(step, pages.length - 1);
+  const page = pages[safeStep];
+  const isLast = safeStep === pages.length - 1;
+  // On continuation pages, reserve room for the trailing "..." so the page stays
+  // within 3 lines.
+  const textEnd = page ? (isLast ? page.to : Math.max(page.from, page.to - ELLIPSIS.length)) : 0;
 
   // Pre-show delay so the wrong-answer feedback can play first.
   useEffect(() => {
@@ -101,23 +135,52 @@ export default function SwabbieSpeechBubble({ open, onClose, explanation, anchor
     return () => clearTimeout(t);
   }, [open]);
 
-  // Reset the typewriter when the page changes.
+  // Measure how many characters fit in 3 lines (monospace Silkscreen), so pages
+  // can be sliced by character count. Runs during the pre-show delay.
   useEffect(() => {
-    setRevealed(0);
+    if (!open) return;
+    let cancelled = false;
+    (async () => {
+      try { await document.fonts.ready; } catch {}
+      if (cancelled) return;
+      const contentWidth = Math.min(300, window.innerWidth - 24) - 28; // card width − border − padding
+      if (contentWidth <= 0) return;
+      const probe = document.createElement('span');
+      probe.style.fontFamily = "'Silkscreen', monospace";
+      probe.style.fontSize = '13px';
+      probe.style.visibility = 'hidden';
+      probe.style.position = 'absolute';
+      probe.style.whiteSpace = 'pre';
+      probe.textContent = 'M';
+      document.body.appendChild(probe);
+      const charWidth = probe.getBoundingClientRect().width;
+      document.body.removeChild(probe);
+      if (charWidth > 0) {
+        setCharsPerPage(Math.max(1, Math.floor(contentWidth / charWidth)) * LINES_PER_PAGE);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [open]);
+
+  // Reset the typewriter when the page or capacity changes.
+  useEffect(() => {
+    if (!visible || !pages.length) return;
+    const p = pages[Math.min(step, pages.length - 1)];
+    setRevealed(p ? p.from : 0);
     setTextDone(false);
     setCanDismiss(false);
-  }, [step]);
+  }, [visible, step, charsPerPage]);
 
   // Reset to the first page when the explanation changes.
   useEffect(() => { setStep(0); }, [explanation]);
 
-  // Typewriter ticker — one character per tick until the whole chunk is shown.
+  // Typewriter ticker — one character per tick until the page's text is shown.
   useEffect(() => {
-    if (!visible || textDone) return;
-    if (revealed >= parsed.total) { setTextDone(true); return; }
-    const t = setTimeout(() => setRevealed((r) => Math.min(parsed.total, r + 1)), TYPE_TICK_MS);
+    if (!visible || !page || textDone) return;
+    if (revealed >= textEnd) { setTextDone(true); return; }
+    const t = setTimeout(() => setRevealed((r) => Math.min(textEnd, r + 1)), TYPE_TICK_MS);
     return () => clearTimeout(t);
-  }, [visible, revealed, textDone, parsed.total]);
+  }, [visible, revealed, textDone, textEnd, page]);
 
   // GOT IT appears only on the last page, after the text finishes + a brief settle.
   useEffect(() => {
@@ -128,8 +191,8 @@ export default function SwabbieSpeechBubble({ open, onClose, explanation, anchor
 
   if (!open) return null;
 
-  const budget = { remaining: revealed };
-  const rendered = renderNodes(parsed.nodes, budget);
+  const state = { pos: 0, from: page ? page.from : 0, to: Math.min(revealed, textEnd), keyCounter: 0 };
+  const { out: rendered } = page ? renderNodes(parsed.nodes, state) : { out: [] };
   const clampedLeft = `clamp(150px, ${anchorX || 0}px, calc(100% - 150px))`;
 
   return (
@@ -148,24 +211,16 @@ export default function SwabbieSpeechBubble({ open, onClose, explanation, anchor
               left: clampedLeft,
               bottom: anchorBottom,
               transform: 'translateX(-50%)',
-              maxHeight: `calc(100% - ${anchorBottom}px - 8px)`,
               display: 'flex',
               flexDirection: 'column',
               pointerEvents: 'auto',
             }}
           >
-            {/* Tail — points down at the character */}
+            {/* Tail — solid black pixel triangle pointing at the character */}
             <div aria-hidden style={{
-              position: 'absolute', bottom: -10, left: '50%', transform: 'translateX(-50%)',
-              width: 0, height: 0,
-              borderLeft: '10px solid transparent', borderRight: '10px solid transparent',
-              borderTop: '10px solid #000',
-            }} />
-            <div aria-hidden style={{
-              position: 'absolute', bottom: -7, left: '50%', transform: 'translateX(-50%)',
-              width: 0, height: 0,
-              borderLeft: '8px solid transparent', borderRight: '8px solid transparent',
-              borderTop: '8px solid #fff',
+              position: 'absolute', bottom: -8, left: '50%', transform: 'translateX(-50%)',
+              width: 12, height: 8, backgroundColor: '#000',
+              clipPath: 'polygon(50% 100%, 0 0, 100% 0)',
             }} />
 
             <div
@@ -175,43 +230,43 @@ export default function SwabbieSpeechBubble({ open, onClose, explanation, anchor
                 maxWidth: 'calc(100vw - 24px)',
                 backgroundColor: '#fff',
                 border: '2px solid #000',
-                borderRadius: 8,
-                boxShadow: '0 4px 0 rgba(0,0,0,0.25)',
-                padding: '12px 14px 10px',
+                padding: '10px 12px 8px',
                 display: 'flex',
                 flexDirection: 'column',
-                flex: '1 1 auto',
-                minHeight: 0,
+                clipPath: PIXEL_CLIP,
               }}
             >
               <div
                 className="swabbie-bubble-content"
                 style={{
                   fontSize: 13, lineHeight: 1.4, color: '#000',
-                  flex: '1 1 auto', minHeight: 0, overflowY: 'auto',
+                  height: 'calc(1.4em * 3)',
+                  overflow: 'hidden',
+                  wordBreak: 'break-all',
                 }}
               >
                 {rendered}
+                {textDone && !isLast && <span>{ELLIPSIS}</span>}
                 {!textDone && <span className="swabbie-cursor" />}
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginTop: 8, gap: 8, flexShrink: 0, minHeight: 22 }}>
-                {steps > 1 && (
+              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginTop: 6, gap: 8, flexShrink: 0, minHeight: 20 }}>
+                {pages.length > 1 && (
                   <span style={{ fontSize: 9, color: '#000' }}>
-                    {step + 1}/{steps}
+                    {safeStep + 1}/{pages.length}
                   </span>
                 )}
                 {!isLast ? (
                   textDone && (
                     <button
-                      onClick={() => setStep((s) => Math.min(steps - 1, s + 1))}
+                      onClick={() => setStep((s) => Math.min(pages.length - 1, s + 1))}
                       className="pixel-ui"
                       style={{
                         fontSize: 10,
                         border: '2px solid #000',
-                        backgroundColor: '#000',
-                        color: '#fff',
-                        padding: '5px 14px',
+                        backgroundColor: '#fff',
+                        color: '#000',
+                        padding: '3px 10px',
                         cursor: 'pointer',
                       }}
                     >
@@ -228,7 +283,7 @@ export default function SwabbieSpeechBubble({ open, onClose, explanation, anchor
                         border: '2px solid #000',
                         backgroundColor: '#fff',
                         color: '#000',
-                        padding: '5px 14px',
+                        padding: '3px 10px',
                         cursor: 'pointer',
                       }}
                     >
