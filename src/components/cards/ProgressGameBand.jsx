@@ -45,10 +45,12 @@ const FINISH_CLEAR_FACTOR = 0.5;  // × W — extra margin past the pole at the 
 const AVATAR_ENTRY_MS   = 1000;
 const AVATAR_ENTRY_EASE = 'linear';
 
-// Outcome classification — mirrors StudySession's CORRECT_KEYS so the band
-// stays a pure consumer (no new props).
+// Outcome classification for the reaction/walk animation.
+// NOTE: 'partial' is intentionally excluded — a multi-select answer with any
+// wrong pick plays the wrong sound, so the character must sad-walk to match,
+// not celebrate. (StudySession keeps its own CORRECT_KEYS for streak/hearts.)
 const CORRECT_KEYS = new Set([
-  'correct', 'second_guess', 'correct_after_clue', 'second_guess_after_clue', 'partial',
+  'correct', 'second_guess', 'correct_after_clue', 'second_guess_after_clue',
 ]);
 
 /**
