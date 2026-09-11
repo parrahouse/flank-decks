@@ -19,6 +19,7 @@ import ConceptsTab from './ConceptsTab';
 import CardNoteEditor from './CardNoteEditor';
 import CardThumbnail from './CardThumbnail';
 import MathButton from './MathInputPopover';
+import { STYLE_PRESETS, buildAiPrompt } from '@/lib/aiImagePresets';
 
 // Parse pipe-delimited correct_answers string into array
 const parseCorrectAnswers = (str) => str ? str.split('|').map(s => s.trim()).filter(Boolean) : [];
@@ -260,13 +261,6 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
     toast.success('Decoys generated');
   };
 
-  const STYLE_PRESETS = {
-    pixel_art:    { label: 'Old School',   enhancer: 'Mid-century retro illustration in vintage halftone print style. No gradients or modern shading. Technique: visible halftone dot texture (Ben-Day dots) throughout, giving a printed-on-cheap-paper look. Bold black ink outlines, simplified shapes, slightly off-register printing feel. Matte, aged quality as if scanned from a vintage magazine or technical brochure.', emoji: '🕹️' },
-    oil_painting: { label: 'Oil Painting', enhancer: 'classic oil painting style, visible brushstrokes, rich textures, warm lighting', emoji: '🖼️' },
-    minimalist:   { label: 'Minimalist',   enhancer: 'minimalist vector art, clean flat design, simple shapes, limited color palette', emoji: '◻️' },
-    watercolor:   { label: 'Watercolor',   enhancer: 'soft watercolor painting, ethereal feel, gentle color bleeds, artistic style', emoji: '🎨' },
-  };
-
   const buildAiPromptPrefill = () => {
     const correct = Array.from(correctSet)[0] || '';
     const plainExplanation = explanation ? explanation.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120) : '';
@@ -284,21 +278,12 @@ export default function CardEditor({ card, onSave, onCancel, onDirtyChange, allT
   const handleGenerateAiImage = async () => {
     if (!aiImagePrompt.trim()) { toast.error('Enter a description first'); return; }
     setGeneratingImage(true);
-    const styleEnhancer = STYLE_PRESETS[aiImageStyle]?.enhancer || '';
-    const humorEnhancer = aiImageHumor ? ', with a subtle whimsical or humorous detail that adds charm without distracting from the main subject' : '';
-    // Collect all unique words from all answer choices to exclude from appearing as text in the image
-    const allWords = allChoicesList
-      .map(c => c.trim())
-      .filter(Boolean)
-      .join(' ')
-      .split(/\s+/)
-      .map(w => w.replace(/[^a-zA-Z0-9]/g, ''))
-      .filter(w => w.length > 2);
-    const uniqueWords = [...new Set(allWords.map(w => w.toLowerCase()))];
-    const noTextInstruction = uniqueWords.length
-      ? `. Do not render any text, words, or labels in the image — especially not the words: ${uniqueWords.join(', ')}`
-      : '. Do not render any text or words in the image';
-    const fullPrompt = `${aiImagePrompt.trim()}, ${styleEnhancer}${humorEnhancer}${noTextInstruction}. Compose for a 4:3 landscape frame. Keep all important subject matter centered and well within the frame, away from the edges. Leave generous safe margins on all sides.`;
+    const fullPrompt = buildAiPrompt({
+      prompt: aiImagePrompt,
+      styleKey: aiImageStyle,
+      humor: aiImageHumor,
+      wordsToExclude: allChoicesList,
+    });
     const { url } = await base44.integrations.Core.GenerateImage({ prompt: fullPrompt });
     setImageUrl(url);
     setOriginalImageUrl(null); // Stage 4C

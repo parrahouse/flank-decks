@@ -26,17 +26,11 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import MarkdownQuill from './MarkdownQuill';
 import { motion, AnimatePresence } from 'framer-motion';
+import { STYLE_PRESETS, buildAiPrompt } from '@/lib/aiImagePresets';
 
 // True inner width of the study card: max-w-7xl (1280) − page px-4 (32) − card p-4 (32).
 // Capping the preview here makes it 1:1 with study rather than merely proportional.
 const STUDY_CARD_TRUE_W = 1216;
-
-const STYLE_PRESETS = {
-  pixel_art:    { label: 'Old School', emoji: '🕹️', enhancer: 'Mid-century retro illustration in vintage halftone print style. No gradients or modern shading. Bold black ink outlines, simplified shapes, matte aged quality.' },
-  oil_painting: { label: 'Oil Painting', emoji: '🖼️', enhancer: 'classic oil painting style, visible brushstrokes, rich textures, warm lighting' },
-  minimalist:   { label: 'Minimalist', emoji: '◻️', enhancer: 'minimalist vector art, clean flat design, simple shapes, limited color palette' },
-  watercolor:   { label: 'Watercolor', emoji: '🎨', enhancer: 'soft watercolor painting, ethereal feel, gentle color bleeds, artistic style' },
-};
 
 const QTYPE_META = {
   multiple_choice: {
@@ -99,6 +93,7 @@ export default function QuickAddCardModal({ open, onClose, deckId, deck, activeC
   const [imagePanel, setImagePanel] = useState(null); // null | 'search' | 'pick' | 'ai'
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiStyle, setAiStyle] = useState('pixel_art');
+  const [aiHumor, setAiHumor] = useState(false);
   const [generatingImage, setGeneratingImage] = useState(false);
 
   // AI suggest whole card
@@ -177,6 +172,7 @@ export default function QuickAddCardModal({ open, onClose, deckId, deck, activeC
     setImageCard(deckUsesImages);
     setImagePanel(null);
     setAiPrompt('');
+    setAiHumor(false);
     setSuggestingCard(false);
     setDifficultyResult(null);
     setOverrideValue('');
@@ -199,8 +195,12 @@ export default function QuickAddCardModal({ open, onClose, deckId, deck, activeC
   const handleGenerateAiImage = async () => {
     if (!aiPrompt.trim()) { toast.error('Enter a description first'); return; }
     setGeneratingImage(true);
-    const enhancer = STYLE_PRESETS[aiStyle]?.enhancer || '';
-    const fullPrompt = `${aiPrompt.trim()}, ${enhancer}. Do not render any text or words. Compose for 3:2 landscape, subject centered, generous margins.`;
+    const fullPrompt = buildAiPrompt({
+      prompt: aiPrompt,
+      styleKey: aiStyle,
+      humor: aiHumor,
+      wordsToExclude: usesBank ? filledChoices : [answer],
+    });
     const { url } = await base44.integrations.Core.GenerateImage({ prompt: fullPrompt });
     setImageUrl(url);
     setImagePanel(null);
@@ -751,6 +751,18 @@ Return:
                                 </button>
                               ))}
                             </div>
+                            <label className="flex items-center gap-2 cursor-pointer select-none">
+                              <div
+                                onClick={() => setAiHumor(v => !v)}
+                                className={cn(
+                                  'relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer',
+                                  aiHumor ? 'bg-primary' : 'bg-muted'
+                                )}
+                              >
+                                <span className={cn('pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform', aiHumor ? 'translate-x-4' : 'translate-x-0')} />
+                              </div>
+                              <span className="text-xs text-muted-foreground">😄 Add a subtle humorous element</span>
+                            </label>
                             <Button type="button" size="sm" onClick={handleGenerateAiImage} disabled={generatingImage} className="gap-1.5 w-full">
                               {generatingImage
                                 ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating…</>
