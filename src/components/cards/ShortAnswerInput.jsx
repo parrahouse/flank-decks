@@ -263,9 +263,9 @@ export default function ShortAnswerInput({
           {verdict.reason && verdict.verdict !== 'correct' &&
         <p style={{ fontSize: 12, color: '#374151', margin: '3px 0 0' }}>{verdict.reason}</p>
         }
-          {committed && verdict.verdict !== 'correct' &&
+          {committed &&
         <p style={{ fontSize: 12, color: '#374151', marginTop: 4 }}>
-              Correct answer: <strong>{card.canonical_answer}</strong>
+              Correct spelling: <strong>{card.canonical_answer}</strong>
               {card.accepted_variants?.length ? ` (also: ${card.accepted_variants.join(', ')})` : ''}
             </p>
         }
