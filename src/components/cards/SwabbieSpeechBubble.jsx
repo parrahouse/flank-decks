@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 const SHOW_DELAY_MS = 700;    // pause before the bubble appears — lets the wrong-answer sound & shake play
@@ -103,6 +103,7 @@ export default function SwabbieSpeechBubble({ open, onClose, explanation, anchor
   const [textDone, setTextDone] = useState(false);
   const [canDismiss, setCanDismiss] = useState(false);
   const [charsPerPage, setCharsPerPage] = useState(0);
+  const contentRef = useRef(null);
 
   const parsed = useMemo(() => {
     const nodes = parseHtml(explanation || '');
@@ -135,32 +136,46 @@ export default function SwabbieSpeechBubble({ open, onClose, explanation, anchor
     return () => clearTimeout(t);
   }, [open]);
 
-  // Measure how many characters fit in 3 lines (monospace Silkscreen), so pages
-  // can be sliced by character count. Runs during the pre-show delay.
+  // Empirically measure how many characters fit on one line: binary-search the
+  // count that keeps a probe (same width, font, line-height, word-break as the
+  // content) at a single line height. This is exact for the real rendered font
+  // and avoids proportional-font / sub-pixel guesswork.
   useEffect(() => {
-    if (!open) return;
+    if (!visible || !contentRef.current) return;
     let cancelled = false;
     (async () => {
       try { await document.fonts.ready; } catch {}
-      if (cancelled) return;
-      const contentWidth = Math.min(300, window.innerWidth - 24) - 28; // card width − border − padding
-      if (contentWidth <= 0) return;
-      const probe = document.createElement('span');
-      probe.style.fontFamily = "'Silkscreen', monospace";
-      probe.style.fontSize = '13px';
-      probe.style.visibility = 'hidden';
+      if (cancelled || !contentRef.current) return;
+      const el = contentRef.current;
+      const cs = window.getComputedStyle(el);
+      const fs = parseFloat(cs.fontSize);
+      const lhNum = parseFloat(cs.lineHeight);
+      // lineHeight may be unitless (e.g. "1.25") — convert to px before comparing.
+      const lh = lhNum > 3 ? lhNum : lhNum * fs;
+      const probe = document.createElement('div');
       probe.style.position = 'absolute';
-      probe.style.whiteSpace = 'pre';
-      probe.textContent = 'M';
-      document.body.appendChild(probe);
-      const charWidth = probe.getBoundingClientRect().width;
-      document.body.removeChild(probe);
-      if (charWidth > 0) {
-        setCharsPerPage(Math.max(1, Math.floor(contentWidth / charWidth)) * LINES_PER_PAGE);
+      probe.style.visibility = 'hidden';
+      probe.style.width = el.clientWidth + 'px';
+      probe.style.fontFamily = cs.fontFamily;
+      probe.style.fontSize = cs.fontSize;
+      probe.style.fontWeight = cs.fontWeight;
+      probe.style.lineHeight = cs.lineHeight;
+      probe.style.letterSpacing = cs.letterSpacing;
+      probe.style.wordBreak = 'break-all';
+      probe.style.whiteSpace = 'normal';
+      el.appendChild(probe);
+      let lo = 1, hi = 300, best = 1;
+      while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        probe.textContent = 'M'.repeat(mid);
+        if (probe.scrollHeight <= lh + 0.5) { best = mid; lo = mid + 1; }
+        else hi = mid - 1;
       }
+      el.removeChild(probe);
+      if (best > 0) setCharsPerPage(best * LINES_PER_PAGE);
     })();
     return () => { cancelled = true; };
-  }, [open]);
+  }, [visible]);
 
   // Reset the typewriter when the page or capacity changes.
   useEffect(() => {
@@ -237,10 +252,15 @@ export default function SwabbieSpeechBubble({ open, onClose, explanation, anchor
               }}
             >
               <div
+                ref={contentRef}
                 className="swabbie-bubble-content"
                 style={{
-                  fontSize: 13, lineHeight: 1.4, color: '#000',
-                  height: 'calc(1.4em * 3)',
+                  // VT323 is a monospace pixel font — character-count pagination is
+                  // exact only with a monospace face; Silkscreen is proportional, so
+                  // an 'M'-based probe under-counts and truncates pages early.
+                  fontFamily: "'VT323', monospace",
+                  fontSize: 18, lineHeight: 1.25, letterSpacing: 'normal', color: '#000',
+                  height: 'calc(1.25em * 3)',
                   overflow: 'hidden',
                   wordBreak: 'break-all',
                 }}
