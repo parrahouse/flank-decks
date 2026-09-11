@@ -609,14 +609,14 @@ export default function StudyCard({
                   )
                 ) : !isTrueFalse && (
                   <button
-                    onClick={canEliminate ? handleEliminate : undefined}
-                    disabled={!canEliminate}
+                    onClick={canEliminate && characterIdle ? handleEliminate : undefined}
+                    disabled={!canEliminate || !characterIdle}
                     title="Eliminate one wrong answer"
                     className={cn(eliminateShake && 'animate-subtle-shake')}
                     style={{
                       color: eliminateUsed ? '#d1d5db' : canEliminate ? '#0165fc' : '#d1d5db',
-                      opacity: eliminateUsed ? 0.4 : 1,
-                      cursor: canEliminate && !eliminateUsed ? 'pointer' : 'not-allowed',
+                      opacity: eliminateUsed ? 0.4 : !characterIdle ? 0.4 : 1,
+                      cursor: canEliminate && !eliminateUsed && characterIdle ? 'pointer' : 'not-allowed',
                       background: 'none', border: 'none', padding: 0,
                       transition: 'opacity 0.3s, color 0.3s',
                     }}
@@ -638,7 +638,8 @@ export default function StudyCard({
                   )}
                   <button
                     onClick={() => { cancelCountdown(); onNext(); }}
-                    style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', position: 'relative' }}
+                    disabled={answered && !characterIdle}
+                    style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: answered && !characterIdle ? 'not-allowed' : 'pointer', opacity: answered && !characterIdle ? 0.4 : 1, transition: 'opacity 0.3s', position: 'relative' }}
                   >
                     <SkipForward style={{ width: 14, height: 14, flexShrink: 0 }} />
                     <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 1, position: 'relative' }}>

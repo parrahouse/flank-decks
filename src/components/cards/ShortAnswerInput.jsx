@@ -300,7 +300,8 @@ export default function ShortAnswerInput({
               }
               onNext && onNext();
             }}
-            style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer' }}>
+            disabled={committed && !characterIdle}
+            style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: committed && !characterIdle ? 'not-allowed' : 'pointer', opacity: committed && !characterIdle ? 0.4 : 1, transition: 'opacity 0.3s' }}>
             
             <SkipForward style={{ width: 14, height: 14 }} />
             <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 1 }}>

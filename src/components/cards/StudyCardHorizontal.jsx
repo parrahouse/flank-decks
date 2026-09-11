@@ -450,9 +450,9 @@ export default function StudyCardHorizontal({
                     </button>
                   )
                 ) : !isTrueFalse && (
-                  <button onClick={canEliminate ? handleEliminate : undefined} disabled={!canEliminate}
+                  <button onClick={canEliminate && characterIdle ? handleEliminate : undefined} disabled={!canEliminate || !characterIdle}
                     className={cn(eliminateShake && 'animate-subtle-shake')}
-                    style={{ color: eliminateUsed ? '#d1d5db' : canEliminate ? '#0165fc' : '#d1d5db', opacity: eliminateUsed ? 0.4 : 1, cursor: canEliminate && !eliminateUsed ? 'pointer' : 'not-allowed', background: 'none', border: 'none', padding: 0, transition: 'opacity 0.3s, color 0.3s' }}
+                    style={{ color: eliminateUsed ? '#d1d5db' : canEliminate ? '#0165fc' : '#d1d5db', opacity: eliminateUsed ? 0.4 : !characterIdle ? 0.4 : 1, cursor: canEliminate && !eliminateUsed && characterIdle ? 'pointer' : 'not-allowed', background: 'none', border: 'none', padding: 0, transition: 'opacity 0.3s, color 0.3s' }}
                   >
                     <Sparkles style={{ width: 18, height: 18 }} />
                   </button>
@@ -481,8 +481,8 @@ export default function StudyCardHorizontal({
                     if (!answered) { onSkip && onSkip(); }
                     else { cancelCountdown(); onNext(); }
                   }}
-                  disabled={!answered && !canSkip}
-                  style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: (!answered && !canSkip) ? 'not-allowed' : 'pointer', opacity: (!answered && !canSkip) ? 0.35 : 1, transition: 'opacity 0.3s', position: 'relative' }}
+                  disabled={(!answered && !canSkip) || (answered && !characterIdle)}
+                  style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: (!answered && !canSkip) || (answered && !characterIdle) ? 'not-allowed' : 'pointer', opacity: (!answered && !canSkip) ? 0.35 : (answered && !characterIdle) ? 0.4 : 1, transition: 'opacity 0.3s', position: 'relative' }}
                 >
                   <SkipForward style={{ width: 14, height: 14, flexShrink: 0 }} />
                   <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2, position: 'relative' }}>
