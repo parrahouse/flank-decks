@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 const SHOW_DELAY_MS = 700;    // pause before the bubble appears — lets the wrong-answer sound & shake play
 const TYPE_TICK_MS = 16;      // ms per revealed character (classic typewriter cadence)
 const BUTTON_SETTLE_MS = 350; // pause after the text finishes before the action button appears
+const EXIT_MS = 220;           // fade-up-and-out dismissal duration (matches the exit transition)
 const LINES_PER_PAGE = 3;
 const FONT_SIZE = 18;          // VT323 main text + buttons
 const LINE_HEIGHT_PX = 21;    // tight pixel line height
@@ -151,6 +152,7 @@ function measurePages(nodes, containerWidth) {
  */
 export default function SwabbieSpeechBubble({ open, onClose, explanation, anchorX, anchorBottom }) {
   const [visible, setVisible] = useState(false);
+  const [displayExplanation, setDisplayExplanation] = useState('');
   const [pages, setPages] = useState([{ from: 0, to: 0 }]);
   const [step, setStep] = useState(0);
   const [revealed, setRevealed] = useState(0);
@@ -159,24 +161,31 @@ export default function SwabbieSpeechBubble({ open, onClose, explanation, anchor
   const contentRef = useRef(null);
 
   const parsed = useMemo(() => {
-    const nodes = parseHtml(explanation || '');
+    const nodes = parseHtml(displayExplanation || '');
     return { nodes, total: nodes.reduce((s, n) => s + countText(n), 0) };
-  }, [explanation]);
+  }, [displayExplanation]);
 
   const safeStep = Math.min(step, pages.length - 1);
   const page = pages[safeStep];
   const isLast = safeStep === pages.length - 1;
 
-  // Pre-show delay so the wrong-answer feedback can play first.
+  // Pre-show delay so the wrong-answer feedback can play first. On close, fade
+  // the bubble up and out (visible=false drives the AnimatePresence exit) while
+  // holding its content; only reset state after the exit animation finishes.
   useEffect(() => {
     if (!open) {
-      setVisible(false); setStep(0); setRevealed(0); setTextDone(false); setCanDismiss(false);
-      setPages([{ from: 0, to: 0 }]);
-      return;
+      setVisible(false);
+      const t = setTimeout(() => {
+        setStep(0); setRevealed(0); setTextDone(false); setCanDismiss(false);
+        setPages([{ from: 0, to: 0 }]);
+        setDisplayExplanation('');
+      }, EXIT_MS);
+      return () => clearTimeout(t);
     }
+    setDisplayExplanation(explanation || '');
     const t = setTimeout(() => setVisible(true), SHOW_DELAY_MS);
     return () => clearTimeout(t);
-  }, [open]);
+  }, [open, explanation]);
 
   // Measure page breaks from the real rendered font once the bubble is visible.
   useEffect(() => {
@@ -204,8 +213,8 @@ export default function SwabbieSpeechBubble({ open, onClose, explanation, anchor
     setCanDismiss(false);
   }, [visible, step, pages]);
 
-  // Reset to the first page when the explanation changes.
-  useEffect(() => { setStep(0); }, [explanation]);
+  // Reset to the first page when the displayed explanation changes.
+  useEffect(() => { setStep(0); }, [displayExplanation]);
 
   // Typewriter ticker — one character per tick until the page's text is shown.
   useEffect(() => {
@@ -222,8 +231,6 @@ export default function SwabbieSpeechBubble({ open, onClose, explanation, anchor
     const t = setTimeout(() => setCanDismiss(true), BUTTON_SETTLE_MS);
     return () => clearTimeout(t);
   }, [textDone, isLast, step]);
-
-  if (!open) return null;
 
   const state = { pos: 0, from: page ? page.from : 0, to: Math.min(revealed, page ? page.to : 0), keyCounter: 0 };
   const { out: rendered } = page ? renderNodes(parsed.nodes, state) : { out: [] };
