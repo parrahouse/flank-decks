@@ -82,7 +82,7 @@ export default function Home() {
     const total = cards.filter((c) => c.deck_id === deckId && !c.deleted).length;
     if (!total) return 0;
     const mastered = cardStats.filter((s) => s.deck_id === deckId && s.mastered).length;
-    return Math.round((mastered / total) * 100);
+    return Math.round(mastered / total * 100);
   };
 
   const savedHoursLeft = (deckId) => {
@@ -126,8 +126,8 @@ export default function Home() {
       if (!q) return true;
       return (
         (d.title || '').toLowerCase().includes(q) ||
-        (d.description || '').toLowerCase().includes(q)
-      );
+        (d.description || '').toLowerCase().includes(q));
+
     });
   }, [decks, search, ownershipFilter, ownedIds]);
 
@@ -190,7 +190,7 @@ export default function Home() {
     <>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">My Decks</h1>
+          <h1 className="text-2xl font-bold tracking-tight [font-family:'Recoleta',_sans-serif]">My Decks</h1>
           <p className="text-muted-foreground text-sm mt-0.5">Create, study and share image flashcard decks.</p>
         </div>
         <div className="flex items-center gap-2">
@@ -222,48 +222,48 @@ export default function Home() {
         <div className="relative flex-1">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search decks by title or description"
-            className="pl-9"
-          />
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search decks by title or description"
+              className="pl-9" />
+            
         </div>
         <div className="flex items-center gap-1 border border-border rounded-md p-0.5 bg-background">
-          {['all', 'owned', 'shared'].map((opt) => (
+          {['all', 'owned', 'shared'].map((opt) =>
             <button
               key={opt}
               onClick={() => setOwnershipFilter(opt)}
-              className={'px-3 py-1 text-xs font-medium rounded transition-colors ' + (ownershipFilter === opt ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground')}
-            >
+              className={'px-3 py-1 text-xs font-medium rounded transition-colors ' + (ownershipFilter === opt ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground')}>
+              
               {opt === 'all' ? 'All' : opt === 'owned' ? 'Mine' : 'Shared'}
             </button>
-          ))}
+            )}
         </div>
       </div>
-      {filteredDecks.length === 0 ? (
-        <p className="text-center text-muted-foreground text-sm py-12">No decks match your filters.</p>
-      ) : (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredDecks.map((deck) =>
-        <DeckCard
-          key={deck.id}
-          deck={deck}
-          cardCount={cardCount(deck.id)}
-          coverUrl={getCoverUrl(deck)}
-          stats={deckStats(deck.id)}
-          masteryPct={deckMasteryPct(deck.id)}
-          savedHoursLeft={savedHoursLeft(deck.id)}
-          onEdit={openEdit}
-          onDelete={(d) => deleteMutation.mutate(d)}
-          onDuplicate={(d) => duplicateMutation.mutate(d)}
-          onShare={(d) => setShareDeck(d)}
-          onSetCover={(d) => setCoverDeck(d)}
-          isShared={!ownedIds.has(deck.id)}
-          onLeave={(d) => leaveMutation.mutate(d)} />
+      {filteredDecks.length === 0 ?
+        <p className="text-center text-muted-foreground text-sm py-12">No decks match your filters.</p> :
 
-        )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredDecks.map((deck) =>
+          <DeckCard
+            key={deck.id}
+            deck={deck}
+            cardCount={cardCount(deck.id)}
+            coverUrl={getCoverUrl(deck)}
+            stats={deckStats(deck.id)}
+            masteryPct={deckMasteryPct(deck.id)}
+            savedHoursLeft={savedHoursLeft(deck.id)}
+            onEdit={openEdit}
+            onDelete={(d) => deleteMutation.mutate(d)}
+            onDuplicate={(d) => duplicateMutation.mutate(d)}
+            onShare={(d) => setShareDeck(d)}
+            onSetCover={(d) => setCoverDeck(d)}
+            isShared={!ownedIds.has(deck.id)}
+            onLeave={(d) => leaveMutation.mutate(d)} />
+
+          )}
         </div>
-      )}
+        }
       </>
       }
 
@@ -314,4 +314,4 @@ export default function Home() {
 
       </>);
 
-      }
+}
