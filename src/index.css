@@ -5,6 +5,29 @@
 
 /* Silkscreen — pixel face for waypoint milestone numbers & .pixel-ui controls */
 @import url('https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap');
+/* base44-workspace-fonts:start */
+@font-face {
+  font-family: 'Recoleta';
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url('https://media.base44.com/files/public/builder-assets/wix-fonts/recoleta-400-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Recoleta';
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url('https://media.base44.com/files/public/builder-assets/wix-fonts/recoleta-700-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Recoleta';
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  src: url('https://media.base44.com/files/public/builder-assets/wix-fonts/recoleta-900-normal.woff2') format('woff2');
+}
+/* base44-workspace-fonts:end */
 
 @tailwind base;
 @tailwind components;
