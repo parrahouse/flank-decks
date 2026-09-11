@@ -19,6 +19,7 @@ import { STUDY_CARD_H } from '@/lib/studyLayout';
 import ShortAnswerInput from './ShortAnswerInput';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import LearnMoreDialog from './LearnMoreDialog';
 import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/useSound';
 import MathRenderer from '@/components/ui/MathRenderer';
@@ -728,17 +729,12 @@ export default function StudyCard({
       </Dialog>
 
       {/* Learn More modal */}
-      <Dialog open={flipped && hasExplanation} onOpenChange={(open) => { if (!open) setFlipped(false); }}>
-        <DialogContent className="max-w-lg">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center shrink-0">
-              <GraduationCap className="w-4 h-4 text-accent-foreground" />
-            </div>
-            <h3 className="font-semibold text-lg">{correctAnswers.join(', ')}</h3>
-          </div>
-          <div className="prose max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: card.explanation }} />
-        </DialogContent>
-      </Dialog>
+      <LearnMoreDialog
+        open={flipped && hasExplanation}
+        onOpenChange={(open) => { if (!open) setFlipped(false); }}
+        title={correctAnswers.join(', ')}
+        explanation={card.explanation}
+      />
 
     </div>
   );
