@@ -250,22 +250,22 @@ export default function StudyCardHorizontal({
   const qtLabel = isTrueFalse ? 'True or False?' : isSelectAll ? 'Multi-Select' : isShortAnswer ? 'Short Answer' : 'Single Select';
 
   const choiceBorderColor = (state) => {
-    if (state === 'correct') return '#00A842';
-    if (state === 'wrong-final') return '#dc2626';
-    if (state === 'first-wrong') return '#f97316';
-    if (state === 'missed-correct') return '#0165fc';
-    if (state === 'eliminated') return '#ccc';
-    if (state === 'selected-pending') return '#0165fc';
-    return '#000';
+    if (state === 'correct') return 'hsl(var(--study-correct))';
+    if (state === 'wrong-final') return 'hsl(var(--study-wrong))';
+    if (state === 'first-wrong') return 'hsl(var(--study-first-wrong))';
+    if (state === 'missed-correct') return 'hsl(var(--study-missed))';
+    if (state === 'eliminated') return 'hsl(var(--study-eliminated))';
+    if (state === 'selected-pending') return 'hsl(var(--study-missed))';
+    return 'hsl(var(--study-choice-border))';
   };
   const choiceBgColor = (state) => {
-    if (state === 'correct') return '#f0fdf4';
-    if (state === 'wrong-final') return '#fef2f2';
-    if (state === 'first-wrong') return '#fff7ed';
-    if (state === 'missed-correct') return '#eff6ff';
-    if (state === 'eliminated') return '#f5f5f5';
-    if (state === 'selected-pending') return '#eff6ff';
-    return '#fff';
+    if (state === 'correct') return 'hsl(var(--study-correct-bg))';
+    if (state === 'wrong-final') return 'hsl(var(--study-wrong-bg))';
+    if (state === 'first-wrong') return 'hsl(var(--study-first-wrong-bg))';
+    if (state === 'missed-correct') return 'hsl(var(--study-missed-bg))';
+    if (state === 'eliminated') return 'hsl(var(--study-eliminated-bg))';
+    if (state === 'selected-pending') return 'hsl(var(--study-missed-bg))';
+    return 'hsl(var(--study-choice-bg))';
   };
 
   const Pane = childVariant ? motion.div : 'div';
@@ -277,7 +277,7 @@ export default function StudyCardHorizontal({
       {/* Image region — 75% of the column. Absent entirely on image-less cards,
           which give the whole column to the question. */}
       {hasImage && (
-        <div style={{ width: '100%', flex: '0 0 75%', minHeight: 0, overflow: 'hidden', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: '100%', flex: '0 0 75%', minHeight: 0, overflow: 'hidden',         backgroundColor: 'hsl(var(--study-image-bg))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <img src={card.image_url} alt="card" style={{ width: '100%', height: '100%', objectFit: card.image_fit || 'cover', objectPosition: (card.image_fit !== 'contain' && card.image_focal_point) ? `${card.image_focal_point.x}% ${card.image_focal_point.y}%` : 'center' }} />
         </div>
       )}
@@ -287,8 +287,8 @@ export default function StudyCardHorizontal({
         width: '100%',
         flex: hasImage ? '0 0 25%' : '1 1 0',
         minHeight: 0,
-        backgroundColor: hintVisible ? '#EEFF41' : '#DFEDF5',
-        borderTop: hasImage ? '1px solid rgba(17,54,86,0.08)' : 'none',
+        backgroundColor: hintVisible ? 'hsl(var(--study-hint-bg))' : 'hsl(var(--study-pane))',
+        borderTop: hasImage ? '1px solid hsl(var(--study-pane-text) / 0.08)' : 'none',
         position: 'relative',
         boxSizing: 'border-box', overflow: 'hidden', transition: 'background-color 0.2s',
       }}>
@@ -299,38 +299,38 @@ export default function StudyCardHorizontal({
           alignItems: hasImage ? 'flex-start' : 'center',
           padding: hasImage ? GEO.qPadImage : GEO.qPadNoImage,
         }}>
-          <p style={{ color: '#113656', fontSize: hasImage ? GEO.qFontImage : GEO.qFontNoImage, fontWeight: 500, lineHeight: 1.35, margin: 0, visibility: hintVisible ? 'hidden' : 'visible' }}>
+          <p style={{ color: 'hsl(var(--study-pane-text))', fontSize: hasImage ? GEO.qFontImage : GEO.qFontNoImage, fontWeight: 500, lineHeight: 1.35, margin: 0, visibility: hintVisible ? 'hidden' : 'visible' }}>
             {card.clue || ''}
           </p>
         </div>
         {hintVisible && note && (
           <div style={{ position: 'absolute', inset: 0, padding: '16px 16px 36px 16px', display: 'flex', alignItems: 'flex-start' }}>
-            <p style={{ color: '#1a237e', fontSize: 'clamp(13px, 1.6vw, 18px)', fontWeight: 500, lineHeight: 1.35, margin: 0 }}>{note}</p>
+            <p style={{ color: 'hsl(var(--study-hint-text))', fontSize: 'clamp(13px, 1.6vw, 18px)', fontWeight: 500, lineHeight: 1.35, margin: 0 }}>{note}</p>
           </div>
         )}
-        <span style={{ position: 'absolute', bottom: 8, left: 16, color: hintVisible ? '#1a237e' : '#113656', fontSize: 13, fontWeight: hintVisible ? 400 : 700, opacity: hintVisible ? 0.7 : 1 }}>
+        <span style={{ position: 'absolute', bottom: 8, left: 16, color: hintVisible ? 'hsl(var(--study-hint-text))' : 'hsl(var(--study-pane-text))', fontSize: 13, fontWeight: hintVisible ? 400 : 700, opacity: hintVisible ? 0.7 : 1 }}>
           {hintVisible ? 'Hint' : `${cardIndex + 1}/${total}`}
         </span>
         {/* Hint button — bottom right of question pane */}
         {hintVisible && note ? (
           // Hint is open + exists: show close and edit buttons
           <div style={{ position: 'absolute', bottom: 6, right: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <button onClick={() => setNoteEditing(true)} title="Edit hint" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1a237e', padding: 0, lineHeight: 0 }}>
+            <button onClick={() => setNoteEditing(true)} title="Edit hint" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'hsl(var(--study-hint-text))', padding: 0, lineHeight: 0 }}>
               <Pencil style={{ width: 15, height: 15 }} />
             </button>
-            <button onClick={() => setHintVisible(false)} title="Close hint" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1a237e', padding: 0, lineHeight: 0 }}>
+            <button onClick={() => setHintVisible(false)} title="Close hint" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'hsl(var(--study-hint-text))', padding: 0, lineHeight: 0 }}>
               <X style={{ width: 16, height: 16 }} />
             </button>
           </div>
         ) : note ? (
           // Hint exists but not visible: show message icon to open it
-          <button onClick={() => setHintVisible(true)} title="View your hint" style={{ position: 'absolute', bottom: 6, right: 12, background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#113656', opacity: 0.6, lineHeight: 0 }}>
-            <MessageCircleQuestion style={{ width: 18, height: 18 }} />
+          <button onClick={() => setHintVisible(true)} title="View your hint" style={{ position: 'absolute', bottom: 6, right: 12, background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'hsl(var(--study-pane-text))', opacity: 0.6, lineHeight: 0 }}>
+              <MessageCircleQuestion style={{ width: 18, height: 18 }} />
           </button>
         ) : (
           // No hint: show + icon to add one
-          <button onClick={() => setNoteEditing(true)} title="Add a hint" style={{ position: 'absolute', bottom: 6, right: 12, background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#113656', opacity: 0.45, lineHeight: 0 }}>
-            <PlusCircle style={{ width: 18, height: 18 }} />
+          <button onClick={() => setNoteEditing(true)} title="Add a hint" style={{ position: 'absolute', bottom: 6, right: 12, background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'hsl(var(--study-pane-text))', opacity: 0.45, lineHeight: 0 }}>
+              <PlusCircle style={{ width: 18, height: 18 }} />
           </button>
         )}
       </div>
@@ -347,7 +347,7 @@ export default function StudyCardHorizontal({
       }}>
         {/* Top row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: GEO.ansTopGap, flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#00A842', fontSize: 20, fontWeight: 500 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'hsl(var(--study-correct))', fontSize: 20, fontWeight: 500 }}>
             <span>{qtLabel}</span>
             {isTrueFalse ? <ToggleLeft style={{ width: 24, height: 24 }} />
               : isSelectAll ? <span style={{ display: 'inline-flex', gap: 2 }}>
@@ -358,7 +358,7 @@ export default function StudyCardHorizontal({
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {!isTrueFalse && !isShortAnswer && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#6b7280', fontSize: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'hsl(var(--muted-foreground))', fontSize: 12 }}>
                 <CopyCheck style={{ width: 13, height: 13 }} />
                 <span>2nd Guess: {secondGuessAllowed ? 'ON' : 'OFF'}</span>
               </div>
@@ -367,7 +367,7 @@ export default function StudyCardHorizontal({
               onClick={() => { const next = !bookmarked; setBookmarked(next); onToggleBookmark && onToggleBookmark(card.id, next); }}
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 0 }}
             >
-              <Bookmark style={{ width: 20, height: 20, fill: bookmarked ? '#d97706' : 'none', color: bookmarked ? '#d97706' : '#9ca3af', strokeWidth: 2 }} />
+              <Bookmark style={{ width: 20, height: 20, fill: bookmarked ? 'hsl(var(--study-partial))' : 'none', color: bookmarked ? 'hsl(var(--study-partial))' : 'hsl(var(--muted-foreground))', strokeWidth: 2 }} />
             </button>
           </div>
         </div>
@@ -408,7 +408,7 @@ export default function StudyCardHorizontal({
                         className={cn('choice-btn', shakingChoice === choice && 'animate-shake')}
                         style={{ flex: 1, height: GEO.tfMaxH, boxSizing: 'border-box', overflow: 'hidden', borderRadius: 10, border: `2px solid ${choiceBorderColor(state)}`, backgroundColor: choiceBgColor(state), display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', cursor: answered ? 'default' : 'pointer', fontSize: GEO.choiceFont, fontWeight: 500, textAlign: 'left', transition: state === 'correct' ? 'none' : 'border-color 0.4s ease 0.15s, background-color 0.4s ease 0.15s' }}
                       >
-                        <span style={{ width: 26, height: 26, borderRadius: 5, flexShrink: 0, backgroundColor: state === 'correct' ? '#00A842' : state === 'wrong-final' ? '#dc2626' : '#000', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>
+                        <span style={{ width: 26, height: 26, borderRadius: 5, flexShrink: 0, backgroundColor: state === 'correct' ? 'hsl(var(--study-correct))' : state === 'wrong-final' ? 'hsl(var(--study-wrong))' : 'hsl(var(--study-badge))', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>
                           {state === 'correct' ? <Check style={{ width: 14, height: 14 }} /> : state === 'wrong-final' ? <X style={{ width: 13, height: 13 }} /> : LETTERS[idx]}
                         </span>
                         {choice}
@@ -425,7 +425,7 @@ export default function StudyCardHorizontal({
                         className={cn('choice-btn', shakingChoice === choice && 'animate-shake')}
                         style={{ width: '100%', flex: '1 1 0', minHeight: 0, maxHeight: GEO.choiceMaxH, boxSizing: 'border-box', overflow: 'hidden', borderRadius: 8, border: `2px solid ${choiceBorderColor(state)}`, backgroundColor: choiceBgColor(state), opacity: state === 'eliminated' || state === 'dim' ? 0.4 : 1, display: 'flex', alignItems: 'center', gap: 8, padding: GEO.choicePad, cursor: answered || state === 'eliminated' ? 'default' : 'pointer', fontSize: GEO.choiceFont, fontWeight: 500, textAlign: 'left', transition: state === 'correct' ? 'none' : 'border-color 0.4s ease 0.15s, background-color 0.4s ease 0.15s, opacity 0.4s ease 0.15s' }}
                       >
-                        <span style={{ width: 26, height: 26, borderRadius: 5, flexShrink: 0, backgroundColor: state === 'correct' ? '#00A842' : state === 'wrong-final' ? '#dc2626' : state === 'missed-correct' ? '#0165fc' : state === 'selected-pending' ? '#0165fc' : '#000', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>
+                        <span style={{ width: 26, height: 26, borderRadius: 5, flexShrink: 0, backgroundColor: state === 'correct' ? 'hsl(var(--study-correct))' : state === 'wrong-final' ? 'hsl(var(--study-wrong))' : state === 'missed-correct' ? 'hsl(var(--study-missed))' : state === 'selected-pending' ? 'hsl(var(--study-missed))' : 'hsl(var(--study-badge))', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>
                           {state === 'correct' || state === 'missed-correct' ? <Check style={{ width: 13, height: 13 }} /> : state === 'wrong-final' ? <X style={{ width: 13, height: 13 }} /> : (isSelectAll && state === 'first-wrong') ? <X style={{ width: 13, height: 13 }} /> : LETTERS[idx]}
                         </span>
                         <span style={{ flex: 1, lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{choice}</span>
@@ -445,14 +445,14 @@ export default function StudyCardHorizontal({
               {!answered && (
                 isSelectAll ? (
                   selectAllPending.size >= 2 && (
-                    <button onClick={handleSelectAllDone} style={{ backgroundColor: '#00A842', color: '#fff', border: 'none', borderRadius: 7, padding: '7px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <button onClick={handleSelectAllDone} style={{ backgroundColor: 'hsl(var(--study-correct))', color: '#fff', border: 'none', borderRadius: 7, padding: '7px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
                       <Check style={{ width: 14, height: 14 }} /> Done
                     </button>
                   )
                 ) : !isTrueFalse && (
                   <button onClick={canEliminate && characterIdle ? handleEliminate : undefined} disabled={!canEliminate || !characterIdle}
                     className={cn(eliminateShake && 'animate-subtle-shake')}
-                    style={{ color: eliminateUsed ? '#d1d5db' : canEliminate ? '#0165fc' : '#d1d5db', opacity: eliminateUsed ? 0.4 : !characterIdle ? 0.4 : 1, cursor: canEliminate && !eliminateUsed && characterIdle ? 'pointer' : 'not-allowed', background: 'none', border: 'none', padding: 0, transition: 'opacity 0.3s, color 0.3s' }}
+                    style={{ color: eliminateUsed ? 'hsl(var(--study-disabled))' : canEliminate ? 'hsl(var(--study-missed))' : 'hsl(var(--study-disabled))', opacity: eliminateUsed ? 0.4 : !characterIdle ? 0.4 : 1, cursor: canEliminate && !eliminateUsed && characterIdle ? 'pointer' : 'not-allowed', background: 'none', border: 'none', padding: 0, transition: 'opacity 0.3s, color 0.3s' }}
                   >
                     <Sparkles style={{ width: 18, height: 18 }} />
                   </button>
@@ -461,8 +461,8 @@ export default function StudyCardHorizontal({
             </div>
 
             {/* Action row — reserved fixed slot; Learn More space reserved via visibility */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: GEO.ansRowGap, paddingTop: GEO.ansRowGap, borderTop: '1px solid #E5E5E5', height: GEO.ansActionH, flexShrink: 0, boxSizing: 'border-box', overflow: 'hidden' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, backgroundColor: '#F5F5F0', borderRadius: 18, padding: '5px 12px', fontSize: 12, flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: GEO.ansRowGap, paddingTop: GEO.ansRowGap, borderTop: '1px solid hsl(var(--border))', height: GEO.ansActionH, flexShrink: 0, boxSizing: 'border-box', overflow: 'hidden' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, backgroundColor: 'hsl(var(--study-mastery-bg))', borderRadius: 18, padding: '5px 12px', fontSize: 12, flexShrink: 0 }}>
                 <Glasses style={{ width: 17, height: 17, flexShrink: 0 }} />
                 <span>Mastery: <strong>{masteryPct !== null ? `${masteryPct}%` : '--'}</strong></span>
                 <span>Studied: <strong>{timesStudied !== null ? timesStudied : '--'}</strong></span>
@@ -472,7 +472,7 @@ export default function StudyCardHorizontal({
                   <div style={{ visibility: answered ? 'visible' : 'hidden', display: 'flex', alignItems: 'center' }}>
                     <button onClick={() => { if (!characterIdle) return; onShowLearnMore && onShowLearnMore(card.explanation, correctAnswers.join(', ')); cancelCountdown(); }} disabled={!characterIdle} style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: characterIdle ? 'pointer' : 'not-allowed', opacity: characterIdle ? 1 : 0.4, transition: 'opacity 0.3s' }}>
                       <GraduationCap style={{ width: 14, height: 14, flexShrink: 0 }} />
-                      <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2 }}>Learn More</span>
+                      <span style={{ borderBottom: '1.5px dotted hsl(var(--muted-foreground))', paddingBottom: 2 }}>Learn More</span>
                     </button>
                   </div>
                 )}
@@ -485,9 +485,9 @@ export default function StudyCardHorizontal({
                   style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: (!answered && !canSkip) || (answered && !characterIdle) ? 'not-allowed' : 'pointer', opacity: (!answered && !canSkip) ? 0.35 : (answered && !characterIdle) ? 0.4 : 1, transition: 'opacity 0.3s', position: 'relative' }}
                 >
                   <SkipForward style={{ width: 14, height: 14, flexShrink: 0 }} />
-                  <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 2, position: 'relative' }}>
+                  <span style={{ borderBottom: '1.5px dotted hsl(var(--muted-foreground))', paddingBottom: 2, position: 'relative' }}>
                     {countdown !== null && (
-                      <span style={{ position: 'absolute', bottom: 0, left: 0, height: '1.5px', backgroundColor: '#555', width: `${((COUNTDOWN_SECS - countdown + 1) / COUNTDOWN_SECS) * 100}%`, transition: 'width 1s linear' }} />
+                      <span style={{ position: 'absolute', bottom: 0, left: 0, height: '1.5px', backgroundColor: 'hsl(var(--muted-foreground))', width: `${((COUNTDOWN_SECS - countdown + 1) / COUNTDOWN_SECS) * 100}%`, transition: 'width 1s linear' }} />
                     )}
                     {answered ? (isLast ? 'Finish' : 'Next') : 'Skip'}
                   </span>

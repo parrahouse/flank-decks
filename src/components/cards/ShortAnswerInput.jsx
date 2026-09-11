@@ -175,10 +175,10 @@ export default function ShortAnswerInput({
     // Enter alone = newline (default textarea behaviour — do nothing)
   };
 
-  const verdictColor = !verdict ? '#6b7280' :
-  verdict.verdict === 'correct' ? '#00A842' :
-  verdict.verdict === 'partial' ? '#d97706' :
-  '#dc2626';
+  const verdictColor = !verdict ? 'hsl(var(--muted-foreground))' :
+  verdict.verdict === 'correct' ? 'hsl(var(--study-correct))' :
+  verdict.verdict === 'partial' ? 'hsl(var(--study-partial))' :
+  'hsl(var(--study-wrong))';
 
   const isRetry = firstWrongText !== null && !committed;
 
@@ -203,14 +203,14 @@ export default function ShortAnswerInput({
             padding: '10px 44px 10px 14px',
             fontSize: 16,
             lineHeight: '24px',
-            border: `2px solid ${isRetry ? '#f97316' : committed && verdict ? verdictColor : '#000'}`,
+            border: `2px solid ${isRetry ? 'hsl(var(--study-first-wrong))' : committed && verdict ? verdictColor : 'hsl(var(--study-choice-border))'}`,
             borderRadius: 8,
             outline: 'none',
             backgroundColor: committed && verdict ?
-            verdict.verdict === 'correct' ? '#f0fdf4' :
-            verdict.verdict === 'partial' ? '#fffbeb' :
-            '#fef2f2' :
-            '#fff',
+            verdict.verdict === 'correct' ? 'hsl(var(--study-correct-bg))' :
+            verdict.verdict === 'partial' ? 'hsl(var(--study-partial-bg))' :
+            'hsl(var(--study-wrong-bg))' :
+            'hsl(var(--study-choice-bg))',
             transition: 'border-color 0.3s, background-color 0.3s',
             fontFamily: 'inherit',
             opacity: committed ? 0.85 : 1
@@ -225,7 +225,7 @@ export default function ShortAnswerInput({
           style={{
             position: 'absolute', right: 8, bottom: 16,
             width: 28, height: 28,
-            background: response.trim() && !grading ? '#000' : '#d1d5db',
+            background: response.trim() && !grading ? 'hsl(var(--study-badge))' : 'hsl(var(--study-disabled))',
             border: 'none', borderRadius: 6,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: response.trim() && !grading ? 'pointer' : 'not-allowed',
@@ -244,27 +244,27 @@ export default function ShortAnswerInput({
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
       {/* Status / feedback */}
       {grading &&
-      <p style={{ fontSize: 12, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 4 }}>
+      <p style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))', display: 'flex', alignItems: 'center', gap: 4 }}>
           <Loader2 style={{ width: 12, height: 12 }} className="animate-spin" /> Checking…
         </p>
       }
 
       {aiUnavailable &&
-      <p style={{ fontSize: 12, color: '#d97706' }}>
+      <p style={{ fontSize: 12, color: 'hsl(var(--study-partial))' }}>
           ⚠ AI grading was unavailable — answer marked incorrect.
         </p>
       }
 
       {verdict &&
-      <div style={{ padding: '8px 12px', borderRadius: 7, backgroundColor: verdictColor + '18', border: `1.5px solid ${verdictColor}22` }}>
+      <div style={{ padding: '8px 12px', borderRadius: 7, backgroundColor: verdict.verdict === 'correct' ? 'hsl(var(--study-correct-bg))' : verdict.verdict === 'partial' ? 'hsl(var(--study-partial-bg))' : 'hsl(var(--study-wrong-bg))', border: `1.5px solid ${verdictColor}` }}>
           <p style={{ fontSize: 14, fontWeight: 600, color: verdictColor, margin: 0 }}>
             {verdict.verdict === 'correct' ? '✓ Correct' : verdict.verdict === 'partial' ? '~ Partial credit' : isRetry ? '✗ Try again' : '✗ Incorrect'}
           </p>
           {verdict.reason && verdict.verdict !== 'correct' &&
-        <p style={{ fontSize: 12, color: '#374151', margin: '3px 0 0' }}>{verdict.reason}</p>
+        <p style={{ fontSize: 12, color: 'hsl(var(--foreground))', margin: '3px 0 0' }}>{verdict.reason}</p>
         }
           {committed &&
-        <p style={{ fontSize: 12, color: '#374151', marginTop: 4 }}>
+        <p style={{ fontSize: 12, color: 'hsl(var(--foreground))', marginTop: 4 }}>
               Correct spelling: <strong>{card.canonical_answer}</strong>
               {card.accepted_variants?.length ? ` (also: ${card.accepted_variants.join(', ')})` : ''}
             </p>
@@ -273,7 +273,7 @@ export default function ShortAnswerInput({
       }
 
       {isRetry &&
-      <p style={{ fontSize: 12, color: '#f97316' }}>
+      <p style={{ fontSize: 12, color: 'hsl(var(--study-first-wrong))' }}>
           <RotateCcw style={{ width: 12, height: 12, display: 'inline', marginRight: 4 }} />
           One more try.
         </p>
@@ -282,15 +282,15 @@ export default function ShortAnswerInput({
       </div>
 
       {/* Action row — pinned to the bottom of the fixed pane */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, paddingTop: 8, borderTop: '1px solid #E5E5E5', flexShrink: 0 }}>
-        <p style={{ fontSize: 12, color: '#6b7280', margin: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, paddingTop: 8, borderTop: '1px solid hsl(var(--border))', flexShrink: 0 }}>
+        <p style={{ fontSize: 12, color: 'hsl(var(--muted-foreground))', margin: 0 }}>
           {!committed ? 'Cmd/Ctrl+Enter to submit' : ''}
         </p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           {committed && hasExplanation &&
           <button onClick={() => { if (!characterIdle) return; onShowExplanation && onShowExplanation(); }} disabled={!characterIdle} style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: characterIdle ? 'pointer' : 'not-allowed', opacity: characterIdle ? 1 : 0.4, transition: 'opacity 0.3s' }}>
               <GraduationCap style={{ width: 14, height: 14 }} />
-              <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 1 }}>Learn More</span>
+              <span style={{ borderBottom: '1.5px dotted hsl(var(--muted-foreground))', paddingBottom: 1 }}>Learn More</span>
             </button>
           }
           <button
@@ -304,7 +304,7 @@ export default function ShortAnswerInput({
             style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: committed && !characterIdle ? 'not-allowed' : 'pointer', opacity: committed && !characterIdle ? 0.4 : 1, transition: 'opacity 0.3s' }}>
             
             <SkipForward style={{ width: 14, height: 14 }} />
-            <span style={{ borderBottom: '1.5px dotted #555', paddingBottom: 1 }}>
+            <span style={{ borderBottom: '1.5px dotted hsl(var(--muted-foreground))', paddingBottom: 1 }}>
               {committed ? isLast ? 'Finish' : 'Next' : 'Skip'}
             </span>
           </button>
