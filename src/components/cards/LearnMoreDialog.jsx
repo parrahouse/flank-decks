@@ -3,7 +3,7 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { GraduationCap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const DELAY_MS = 3000;
+const DELAY_MS = 4500;
 
 /**
  * "Learn More" explanation dialog.
@@ -35,9 +35,9 @@ export default function LearnMoreDialog({ open, onOpenChange, title, explanation
         <DialogPrimitive.Overlay
           className="fixed inset-0 z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
           style={{
-            backgroundColor: 'rgba(34, 197, 94, 0.92)',
+            backgroundColor: 'rgb(167, 201, 177)',
             backgroundImage:
-              'radial-gradient(circle, rgba(255,255,255,0.18) 1px, transparent 1.5px)',
+              'radial-gradient(circle, rgba(255,255,255,0.14) 1px, transparent 1.5px)',
             backgroundSize: '14px 14px',
           }}
         />
