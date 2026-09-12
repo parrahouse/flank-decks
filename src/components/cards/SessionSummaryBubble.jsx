@@ -77,7 +77,7 @@ export default function SessionSummaryBubble({ open, anchorX, anchorBottom, stat
     backgroundColor: '#000',
     color: '#fff',
     border: 'none',
-    padding: '4px 14px',
+    padding: '4px 4px',
     cursor: 'pointer',
     letterSpacing: '0.02em',
   };
