@@ -143,7 +143,7 @@ export default function StudySession() {
   const [characterIdle, setCharacterIdle] = useState(true);
   const speaking = learnMore != null;
   const handleCharacterAnchor = useCallback((anchor) => {
-    setCharacterAnchor((prev) => prev.x === anchor.x && prev.bottom === anchor.bottom ? prev : anchor);
+    setCharacterAnchor((prev) => prev.x === anchor.x && prev.bottom === anchor.bottom && prev.width === anchor.width ? prev : anchor);
   }, []);
   const handleShowLearnMore = useCallback((explanation, title) => {
     setLearnMore({ explanation, title });

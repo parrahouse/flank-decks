@@ -686,7 +686,7 @@ export default function ProgressGameBand({
   // Report the character's screen position so the Learn More bubble can anchor to it.
   useEffect(() => {
     if (!onCharacterAnchor) return;
-    onCharacterAnchor({ x: charScreenX, bottom: anchorBottom });
+    onCharacterAnchor({ x: charScreenX, bottom: anchorBottom, width: W });
   }, [charScreenX, anchorBottom, speaking, onCharacterAnchor]);
 
   // Report idle/not-idle so the parent can gate the manual 'Learn More' link —

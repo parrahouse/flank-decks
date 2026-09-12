@@ -38,7 +38,7 @@ function articleFor(num) {
  * and a light-gray scrolling bar cycles through session stats.
  * Appears automatically when the celebration loop starts (characterIdle).
  */
-export default function SessionSummaryBubble({ open, anchorX, anchorBottom, stats, onGetNerdy, onReviewMissed, hasMissed }) {
+export default function SessionSummaryBubble({ open, anchorX, anchorBottom, anchorWidth, stats, onGetNerdy, onReviewMissed, hasMissed }) {
   const [visible, setVisible] = useState(false);
   const [statIndex, setStatIndex] = useState(0);
 
@@ -67,8 +67,8 @@ export default function SessionSummaryBubble({ open, anchorX, anchorBottom, stat
     return () => clearTimeout(t);
   }, [visible, statIndex, statLines]);
 
-  // Anchor to the right edge of the progress band with a little padding.
-  const bottomPx = (anchorBottom || 0) - 40;
+  // Pin to the character: 64px between the character's right edge and the bubble's left edge.
+  const leftPx = (anchorX || 0) + (anchorWidth || 0) + 64;
 
   const buttonStyle = {
     fontFamily: "'VT323', monospace",
@@ -93,7 +93,7 @@ export default function SessionSummaryBubble({ open, anchorX, anchorBottom, stat
           transition={{ duration: 0.2, ease: 'easeOut' }}
           className="absolute z-20"
           style={{
-            right: 16,
+            left: `clamp(16px, ${leftPx}px, calc(100% - 241px))`,
             bottom: 24,
             width: 225,
             display: 'flex',
