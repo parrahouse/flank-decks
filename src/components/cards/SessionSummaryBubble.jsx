@@ -7,7 +7,7 @@ const STAT_TRANSITION_MS = 400;
 const EXIT_MS = 220;
 
 const HEADER_FONT = 35;
-const SUB_FONT = 18;
+const SUB_FONT = 16;
 const STAT_FONT = 18;
 
 const PIXEL_CLIP = 'polygon(0 2px, 2px 2px, 2px 0, calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px))';
