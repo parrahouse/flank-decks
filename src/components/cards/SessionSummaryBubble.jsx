@@ -172,7 +172,7 @@ export default function SessionSummaryBubble({ open, anchorX, anchorBottom, stat
           </div>
 
           {/* Action buttons — horizontally aligned, centered */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 1, marginTop: 6, minHeight: 28 }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 5, marginTop: 6, minHeight: 28 }}>
             {hasMissed && (
               <button onClick={onReviewMissed} style={buttonStyle}>
                 Review Mistakes
