@@ -119,7 +119,7 @@ export default function SessionSummaryBubble({ open, anchorX, anchorBottom, stat
               fontFamily: "'VT323', monospace",
               fontSize: HEADER_FONT,
               lineHeight: '32px',
-              fontWeight: 700,
+              fontWeight: 500,
               color: '#000',
               textAlign: 'center',
               padding: '12px 12px 2px',
