@@ -710,6 +710,18 @@ export default function StudySession() {
   const maxPoints = shuffledCards.reduce((s, c) => s + (c.point_value ?? 20), 0);
   const pct = maxPoints > 0 ? Math.round(totalPoints / maxPoints * 100) : 0;
   const missedCount = shuffledCards.filter((c, i) => !(scores[i] && CORRECT_KEYS.has(scores[i].key))).length;
+  const correctCount = scores.filter((s) => s && CORRECT_KEYS.has(s.key)).length;
+  const longestWrongStreak = (() => {
+    let max = 0, cur = 0;
+    for (const s of scores) {
+      if (s && !CORRECT_KEYS.has(s.key)) { cur++; max = Math.max(max, cur); } else { cur = 0; }
+    }
+    return max;
+  })();
+  const avgAnswerMs = (() => {
+    const times = answerTimes.filter((t) => t != null);
+    return times.length ? times.reduce((s, t) => s + t, 0) / times.length : null;
+  })();
   const highScore = pastSessions.length > 0 ?
   Math.max(...pastSessions.map((s) => s.total_points || 0)) :
   0;
@@ -1242,7 +1254,7 @@ export default function StudySession() {
           onClose={() => setSummaryDismissed(true)}
           anchorX={characterAnchor.x}
           anchorBottom={characterAnchor.bottom}
-          stats={{ pct, totalPoints, maxPoints, bestStreak, durationMs: completionDurationMs }}
+          stats={{ pct, correctCount, totalCards: shuffledCards.length, bestStreak, longestWrongStreak, durationMs: completionDurationMs, avgAnswerMs }}
           onGetNerdy={() => navigate(`/stats/${deckId}`)}
           onReviewMissed={reviewMissed}
           hasMissed={missedCount > 0} />

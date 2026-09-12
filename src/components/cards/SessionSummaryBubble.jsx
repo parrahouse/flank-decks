@@ -1,18 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X } from 'lucide-react';
 
 const SHOW_DELAY_MS = 400;
-const TYPE_TICK_MS = 16;
-const BUTTON_SETTLE_MS = 350;
+const STAT_HOLD_MS = 2600;   // total time each stat is shown (includes transition)
+const STAT_TRANSITION_MS = 400;
 const EXIT_MS = 220;
-const FONT_SIZE = 18;
-const LINE_HEIGHT_PX = 21;
-const LINES = 6;
+
+const HEADER_FONT = 28;
+const SUB_FONT = 18;
+const STAT_FONT = 18;
 
 const PIXEL_CLIP = 'polygon(0 2px, 2px 2px, 2px 0, calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px))';
-
-const CURSOR_CSS = `.swabbie-summary-cursor { display: inline-block; width: 7px; height: 13px; background: #000; margin-left: 3px; vertical-align: -2px; animation: swabbie-summary-blink 0.7s steps(2, start) infinite; } @keyframes swabbie-summary-blink { 50% { opacity: 0; } }`;
 
 function fmtMs(ms) {
   if (ms == null) return '—';
@@ -20,59 +18,62 @@ function fmtMs(ms) {
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
-/**
- * SessionSummaryBubble — end-of-session stats spoken by the Swabbie character.
- * Same pixel-art shell as SwabbieSpeechBubble, but renders condensed stat lines
- * (score %, points, best streak, duration) with two action buttons:
- * "Get nerdy" (navigate to full stats) and "Review missed answers" (restart with
- * only the wrong/skipped cards). Single-page, typewriter effect, no pagination.
- */
-export default function SessionSummaryBubble({ open, onClose, anchorX, anchorBottom, stats, onGetNerdy, onReviewMissed, hasMissed }) {
-  const [visible, setVisible] = useState(false);
-  const [revealed, setRevealed] = useState(0);
-  const [textDone, setTextDone] = useState(false);
-  const [canDismiss, setCanDismiss] = useState(false);
+function quipForPct(pct) {
+  if (pct >= 100) return 'Perfect!';
+  if (pct >= 90) return 'Outstanding!';
+  if (pct >= 80) return 'Not bad!';
+  if (pct >= 70) return 'Solid effort!';
+  if (pct >= 60) return 'Keep at it!';
+  return 'Every try counts!';
+}
 
-  const text = useMemo(() => {
-    const { pct, totalPoints, maxPoints, bestStreak, durationMs } = stats || {};
-    return `SESSION COMPLETE!\n\nSCORE: ${pct ?? 0}%\nPOINTS: ${(totalPoints ?? 0).toFixed(0)} / ${maxPoints ?? 0}\nBEST STREAK: ${bestStreak ?? 0}\nTIME: ${fmtMs(durationMs)}`;
-  }, [stats]);
+function articleFor(num) {
+  const s = String(num);
+  return s.startsWith('8') || num === 11 || num === 18 ? 'an' : 'a';
+}
+
+/**
+ * SessionSummaryBubble — end-of-session stats card in pixel-art style.
+ * Header shows the score, sub-header shows correct/total with a quip,
+ * and a light-gray scrolling bar cycles through session stats.
+ * Appears automatically when the celebration loop starts (characterIdle).
+ */
+export default function SessionSummaryBubble({ open, anchorX, anchorBottom, stats, onGetNerdy, onReviewMissed, hasMissed }) {
+  const [visible, setVisible] = useState(false);
+  const [statIndex, setStatIndex] = useState(0);
+
+  const { pct = 0, correctCount = 0, totalCards = 0, bestStreak = 0, longestWrongStreak = 0, durationMs = null, avgAnswerMs = null } = stats || {};
+
+  const statLines = useMemo(() => [
+    `Best Streak: ${bestStreak}`,
+    `Longest Wrong Streak: ${longestWrongStreak}`,
+    `Study Time: ${fmtMs(durationMs)}`,
+    `Avg Answer: ${fmtMs(avgAnswerMs)}`,
+  ], [bestStreak, longestWrongStreak, durationMs, avgAnswerMs]);
 
   useEffect(() => {
     if (!open) {
       setVisible(false);
-      const t = setTimeout(() => {
-        setRevealed(0); setTextDone(false); setCanDismiss(false);
-      }, EXIT_MS);
-      return () => clearTimeout(t);
+      setStatIndex(0);
+      return;
     }
     const t = setTimeout(() => setVisible(true), SHOW_DELAY_MS);
     return () => clearTimeout(t);
   }, [open]);
 
   useEffect(() => {
-    if (!visible) return;
-    if (revealed >= text.length) { setTextDone(true); return; }
-    const t = setTimeout(() => setRevealed((r) => Math.min(text.length, r + 1)), TYPE_TICK_MS);
+    if (!visible || statLines.length <= 1) return;
+    const t = setTimeout(() => setStatIndex((i) => (i + 1) % statLines.length), STAT_HOLD_MS);
     return () => clearTimeout(t);
-  }, [visible, revealed, text]);
-
-  useEffect(() => {
-    if (!textDone) { setCanDismiss(false); return; }
-    const t = setTimeout(() => setCanDismiss(true), BUTTON_SETTLE_MS);
-    return () => clearTimeout(t);
-  }, [textDone]);
+  }, [visible, statIndex, statLines]);
 
   // Position to the RIGHT of the character, vertically centered on it.
-  // anchorBottom = top of the character sprite; the band container is too short
-  // to fit the bubble above (it breaks out the top of the window), so we use
-  // the open space to the right where the user confirmed there's room.
   const leftPx = (anchorX || 0) + 48;
   const bottomPx = (anchorBottom || 0) - 40;
 
   const buttonStyle = {
     fontFamily: "'VT323', monospace",
-    fontSize: FONT_SIZE,
+    fontSize: STAT_FONT,
     lineHeight: '21px',
     backgroundColor: '#000',
     color: '#fff',
@@ -82,96 +83,109 @@ export default function SessionSummaryBubble({ open, onClose, anchorX, anchorBot
     letterSpacing: '0.02em',
   };
 
-  const displayText = text.slice(0, revealed);
-
   return (
-    <>
-      <style>{CURSOR_CSS}</style>
-      <AnimatePresence>
-        {visible && (
-          <motion.div
-            key="summary-bubble"
-            initial={{ opacity: 0, y: 8, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="absolute z-20"
+    <AnimatePresence>
+      {visible && (
+        <motion.div
+          key="summary-bubble"
+          initial={{ opacity: 0, y: 8, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+          className="absolute z-20"
+          style={{
+            left: `clamp(16px, ${leftPx}px, calc(100% - 316px))`,
+            bottom: bottomPx,
+            width: 300,
+            maxWidth: 'calc(100vw - 24px)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'stretch',
+            pointerEvents: 'auto',
+          }}
+        >
+          <div
+            className="pixel-ui"
             style={{
-              left: `clamp(16px, ${leftPx}px, calc(100% - 316px))`,
-              bottom: bottomPx,
-              width: 300,
-              maxWidth: 'calc(100vw - 24px)',
+              backgroundColor: '#fff',
+              border: '2px solid #000',
               display: 'flex',
               flexDirection: 'column',
-              alignItems: 'stretch',
-              pointerEvents: 'auto',
+              clipPath: PIXEL_CLIP,
+              position: 'relative',
+              overflow: 'hidden',
             }}
           >
-            <div
-              className="pixel-ui"
-              style={{
-                backgroundColor: '#fff',
-                border: '2px solid #000',
-                padding: '10px 12px 6px',
-                display: 'flex',
-                flexDirection: 'column',
-                clipPath: PIXEL_CLIP,
-                position: 'relative',
-              }}
-            >
-              <button
-                onClick={onClose}
-                style={{
-                  position: 'absolute', top: 4, right: 6,
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  padding: 0, lineHeight: 0,
-                }}
-              >
-                <X style={{ width: 14, height: 14, color: '#000' }} />
-              </button>
-
-              <div
-                style={{
-                  fontFamily: "'VT323', monospace",
-                  fontSize: FONT_SIZE,
-                  lineHeight: `${LINE_HEIGHT_PX}px`,
-                  color: '#000',
-                  whiteSpace: 'pre-wrap',
-                  height: LINES * LINE_HEIGHT_PX,
-                  overflow: 'hidden',
-                }}
-              >
-                {displayText}
-                {!textDone && <span className="swabbie-summary-cursor" />}
-              </div>
+            {/* Header — "You Made an 80" */}
+            <div style={{
+              fontFamily: "'VT323', monospace",
+              fontSize: HEADER_FONT,
+              lineHeight: '32px',
+              fontWeight: 700,
+              color: '#000',
+              textAlign: 'center',
+              padding: '12px 12px 2px',
+            }}>
+              You Made {articleFor(pct)} {pct}
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 6, minHeight: 28 }}>
-              <AnimatePresence>
-                {canDismiss && (
-                  <motion.div
-                    key="summary-buttons"
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 8 }}
-                    transition={{ duration: 0.3, ease: 'easeOut' }}
-                    style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}
-                  >
-                    <button onClick={onGetNerdy} style={buttonStyle}>
-                      Get nerdy
-                    </button>
-                    {hasMissed && (
-                      <button onClick={onReviewMissed} style={buttonStyle}>
-                        Review missed answers
-                      </button>
-                    )}
-                  </motion.div>
-                )}
+            {/* Sub-header — "That's 8 for 10 — not bad!" */}
+            <div style={{
+              fontFamily: "'VT323', monospace",
+              fontSize: SUB_FONT,
+              lineHeight: '21px',
+              color: '#000',
+              textAlign: 'center',
+              padding: '0 12px 10px',
+            }}>
+              That's {correctCount} for {totalCards} — {quipForPct(pct)}
+            </div>
+
+            {/* Scrolling stats bar — light gray background */}
+            <div style={{
+              backgroundColor: '#E0E0E0',
+              borderTop: '2px solid #000',
+              padding: '6px 12px',
+              minHeight: 30,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+            }}>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={statIndex}
+                  initial={{ opacity: 0, x: 30 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -30 }}
+                  transition={{ duration: STAT_TRANSITION_MS / 1000, ease: 'easeOut' }}
+                  style={{
+                    fontFamily: "'VT323', monospace",
+                    fontSize: STAT_FONT,
+                    lineHeight: '21px',
+                    color: '#000',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {statLines[statIndex]}
+                </motion.div>
               </AnimatePresence>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
+          </div>
+
+          {/* Action buttons — horizontally aligned, centered */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 6, minHeight: 28 }}>
+            {hasMissed && (
+              <button onClick={onReviewMissed} style={buttonStyle}>
+                Review Mistakes
+              </button>
+            )}
+            <button onClick={onGetNerdy} style={buttonStyle}>
+              Get Nerdy
+            </button>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
