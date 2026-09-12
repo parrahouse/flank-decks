@@ -122,7 +122,7 @@ export default function SessionSummaryBubble({ open, anchorX, anchorBottom, stat
               fontWeight: 500,
               color: '#000',
               textAlign: 'center',
-              padding: '12px 12px 2px',
+              padding: '2px 2px 2px',
             }}>
               You Made {articleFor(pct)} {pct}
             </div>
