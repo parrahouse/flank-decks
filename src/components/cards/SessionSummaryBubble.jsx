@@ -68,7 +68,7 @@ export default function SessionSummaryBubble({ open, anchorX, anchorBottom, anch
   }, [visible, statIndex, statLines]);
 
   // Pin to the character: 64px between the character's right edge and the bubble's left edge.
-  const leftPx = (anchorX || 0) + (anchorWidth || 0) + 64;
+  const leftPx = (anchorX || 0) + (anchorWidth || 0) + 32;
 
   const buttonStyle = {
     fontFamily: "'VT323', monospace",
