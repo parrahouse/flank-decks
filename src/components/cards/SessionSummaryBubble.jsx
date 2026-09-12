@@ -6,7 +6,7 @@ const STAT_HOLD_MS = 2600;   // total time each stat is shown (includes transiti
 const STAT_TRANSITION_MS = 400;
 const EXIT_MS = 220;
 
-const HEADER_FONT = 28;
+const HEADER_FONT = 35;
 const SUB_FONT = 18;
 const STAT_FONT = 18;
 
@@ -118,7 +118,7 @@ export default function SessionSummaryBubble({ open, anchorX, anchorBottom, stat
             <div style={{
               fontFamily: "'VT323', monospace",
               fontSize: HEADER_FONT,
-              lineHeight: '32px',
+              lineHeight: '21px',
               fontWeight: 500,
               color: '#000',
               textAlign: 'center',
@@ -131,7 +131,7 @@ export default function SessionSummaryBubble({ open, anchorX, anchorBottom, stat
             <div style={{
               fontFamily: "'VT323', monospace",
               fontSize: SUB_FONT,
-              lineHeight: '21px',
+              lineHeight: '15px',
               color: '#000',
               textAlign: 'center',
               padding: '0 12px 10px',
