@@ -95,7 +95,7 @@ export default function SessionSummaryBubble({ open, anchorX, anchorBottom, stat
           style={{
             right: 16,
             bottom: 24,
-            width: 300,
+            width: 225,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'stretch',
