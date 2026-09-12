@@ -684,10 +684,13 @@ export default function ProgressGameBand({
   const anchorBottom = CHAR_BOTTOM + W;
 
   // Report the character's screen position so the Learn More bubble can anchor to it.
+  // Include nudgeOffset: the finish-push shifts the character forward by a fixed
+  // amount that the outer translateX doesn't reflect, so the anchor must add it
+  // to land on the character's true on-screen right edge (esp. during celebrate).
   useEffect(() => {
     if (!onCharacterAnchor) return;
-    onCharacterAnchor({ x: charScreenX, bottom: anchorBottom, width: W });
-  }, [charScreenX, anchorBottom, speaking, onCharacterAnchor]);
+    onCharacterAnchor({ x: charScreenX + nudgeOffset, bottom: anchorBottom, width: W });
+  }, [charScreenX, nudgeOffset, anchorBottom, speaking, onCharacterAnchor]);
 
   // Report idle/not-idle so the parent can gate the manual 'Learn More' link —
   // it's only active when the character is stationary (no walk/reaction in flight).
