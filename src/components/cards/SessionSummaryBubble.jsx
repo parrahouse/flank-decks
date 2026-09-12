@@ -18,13 +18,29 @@ function fmtMs(ms) {
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
-function quipForPct(pct) {
-  if (pct >= 100) return 'Perfect!';
-  if (pct >= 90) return 'Outstanding!';
-  if (pct >= 80) return 'Not bad!';
-  if (pct >= 70) return 'Solid effort!';
-  if (pct >= 60) return 'Keep at it!';
-  return 'Every try counts!';
+// Tiered quip library — one is picked at random per session open so repeat
+// plays feel fresh instead of always showing the same line for a given score.
+const QUIPS = {
+  perfect:   ['Perfect!', 'Flawless!', 'Untouchable!', 'Masterclass!', 'Not a single slip!'],
+  outstanding: ['Outstanding!', 'Brilliant!', 'Top marks!', 'Crushed it!', 'Exceptional!'],
+  great:     ['Not bad!', 'Strong run!', 'Well done!', 'Nicely played!', 'Solid work!'],
+  solid:     ['Solid effort!', 'Good going!', 'Steady wins!', 'On the right track!', 'Keeping pace!'],
+  ok:        ['Keep at it!', 'Getting there!', 'Momentum building!', 'Next time!', 'Hang in there!'],
+  low:       ['Every try counts!', 'Onward!', 'Rome wasn\'t built in a day!', 'Keep showing up!', 'Slow and steady!'],
+};
+
+function bandForPct(pct) {
+  if (pct >= 100) return 'perfect';
+  if (pct >= 90)  return 'outstanding';
+  if (pct >= 80)  return 'great';
+  if (pct >= 70)  return 'solid';
+  if (pct >= 60)  return 'ok';
+  return 'low';
+}
+
+function pickQuip(pct, seed) {
+  const pool = QUIPS[bandForPct(pct)] || QUIPS.low;
+  return pool[seed % pool.length];
 }
 
 function articleFor(num) {
@@ -41,6 +57,7 @@ function articleFor(num) {
 export default function SessionSummaryBubble({ open, anchorX, anchorBottom, anchorWidth, stats, onGetNerdy, onReviewMissed, hasMissed }) {
   const [visible, setVisible] = useState(false);
   const [statIndex, setStatIndex] = useState(0);
+  const [quipSeed, setQuipSeed] = useState(0);
 
   const { pct = 0, correctCount = 0, totalCards = 0, bestStreak = 0, longestWrongStreak = 0, durationMs = null, avgAnswerMs = null } = stats || {};
 
@@ -57,6 +74,7 @@ export default function SessionSummaryBubble({ open, anchorX, anchorBottom, anch
       setStatIndex(0);
       return;
     }
+    setQuipSeed(Math.floor(Math.random() * 1000));
     const t = setTimeout(() => setVisible(true), SHOW_DELAY_MS);
     return () => clearTimeout(t);
   }, [open]);
@@ -127,7 +145,7 @@ export default function SessionSummaryBubble({ open, anchorX, anchorBottom, anch
               You Made {articleFor(pct)} {pct}
             </div>
 
-            {/* Sub-header — "That's 8 for 10 — not bad!" */}
+            {/* Sub-header — quip only */}
             <div style={{
               fontFamily: "'VT323', monospace",
               fontSize: SUB_FONT,
@@ -136,7 +154,7 @@ export default function SessionSummaryBubble({ open, anchorX, anchorBottom, anch
               textAlign: 'center',
               padding: '2px 4px 4px',
             }}>
-              That's {correctCount} for {totalCards} — {quipForPct(pct)}
+              {pickQuip(pct, quipSeed)}
             </div>
 
             {/* Scrolling stats bar — light gray background */}
