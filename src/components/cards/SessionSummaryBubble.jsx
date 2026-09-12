@@ -77,7 +77,7 @@ export default function SessionSummaryBubble({ open, anchorX, anchorBottom, stat
     backgroundColor: '#000',
     color: '#fff',
     border: 'none',
-    padding: '4px 4px',
+    padding: '4px 6px',
     cursor: 'pointer',
     letterSpacing: '0.02em',
   };
@@ -122,7 +122,7 @@ export default function SessionSummaryBubble({ open, anchorX, anchorBottom, stat
               fontWeight: 500,
               color: '#000',
               textAlign: 'center',
-              padding: '2px 2px 2px',
+              padding: '6px 2px 4px',
             }}>
               You Made {articleFor(pct)} {pct}
             </div>
