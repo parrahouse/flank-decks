@@ -1254,6 +1254,7 @@ export default function StudySession() {
           onClose={() => setSummaryDismissed(true)}
           anchorX={characterAnchor.x}
           anchorBottom={characterAnchor.bottom}
+          anchorWidth={characterAnchor.width}
           stats={{ pct, correctCount, totalCards: shuffledCards.length, bestStreak, longestWrongStreak, durationMs: completionDurationMs, avgAnswerMs }}
           onGetNerdy={() => navigate(`/stats/${deckId}`)}
           onReviewMissed={reviewMissed}
