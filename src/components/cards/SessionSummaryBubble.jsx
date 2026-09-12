@@ -134,7 +134,7 @@ export default function SessionSummaryBubble({ open, anchorX, anchorBottom, stat
               lineHeight: '15px',
               color: '#000',
               textAlign: 'center',
-              padding: '0 12px 10px',
+              padding: '2px 4px 4px',
             }}>
               That's {correctCount} for {totalCards} — {quipForPct(pct)}
             </div>
@@ -142,7 +142,7 @@ export default function SessionSummaryBubble({ open, anchorX, anchorBottom, stat
             {/* Scrolling stats bar — light gray background */}
             <div style={{
               backgroundColor: '#E0E0E0',
-              borderTop: '2px solid #000',
+              margin: '4px 4px 4px 4px',
               padding: '6px 12px',
               minHeight: 30,
               display: 'flex',
