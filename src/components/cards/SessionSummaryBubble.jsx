@@ -67,8 +67,7 @@ export default function SessionSummaryBubble({ open, anchorX, anchorBottom, stat
     return () => clearTimeout(t);
   }, [visible, statIndex, statLines]);
 
-  // Position to the RIGHT of the character, vertically centered on it.
-  const leftPx = (anchorX || 0) + 48;
+  // Anchor to the right edge of the progress band with a little padding.
   const bottomPx = (anchorBottom || 0) - 40;
 
   const buttonStyle = {
@@ -94,10 +93,9 @@ export default function SessionSummaryBubble({ open, anchorX, anchorBottom, stat
           transition={{ duration: 0.2, ease: 'easeOut' }}
           className="absolute z-20"
           style={{
-            left: `clamp(16px, ${leftPx}px, calc(100% - 316px))`,
-            bottom: bottomPx,
+            right: 16,
+            bottom: 24,
             width: 300,
-            maxWidth: 'calc(100vw - 24px)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'stretch',
