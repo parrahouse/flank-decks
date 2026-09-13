@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Volume2, VolumeX, Info, Trophy, PlayCircle, RefreshCw, Clock, AlertTriangle, Settings, LogOut } from 'lucide-react';
+import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Volume2, VolumeX, Info, Trophy, PlayCircle, RefreshCw, Clock, AlertTriangle, Settings, SlidersVertical, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cardLabel } from '@/lib/utils';
@@ -14,6 +14,7 @@ import ProgressGameBand from '@/components/cards/ProgressGameBand';
 import SwabbieSpeechBubble from '@/components/cards/SwabbieSpeechBubble';
 import SessionSummaryBubble from '@/components/cards/SessionSummaryBubble';
 import LeaveSessionDialog from '@/components/cards/LeaveSessionDialog';
+import DeckInfoTooltip from '@/components/cards/DeckInfoTooltip';
 import HeartsHud from '@/components/cards/HeartsHud';
 import { getSkin, DEFAULT_SKIN_ID, canZombify } from '@/components/cards/skins';
 import StreakCounter from '@/components/cards/StreakCounter';
@@ -1134,7 +1135,14 @@ export default function StudySession() {
       {/* Header section — deck name + settings + end session */}
       <div className="flex items-center justify-between gap-3 px-1 pb-2">
         <div className="min-w-0">
-          <h1 className="text-lg font-semibold text-foreground truncate [font-family:'Recoleta',_sans-serif]">{deck?.title}</h1>
+          <h1 className="text-lg font-semibold text-foreground truncate [font-family:'Recoleta',_sans-serif] flex items-center gap-1.5">
+            <span className="truncate">{deck?.title}</span>
+            <DeckInfoTooltip
+              deck={deck}
+              totalCards={activeCards.length}
+              masteredCount={cardStats.filter((s) => s.mastered).length}
+            />
+          </h1>
           <p className="text-xs mt-0.5">
             {filterMode === 'unmastered' && <span className="text-amber-600">Unmastered only</span>}
             {filterMode === 'bookmarked' && <span className="text-amber-600">Bookmarked only</span>}
@@ -1145,7 +1153,7 @@ export default function StudySession() {
             onClick={() => setFilterChosen(false)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm text-foreground hover:bg-muted transition-colors"
             title="Settings">
-            <Settings className="w-4 h-4" />
+            <SlidersVertical className="w-4 h-4" />
             <span>Settings</span>
           </button>
           <button
