@@ -5,7 +5,7 @@ const NAVY = '#2C4A6F';
 const RED = '#D9534F';
 const GRAY_BORDER = '#CCCCCC';
 const SUBTEXT = '#555555';
-const FONT = "'VT323', monospace";
+const FONT = "'Inter', sans-serif";
 
 const EXIT_ICON = 'https://media.base44.com/images/public/69fd6153088222f7245f34d6/06551a213_Interface-Essential-Signin-Login--Streamline-Pixel.png';
 
@@ -24,38 +24,33 @@ export default function LeaveSessionDialog({ open, onOpenChange, doneCount, tota
             style={{ width: 32, height: 32, imageRendering: 'pixelated' }}
           />
           <p
-            className="uppercase"
-            style={{ fontFamily: FONT, fontSize: 24, lineHeight: 1, color: NAVY }}
+            style={{ fontFamily: FONT, fontSize: 20, fontWeight: 600, lineHeight: 1.2, color: NAVY }}
           >
-            LEAVE SESSION?
+            Leave session?
           </p>
           <p
-            className="uppercase"
-            style={{ fontFamily: FONT, fontSize: 16, lineHeight: 1.2, color: SUBTEXT, whiteSpace: 'pre-line' }}
+            style={{ fontFamily: FONT, fontSize: 14, lineHeight: 1.4, color: SUBTEXT, whiteSpace: 'pre-line' }}
           >
-            {`${doneCount} / ${totalCount} CARDS DONE.\nSAVE TO RESUME WITHIN 24H.`}
+            {`${doneCount} / ${totalCount} cards done.\nSave to resume within 24h.`}
           </p>
           <div className="flex flex-col gap-2 w-full mt-1">
             <button
               onClick={onSave}
-              className="w-full uppercase"
-              style={{ fontFamily: FONT, fontSize: 16, lineHeight: 1.2, color: '#fff', backgroundColor: NAVY, border: `2px solid ${NAVY}`, padding: '6px 0' }}
+              style={{ fontFamily: FONT, fontSize: 14, fontWeight: 500, lineHeight: 1.2, color: '#fff', backgroundColor: NAVY, border: `2px solid ${NAVY}`, padding: '8px 0', borderRadius: 4 }}
             >
-              SAVE &amp; EXIT
+              Save &amp; exit
             </button>
             <button
               onClick={onDiscard}
-              className="w-full uppercase"
-              style={{ fontFamily: FONT, fontSize: 16, lineHeight: 1.2, color: RED, backgroundColor: 'transparent', border: `2px solid ${RED}`, padding: '6px 0' }}
+              style={{ fontFamily: FONT, fontSize: 14, fontWeight: 500, lineHeight: 1.2, color: RED, backgroundColor: 'transparent', border: `2px solid ${RED}`, padding: '8px 0', borderRadius: 4 }}
             >
-              DISCARD &amp; EXIT
+              Discard &amp; exit
             </button>
             <button
               onClick={() => onOpenChange(false)}
-              className="w-full uppercase"
-              style={{ fontFamily: FONT, fontSize: 16, lineHeight: 1.2, color: NAVY, backgroundColor: 'transparent', border: `2px solid ${GRAY_BORDER}`, padding: '6px 0' }}
+              style={{ fontFamily: FONT, fontSize: 14, fontWeight: 500, lineHeight: 1.2, color: NAVY, backgroundColor: 'transparent', border: `2px solid ${GRAY_BORDER}`, padding: '8px 0', borderRadius: 4 }}
             >
-              KEEP GOING
+              Keep going
             </button>
           </div>
         </div>
