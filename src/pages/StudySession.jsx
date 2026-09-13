@@ -177,7 +177,7 @@ export default function StudySession() {
   useEffect(() => {setLearnMore(null);}, [cardIndex, done]);
 
   // Re-arm the summary bubble for the next session whenever a new one starts.
-  useEffect(() => { if (!done) setSummaryDismissed(false); }, [done]);
+  useEffect(() => {if (!done) setSummaryDismissed(false);}, [done]);
 
   // Timing origin: the moment the current question becomes answerable.
   // shuffledCards is a dep because a DEFER swaps the card at the same index.
@@ -432,9 +432,9 @@ export default function StudySession() {
 
 
 
+
           // already studied today, no change
-        } else if (last === yesterday) {newStreak = streak.current_streak + 1;} else {newStreak = 1;}const newLongest = Math.max(streak.longest_streak || 0, newStreak);const newMilestone = [3, 7, 14, 30, 60, 100].filter((m) => newStreak >= m).pop() || 0;await base44.entities.Streak.update(streak.id, { current_streak: newStreak, longest_streak: newLongest,
-            last_study_date: today,
+        } else if (last === yesterday) {newStreak = streak.current_streak + 1;} else {newStreak = 1;}const newLongest = Math.max(streak.longest_streak || 0, newStreak);const newMilestone = [3, 7, 14, 30, 60, 100].filter((m) => newStreak >= m).pop() || 0;await base44.entities.Streak.update(streak.id, { current_streak: newStreak, longest_streak: newLongest, last_study_date: today,
             milestone_reached: Math.max(streak.milestone_reached || 0, newMilestone)
           });
       } else if (currentUser?.id) {
@@ -712,9 +712,9 @@ export default function StudySession() {
   const missedCount = shuffledCards.filter((c, i) => !(scores[i] && CORRECT_KEYS.has(scores[i].key))).length;
   const correctCount = scores.filter((s) => s && CORRECT_KEYS.has(s.key)).length;
   const longestWrongStreak = (() => {
-    let max = 0, cur = 0;
+    let max = 0,cur = 0;
     for (const s of scores) {
-      if (s && !CORRECT_KEYS.has(s.key)) { cur++; max = Math.max(max, cur); } else { cur = 0; }
+      if (s && !CORRECT_KEYS.has(s.key)) {cur++;max = Math.max(max, cur);} else {cur = 0;}
     }
     return max;
   })();
@@ -1167,7 +1167,7 @@ export default function StudySession() {
       {/* Header section — deck name + settings + end session */}
       <div className="flex items-center justify-between gap-3 px-1 pb-2">
         <div className="min-w-0">
-          <h1 className="text-lg font-semibold text-foreground truncate">{deck?.title}</h1>
+          <h1 className="text-lg font-semibold text-foreground truncate [font-family:'Recoleta',_sans-serif]">{deck?.title}</h1>
           <p className="text-xs mt-0.5">
             {filterMode === 'unmastered' && <span className="text-amber-600">Unmastered only</span>}
             {filterMode === 'bookmarked' && <span className="text-amber-600">Bookmarked only</span>}
