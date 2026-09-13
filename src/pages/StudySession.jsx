@@ -1136,7 +1136,7 @@ export default function StudySession() {
       <div className="flex items-center justify-between gap-3 px-1 pb-2">
         <div className="min-w-0">
           <h1 className="text-lg font-semibold text-foreground [font-family:'Recoleta',_sans-serif] flex items-center gap-1.5 min-w-0">
-            <span className="truncate">{deck?.title}</span>
+            <span>{deck?.title}</span>
             <DeckInfoTooltip
               deck={deck}
               totalCards={activeCards.length}
