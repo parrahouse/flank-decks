@@ -365,9 +365,14 @@ export default function DeckBuilder() {
         <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
           {displayedCards.map((card, idx) => (
             <div key={card.id} onClick={() => openEdit(card)} className="group relative bg-card border border-border rounded-xl overflow-hidden hover:shadow-md transition-all cursor-pointer">
-              <div className="bg-muted h-28 flex items-center justify-center overflow-hidden">
+              <div className="bg-muted h-28 flex items-center justify-center overflow-hidden relative">
                 {card.image_url
-                  ? <img src={card.image_url} alt="" className="w-full h-full object-cover" />
+                  ? <>
+                    <img src={card.image_url} alt="" className="w-full h-full object-cover brightness-50 group-hover:brightness-100 transition-all duration-200" />
+                    <div className="absolute inset-0 flex items-center justify-center p-3 group-hover:opacity-0 transition-opacity duration-200">
+                      <p className="text-sm font-medium text-white text-center line-clamp-3 leading-snug">{card.clue}</p>
+                    </div>
+                  </>
                   : card.clue
                     ? <p className="px-3 text-sm font-medium text-foreground line-clamp-4 leading-snug">{card.clue}</p>
                     : <ImageIcon className="w-6 h-6 text-muted-foreground" />}
@@ -405,7 +410,7 @@ export default function DeckBuilder() {
                   <Trash2 className="w-3.5 h-3.5 text-destructive" />
                 </button>
               </div>
-              <span className="absolute top-2 left-2 bg-black/50 text-white text-xs rounded px-1.5 py-0.5">{idx + 1}</span>
+              <span className="absolute bottom-2 right-2 bg-black/50 text-white text-xs rounded px-1.5 py-0.5">{idx + 1}</span>
             </div>
           ))}
 
