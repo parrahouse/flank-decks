@@ -365,7 +365,7 @@ export default function DeckBuilder() {
         <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
           {displayedCards.map((card, idx) => (
             <div key={card.id} onClick={() => openEdit(card)} className="group relative bg-card border border-border rounded-xl overflow-hidden hover:shadow-md transition-all cursor-pointer">
-              <div className="bg-muted h-28 flex items-center justify-center overflow-hidden relative">
+              <div className="bg-muted aspect-[4/3] flex items-center justify-center overflow-hidden relative">
                 {card.image_url
                   ? <>
                     <img src={card.image_url} alt="" className="w-full h-full object-cover brightness-50 group-hover:brightness-100 transition-all duration-200" />
