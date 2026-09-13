@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, ArrowLeft, Pencil, Trash2, GalleryVerticalEnd, Image as ImageIcon, Cog, X, Upload, RotateCcw, PieChart, Archive, CircleDot, CheckSquare, ToggleRight, Play, Sparkles, Check, FolderOpen, ChevronDown, Loader2 } from 'lucide-react';
+import { Plus, ArrowLeft, Pencil, Trash2, GalleryVerticalEnd, Image as ImageIcon, Cog, X, Upload, RotateCcw, PieChart, Archive, CircleDot, CheckSquare, ToggleRight, Play, Sparkles, Check, FolderOpen, ChevronDown, Loader2, PencilLine } from 'lucide-react';
 import AiCardSuggestionsModal from '@/components/cards/AiCardSuggestionsModal';
 import CardEditorModal from '@/components/cards/CardEditorModal';
 import { Button } from '@/components/ui/button';
@@ -379,8 +379,15 @@ export default function DeckBuilder() {
                     ? <CheckSquare className="w-3 h-3 shrink-0" />
                     : card.question_type === 'true_false'
                     ? <ToggleRight className="w-3 h-3 shrink-0" />
+                    : card.question_type === 'short_answer'
+                    ? <PencilLine className="w-3 h-3 shrink-0" />
                     : <CircleDot className="w-3 h-3 shrink-0" />}
-                  <p className="text-xs">{card.choices?.length ?? 0} choices</p>
+                  <p className="text-xs">
+                    {card.question_type === 'true_false' ? 'True/False'
+                      : card.question_type === 'short_answer' ? 'Short Answer'
+                      : card.question_type === 'select_all' ? 'Select All'
+                      : `${card.choices?.length ?? 0} choices`}
+                  </p>
                 </div>
                 {card.tags?.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1.5">
