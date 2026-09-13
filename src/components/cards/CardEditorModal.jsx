@@ -149,7 +149,7 @@ export default function CardEditorModal({ open, onClose, mode = 'edit', card, de
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) requestClose(); }}>
-      <DialogContent className="w-[96vw] max-w-[1700px] h-[92vh] p-0 overflow-hidden flex flex-col" onKeyDown={onKeyDown}>
+      <DialogContent className="!inset-0 !translate-x-0 !translate-y-0 w-screen h-screen max-w-none rounded-none p-0 overflow-hidden flex flex-col" onKeyDown={onKeyDown}>
         <AnimatePresence mode="wait">
 
           {/* ── STEP: input / saving / done ─────────────────────────────── */}
