@@ -213,7 +213,7 @@ export default function CardEditorModal({ open, onClose, mode = 'edit', card, de
                     <ChevronRight className="w-4 h-4" /> Save &amp; Next
                   </Button>
                 )}
-                <Button onClick={handleSave} disabled={!state.canSave} className="gap-1.5">
+                <Button onClick={() => handleSave()} disabled={!state.canSave} className="gap-1.5">
                   <Check className="w-4 h-4" /> Save
                 </Button>
               </div>
