@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import InfoTooltip from '../InfoTooltip';
 import ImageEditor from '../ImageEditor';
 import ImageSearchPanel from '../ImageSearchPanel';
-import ImagePickerFromDeck from '../ImagePickerFromDeck';
+import ImagePoolPicker from '../ImagePoolPicker';
 import PreviewPane from './PreviewPane';
 import { cn } from '@/lib/utils';
 
@@ -67,7 +67,7 @@ export default function ImageTabContent({ state, previewLayout, setPreviewLayout
             )}
             {s.imageUrl && (
               <>
-                <button onClick={(e) => { e.stopPropagation(); s.setImageUrl(''); s.setOriginalImageUrl(null); }} className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80">
+                <button onClick={(e) => { e.stopPropagation(); s.setImageUrl(''); s.setOriginalImageUrl(null); s.dismissPoolPrompt(); }} className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80">
                   <X className="w-3.5 h-3.5" />
                 </button>
                 <button onClick={(e) => { e.stopPropagation(); s.setShowImageEditor(true); }} className="absolute top-2 left-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80">
@@ -77,6 +77,34 @@ export default function ImageTabContent({ state, previewLayout, setPreviewLayout
             )}
           </div>
           <input ref={s.fileRef} type="file" accept="image/*" className="hidden" onChange={s.handleImageUpload} />
+
+          {/* Offer to add a freshly uploaded image to the pool */}
+          {s.poolPromptUrl && s.poolPromptUrl === s.imageUrl && (
+            <div className="flex items-center gap-2 mt-1">
+              <input
+                value={s.poolTags}
+                onChange={(e) => s.setPoolTags(e.target.value)}
+                placeholder="Tags (comma-separated)"
+                className="flex-1 min-w-0 text-xs border border-border rounded-md px-2 py-1.5 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+              <button
+                type="button"
+                onClick={s.addToPool}
+                disabled={s.addingToPool}
+                className="text-xs font-medium bg-primary text-primary-foreground rounded-md px-3 py-1.5 hover:bg-primary/90 disabled:opacity-50 shrink-0"
+              >
+                {s.addingToPool ? 'Adding…' : 'Add to pool'}
+              </button>
+              <button
+                type="button"
+                onClick={s.dismissPoolPrompt}
+                className="text-muted-foreground hover:text-foreground shrink-0"
+                title="Don't add to pool"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
 
           {/* Fit toggle */}
           {s.imageUrl && (
@@ -118,7 +146,7 @@ export default function ImageTabContent({ state, previewLayout, setPreviewLayout
             <InfoTooltip text="Accepted: JPG, PNG, GIF, WebP · Min 10 KB · Max 10 MB" />
             <div className="flex items-center gap-3">
               <button type="button" onClick={() => { s.setShowImagePicker(v => !v); s.setShowImageSearch(false); s.setShowAiImageGen(false); }} className="flex items-center gap-1 text-xs text-primary hover:underline">
-                <ImageIcon className="w-3 h-3" /> Pick from decks
+                <ImageIcon className="w-3 h-3" /> Image pool
               </button>
               <button type="button" onClick={() => { s.setShowImageSearch(v => !v); s.setShowImagePicker(false); s.setShowAiImageGen(false); }} className="flex items-center gap-1 text-xs text-primary hover:underline">
                 <Search className="w-3 h-3" /> Search Wikimedia
@@ -179,10 +207,10 @@ export default function ImageTabContent({ state, previewLayout, setPreviewLayout
           </div>
         )}
 
-        {/* Pick from deck */}
+        {/* Pick from image pool */}
         {s.showImagePicker && (
-          <ImagePickerFromDeck
-            onSelect={(url) => { s.setImageUrl(url); s.setOriginalImageUrl(null); s.setFocalPoint({ x: 50, y: 50 }); s.setShowImagePicker(false); }}
+          <ImagePoolPicker
+            onSelect={(url) => { s.setImageUrl(url); s.setOriginalImageUrl(null); s.setFocalPoint({ x: 50, y: 50 }); s.setShowImagePicker(false); s.dismissPoolPrompt(); }}
             onClose={() => s.setShowImagePicker(false)}
           />
         )}

@@ -1,8 +1,11 @@
 import { useState, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { computeCardDifficulty } from '@/lib/computeCardDifficulty';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { STYLE_PRESETS, buildAiPrompt } from '@/lib/aiImagePresets';
+
+const parseTags = (str) => str.split(',').map((t) => t.trim()).filter(Boolean);
 
 const parseCorrectAnswers = (str) => str ? str.split('|').map(s => s.trim()).filter(Boolean) : [];
 const joinCorrectAnswers = (arr) => arr.join('|');
@@ -13,6 +16,7 @@ const joinCorrectAnswers = (arr) => arr.join('|');
  * Returns all fields, handlers, derived values, and a buildSaveData() builder.
  */
 export function useCardFormState({ mode, card, deck, activeCards }) {
+  const qc = useQueryClient();
   const isCreate = mode === 'create';
   const initQType = card?.question_type || 'multiple_choice';
   const initCorrect = parseCorrectAnswers(card?.correct_answers || card?.correct_answer || '');
@@ -71,6 +75,11 @@ export function useCardFormState({ mode, card, deck, activeCards }) {
   const [showAiImageGen, setShowAiImageGen] = useState(false);
   const [showImageEditor, setShowImageEditor] = useState(false);
   const [uploading, setUploading] = useState(false);
+
+  // Add-to-pool prompt (shown after a fresh upload)
+  const [poolPromptUrl, setPoolPromptUrl] = useState(null);
+  const [poolTags, setPoolTags] = useState('');
+  const [addingToPool, setAddingToPool] = useState(false);
 
   // AI helpers
   const [suggestingCard, setSuggestingCard] = useState(false);
@@ -244,9 +253,33 @@ export function useCardFormState({ mode, card, deck, activeCards }) {
       setOriginalImageUrl(null);
       setFocalPoint({ x: 50, y: 50 });
       setImageFit('cover');
+      setPoolPromptUrl(file_url);
+      setPoolTags('');
     } catch { toast.error('Upload failed'); }
     setUploading(false);
     e.target.value = '';
+  };
+
+  const dismissPoolPrompt = () => {
+    setPoolPromptUrl(null);
+    setPoolTags('');
+  };
+
+  const addToPool = async () => {
+    if (!poolPromptUrl) return;
+    setAddingToPool(true);
+    try {
+      await base44.entities.ImagePool.create({
+        image_url: poolPromptUrl,
+        tags: parseTags(poolTags),
+      });
+      qc.invalidateQueries(['image-pool']);
+      toast.success('Added to image pool');
+      dismissPoolPrompt();
+    } catch {
+      toast.error('Could not add to pool');
+    }
+    setAddingToPool(false);
   };
 
   const handleGenerateAiImage = async () => {
@@ -264,6 +297,7 @@ export function useCardFormState({ mode, card, deck, activeCards }) {
       setOriginalImageUrl(null);
       setFocalPoint({ x: 50, y: 50 });
       setShowAiImageGen(false);
+      setPoolPromptUrl(null);
       toast.success('Image generated!');
     } catch { toast.error('Image generation failed'); }
     setGeneratingImage(false);
@@ -483,6 +517,7 @@ Return:
     generatingImage, handleGenerateAiImage, openAiImageGen,
     showImageSearch, setShowImageSearch, showImagePicker, setShowImagePicker,
     showAiImageGen, setShowAiImageGen, showImageEditor, setShowImageEditor,
+    poolPromptUrl, poolTags, setPoolTags, addingToPool, addToPool, dismissPoolPrompt,
     // tags
     tags, setTags, suggestTags, suggestingTags,
     // difficulty
