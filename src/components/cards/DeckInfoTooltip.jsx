@@ -29,7 +29,7 @@ export default function DeckInfoTooltip({ deck, totalCards, masteredCount }) {
         <Info className="w-4 h-4 text-muted-foreground/70" />
       </button>
       {open && (
-        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 w-64 rounded-lg bg-foreground text-background text-xs px-3 py-2 z-30 text-left shadow-lg pointer-events-none">
+        <span className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 w-64 rounded-lg bg-foreground text-background text-xs px-3 py-2 z-30 text-left shadow-lg pointer-events-none">
           {description ? (
             <p className="leading-snug mb-1.5">{description}</p>
           ) : (
