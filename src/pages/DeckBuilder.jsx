@@ -225,7 +225,7 @@ export default function DeckBuilder() {
     <div className="max-w-7xl mx-auto">
 
       {/* Sticky header + filter region */}
-      <div className="sticky top-14 z-30 bg-background/80 backdrop-blur-md pb-2 -mx-4 px-4">
+      <div className="sticky top-14 z-30 bg-background pb-2 -mx-4 px-4">
       {/* Header */}
       <div className="mb-4 bg-card border border-border rounded-md overflow-hidden">
         {/* Title + description */}
