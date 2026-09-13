@@ -46,8 +46,6 @@ export function useCardFormState({ mode, card, deck, activeCards }) {
   const [explanation, setExplanation] = useState(card?.explanation || '');
 
   // Image
-  const deckUsesImages = activeCards.length === 0 || activeCards.some(c => !!c.image_url);
-  const [imageCard, setImageCard] = useState(isCreate ? deckUsesImages : true);
   const [imageUrl, setImageUrl] = useState(card?.image_url || '');
   const [originalImageUrl, setOriginalImageUrl] = useState(card?.image_original_url || null);
   const [focalPoint, setFocalPoint] = useState(card?.image_focal_point || (card?.image_url ? { x: 50, y: 50 } : null));
@@ -468,7 +466,7 @@ Return:
     const correctList = isShortAnswer ? [] : Array.from(correctSet).filter(c => filled.includes(c.trim()));
     const correct_answers = isShortAnswer ? canonicalAnswer.trim() : joinCorrectAnswers(correctList);
     return {
-      image_url: (!isCreate || imageCard) ? imageUrl : '',
+      image_url: imageUrl,
       image_focal_point: focalPoint,
       image_fit: imageFit,
       image_original_url: originalImageUrl || null,
@@ -480,7 +478,7 @@ Return:
       explanation,
       tags,
       point_value: pointValue,
-      difficulty_tier: difficultyTier,
+      difficulty_tier: difficultyTier ?? Math.round(pointValue / 10),
       difficulty_overridden: difficultyOverridden,
       ...(isShortAnswer && {
         canonical_answer: canonicalAnswer.trim(),
@@ -509,7 +507,7 @@ Return:
     // explanation
     explanation, setExplanation, quillRef, handleGenerateExplanation, generatingExplanation,
     // image
-    imageCard, setImageCard, imageUrl, setImageUrl, originalImageUrl, focalPoint, setFocalPoint,
+    imageUrl, setImageUrl, originalImageUrl, focalPoint, setFocalPoint,
     imageFit, setImageFit,
     fileRef, previewImgRef, draggingPreview, beginFocalDrag, moveFocalDrag, endFocalDrag,
     handleImageUpload, uploading,

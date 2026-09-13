@@ -20,7 +20,7 @@ export default function PreviewPane({
   maxHeightClass = '',
 }) {
   const card = {
-    image_url: state.imageCard ? state.imageUrl : '',
+    image_url: state.imageUrl,
     image_fit: state.imageFit,
     image_focal_point: state.focalPoint,
     clue: state.clue,

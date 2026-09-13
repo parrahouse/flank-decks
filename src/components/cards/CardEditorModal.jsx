@@ -103,6 +103,7 @@ export default function CardEditorModal({ open, onClose, mode = 'edit', card, de
           setDifficultyResult({ point_value: 20, difficulty_tier: 2, _reason: '' });
         }
       }
+      if (data.difficulty_tier == null) data.difficulty_tier = Math.round(data.point_value / 10);
       data.deck_id = deckId;
       data.order = activeCards.length;
       try {
@@ -186,7 +187,7 @@ export default function CardEditorModal({ open, onClose, mode = 'edit', card, de
               {/* Body */}
               <div className="flex-1 min-h-0 flex flex-col">
                 {activeTab === 'edit' && (
-                  <EditTabContent state={state} allTags={allTags} previewLayout={previewLayout} setPreviewLayout={setPreviewLayout} />
+                  <EditTabContent state={state} allTags={allTags} previewLayout={previewLayout} setPreviewLayout={setPreviewLayout} onOpenImageSource={(type) => { setActiveTab('image'); if (type === 'search') state.setShowImageSearch(true); else if (type === 'ai') state.setShowAiImageGen(true); }} />
                 )}
                 {activeTab === 'image' && (
                   <ImageTabContent state={state} previewLayout={previewLayout} setPreviewLayout={setPreviewLayout} />

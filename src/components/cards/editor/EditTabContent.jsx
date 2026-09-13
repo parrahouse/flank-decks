@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import InfoTooltip from '../InfoTooltip';
 import TagInput from '../TagInput';
 import MathButton from '../MathInputPopover';
@@ -19,10 +18,10 @@ import { cn } from '@/lib/utils';
  * EditTabContent — two-column body for the "Edit" tab.
  * Left: the form (what the card says). Right: live preview + explanation.
  */
-export default function EditTabContent({ state, allTags, previewLayout, setPreviewLayout }) {
+export default function EditTabContent({ state, allTags, previewLayout, setPreviewLayout, onOpenImageSource }) {
   const s = state;
 
-  const imageEmpty = (s.imageCard && !s.imageUrl) ? (
+  const imageEmpty = !s.imageUrl ? (
     <div className="w-full h-full flex flex-col items-center justify-center gap-2 border-2 border-dashed border-muted-foreground/30 rounded p-4">
       <button
         type="button"
@@ -34,25 +33,25 @@ export default function EditTabContent({ state, allTags, previewLayout, setPrevi
       {s.imageSeed && (
         <button
           type="button"
-          onClick={() => s.setShowImageSearch(true)}
+          onClick={() => onOpenImageSource?.('search')}
           className="flex items-center gap-2 px-4 py-2 rounded-md bg-muted hover:bg-muted/70 transition-colors text-sm font-medium"
-        >
+          >
           <Search className="w-4 h-4" /> Search Images
         </button>
       )}
       {s.imageSeed && (
         <button
           type="button"
-          onClick={() => s.setShowAiImageGen(true)}
+          onClick={() => onOpenImageSource?.('ai')}
           className="flex items-center gap-2 px-4 py-2 rounded-md bg-muted hover:bg-muted/70 transition-colors text-sm font-medium"
-        >
+          >
           <Sparkles className="w-4 h-4" /> Create with AI
         </button>
       )}
     </div>
   ) : null;
 
-  const imageOverlay = (s.imageCard && s.imageUrl) ? (
+  const imageOverlay = s.imageUrl ? (
     <button
       type="button"
       onClick={() => { s.setImageUrl(''); s.setOriginalImageUrl(null); }}
@@ -94,12 +93,6 @@ export default function EditTabContent({ state, allTags, previewLayout, setPrevi
               ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Thinking…</>
               : <><Sparkles className="w-3.5 h-3.5" /> Draft with AI</>}
           </Button>
-          {s.isCreate && (
-            <label className="flex items-center gap-2 text-sm font-medium cursor-pointer select-none">
-              <Checkbox checked={s.imageCard} onCheckedChange={(v) => s.setImageCard(!!v)} />
-              Image Card
-            </label>
-          )}
         </div>
 
         {/* Question / Clue */}
