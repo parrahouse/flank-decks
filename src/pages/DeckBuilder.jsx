@@ -219,7 +219,7 @@ export default function DeckBuilder() {
   });
 
   return (
-    <div className="flex min-h-[calc(100vh-3.5rem)]">
+    <div className="flex min-h-[calc(100vh-3.5rem)] -mx-4 -mt-6">
     {/* Main content */}
     <div className="flex-1 px-4 pb-4">
 
