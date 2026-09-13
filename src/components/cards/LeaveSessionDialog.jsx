@@ -2,7 +2,7 @@ import React from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 const NAVY = '#2C4A6F';
-const RED = '#D9534F';
+const RED = '#FF7800';
 const GRAY_BORDER = '#CCCCCC';
 const SUBTEXT = '#555555';
 const FONT = "'Inter', sans-serif";
@@ -16,7 +16,7 @@ const EXIT_ICON = 'https://media.base44.com/images/public/69fd6153088222f7245f34
 export default function LeaveSessionDialog({ open, onOpenChange, doneCount, totalCount, onSave, onDiscard }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xs gap-0 p-8 rounded-none sm:rounded-none [&>button]:hidden">
+      <DialogContent className="max-w-md gap-0 p-8 rounded-none sm:rounded-none [&>button]:hidden">
         <div className="flex flex-col items-center gap-4 text-center">
           <img
             src={EXIT_ICON}
@@ -31,7 +31,7 @@ export default function LeaveSessionDialog({ open, onOpenChange, doneCount, tota
           <p
             style={{ fontFamily: FONT, fontSize: 14, lineHeight: 1.4, color: SUBTEXT, whiteSpace: 'pre-line' }}
           >
-            {`${doneCount} / ${totalCount} cards studied.\nSave to resume within 24h without losing your progress.`}
+            You've studied {`${doneCount} of ${totalCount} cards.\nSave to resume within 24h without losing your progress.`}
           </p>
           <div className="flex flex-col gap-2 w-full mt-1">
             <button
@@ -50,7 +50,7 @@ export default function LeaveSessionDialog({ open, onOpenChange, doneCount, tota
               onClick={() => onOpenChange(false)}
               style={{ fontFamily: FONT, fontSize: 14, fontWeight: 500, lineHeight: 1.2, color: NAVY, backgroundColor: 'transparent', border: `2px solid ${GRAY_BORDER}`, padding: '8px 0', borderRadius: 4 }}
             >
-              Keep going
+              Keep Going
             </button>
           </div>
         </div>
