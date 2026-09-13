@@ -23,15 +23,15 @@ export default function LeaveSessionDialog({ open, onOpenChange, doneCount, tota
             alt="Leave"
             style={{ width: 32, height: 32, imageRendering: 'pixelated' }}
           />
-          <p
-            style={{ fontFamily: FONT, fontSize: 20, fontWeight: 600, lineHeight: 1.2, color: NAVY }}
+          <H2
+            style={{ fontFamily: FONT, fontSize: 20, fontWeight: 600, color: NAVY }}
           >
             Leave session?
-          </p>
+          </H2>
           <p
             style={{ fontFamily: FONT, fontSize: 14, lineHeight: 1.4, color: SUBTEXT, whiteSpace: 'pre-line' }}
           >
-            {`${doneCount} / ${totalCount} cards done.\nSave to resume within 24h.`}
+            {`${doneCount} / ${totalCount} cards studied.\nSave to resume within 24h without losing your progress.`}
           </p>
           <div className="flex flex-col gap-2 w-full mt-1">
             <button
