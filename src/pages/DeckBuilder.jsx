@@ -221,11 +221,11 @@ export default function DeckBuilder() {
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)]">
     {/* Main content */}
-    <div className="flex-1 px-4 py-4">
-    <div className="max-w-7xl mx-auto">
+    <div className="flex-1 px-4 pb-4">
 
-      {/* Sticky header + filter region */}
-      <div className="sticky top-14 z-30 bg-card pb-2 -mx-4 px-4 border-b border-border/60">
+      {/* Sticky header + filter region — full width, meets nav bar */}
+      <div className="sticky top-14 z-30 bg-card pt-4 pb-2 -mx-4 px-4 border-b border-border/60">
+      <div className="max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-4 bg-card border border-border rounded-md overflow-hidden">
         {/* Title + description */}
@@ -339,8 +339,10 @@ export default function DeckBuilder() {
         />
       )}
       </div>
+      </div>
 
       {/* Cards grid */}
+      <div className="max-w-7xl mx-auto">
       {isLoading ? (
         <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
           {[1,2,3,4].map(i => <div key={i} className="h-40 rounded-xl bg-muted animate-pulse" />)}
