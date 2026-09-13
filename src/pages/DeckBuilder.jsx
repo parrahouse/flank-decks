@@ -227,7 +227,7 @@ export default function DeckBuilder() {
       <div className="sticky top-14 z-30 bg-card pt-4 pb-2 -mx-4 px-4 border-b border-border/60">
       <div className="max-w-7xl mx-auto">
       {/* Header */}
-      <div className="mb-4 bg-card border border-border rounded-md overflow-hidden">
+      <div className="mb-4">
         {/* Title + description */}
         <div className="px-4 pt-4 pb-3">
           {editingTitle ? (
@@ -342,7 +342,7 @@ export default function DeckBuilder() {
       </div>
 
       {/* Cards grid */}
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto pt-6">
       {isLoading ? (
         <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
           {[1,2,3,4].map(i => <div key={i} className="h-40 rounded-xl bg-muted animate-pulse" />)}
