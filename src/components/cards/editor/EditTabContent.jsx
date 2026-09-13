@@ -22,32 +22,13 @@ export default function EditTabContent({ state, allTags, previewLayout, setPrevi
   const s = state;
 
   const imageEmpty = !s.imageUrl ? (
-    <div className="w-full h-full flex flex-col items-center justify-center gap-2 border-2 border-dashed border-muted-foreground/30 rounded p-4">
-      <button
-        type="button"
-        onClick={() => s.fileRef.current?.click()}
-        className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary/10 text-primary hover:bg-primary/15 transition-colors text-sm font-medium"
-      >
-        <Upload className="w-4 h-4" /> Upload a File
-      </button>
-      {s.imageSeed && (
-        <button
-          type="button"
-          onClick={() => onOpenImageSource?.('search')}
-          className="flex items-center gap-2 px-4 py-2 rounded-md bg-muted hover:bg-muted/70 transition-colors text-sm font-medium"
-          >
-          <Search className="w-4 h-4" /> Search Images
-        </button>
-      )}
-      {s.imageSeed && (
-        <button
-          type="button"
-          onClick={() => onOpenImageSource?.('ai')}
-          className="flex items-center gap-2 px-4 py-2 rounded-md bg-muted hover:bg-muted/70 transition-colors text-sm font-medium"
-          >
-          <Sparkles className="w-4 h-4" /> Create with AI
-        </button>
-      )}
+    <div className="flex items-center gap-1.5 justify-center px-3 py-1.5 rounded-full bg-white border border-border shadow-sm text-xs whitespace-nowrap">
+      <span className="text-muted-foreground font-medium">Add an image:</span>
+      <button type="button" onClick={() => s.fileRef.current?.click()} className="text-primary hover:underline font-medium">Upload</button>
+      <span className="text-muted-foreground">·</span>
+      <button type="button" onClick={() => onOpenImageSource?.('search')} disabled={!s.imageSeed} className="text-primary hover:underline font-medium disabled:opacity-40 disabled:no-underline">Search</button>
+      <span className="text-muted-foreground">·</span>
+      <button type="button" onClick={() => onOpenImageSource?.('ai')} disabled={!s.imageSeed} className="text-primary hover:underline font-medium disabled:opacity-40 disabled:no-underline">AI Generate</button>
     </div>
   ) : null;
 
