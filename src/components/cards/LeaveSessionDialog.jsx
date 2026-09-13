@@ -23,7 +23,7 @@ export default function LeaveSessionDialog({ open, onOpenChange, doneCount, tota
             alt="Leave"
             style={{ width: 32, height: 32, imageRendering: 'pixelated' }}
           />
-          <h2>
+          <h2
             style={{ fontFamily: FONT, fontSize: 20, fontWeight: 600, color: NAVY }}
           >
             Leave Session?
