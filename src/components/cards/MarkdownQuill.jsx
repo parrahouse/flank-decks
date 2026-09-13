@@ -8,7 +8,7 @@
  *
  * The toolbar still offers the same formats visually.
  */
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, forwardRef } from 'react';
 import ReactQuill from 'react-quill';
 
 // Order matters: longer hashes first so "###" isn't caught by "#".

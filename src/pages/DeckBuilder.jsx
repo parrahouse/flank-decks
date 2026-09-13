@@ -4,11 +4,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Plus, ArrowLeft, Pencil, Trash2, GalleryVerticalEnd, Image as ImageIcon, Cog, X, Upload, RotateCcw, PieChart, Archive, CircleDot, CheckSquare, ToggleRight, Play, Sparkles, Check, FolderOpen, ChevronDown, Loader2 } from 'lucide-react';
 import AiCardSuggestionsModal from '@/components/cards/AiCardSuggestionsModal';
-import QuickAddCardModal from '@/components/cards/QuickAddCardModal';
+import CardEditorModal from '@/components/cards/CardEditorModal';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import CardEditor from '@/components/cards/CardEditor';
 import CsvUploadModal from '@/components/cards/CsvUploadModal';
 import DeckCollectionsDialog from '@/components/collections/DeckCollectionsDialog';
 import CardFilterBar from '@/components/cards/CardFilterBar';
@@ -56,18 +55,15 @@ export default function DeckBuilder() {
   }, []);
 
   // UI state
-  const [showEditor, setShowEditor] = useState(false);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editorMode, setEditorMode] = useState('create');
   const [editingCard, setEditingCard] = useState(null);
+  const [editorKey, setEditorKey] = useState(0); // bump to remount the modal fresh (add-another)
   const [showCsvUpload, setShowCsvUpload] = useState(false);
-  const [editorDirty, setEditorDirty] = useState(false);
-  const [showDiscardDialog, setShowDiscardDialog] = useState(false);
   const [showBin, setShowBin] = useState(false);
   const [showAiSuggest, setShowAiSuggest] = useState(false);
-  const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [showCollections, setShowCollections] = useState(false);
   const [previewCard, setPreviewCard] = useState(null);
-  const [closeDropdownOpen, setCloseDropdownOpen] = useState(false);
-  const editorSaveRef = useRef(null);
 
   // Description editing
   const [editingDesc, setEditingDesc] = useState(false);
@@ -169,37 +165,18 @@ export default function DeckBuilder() {
     URL.revokeObjectURL(url);
   };
 
-  const openAdd = () => { setShowQuickAdd(true); };
-  const openAddLegacy = () => { setEditingCard(null); setEditorDirty(false); setShowEditor(true); };
-  const openEdit = (card) => { setEditingCard(card); setEditorDirty(false); setShowEditor(true); };
-
-  const requestCloseEditor = () => {
-    if (editorDirty) setShowDiscardDialog(true);
-    else closeEditor();
+  const openAdd = () => {
+    setEditingCard(null);
+    setEditorMode('create');
+    setEditorKey(k => k + 1);
+    setEditorOpen(true);
   };
-
-  const closeEditor = () => {
-    setShowEditor(false);
-    setEditorDirty(false);
-    setShowDiscardDialog(false);
-    setCloseDropdownOpen(false);
+  const openEdit = (card) => {
+    setEditingCard(card);
+    setEditorMode('edit');
+    setEditorKey(k => k + 1);
+    setEditorOpen(true);
   };
-
-  const saveMutation = useMutation({
-    mutationFn: async (data) => {
-      if (editingCard) {
-        return base44.entities.Card.update(editingCard.id, data);
-      } else {
-        return base44.entities.Card.create({ ...data, deck_id: deckId, order: activeCards.length });
-      }
-    },
-    onSuccess: () => {
-      qc.invalidateQueries(['cards', deckId]);
-      qc.invalidateQueries(['cards-all']);
-      setShowEditor(false);
-      toast.success(editingCard ? 'Card updated' : 'Card added');
-    },
-  });
 
   const invalidateCards = () => {
     qc.invalidateQueries(['cards', deckId]);
@@ -240,7 +217,7 @@ export default function DeckBuilder() {
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)]">
     {/* Main content */}
-    <div className={`flex-1 px-4 py-8 transition-all duration-300 ${showEditor ? 'md:mr-[640px]' : ''}`}>
+    <div className="flex-1 px-4 py-8">
     <div className="max-w-7xl mx-auto">
 
       {/* Header */}
@@ -358,7 +335,7 @@ export default function DeckBuilder() {
 
       {/* Cards grid */}
       {isLoading ? (
-        <div className={`grid gap-4 ${showEditor ? 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4'}`}>
+        <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
           {[1,2,3,4].map(i => <div key={i} className="h-40 rounded-xl bg-muted animate-pulse" />)}
         </div>
       ) : activeCards.length === 0 ? (
@@ -381,7 +358,7 @@ export default function DeckBuilder() {
           </button>
         </div>
       ) : (
-        <div className={`grid gap-4 ${showEditor ? 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4'}`}>
+        <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
           {displayedCards.map((card, idx) => (
             <div key={card.id} onClick={() => openEdit(card)} className="group relative bg-card border border-border rounded-xl overflow-hidden hover:shadow-md transition-all cursor-pointer">
               <div className="bg-muted h-28 flex items-center justify-center overflow-hidden">
@@ -440,115 +417,6 @@ export default function DeckBuilder() {
     </div>
     </div>
 
-    {/* Side panel on large screens, modal on small */}
-    {showEditor && (
-      <>
-        {/* Mobile: modal overlay — only rendered on small screens */}
-        {isMobile && (
-          <Dialog open={showEditor} onOpenChange={(open) => { if (!open) requestCloseEditor(); }}>
-            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>{editingCard ? 'Edit Card' : 'Add Card'}</DialogTitle>
-              </DialogHeader>
-              <CardEditor
-                key={editingCard?.id ?? 'new'}
-                card={editingCard}
-                onSave={(data) => saveMutation.mutate(data)}
-                onCancel={requestCloseEditor}
-                onDirtyChange={setEditorDirty}
-                allTags={allTags}
-                saveRef={editorSaveRef}
-              />
-            </DialogContent>
-          </Dialog>
-        )}
-
-        {/* Desktop: fixed side panel */}
-        {!isMobile && (
-          <div className="flex fixed top-14 right-0 bottom-0 w-[640px] bg-card border-l border-border flex-col z-30 shadow-xl">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-              <h2 className="font-semibold text-base">Card Details</h2>
-              <div className="relative">
-                {!editorDirty ? (
-                  <button
-                    onClick={closeEditor}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors px-1 py-0.5 rounded"
-                  >
-                    Close
-                  </button>
-                ) : (
-                  <>
-                    <div className="flex items-center">
-                      <Button
-                        size="sm"
-                        onClick={() => editorSaveRef.current?.()}
-                        disabled={saveMutation.isPending}
-                        className="h-7 text-xs rounded-r-none pr-3"
-                      >
-                        {saveMutation.isPending ? <><Loader2 className="w-3 h-3 animate-spin" /> Saving…</> : 'Save & Close'}
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => setCloseDropdownOpen(v => !v)}
-                        disabled={saveMutation.isPending}
-                        className="h-7 text-xs rounded-l-none border-l border-primary-foreground/30 px-2"
-                      >
-                        <ChevronDown className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
-                    {closeDropdownOpen && (
-                      <>
-                        <div className="fixed inset-0 z-10" onClick={() => setCloseDropdownOpen(false)} />
-                        <div className="absolute right-0 top-full mt-1 w-44 bg-popover border border-border rounded-md shadow-lg z-20 py-1 text-sm">
-                          <button
-                            onClick={() => { setCloseDropdownOpen(false); closeEditor(); }}
-                            className="w-full text-left px-3 py-2 hover:bg-accent hover:text-accent-foreground transition-colors text-destructive"
-                          >
-                            Revert &amp; Close
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-            <div className="flex-1 overflow-y-auto px-5 pt-5 pb-4">
-              <CardEditor
-                key={editingCard?.id ?? 'new'}
-                card={editingCard}
-                onSave={(data) => saveMutation.mutate(data)}
-                onCancel={requestCloseEditor}
-                onDirtyChange={setEditorDirty}
-                allTags={allTags}
-                saveRef={editorSaveRef}
-              />
-            </div>
-          </div>
-        )}
-      </>
-    )}
-
-    <AlertDialog open={showDiscardDialog} onOpenChange={setShowDiscardDialog}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Discard changes?</AlertDialogTitle>
-          <AlertDialogDescription>
-            You have unsaved changes. If you close now they will be lost.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={() => setShowDiscardDialog(false)}>Keep editing</AlertDialogCancel>
-          <AlertDialogAction onClick={closeEditor} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-            Discard
-          </AlertDialogAction>
-          <AlertDialogAction onClick={() => { setShowDiscardDialog(false); editorSaveRef.current?.(); }}>
-            Save Card
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-
     <BinPanel
       open={showBin}
       onClose={() => setShowBin(false)}
@@ -565,20 +433,31 @@ export default function DeckBuilder() {
       onImported={() => { qc.invalidateQueries(['cards', deckId]); qc.invalidateQueries(['cards-all']); }}
     />
 
-    <QuickAddCardModal
-      open={showQuickAdd}
-      onClose={() => setShowQuickAdd(false)}
+    <CardEditorModal
+      key={editorKey}
+      open={editorOpen}
+      onClose={() => setEditorOpen(false)}
+      mode={editorMode}
+      card={editingCard}
       deckId={deckId}
       deck={deck}
       activeCards={activeCards}
+      allTags={allTags}
       onSaved={() => {
-        qc.invalidateQueries(['cards', deckId]);
-        qc.invalidateQueries(['cards-all']);
+        invalidateCards();
+        toast.success(editorMode === 'edit' ? 'Card updated' : 'Card added');
       }}
       onEditDetails={(card) => {
         setEditingCard(card);
-        setEditorDirty(false);
-        setShowEditor(true);
+        setEditorMode('edit');
+        setEditorKey(k => k + 1);
+        setEditorOpen(true);
+      }}
+      onAddAnother={() => {
+        setEditingCard(null);
+        setEditorMode('create');
+        setEditorKey(k => k + 1);
+        setEditorOpen(true);
       }}
     />
 
