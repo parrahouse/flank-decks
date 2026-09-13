@@ -44,7 +44,7 @@ export default function EditTabContent({ state, allTags, previewLayout, setPrevi
   ) : null;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[minmax(360px,420px)_1fr] flex-1 min-h-0 overflow-y-auto md:overflow-hidden">
+    <div className="grid grid-cols-1 md:grid-cols-[minmax(420px,520px)_1fr] flex-1 min-h-0 overflow-y-auto md:overflow-hidden">
       {/* ── Left: form ─────────────────────────────────────────────────────── */}
       <div className="px-6 py-5 space-y-5 min-h-0 md:overflow-y-auto">
         {/* Question Type */}
