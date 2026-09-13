@@ -435,9 +435,9 @@ export default function StudySession() {
 
 
 
+
           // already studied today, no change
-        } else if (last === yesterday) {newStreak = streak.current_streak + 1;} else {newStreak = 1;}const newLongest = Math.max(streak.longest_streak || 0, newStreak);const newMilestone = [3, 7, 14, 30, 60, 100].filter((m) => newStreak >= m).pop() || 0;await base44.entities.Streak.update(streak.id, { current_streak: newStreak, longest_streak: newLongest, last_study_date: today,
-            milestone_reached: Math.max(streak.milestone_reached || 0, newMilestone)
+        } else if (last === yesterday) {newStreak = streak.current_streak + 1;} else {newStreak = 1;}const newLongest = Math.max(streak.longest_streak || 0, newStreak);const newMilestone = [3, 7, 14, 30, 60, 100].filter((m) => newStreak >= m).pop() || 0;await base44.entities.Streak.update(streak.id, { current_streak: newStreak, longest_streak: newLongest, last_study_date: today, milestone_reached: Math.max(streak.milestone_reached || 0, newMilestone)
           });
       } else if (currentUser?.id) {
         await base44.entities.Streak.create({
@@ -1140,8 +1140,8 @@ export default function StudySession() {
             <DeckInfoTooltip
               deck={deck}
               totalCards={activeCards.length}
-              masteredCount={cardStats.filter((s) => s.mastered).length}
-            />
+              masteredCount={cardStats.filter((s) => s.mastered).length} />
+            
           </h1>
           <p className="text-xs mt-0.5">
             {filterMode === 'unmastered' && <span className="text-amber-600">Unmastered only</span>}
@@ -1154,7 +1154,7 @@ export default function StudySession() {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm text-foreground hover:bg-muted transition-colors"
             title="Settings">
             <SlidersVertical className="w-4 h-4" />
-            <span>Settings</span>
+            <span className="[font-family:'Inter',_sans-serif] font-medium">Settings</span>
           </button>
           <button
             onClick={() => requestExit(`/deck/${deckId}`)}
