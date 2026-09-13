@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Volume2, VolumeX, Info, Trophy, PlayCircle, RefreshCw, Clock, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Volume2, VolumeX, Info, Trophy, PlayCircle, RefreshCw, Clock, AlertTriangle, Settings, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cardLabel } from '@/lib/utils';
@@ -1164,9 +1164,36 @@ export default function StudySession() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Stage: header controls + game scene share one positioned parent so the scene sits behind the controls */}
+      {/* Header section — deck name + settings + end session */}
+      <div className="flex items-center justify-between gap-3 px-1 pb-2">
+        <div className="min-w-0">
+          <h1 className="text-lg font-semibold text-foreground truncate">{deck?.title}</h1>
+          <p className="text-xs mt-0.5">
+            {filterMode === 'unmastered' && <span className="text-amber-600">Unmastered only</span>}
+            {filterMode === 'bookmarked' && <span className="text-amber-600">Bookmarked only</span>}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => setFilterChosen(false)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm text-foreground hover:bg-muted transition-colors"
+            title="Settings">
+            <Settings className="w-4 h-4" />
+            <span>Settings</span>
+          </button>
+          <button
+            onClick={() => requestExit(`/deck/${deckId}`)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 transition-colors"
+            title="End session">
+            <LogOut className="w-4 h-4" />
+            <span>End Session</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Game world — bordered box holding the scene + HUD */}
       <motion.div
-        className="relative mb-1"
+        className="relative mb-1 border-2 border-black rounded overflow-hidden"
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25, ease: 'easeOut' }}>
@@ -1189,26 +1216,8 @@ export default function StudySession() {
 
         }
 
-        {/* Controls layer — paints on top of the scene */}
-        <div className="relative z-10 flex items-center gap-1 pt-1 pr-3 pb-3 pl-3">
-          <button
-            onClick={() => requestExit(`/deck/${deckId}`)}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-            title="Quit">
-            
-            <img
-              src="https://media.base44.com/images/public/69fd6153088222f7245f34d6/06551a213_Interface-Essential-Signin-Login--Streamline-Pixel.png"
-              alt="Quit"
-              style={{ width: 16, height: 16, imageRendering: 'pixelated' }} />
-            
-          </button>
-          <div className="flex-1">
-            <h1 style={{ fontFamily: "'VT323', monospace", fontSize: 26, lineHeight: 1 }}>{deck?.title}</h1>
-            <p className="text-xs text-muted-foreground mt-1">
-              {filterMode === 'unmastered' && <span className="text-amber-600">Unmastered only</span>}
-              {filterMode === 'bookmarked' && <span className="text-amber-600">Bookmarked only</span>}
-            </p>
-          </div>
+        {/* HUD layer — paints on top of the scene */}
+        <div className="relative z-10 flex items-center justify-end gap-2 pt-1 pr-3 pb-3 pl-3">
           {gameMode && <HeartsHud hearts={hearts} />}
           <div className="flex items-baseline gap-3 select-none px-1" style={{ fontFamily: "'VT323', monospace" }}>
             <span className="text-foreground uppercase" style={{ fontSize: 20, lineHeight: 1 }}>Score: {totalPoints.toFixed(2)}</span>
