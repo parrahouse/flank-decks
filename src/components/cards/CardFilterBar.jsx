@@ -16,7 +16,7 @@ export default function CardFilterBar({ search, onSearch, sortBy, onSort, master
   };
 
   return (
-    <div className="flex flex-col gap-2 mb-5">
+    <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
         {/* Search */}
         <div className="relative flex-1 min-w-[160px]">

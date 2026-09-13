@@ -14,6 +14,7 @@ import CardFilterBar from '@/components/cards/CardFilterBar';
 import BinPanel from '@/components/cards/BinPanel';
 import CardPreviewModal from '@/components/cards/CardPreviewModal';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 export default function DeckBuilder() {
   const { deckId } = useParams();
@@ -218,14 +219,22 @@ export default function DeckBuilder() {
     onSuccess: () => { qc.invalidateQueries(['deck', deckId]); toast.success('Deck settings saved'); },
   });
 
+  const hasCover = !!deck?.cover_image_url;
+
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)] -mx-4 -mt-6">
     {/* Main content */}
     <div className="flex-1 px-4 pb-4">
 
       {/* Sticky header + filter region — full width, meets nav bar */}
-      <div className="sticky top-14 z-30 bg-card pt-4 pb-2 -mx-4 px-4 border-b border-border/60">
-      <div className="max-w-7xl mx-auto">
+      <div className={cn("sticky top-14 z-30 pt-4 pb-2 -mx-4 px-4 border-b border-border/60 relative overflow-hidden", !hasCover && "bg-card")}>
+        {hasCover && (
+          <>
+            <img src={deck.cover_image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-primary/80 backdrop-grayscale" />
+          </>
+        )}
+      <div className="relative max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-4">
         {/* Title + description */}
@@ -246,9 +255,9 @@ export default function DeckBuilder() {
               <button onClick={cancelEditTitle} className="text-xs text-muted-foreground hover:text-foreground shrink-0">Cancel</button>
             </div>
           ) : (
-            <h1 className="text-xl font-bold group/title flex items-center gap-1.5 cursor-text" onClick={startEditTitle} title="Click to edit title">
+            <h1 className={cn("text-xl font-bold group/title flex items-center gap-1.5 cursor-text", hasCover && "text-white")} onClick={startEditTitle} title="Click to edit title">
               {deck?.title || 'Loading…'}
-              <Pencil className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover/title:opacity-100 transition-opacity" />
+              <Pencil className={cn("w-3.5 h-3.5 opacity-0 group-hover/title:opacity-100 transition-opacity", hasCover ? "text-white/70" : "text-muted-foreground")} />
             </h1>
           )}
           {editingDesc ? (
@@ -287,38 +296,38 @@ export default function DeckBuilder() {
           ) : (
             <button onClick={startEditDesc} className="group flex items-start gap-1 text-left mt-0.5">
               {deck?.description
-                ? <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors line-clamp-2">{deck.description}</span>
-                : <span className="text-sm text-muted-foreground/50 italic group-hover:text-muted-foreground transition-colors">Add description…</span>
+                ? <span className={cn("text-sm transition-colors line-clamp-2", hasCover ? "text-white/80 group-hover:text-white" : "text-muted-foreground group-hover:text-foreground")}>{deck.description}</span>
+                : <span className={cn("text-sm italic transition-colors", hasCover ? "text-white/50 group-hover:text-white/80" : "text-muted-foreground/50 group-hover:text-muted-foreground")}>Add description…</span>
               }
-              <Pencil className="w-3 h-3 text-muted-foreground/40 group-hover:text-muted-foreground shrink-0 mt-0.5 transition-colors" />
+              <Pencil className={cn("w-3 h-3 shrink-0 mt-0.5 transition-colors", hasCover ? "text-white/40 group-hover:text-white/70" : "text-muted-foreground/40 group-hover:text-muted-foreground")} />
             </button>
           )}
-          <p className="text-muted-foreground text-xs mt-1">{activeCards.length} {activeCards.length === 1 ? 'card' : 'cards'}</p>
+          <p className={cn("text-xs mt-1", hasCover ? "text-white/70" : "text-muted-foreground")}>{activeCards.length} {activeCards.length === 1 ? 'card' : 'cards'}</p>
         </div>
 
         {/* Action toolbar */}
-        <div className="border-t border-border px-3 py-2 flex flex-wrap items-center gap-1">
+        <div className="px-3 pt-0.5 pb-2 flex flex-wrap items-center gap-1">
           <Link to={`/stats/${deckId}`}>
-            <Button variant="ghost" size="sm" className="gap-1.5 h-9 text-muted-foreground hover:text-foreground">
+            <Button variant="ghost" size="sm" className={cn("gap-1.5 h-9", hasCover ? "text-white/80 hover:text-white" : "text-muted-foreground hover:text-foreground")}>
               <PieChart className="w-4 h-4" /> Stats
             </Button>
           </Link>
           <Link to={`/settings/${deckId}`}>
-            <Button variant="ghost" size="sm" className="gap-1.5 h-9 text-muted-foreground hover:text-foreground">
+            <Button variant="ghost" size="sm" className={cn("gap-1.5 h-9", hasCover ? "text-white/80 hover:text-white" : "text-muted-foreground hover:text-foreground")}>
               <Cog className="w-4 h-4" /> Settings
             </Button>
           </Link>
 
-          <Button variant="ghost" size="sm" onClick={openAdd} className="gap-1.5 h-9">
+          <Button variant="ghost" size="sm" onClick={openAdd} className={cn("gap-1.5 h-9", hasCover && "text-white hover:text-white")}>
             <Plus className="w-4 h-4" /> Add Card
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => setShowCsvUpload(true)} className="gap-1.5 h-9 text-muted-foreground hover:text-foreground">
+          <Button variant="ghost" size="sm" onClick={() => setShowCsvUpload(true)} className={cn("gap-1.5 h-9", hasCover ? "text-white/80 hover:text-white" : "text-muted-foreground hover:text-foreground")}>
             <Upload className="w-4 h-4" /> Import CSV
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => setShowCollections(true)} className="gap-1.5 h-9 text-muted-foreground hover:text-foreground">
+          <Button variant="ghost" size="sm" onClick={() => setShowCollections(true)} className={cn("gap-1.5 h-9", hasCover ? "text-white/80 hover:text-white" : "text-muted-foreground hover:text-foreground")}>
             <FolderOpen className="w-4 h-4" /> Collections
           </Button>
-          <Link to={`/study/${deckId}`} className="ml-auto flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors">
+          <Link to={`/study/${deckId}`} className={cn("ml-auto flex items-center gap-1.5 text-sm font-semibold transition-colors", hasCover ? "text-white hover:text-white/80" : "text-primary hover:text-primary/80")}>
             <GalleryVerticalEnd className="w-4 h-4" /> Study
           </Link>
         </div>
@@ -326,17 +335,19 @@ export default function DeckBuilder() {
 
       {/* Filter bar */}
       {activeCards.length > 0 && (
-        <CardFilterBar
-          search={search}
-          onSearch={setSearch}
-          sortBy={sortBy}
-          onSort={setSortBy}
-          masteryFilter={masteryFilter}
-          onMasteryFilter={setMasteryFilter}
-          allTags={allTags}
-          tagFilters={tagFilters}
-          onTagFilters={setTagFilters}
-        />
+        <div className={cn("rounded-lg border p-3 mt-1 mx-4", hasCover ? "bg-card border-border shadow-sm" : "bg-card border-border")}>
+          <CardFilterBar
+            search={search}
+            onSearch={setSearch}
+            sortBy={sortBy}
+            onSort={setSortBy}
+            masteryFilter={masteryFilter}
+            onMasteryFilter={setMasteryFilter}
+            allTags={allTags}
+            tagFilters={tagFilters}
+            onTagFilters={setTagFilters}
+          />
+        </div>
       )}
       </div>
       </div>
