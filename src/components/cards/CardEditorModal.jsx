@@ -100,10 +100,13 @@ export default function CardEditorModal({ open, onClose, mode = 'edit', card, de
           data.difficulty_overridden = false;
           setDifficultyResult(diff);
         } catch {
+          data.point_value = 20;
+          data.difficulty_tier = 2;
           setDifficultyResult({ point_value: 20, difficulty_tier: 2, _reason: '' });
         }
       }
-      if (data.difficulty_tier == null) data.difficulty_tier = Math.round(data.point_value / 10);
+      data.difficulty_tier = Math.max(1, Math.min(5, data.difficulty_tier || 2));
+      data.point_value = Math.max(10, Math.round(data.point_value / 10) * 10);
       data.deck_id = deckId;
       data.order = activeCards.length;
       try {
@@ -112,8 +115,9 @@ export default function CardEditorModal({ open, onClose, mode = 'edit', card, de
         setOverrideValue(String(data.point_value));
         setStep('done');
         onSaved?.();
-      } catch {
-        toast.error('Could not save card');
+      } catch (e) {
+        console.error('Card save failed:', e);
+        toast.error('Could not save card: ' + (e?.message || 'Unknown error'));
         setStep('input');
       }
     } else {
@@ -122,8 +126,9 @@ export default function CardEditorModal({ open, onClose, mode = 'edit', card, de
         onSaved?.();
         if (afterSave) afterSave();
         else handleClose();
-      } catch {
-        toast.error('Could not save card');
+      } catch (e) {
+        console.error('Card save failed:', e);
+        toast.error('Could not save card: ' + (e?.message || 'Unknown error'));
         setStep('input');
       }
     }
