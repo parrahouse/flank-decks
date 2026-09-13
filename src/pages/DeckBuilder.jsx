@@ -178,6 +178,10 @@ export default function DeckBuilder() {
     setEditorOpen(true);
   };
 
+  // Index of the card currently being edited within the deck's card order.
+  const editingCardIndex = editingCard ? activeCards.findIndex(c => c.id === editingCard.id) : -1;
+  const hasNextCard = editingCardIndex >= 0 && editingCardIndex < activeCards.length - 1;
+
   const invalidateCards = () => {
     qc.invalidateQueries(['cards', deckId]);
     qc.invalidateQueries(['cards-all']);
@@ -458,6 +462,19 @@ export default function DeckBuilder() {
         setEditorMode('create');
         setEditorKey(k => k + 1);
         setEditorOpen(true);
+      }}
+      hasNextCard={hasNextCard}
+      onSaveAndNext={() => {
+        const next = hasNextCard ? activeCards[editingCardIndex + 1] : null;
+        if (next) {
+          setEditingCard(next);
+          setEditorMode('edit');
+          setEditorKey(k => k + 1);
+          setEditorOpen(true);
+        } else {
+          setEditorOpen(false);
+          toast.info('Last card in deck');
+        }
       }}
     />
 

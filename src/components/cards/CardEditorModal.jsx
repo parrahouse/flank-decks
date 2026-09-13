@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Check, Loader2, Plus, Pencil, Zap } from 'lucide-react';
+import { Check, Loader2, Plus, Pencil, Zap, ChevronRight } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -26,7 +26,7 @@ const TABS = [
  * CardEditorModal — unified full-screen modal for creating and editing cards.
  * mode: 'create' | 'edit'. In create mode, a done step follows save.
  */
-export default function CardEditorModal({ open, onClose, mode = 'edit', card, deckId, deck, activeCards, allTags = [], onSaved, onEditDetails, onAddAnother }) {
+export default function CardEditorModal({ open, onClose, mode = 'edit', card, deckId, deck, activeCards, allTags = [], onSaved, onEditDetails, onAddAnother, onSaveAndNext, hasNextCard = false }) {
   const isCreate = mode === 'create';
   const [activeTab, setActiveTab] = useState('edit');
   const [step, setStep] = useState('input'); // 'input' | 'saving' | 'done' (create only)
@@ -60,7 +60,7 @@ export default function CardEditorModal({ open, onClose, mode = 'edit', card, de
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = async (afterSave) => {
     if (!state.canSave) {
       toast.error(state.isShortAnswer ? 'Enter the canonical answer' : 'Add at least two choices and mark the correct one(s)');
       return;
@@ -119,13 +119,16 @@ export default function CardEditorModal({ open, onClose, mode = 'edit', card, de
       try {
         await base44.entities.Card.update(card.id, data);
         onSaved?.();
-        handleClose();
+        if (afterSave) afterSave();
+        else handleClose();
       } catch {
         toast.error('Could not save card');
         setStep('input');
       }
     }
   };
+
+  const handleSaveAndNext = () => handleSave(onSaveAndNext);
 
   const handleAddAnother = () => {
     reset();
@@ -199,6 +202,11 @@ export default function CardEditorModal({ open, onClose, mode = 'edit', card, de
               {/* Footer — pinned */}
               <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-2 bg-muted/30 shrink-0">
                 <Button variant="ghost" onClick={requestClose}>Cancel</Button>
+                {!isCreate && onSaveAndNext && (
+                  <Button variant="outline" onClick={handleSaveAndNext} disabled={!state.canSave || !hasNextCard} className="gap-1.5">
+                    <ChevronRight className="w-4 h-4" /> Save &amp; Next
+                  </Button>
+                )}
                 <Button onClick={handleSave} disabled={!state.canSave} className="gap-1.5">
                   <Check className="w-4 h-4" /> Save
                 </Button>
