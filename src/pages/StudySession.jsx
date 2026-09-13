@@ -13,6 +13,7 @@ import ContactSheet from '@/components/cards/ContactSheet';
 import ProgressGameBand from '@/components/cards/ProgressGameBand';
 import SwabbieSpeechBubble from '@/components/cards/SwabbieSpeechBubble';
 import SessionSummaryBubble from '@/components/cards/SessionSummaryBubble';
+import LeaveSessionDialog from '@/components/cards/LeaveSessionDialog';
 import HeartsHud from '@/components/cards/HeartsHud';
 import { getSkin, DEFAULT_SKIN_ID, canZombify } from '@/components/cards/skins';
 import StreakCounter from '@/components/cards/StreakCounter';
@@ -1118,52 +1119,18 @@ export default function StudySession() {
     </div> :
   null;
 
-  // ── Exit warning — inline overlay inside the game pane ───────────────────
-  const ExitWarningOverlay = showExitWarning ?
-  <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg">
-      <div className="flex flex-col items-center gap-4 px-6 py-7 text-center max-w-xs">
-        <img
-        src="https://media.base44.com/images/public/69fd6153088222f7245f34d6/06551a213_Interface-Essential-Signin-Login--Streamline-Pixel.png"
-        alt="Exit"
-        style={{ width: 32, height: 32, imageRendering: 'pixelated' }} />
-      
-        <p className="text-foreground uppercase" style={{ fontFamily: "'VT323', monospace", fontSize: 22, lineHeight: 1 }}>
-          LEAVE SESSION?
-        </p>
-        <p className="text-muted-foreground uppercase" style={{ fontFamily: "'VT323', monospace", fontSize: 16, lineHeight: 1.1 }}>
-          {scores.filter(Boolean).length} / {shuffledCards.length} CARDS DONE.{'\n'}SAVE TO RESUME WITHIN 24H.
-        </p>
-        <div className="flex flex-col gap-2 w-full mt-1">
-          <button
-          onClick={handleExitSave}
-          className="px-4 py-2 bg-primary text-primary-foreground border-2 border-primary hover:opacity-90 transition-opacity w-full uppercase"
-          style={{ fontFamily: "'VT323', monospace", fontSize: 16 }}>
-          
-            SAVE &amp; EXIT
-          </button>
-          <button
-          onClick={handleExitDiscard}
-          className="px-4 py-2 border-2 border-destructive text-destructive hover:bg-destructive/10 transition-colors w-full uppercase"
-          style={{ fontFamily: "'VT323', monospace", fontSize: 16 }}>
-          
-            DISCARD &amp; EXIT
-          </button>
-          <button
-          onClick={() => setShowExitWarning(false)}
-          className="px-4 py-2 border-2 border-border text-foreground hover:bg-muted transition-colors w-full uppercase"
-          style={{ fontFamily: "'VT323', monospace", fontSize: 16 }}>
-          
-            KEEP GOING
-          </button>
-        </div>
-      </div>
-    </div> :
-  null;
-
   const useHorizontal = layoutMode === 'horizontal' || layoutMode === 'auto' && isWide;
 
   return (
     <div className="min-h-screen bg-background">
+      <LeaveSessionDialog
+        open={showExitWarning}
+        onOpenChange={setShowExitWarning}
+        doneCount={scores.filter(Boolean).length}
+        totalCount={shuffledCards.length}
+        onSave={handleExitSave}
+        onDiscard={handleExitDiscard} />
+
       {/* Header section — deck name + settings + end session */}
       <div className="flex items-center justify-between gap-3 px-1 pb-2">
         <div className="min-w-0">
@@ -1345,7 +1312,6 @@ export default function StudySession() {
                 animate="visible">
                   
                   {RestartWarningOverlay}
-                  {ExitWarningOverlay}
                   {useHorizontal ?
                 <StudyCardHorizontal {...sharedProps} handedness={handedness} childVariant={childVariant} /> :
                 <StudyCard {...sharedProps} hintsAllowed={hintsAllowed} childVariant={childVariant} />
