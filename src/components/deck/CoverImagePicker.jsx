@@ -124,12 +124,12 @@ export default function CoverImagePicker({ open, onClose, cards, currentUrl, cur
   return (
     <>
       <Dialog open={open && !showEditor} onOpenChange={onClose}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Deck Cover Image</DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
             {/* Preview with drag-to-reposition focal point */}
             {selected && (
               <div className="space-y-2">
