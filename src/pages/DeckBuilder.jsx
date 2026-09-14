@@ -17,8 +17,8 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import useDominantColor from '@/hooks/useDominantColor';
 
-const HERO_EXPANDED = 300;   // px — full height at scroll top
-const HERO_COLLAPSED = 168;  // px — height once collapsed (toolbar + filter bar)
+const HERO_EXPANDED = 380;   // px — full height at scroll top
+const HERO_COLLAPSED = 200;  // px — height once collapsed (toolbar + filter bar)
 
 export default function DeckBuilder() {
   const { deckId } = useParams();
@@ -252,6 +252,16 @@ export default function DeckBuilder() {
   const heroHeight = HERO_EXPANDED - (HERO_EXPANDED - HERO_COLLAPSED) * collapseProgress;
   const spacerHeight = HERO_EXPANDED - heroHeight;
 
+  // Fade geometry, measured in px up from the bottom of the hero.
+  // Both ends tighten as the header collapses so the fade stays clear of the toolbar.
+  const fadeEndFromBottom = 70 - 50 * collapseProgress;   // 70px expanded → 20px collapsed
+  const fadeBand          = 150 - 95 * collapseProgress;  // 150px expanded → 55px collapsed
+
+  const fadeEndPx   = heroHeight - fadeEndFromBottom;
+  const fadeStartPx = fadeEndPx - fadeBand;
+
+  const heroMask = `linear-gradient(to bottom, black 0px, black ${fadeStartPx}px, transparent ${fadeEndPx}px)`;
+
   // ── Title block: title, description, card count ──
   const titleBlock = (
     <div className="px-4 pb-3">
@@ -352,7 +362,7 @@ export default function DeckBuilder() {
   );
 
   return (
-    <div className="flex min-h-[calc(100vh-3.5rem)] -mx-4 -mt-6">
+    <div className="flex min-h-[calc(100vh-3.5rem)] -mx-4 -mt-6 overflow-x-clip">
     {/* Main content */}
     <div className="flex-1 px-4 pb-4">
 
@@ -360,16 +370,18 @@ export default function DeckBuilder() {
         <>
           {/* ═══ Sticky collapsing hero ═══ */}
           <div
-            className="sticky top-14 z-30 -mx-4 overflow-hidden flex flex-col justify-end"
-            style={{ height: `${heroHeight}px` }}
+            className="sticky top-14 z-30 overflow-hidden flex flex-col justify-end"
+            style={{
+              height: `${heroHeight}px`,
+              width: '100vw',
+              marginLeft: 'calc(50% - 50vw)',
+              marginRight: 'calc(50% - 50vw)',
+            }}
           >
             {/* ── Image layer: masked so the bottom edge fades to transparent ── */}
             <div
               className="absolute inset-0"
-              style={{
-                maskImage: 'linear-gradient(to bottom, black 0%, black 70%, transparent 100%)',
-                WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 70%, transparent 100%)',
-              }}
+              style={{ maskImage: heroMask, WebkitMaskImage: heroMask }}
             >
               <img
                 src={deck.cover_image_url}
