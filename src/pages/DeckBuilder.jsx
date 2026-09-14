@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useLayoutEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -169,6 +169,19 @@ export default function DeckBuilder() {
     return Array.from(set).sort();
   }, [activeCards]);
 
+  const filterCardRef = useRef(null);
+  const [filterCardH, setFilterCardH] = useState(92);
+
+  useLayoutEffect(() => {
+    const el = filterCardRef.current;
+    if (!el) return;
+    const measure = () => setFilterCardH(el.offsetHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [activeCards.length, allTags.length]);
+
   const displayedCards = useMemo(() => {
     let cards = [...activeCards];
 
@@ -305,6 +318,15 @@ export default function DeckBuilder() {
   const heroHeight = HERO_EXPANDED - (HERO_EXPANDED - HERO_COLLAPSED) * collapseProgress;
   const spacerHeight = HERO_EXPANDED - heroHeight;
 
+  const FILTER_BOTTOM_GAP  = 12; // the filter card's mb-3
+  const SEARCH_ROW_CENTER  = 28; // card p-3 (12) + half the h-8 search input (16)
+
+  // The image stops at the middle of the search input row, so the filter card
+  // straddles the hero's bottom edge. With no filter bar, the image fills the hero.
+  const imageHeight = activeCards.length > 0
+    ? Math.max(0, heroHeight - filterCardH - FILTER_BOTTOM_GAP + SEARCH_ROW_CENTER)
+    : heroHeight;
+
   // Fade geometry, measured in px up from the bottom of the hero.
   // Both ends tighten as the header collapses so the fade stays clear of the toolbar.
   const scrim = buildScrim(dominantColor);
@@ -428,7 +450,7 @@ export default function DeckBuilder() {
         <>
           {/* ═══ Sticky collapsing hero ═══ */}
           <div
-            className="sticky top-14 z-30 overflow-hidden flex flex-col justify-end"
+            className="sticky top-14 z-30 overflow-hidden flex flex-col justify-end bg-background"
             style={{
               height: `${heroHeight}px`,
               width: '100vw',
@@ -436,8 +458,11 @@ export default function DeckBuilder() {
               marginRight: 'calc(50% - 50vw)',
             }}
           >
-            {/* ── Image layer: masked so the bottom edge fades to transparent ── */}
-            <div className="absolute inset-0">
+            {/* ── Image layer: top-anchored, stops at mid-search-input ── */}
+            <div
+              className="absolute top-0 left-0 right-0 overflow-hidden"
+              style={{ height: `${imageHeight}px` }}
+            >
               <img
                 src={deck.cover_image_url}
                 alt=""
@@ -463,7 +488,10 @@ export default function DeckBuilder() {
               {toolbarBlock}
 
               {activeCards.length > 0 && (
-                <div className="rounded-lg border p-3 mx-4 mb-3 bg-card border-border shadow-sm">
+                <div
+                  ref={filterCardRef}
+                  className="rounded-lg border p-3 mx-4 mb-3 bg-card border-border shadow-sm"
+                >
                   <CardFilterBar
                     search={search} onSearch={setSearch}
                     sortBy={sortBy} onSort={setSortBy}
