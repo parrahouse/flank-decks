@@ -13,6 +13,8 @@ import DeckCollectionsDialog from '@/components/collections/DeckCollectionsDialo
 import CardFilterBar from '@/components/cards/CardFilterBar';
 import BinPanel from '@/components/cards/BinPanel';
 import CardPreviewModal from '@/components/cards/CardPreviewModal';
+import CoverImagePicker from '@/components/deck/CoverImagePicker';
+import { deriveCoverAccentColor, hexToRgba } from '@/lib/deriveCoverAccentColor';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -65,6 +67,7 @@ export default function DeckBuilder() {
   const [showAiSuggest, setShowAiSuggest] = useState(false);
   const [showCollections, setShowCollections] = useState(false);
   const [previewCard, setPreviewCard] = useState(null);
+  const [showCoverPicker, setShowCoverPicker] = useState(false);
 
   // Description editing
   const [editingDesc, setEditingDesc] = useState(false);
@@ -219,20 +222,49 @@ export default function DeckBuilder() {
     onSuccess: () => { qc.invalidateQueries(['deck', deckId]); toast.success('Deck settings saved'); },
   });
 
+  const saveCoverMutation = useMutation({
+    mutationFn: async ({ url, focalPoint, originalUrl }) => {
+      const c = url ? await deriveCoverAccentColor(url) : null;
+      return base44.entities.Deck.update(deckId, {
+        cover_image_url: url,
+        cover_focal_point: focalPoint,
+        cover_image_original_url: originalUrl,
+        cover_accent_color: c || null,
+      });
+    },
+    onSuccess: () => { qc.invalidateQueries(['deck', deckId]); toast.success('Cover updated'); },
+  });
+
   const hasCover = !!deck?.cover_image_url;
+  const accent = deck?.cover_accent_color || null;
+  const overlayBg = accent ? hexToRgba(accent, 0.82) : (hasCover ? 'hsl(var(--primary) / 0.82)' : null);
+  const gradientTop = accent ? accent : (hasCover ? 'hsl(var(--primary))' : null);
+
+  // Lazily derive + cache the accent color for existing decks that have a cover but no cached color yet.
+  useEffect(() => {
+    if (deck?.cover_image_url && !deck?.cover_accent_color) {
+      let cancelled = false;
+      deriveCoverAccentColor(deck.cover_image_url).then((c) => {
+        if (!cancelled && c) {
+          base44.entities.Deck.update(deckId, { cover_accent_color: c }).then(() => qc.invalidateQueries(['deck', deckId]));
+        }
+      });
+      return () => { cancelled = true; };
+    }
+  }, [deck?.cover_image_url, deck?.cover_accent_color, deckId]);
 
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)] -mx-4 -mt-6">
     {/* Main content */}
-    <div className="flex-1 px-4 pb-4">
+    <div className="flex-1 px-4 pb-4 relative z-10">
 
       {/* Sticky header + filter region — full width, meets nav bar */}
       <div className={cn("sticky top-14 z-30 pt-4 pb-2 -mx-4 px-4", hasCover ? "" : "bg-card border-b border-border/60")}>
         {hasCover && (
           <>
             <img src={deck.cover_image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-primary/80 backdrop-grayscale" />
-            <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-card pointer-events-none" />
+            <div className="absolute inset-0 backdrop-grayscale" style={overlayBg ? { backgroundColor: overlayBg } : undefined} />
+            <div className="absolute inset-x-0 bottom-0 h-32 pointer-events-none" style={gradientTop ? { background: `linear-gradient(to bottom, transparent, ${gradientTop})` } : undefined} />
           </>
         )}
       <div className="relative max-w-7xl mx-auto">
@@ -319,6 +351,10 @@ export default function DeckBuilder() {
             </Button>
           </Link>
 
+          <Button variant="ghost" size="sm" onClick={() => setShowCoverPicker(true)} className={cn("gap-1.5 h-9", hasCover ? "text-white/80 hover:text-white" : "text-muted-foreground hover:text-foreground")}>
+            <ImageIcon className="w-4 h-4" /> Cover
+          </Button>
+
           <Button variant="ghost" size="sm" onClick={openAdd} className={cn("gap-1.5 h-9", hasCover && "text-white hover:text-white")}>
             <Plus className="w-4 h-4" /> Add Card
           </Button>
@@ -353,8 +389,13 @@ export default function DeckBuilder() {
       </div>
       </div>
 
+      {/* Cover-derived gradient behind cards */}
+      {gradientTop && (
+        <div className="fixed top-14 inset-x-0 h-[100vh] pointer-events-none" style={{ background: `linear-gradient(to bottom, ${gradientTop}, transparent)`, zIndex: 0 }} />
+      )}
+
       {/* Cards grid */}
-      <div className="max-w-7xl mx-auto pt-6">
+      <div className="max-w-7xl mx-auto pt-6 relative z-10">
       {isLoading ? (
         <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
           {[1,2,3,4].map(i => <div key={i} className="h-40 rounded-xl bg-muted animate-pulse" />)}
@@ -512,6 +553,18 @@ export default function DeckBuilder() {
       onClose={() => setShowCollections(false)}
       deckId={deckId}
       deckTitle={deck?.title}
+    />
+
+    <CoverImagePicker
+      open={showCoverPicker}
+      onClose={() => setShowCoverPicker(false)}
+      cards={activeCards}
+      currentUrl={deck?.cover_image_url || null}
+      currentFocalPoint={deck?.cover_focal_point || null}
+      currentOriginalUrl={deck?.cover_image_original_url || null}
+      deckTitle={deck?.title}
+      deckDescription={deck?.description}
+      onSave={(url, focalPoint, originalUrl) => saveCoverMutation.mutate({ url, focalPoint, originalUrl })}
     />
 
     <AiCardSuggestionsModal

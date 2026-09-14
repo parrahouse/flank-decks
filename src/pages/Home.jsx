@@ -12,6 +12,7 @@ import DeckCard from '@/components/deck/DeckCard';
 import ShareModal from '@/components/deck/ShareModal';
 import AddDeckByLinkDialog from '@/components/deck/AddDeckByLinkDialog';
 import CoverImagePicker from '@/components/deck/CoverImagePicker';
+import { deriveCoverAccentColor } from '@/lib/deriveCoverAccentColor';
 import NewDeckDialog from '@/components/deck/NewDeckDialog';
 import { toast } from 'sonner';
 function makeToken() {
@@ -182,7 +183,15 @@ export default function Home() {
   };
 
   const saveCoverMutation = useMutation({
-    mutationFn: ({ deck, url, focalPoint, originalUrl }) => base44.entities.Deck.update(deck.id, { cover_image_url: url, cover_focal_point: focalPoint, cover_image_original_url: originalUrl }),
+    mutationFn: async ({ deck, url, focalPoint, originalUrl }) => {
+      const accent = url ? await deriveCoverAccentColor(url) : null;
+      return base44.entities.Deck.update(deck.id, {
+        cover_image_url: url,
+        cover_focal_point: focalPoint,
+        cover_image_original_url: originalUrl,
+        cover_accent_color: accent || null,
+      });
+    },
     onSuccess: () => {qc.invalidateQueries(['decks']);toast.success('Cover updated');}
   });
 
