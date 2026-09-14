@@ -329,66 +329,89 @@ export default function DeckBuilder() {
     <div className="flex-1 px-4 pb-4">
 
       {hasCover ? (
-        <>
-      {/* ── Hero region (non-sticky, scrolls normally) ── */}
-      <div className="relative overflow-hidden -mx-4" style={{ minHeight: '50vh' }}>
-        <img src={deck.cover_image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
-        {dominantColor ? (
-          <div className="absolute inset-0" style={{ backgroundColor: `rgb(${dominantColor})`, opacity: 0.55, mixBlendMode: 'overlay' }} />
-        ) : (
-          <div className="absolute inset-0 bg-primary/60 backdrop-blur-sm" />
-        )}
-        <div className="absolute inset-x-0 bottom-0 pointer-events-none" style={{ height: '45%' }}>
-          <div className="w-full h-full bg-gradient-to-b from-transparent to-background" />
-        </div>
-        <div className="relative z-10 flex flex-col justify-end max-w-7xl w-full mx-auto px-4 pb-4" style={{ minHeight: '50vh' }}>
-          {headerContent}
-        </div>
-      </div>
-
-      {/* ── Sticky filter bar ── */}
-      {activeCards.length > 0 && (
-        <div className="sticky top-14 z-30 -mx-4 px-4 bg-card border-b border-border/40">
-          <div className="max-w-7xl mx-auto py-3">
-            <CardFilterBar
-              search={search}
-              onSearch={setSearch}
-              sortBy={sortBy}
-              onSort={setSortBy}
-              masteryFilter={masteryFilter}
-              onMasteryFilter={setMasteryFilter}
-              allTags={allTags}
-              tagFilters={tagFilters}
-              onTagFilters={setTagFilters}
+        <div className="sticky top-14 z-30 -mx-4 px-4 pt-4 pb-2">
+          {/* ── Image shell: cover + overlay, masked to fade at bottom ── */}
+          <div
+            className="absolute inset-0 overflow-hidden"
+            style={{
+              maskImage: 'linear-gradient(to bottom, black 0%, black 55%, transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 55%, transparent 100%)',
+            }}
+          >
+            <img
+              src={deck.cover_image_url}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover"
             />
+            {dominantColor ? (
+              <div
+                className="absolute inset-0"
+                style={{
+                  backgroundColor: `rgb(${dominantColor})`,
+                  opacity: 0.55,
+                  mixBlendMode: 'overlay',
+                }}
+              />
+            ) : (
+              <div className="absolute inset-0 bg-primary/60 backdrop-blur-sm" />
+            )}
+          </div>
+
+          {/* ── Content: title, toolbar, filter — fully opaque, not masked ── */}
+          <div className="relative z-10 max-w-7xl mx-auto">
+            {headerContent}
+
+            {activeCards.length > 0 && (
+              <div className="rounded-lg border p-3 mt-1 mx-4 bg-card/95 backdrop-blur-sm border-border shadow-sm">
+                <CardFilterBar
+                  search={search}
+                  onSearch={setSearch}
+                  sortBy={sortBy}
+                  onSort={setSortBy}
+                  masteryFilter={masteryFilter}
+                  onMasteryFilter={setMasteryFilter}
+                  allTags={allTags}
+                  tagFilters={tagFilters}
+                  onTagFilters={setTagFilters}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* ── Fade tail: extends below the sticky block so cards dissolve ── */}
+          <div
+            className="absolute left-0 right-0 h-16 pointer-events-none"
+            style={{
+              top: '100%',
+              background: dominantColor
+                ? `linear-gradient(to bottom, rgba(${dominantColor}, 0.25), transparent)`
+                : 'linear-gradient(to bottom, hsl(var(--card) / 0.3), transparent)',
+            }}
+          />
+        </div>
+      ) : (
+        /* ── Non-cover fallback: compact sticky header, no hero ── */
+        <div className="sticky top-14 z-30 pt-4 pb-2 -mx-4 px-4 bg-card border-b border-border/60">
+          <div className="relative max-w-7xl mx-auto">
+            {headerContent}
+            {activeCards.length > 0 && (
+              <div className="rounded-lg border p-3 mt-1 mx-4 bg-card border-border">
+                <CardFilterBar
+                  search={search}
+                  onSearch={setSearch}
+                  sortBy={sortBy}
+                  onSort={setSortBy}
+                  masteryFilter={masteryFilter}
+                  onMasteryFilter={setMasteryFilter}
+                  allTags={allTags}
+                  tagFilters={tagFilters}
+                  onTagFilters={setTagFilters}
+                />
+              </div>
+            )}
           </div>
           <div className="absolute left-0 right-0 -bottom-12 h-12 bg-gradient-to-b from-card to-transparent pointer-events-none" />
         </div>
-      )}
-      </>
-      ) : (
-      <div className="sticky top-14 z-30 pt-4 pb-2 -mx-4 px-4 bg-card border-b border-border/60">
-        {/* ── Non-cover fallback: compact sticky header ── */}
-        <div className="relative max-w-7xl mx-auto">
-          {headerContent}
-          {activeCards.length > 0 && (
-            <div className="rounded-lg border p-3 mt-1 mx-4 bg-card border-border">
-              <CardFilterBar
-                search={search}
-                onSearch={setSearch}
-                sortBy={sortBy}
-                onSort={setSortBy}
-                masteryFilter={masteryFilter}
-                onMasteryFilter={setMasteryFilter}
-                allTags={allTags}
-                tagFilters={tagFilters}
-                onTagFilters={setTagFilters}
-              />
-            </div>
-          )}
-        </div>
-        <div className="absolute left-0 right-0 -bottom-12 h-12 bg-gradient-to-b from-card to-transparent pointer-events-none" />
-      </div>
       )}
 
       {/* Cards grid */}
