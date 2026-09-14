@@ -227,11 +227,12 @@ export default function DeckBuilder() {
     <div className="flex-1 px-4 pb-4">
 
       {/* Sticky header + filter region — full width, meets nav bar */}
-      <div className={cn("sticky top-14 z-30 pt-4 pb-2 -mx-4 px-4 border-b border-border/60", !hasCover && "bg-card")}>
+      <div className={cn("sticky top-14 z-30 pt-4 pb-2 -mx-4 px-4", hasCover ? "" : "bg-card border-b border-border/60")}>
         {hasCover && (
           <>
             <img src={deck.cover_image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
             <div className="absolute inset-0 bg-primary/80 backdrop-grayscale" />
+            <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-b from-transparent to-card pointer-events-none" />
           </>
         )}
       <div className="relative max-w-7xl mx-auto">
