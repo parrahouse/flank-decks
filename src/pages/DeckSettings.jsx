@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, Settings2, Volume2, VolumeX, Download } from 'lucide-react';
+import { Volume2, VolumeX, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import DeckHeroHeader from '@/components/deck/DeckHeroHeader';
 
 export default function DeckSettings() {
   const { deckId } = useParams();
@@ -70,18 +71,7 @@ export default function DeckSettings() {
 
   return (
     <>
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-8">
-        <Link to={`/deck/${deckId}`} className="text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft className="w-5 h-5" />
-        </Link>
-        <div className="flex-1">
-          <h1 className="text-xl font-bold">{deck.title}</h1>
-          <p className="text-sm text-muted-foreground flex items-center gap-1.5">
-            <Settings2 className="w-3.5 h-3.5" /> Deck Settings
-          </p>
-        </div>
-      </div>
+      <DeckHeroHeader deck={deck} activePage="settings" cardCount={activeCards.length} />
 
       <div className="space-y-4">
         {/* Study experience */}
