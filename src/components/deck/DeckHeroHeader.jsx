@@ -10,8 +10,8 @@ import useDominantColor from '@/hooks/useDominantColor';
 // The image is always 304 expanded / 124 collapsed on every page.
 const HERO_EXPANDED_WITH_FILTER = 380;
 const HERO_COLLAPSED_WITH_FILTER = 200;
-const HERO_EXPANDED_NO_FILTER = 304;
-const HERO_COLLAPSED_NO_FILTER = 124;
+const HERO_EXPANDED_NO_FILTER = 281;
+const HERO_COLLAPSED_NO_FILTER = 101;
 
 /** sRGB channel → linear, for luminance math. */
 const srgbToLinear = (c) =>
