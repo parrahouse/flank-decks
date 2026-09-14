@@ -17,9 +17,8 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import useDominantColor from '@/hooks/useDominantColor';
 
-/** Darken an "R, G, B" string to ~30% brightness for use as a toolbar background. */
-const darkenColor = (rgb, factor = 0.3) =>
-  rgb ? rgb.split(',').map(c => Math.round(Number(c.trim()) * factor)).join(', ') : null;
+const HERO_EXPANDED = 300;   // px — full height at scroll top
+const HERO_COLLAPSED = 168;  // px — height once collapsed (toolbar + filter bar)
 
 export default function DeckBuilder() {
   const { deckId } = useParams();
@@ -227,9 +226,35 @@ export default function DeckBuilder() {
   const hasCover = !!deck?.cover_image_url;
   const dominantColor = useDominantColor(deck?.cover_image_url);
 
+  // Scroll-driven collapse: 0 = fully expanded, 1 = fully collapsed
+  const [collapseProgress, setCollapseProgress] = useState(0);
+
+  useEffect(() => {
+    if (!hasCover) return;
+    let raf = null;
+    const range = HERO_EXPANDED - HERO_COLLAPSED;
+    const onScroll = () => {
+      if (raf !== null) return;
+      raf = requestAnimationFrame(() => {
+        const p = Math.min(1, Math.max(0, window.scrollY / range));
+        setCollapseProgress(p);
+        raf = null;
+      });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (raf !== null) cancelAnimationFrame(raf);
+    };
+  }, [hasCover]);
+
+  const heroHeight = HERO_EXPANDED - (HERO_EXPANDED - HERO_COLLAPSED) * collapseProgress;
+  const spacerHeight = HERO_EXPANDED - heroHeight;
+
   // ── Title block: title, description, card count ──
   const titleBlock = (
-    <div className="px-4 pt-4 pb-3">
+    <div className="px-4 pb-3">
       {editingTitle ? (
         <div className="flex items-center gap-2">
           <input
@@ -299,7 +324,7 @@ export default function DeckBuilder() {
 
   // ── Toolbar block: action buttons ──
   const toolbarBlock = (
-    <div className="px-3 pt-0.5 pb-2 flex flex-wrap items-center gap-1">
+    <div className="px-3 pb-2 flex flex-wrap items-center gap-1">
       <Link to={`/stats/${deckId}`}>
         <Button variant="ghost" size="sm" className={cn("gap-1.5 h-9", hasCover ? "text-white/80 hover:text-white" : "text-muted-foreground hover:text-foreground")}>
           <PieChart className="w-4 h-4" /> Stats
@@ -333,14 +358,17 @@ export default function DeckBuilder() {
 
       {hasCover ? (
         <>
-          {/* ═══ A. Scrollable hero — scrolls away ═══ */}
-          <div className="relative overflow-hidden -mx-4" style={{ minHeight: '280px' }}>
-            {/* Image + scrim + overlay, masked to fade at bottom */}
+          {/* ═══ Sticky collapsing hero ═══ */}
+          <div
+            className="sticky top-14 z-30 -mx-4 overflow-hidden flex flex-col justify-end"
+            style={{ height: `${heroHeight}px` }}
+          >
+            {/* ── Image layer: masked so the bottom edge fades to transparent ── */}
             <div
               className="absolute inset-0"
               style={{
-                maskImage: 'linear-gradient(to bottom, black 0%, black 55%, transparent 100%)',
-                WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 55%, transparent 100%)',
+                maskImage: 'linear-gradient(to bottom, black 0%, black 70%, transparent 100%)',
+                WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 70%, transparent 100%)',
               }}
             >
               <img
@@ -348,79 +376,68 @@ export default function DeckBuilder() {
                 alt=""
                 className="absolute inset-0 w-full h-full object-cover"
               />
-              {/* Dark scrim — guarantees contrast for white text */}
-              <div className="absolute inset-0 bg-black/40" />
-              {/* Dominant-color overlay */}
+
+              {/* Subtle dominant-color tint — flat alpha, NO blend mode */}
               {dominantColor && (
                 <div
                   className="absolute inset-0"
-                  style={{
-                    backgroundColor: `rgb(${dominantColor})`,
-                    opacity: 0.4,
-                    mixBlendMode: 'overlay',
-                  }}
+                  style={{ backgroundColor: `rgba(${dominantColor}, 0.18)` }}
                 />
               )}
+
+              {/* Black scrim — this is what makes white text readable on any cover */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  background:
+                    'linear-gradient(to bottom, rgba(0,0,0,0.30) 0%, rgba(0,0,0,0.55) 55%, rgba(0,0,0,0.75) 100%)',
+                }}
+              />
             </div>
 
-            {/* Title content, pinned to the bottom of the hero */}
-            <div className="relative z-10 flex flex-col justify-end h-full max-w-7xl mx-auto" style={{ minHeight: '280px' }}>
-              {titleBlock}
-            </div>
-          </div>
+            {/* ── Content, pinned to the bottom of the shrinking container ── */}
+            <div className="relative z-10 w-full max-w-7xl mx-auto px-4">
+              {/* Title fades out and clips away as the header collapses */}
+              <div
+                style={{
+                  opacity: 1 - collapseProgress,
+                  pointerEvents: collapseProgress > 0.6 ? 'none' : 'auto',
+                }}
+              >
+                {titleBlock}
+              </div>
 
-          {/* ═══ B. Sticky toolbar — sticks when hero scrolls away ═══ */}
-          <div
-            className="sticky top-14 z-30 -mx-4 px-4"
-            style={{
-              backgroundColor: dominantColor
-                ? `rgb(${darkenColor(dominantColor)})`
-                : 'hsl(var(--card))',
-            }}
-          >
-            <div className="relative z-10 max-w-7xl mx-auto">
-              {/* Action toolbar */}
               {toolbarBlock}
 
-              {/* Filter bar */}
               {activeCards.length > 0 && (
-                <div className="rounded-lg border p-3 mt-1 mx-4 mb-3 bg-card/95 backdrop-blur-sm border-border/50 shadow-sm">
+                <div className="rounded-lg border p-3 mx-4 mb-3 bg-card border-border shadow-sm">
                   <CardFilterBar
-                    search={search}
-                    onSearch={setSearch}
-                    sortBy={sortBy}
-                    onSort={setSortBy}
-                    masteryFilter={masteryFilter}
-                    onMasteryFilter={setMasteryFilter}
-                    allTags={allTags}
-                    tagFilters={tagFilters}
-                    onTagFilters={setTagFilters}
+                    search={search} onSearch={setSearch}
+                    sortBy={sortBy} onSort={setSortBy}
+                    masteryFilter={masteryFilter} onMasteryFilter={setMasteryFilter}
+                    allTags={allTags} tagFilters={tagFilters} onTagFilters={setTagFilters}
                   />
                 </div>
               )}
             </div>
           </div>
+
+          {/* ═══ Spacer: grows as the hero shrinks, so cards never jump ═══ */}
+          <div aria-hidden style={{ height: `${spacerHeight}px` }} />
         </>
       ) : (
-        /* ═══ Non-cover fallback: compact sticky header ═══ */
+        /* ═══ No cover image: compact sticky header, no hero ═══ */
         <div className="sticky top-14 z-30 pt-4 pb-2 -mx-4 px-4 bg-card border-b border-border/60">
           <div className="relative max-w-7xl mx-auto">
-            <div className="mb-4">
-              {titleBlock}
-              {toolbarBlock}
-            </div>
+            {titleBlock}
+            {toolbarBlock}
             {activeCards.length > 0 && (
               <div className="rounded-lg border p-3 mt-1 mx-4 bg-card border-border">
                 <CardFilterBar
-                  search={search}
-                  onSearch={setSearch}
-                  sortBy={sortBy}
-                  onSort={setSortBy}
-                  masteryFilter={masteryFilter}
-                  onMasteryFilter={setMasteryFilter}
-                  allTags={allTags}
-                  tagFilters={tagFilters}
-                  onTagFilters={setTagFilters}
+                  search={search} onSearch={setSearch}
+                  sortBy={sortBy} onSort={setSortBy}
+                  masteryFilter={masteryFilter} onMasteryFilter={setMasteryFilter}
+                  allTags={allTags} tagFilters={tagFilters} onTagFilters={setTagFilters}
                 />
               </div>
             )}
