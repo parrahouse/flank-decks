@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, GalleryVerticalEnd, Image as ImageIcon, Cog, Upload, PieChart, FolderOpen, Check, Pencil, Sparkles } from 'lucide-react';
+import { Plus, GalleryVerticalEnd, Image as ImageIcon, Cog, Upload, PieChart, FolderOpen, Check, Pencil, Sparkles, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import useDominantColor from '@/hooks/useDominantColor';
 
-const HERO_EXPANDED = 380;
-const HERO_COLLAPSED = 200;
+// Hero heights differ based on whether the filter bar is present.
+// With filter bar (Deck page): 380→200. Without (Stats/Settings): 304→124.
+// The image is always 304 expanded / 124 collapsed on every page.
+const HERO_EXPANDED_WITH_FILTER = 380;
+const HERO_COLLAPSED_WITH_FILTER = 200;
+const HERO_EXPANDED_NO_FILTER = 304;
+const HERO_COLLAPSED_NO_FILTER = 124;
 
 /** sRGB channel → linear, for luminance math. */
 const srgbToLinear = (c) =>
@@ -94,6 +99,10 @@ export default function DeckHeroHeader({
   const extractedColor = useDominantColor(deck?.cover_image_url);
   const scrimSourceColor = hexToRgbString(deck?.accent_color) || extractedColor;
 
+  const hasFilterBar = activePage === 'deck' && cardCount > 0;
+  const HERO_EXPANDED = hasFilterBar ? HERO_EXPANDED_WITH_FILTER : HERO_EXPANDED_NO_FILTER;
+  const HERO_COLLAPSED = hasFilterBar ? HERO_COLLAPSED_WITH_FILTER : HERO_COLLAPSED_NO_FILTER;
+
   // ── Scroll-driven collapse ──
   const [collapseProgress, setCollapseProgress] = useState(0);
 
@@ -115,7 +124,7 @@ export default function DeckHeroHeader({
       window.removeEventListener('scroll', onScroll);
       if (raf !== null) cancelAnimationFrame(raf);
     };
-  }, [hasCover]);
+  }, [hasCover, HERO_EXPANDED, HERO_COLLAPSED]);
 
   const heroHeight = HERO_EXPANDED - (HERO_EXPANDED - HERO_COLLAPSED) * collapseProgress;
   const spacerHeight = HERO_EXPANDED - heroHeight;
@@ -128,7 +137,6 @@ export default function DeckHeroHeader({
 
   // When a filter bar is present (Deck page), the image stops at mid-search-input.
   // On Stats/Settings there's no filter bar, so the image fills the hero.
-  const hasFilterBar = activePage === 'deck' && cardCount > 0;
   const imageHeight = hasFilterBar
     ? Math.max(0, heroHeight - 92 - FILTER_BOTTOM_GAP + SEARCH_ROW_CENTER)
     : heroHeight;
@@ -179,6 +187,11 @@ export default function DeckHeroHeader({
   const deckPath = `/deck/${deck?.id}`;
   const toolbarBlock = (
     <div className="px-3 pb-2 flex flex-wrap items-center gap-1">
+      <Link to={deckPath}>
+        <Button variant="ghost" size="sm" className={btnClass('deck')}>
+          <Layers className="w-4 h-4" /> Deck
+        </Button>
+      </Link>
       <Link to={`/stats/${deck?.id}`}>
         <Button variant="ghost" size="sm" className={btnClass('stats')}>
           <PieChart className="w-4 h-4" /> Stats
