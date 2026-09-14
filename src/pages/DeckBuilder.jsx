@@ -450,7 +450,7 @@ export default function DeckBuilder() {
         <>
           {/* ═══ Sticky collapsing hero ═══ */}
           <div
-            className="sticky top-14 z-30 overflow-hidden flex flex-col justify-end bg-background"
+            className="sticky top-14 z-30 overflow-hidden flex flex-col justify-end"
             style={{
               height: `${heroHeight}px`,
               width: '100vw',
@@ -490,7 +490,7 @@ export default function DeckBuilder() {
               {activeCards.length > 0 && (
                 <div
                   ref={filterCardRef}
-                  className="rounded-lg border p-3 mx-4 mb-3 bg-card border-border shadow-sm"
+                  className="rounded-lg border p-3 mx-4 mb-3 bg-card border-border shadow-md"
                 >
                   <CardFilterBar
                     search={search} onSearch={setSearch}
