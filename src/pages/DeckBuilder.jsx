@@ -20,15 +20,26 @@ import useDominantColor from '@/hooks/useDominantColor';
 const HERO_EXPANDED = 380;   // px — full height at scroll top
 const HERO_COLLAPSED = 200;  // px — height once collapsed (toolbar + filter bar)
 
+/** sRGB channel → linear, for luminance math. */
+const srgbToLinear = (c) =>
+  c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+
+/** WCAG relative luminance from 0–1 sRGB channels. */
+const relLuminance = (r, g, b) =>
+  0.2126 * srgbToLinear(r) + 0.7152 * srgbToLinear(g) + 0.0722 * srgbToLinear(b);
+
 /**
- * Convert an "R, G, B" string into a dark, saturated scrim color.
- * Preserves hue, boosts saturation (pixel averaging washes it out),
- * and clamps lightness so white text stays readable.
- * Returns { h, s, l } or null.
+ * Build a scrim from an "R, G, B" dominant color.
+ * Hue and saturation come from the cover; lightness is clamped dark.
+ * Alpha is derived from the cover's luminance so the composite lands
+ * dark enough for white text regardless of how light the cover is.
+ * Returns { h, s, l, aTop, aMid, aBottom } or null.
  */
-const toScrimHsl = (rgb, lightness = 14) => {
+const buildScrim = (rgb, lightness = 13) => {
   if (!rgb) return null;
   const [r, g, b] = rgb.split(',').map(c => Number(c.trim()) / 255);
+
+  // ── Hue + saturation ──
   const max = Math.max(r, g, b);
   const min = Math.min(r, g, b);
   const l = (max + min) / 2;
@@ -43,10 +54,22 @@ const toScrimHsl = (rgb, lightness = 14) => {
     h *= 60;
     if (h < 0) h += 360;
   }
+
+  // ── Alpha needed to bring the composite to a readable luminance ──
+  // Solving  TARGET = L(1 - a) + SCRIM_L(a)  for a.
+  const TARGET = 0.18;    // composite luminance ≈ 4.5:1 against white
+  const SCRIM_L = 0.02;   // the scrim's own luminance at l≈13%
+  const L = relLuminance(r, g, b);
+  const raw = L <= TARGET ? 0 : (L - TARGET) / Math.max(L - SCRIM_L, 0.01);
+  const aBottom = Math.min(0.88, Math.max(0.42, raw));
+
   return {
     h: Math.round(h),
     s: Math.min(100, Math.round(s * 140)),
     l: lightness,
+    aTop: Number((aBottom * 0.28).toFixed(3)),
+    aMid: Number((aBottom * 0.72).toFixed(3)),
+    aBottom: Number(aBottom.toFixed(3)),
   };
 };
 
@@ -284,24 +307,18 @@ export default function DeckBuilder() {
 
   // Fade geometry, measured in px up from the bottom of the hero.
   // Both ends tighten as the header collapses so the fade stays clear of the toolbar.
-  const fadeEndFromBottom = 70 - 50 * collapseProgress;   // 70px expanded → 20px collapsed
-  const fadeBand          = 150 - 95 * collapseProgress;  // 150px expanded → 55px collapsed
-
-  const fadeEndPx   = heroHeight - fadeEndFromBottom;
-  const fadeStartPx = fadeEndPx - fadeBand;
-
-  const heroMask = `linear-gradient(to bottom, black 0px, black ${fadeStartPx}px, transparent ${fadeEndPx}px)`;
-
-  const scrim = toScrimHsl(dominantColor);
+  const scrim = buildScrim(dominantColor);
   const scrimGradient = scrim
     ? `linear-gradient(to bottom,
-        hsla(${scrim.h}, ${scrim.s}%, ${scrim.l}%, 0.25) 0%,
-        hsla(${scrim.h}, ${scrim.s}%, ${scrim.l}%, 0.60) 55%,
-        hsla(${scrim.h}, ${scrim.s}%, ${scrim.l}%, 0.90) 100%)`
+        hsla(${scrim.h}, ${scrim.s}%, ${scrim.l}%, ${scrim.aTop}) 0%,
+        hsla(${scrim.h}, ${scrim.s}%, ${scrim.l}%, ${scrim.aMid}) 40%,
+        hsla(${scrim.h}, ${scrim.s}%, ${scrim.l}%, ${scrim.aBottom}) 72%,
+        hsla(${scrim.h}, ${scrim.s}%, ${scrim.l}%, ${scrim.aBottom}) 100%)`
     : `linear-gradient(to bottom,
-        rgba(0,0,0,0.30) 0%,
-        rgba(0,0,0,0.55) 55%,
-        rgba(0,0,0,0.75) 100%)`;
+        rgba(0,0,0,0.20) 0%,
+        rgba(0,0,0,0.52) 40%,
+        rgba(0,0,0,0.72) 72%,
+        rgba(0,0,0,0.72) 100%)`;
 
   // ── Title block: title, description, card count ──
   const titleBlock = (
@@ -403,7 +420,7 @@ export default function DeckBuilder() {
   );
 
   return (
-    <div className="flex min-h-[calc(100vh-3.5rem)] -mx-4 -mt-6 overflow-x-clip">
+    <div className="flex min-h-[calc(100vh-3.5rem)] -mx-4 -mt-6">
     {/* Main content */}
     <div className="flex-1 px-4 pb-4">
 
@@ -420,10 +437,7 @@ export default function DeckBuilder() {
             }}
           >
             {/* ── Image layer: masked so the bottom edge fades to transparent ── */}
-            <div
-              className="absolute inset-0"
-              style={{ maskImage: heroMask, WebkitMaskImage: heroMask }}
-            >
+            <div className="absolute inset-0">
               <img
                 src={deck.cover_image_url}
                 alt=""
