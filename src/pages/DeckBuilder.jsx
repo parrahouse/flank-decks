@@ -331,6 +331,9 @@ export default function DeckBuilder() {
   const heroHeight = HERO_EXPANDED - (HERO_EXPANDED - HERO_COLLAPSED) * collapseProgress;
   const spacerHeight = HERO_EXPANDED - heroHeight;
 
+  const fp = deck?.cover_focal_point;
+  const coverObjectPosition = fp ? `${fp.x}% ${fp.y}%` : '50% 50%';
+
   const FILTER_BOTTOM_GAP  = 12; // the filter card's mb-3
   const SEARCH_ROW_CENTER  = 28; // card p-3 (12) + half the h-8 search input (16)
 
@@ -480,6 +483,7 @@ export default function DeckBuilder() {
                 src={deck.cover_image_url}
                 alt=""
                 className="absolute inset-0 w-full h-full object-cover"
+                style={{ objectPosition: coverObjectPosition }}
               />
 
               {/* Chromatic scrim — hue from the cover, lightness clamped for contrast */}
