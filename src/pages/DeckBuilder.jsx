@@ -35,7 +35,7 @@ const relLuminance = (r, g, b) =>
  * dark enough for white text regardless of how light the cover is.
  * Returns { h, s, l, aTop, aMid, aBottom } or null.
  */
-const buildScrim = (rgb, lightness = 13) => {
+const buildScrim = (rgb, lightness = 20) => {
   if (!rgb) return null;
   const [r, g, b] = rgb.split(',').map(c => Number(c.trim()) / 255);
 
