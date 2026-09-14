@@ -13,8 +13,6 @@ import DeckCollectionsDialog from '@/components/collections/DeckCollectionsDialo
 import CardFilterBar from '@/components/cards/CardFilterBar';
 import BinPanel from '@/components/cards/BinPanel';
 import CardPreviewModal from '@/components/cards/CardPreviewModal';
-import CoverImagePicker from '@/components/deck/CoverImagePicker';
-import { deriveCoverAccentColor, hexToRgba } from '@/lib/deriveCoverAccentColor';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -67,9 +65,6 @@ export default function DeckBuilder() {
   const [showAiSuggest, setShowAiSuggest] = useState(false);
   const [showCollections, setShowCollections] = useState(false);
   const [previewCard, setPreviewCard] = useState(null);
-  const [showCoverPicker, setShowCoverPicker] = useState(false);
-  const headerRef = useRef(null);
-  const [headerH, setHeaderH] = useState(0);
 
   // Description editing
   const [editingDesc, setEditingDesc] = useState(false);
@@ -224,73 +219,23 @@ export default function DeckBuilder() {
     onSuccess: () => { qc.invalidateQueries(['deck', deckId]); toast.success('Deck settings saved'); },
   });
 
-  const saveCoverMutation = useMutation({
-    mutationFn: async ({ url, focalPoint, originalUrl }) => {
-      const c = url ? await deriveCoverAccentColor(url) : null;
-      return base44.entities.Deck.update(deckId, {
-        cover_image_url: url,
-        cover_focal_point: focalPoint,
-        cover_image_original_url: originalUrl,
-        cover_accent_color: c || null,
-      });
-    },
-    onSuccess: () => { qc.invalidateQueries(['deck', deckId]); toast.success('Cover updated'); },
-  });
-
   const hasCover = !!deck?.cover_image_url;
-  const accent = deck?.cover_accent_color || null;
-  const overlayBg = accent ? hexToRgba(accent, 0.82) : (hasCover ? 'hsl(var(--primary) / 0.82)' : null);
-  const gradientTop = accent ? accent : (hasCover ? 'hsl(var(--primary))' : null);
-
-  // Lazily derive + cache the accent color for existing decks that have a cover but no cached color yet.
-  useEffect(() => {
-    if (deck?.cover_image_url && !deck?.cover_accent_color) {
-      let cancelled = false;
-      deriveCoverAccentColor(deck.cover_image_url).then((c) => {
-        if (!cancelled && c) {
-          base44.entities.Deck.update(deckId, { cover_accent_color: c }).then(() => qc.invalidateQueries(['deck', deckId]));
-        }
-      });
-      return () => { cancelled = true; };
-    }
-  }, [deck?.cover_image_url, deck?.cover_accent_color, deckId]);
-
-  // Measure the sticky header height so the background gradient can start exactly at its bottom edge.
-  useEffect(() => {
-    const el = headerRef.current;
-    if (!el) return;
-    const measure = () => setHeaderH(el.offsetHeight);
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [deck?.id, hasCover, activeCards.length]);
 
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)] -mx-4 -mt-6">
     {/* Main content */}
-    <div className="flex-1 px-4 pb-4 relative z-10">
+    <div className="flex-1 px-4 pb-4">
 
       {/* Sticky header + filter region — full width, meets nav bar */}
-      <div ref={headerRef} className={cn("sticky top-14 z-30 pt-4 pb-3 -mx-4 px-4", hasCover ? "bg-background" : "bg-card border-b border-border/60")}>
-      <div className="relative max-w-7xl mx-auto">
-      {/* Brown hero — title + actions on the cover image, fading to transparent at the bottom */}
-      <div className="relative">
+      <div className={cn("sticky top-14 z-30 pt-4 pb-2 -mx-4 px-4", hasCover ? "" : "bg-card border-b border-border/60")}>
         {hasCover && (
           <>
-            <img
-              src={deck.cover_image_url}
-              alt=""
-              className="absolute inset-0 w-full h-full object-cover"
-              style={{ WebkitMaskImage: 'linear-gradient(to bottom, #000 70%, transparent)', maskImage: 'linear-gradient(to bottom, #000 70%, transparent)' }}
-            />
-            <div
-              className="absolute inset-0 backdrop-grayscale"
-              style={overlayBg ? { background: `linear-gradient(to bottom, ${overlayBg} 70%, transparent)` } : undefined}
-            />
+            <img src={deck.cover_image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-primary/80 backdrop-grayscale" />
+            <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-card pointer-events-none" />
           </>
         )}
-        <div className={cn("relative", hasCover && "pb-8")}>
+      <div className="relative max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-4">
         {/* Title + description */}
@@ -374,10 +319,6 @@ export default function DeckBuilder() {
             </Button>
           </Link>
 
-          <Button variant="ghost" size="sm" onClick={() => setShowCoverPicker(true)} className={cn("gap-1.5 h-9", hasCover ? "text-white/80 hover:text-white" : "text-muted-foreground hover:text-foreground")}>
-            <ImageIcon className="w-4 h-4" /> Cover
-          </Button>
-
           <Button variant="ghost" size="sm" onClick={openAdd} className={cn("gap-1.5 h-9", hasCover && "text-white hover:text-white")}>
             <Plus className="w-4 h-4" /> Add Card
           </Button>
@@ -392,12 +333,10 @@ export default function DeckBuilder() {
           </Link>
         </div>
       </div>
-        </div>
-      </div>
 
       {/* Filter bar */}
       {activeCards.length > 0 && (
-        <div className="rounded-lg border p-3 mt-2 mx-4 bg-card border-border shadow-sm">
+        <div className={cn("rounded-lg border p-3 mt-1 mx-4", hasCover ? "bg-card border-border shadow-sm" : "bg-card border-border")}>
           <CardFilterBar
             search={search}
             onSearch={setSearch}
@@ -414,13 +353,8 @@ export default function DeckBuilder() {
       </div>
       </div>
 
-      {/* Cover-derived gradient behind cards — starts at header bottom, fades in and out */}
-      {gradientTop && headerH > 0 && (
-        <div className="fixed left-0 right-0 pointer-events-none" style={{ top: `calc(3.5rem + ${headerH}px)`, height: '80vh', background: `linear-gradient(to bottom, transparent, ${gradientTop} 30%, transparent)`, zIndex: 0 }} />
-      )}
-
       {/* Cards grid */}
-      <div className="max-w-7xl mx-auto pt-6 relative z-10">
+      <div className="max-w-7xl mx-auto pt-6">
       {isLoading ? (
         <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
           {[1,2,3,4].map(i => <div key={i} className="h-40 rounded-xl bg-muted animate-pulse" />)}
@@ -447,7 +381,7 @@ export default function DeckBuilder() {
       ) : (
         <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
           {displayedCards.map((card, idx) => (
-            <div key={card.id} onClick={() => openEdit(card)} className="group relative bg-card rounded-xl overflow-hidden hover:shadow-md transition-all cursor-pointer">
+            <div key={card.id} onClick={() => openEdit(card)} className="group relative bg-card border border-border rounded-xl overflow-hidden hover:shadow-md transition-all cursor-pointer">
               <div className="bg-muted aspect-[4/3] flex items-center justify-center overflow-hidden relative">
                 {card.image_url
                   ? <>
@@ -578,18 +512,6 @@ export default function DeckBuilder() {
       onClose={() => setShowCollections(false)}
       deckId={deckId}
       deckTitle={deck?.title}
-    />
-
-    <CoverImagePicker
-      open={showCoverPicker}
-      onClose={() => setShowCoverPicker(false)}
-      cards={activeCards}
-      currentUrl={deck?.cover_image_url || null}
-      currentFocalPoint={deck?.cover_focal_point || null}
-      currentOriginalUrl={deck?.cover_image_original_url || null}
-      deckTitle={deck?.title}
-      deckDescription={deck?.description}
-      onSave={(url, focalPoint, originalUrl) => saveCoverMutation.mutate({ url, focalPoint, originalUrl })}
     />
 
     <AiCardSuggestionsModal

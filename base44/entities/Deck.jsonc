@@ -53,10 +53,6 @@
       "type": "string",
       "description": "Pre-crop original cover image URL. Set on first crop; absent means cover_image_url is the original."
     },
-    "cover_accent_color": {
-      "type": "string",
-      "description": "Hex accent color derived from the cover image (e.g. #3B5BA9). Used for the DeckBuilder header overlay and background gradient. Null when no cover or not yet derived."
-    },
     "mastery_min_sessions": {
       "type": "number",
       "default": 3,

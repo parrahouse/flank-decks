@@ -8,7 +8,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { base44 } from '@/api/base44Client';
 import ImagePoolGallery from '@/components/deck/ImagePoolGallery';
-import { deriveCoverAccentColor } from '@/lib/deriveCoverAccentColor';
 import { parseCSV, rowToCard, SAMPLE_CSV } from '@/components/cards/CsvUploadModal';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -103,11 +102,6 @@ export default function NewDeckDialog({ open, onClose }) {
         share_token: makeToken(),
         ...(coverUrl && { cover_image_url: coverUrl, cover_focal_point: { x: 50, y: 50 } }),
       });
-
-      if (coverUrl) {
-        const accent = await deriveCoverAccentColor(coverUrl);
-        if (accent) await base44.entities.Deck.update(deck.id, { cover_accent_color: accent });
-      }
 
       if (preview?.cards?.length) {
         const cards = preview.cards.map((c, i) => ({ ...c, deck_id: deck.id, order: i }));
