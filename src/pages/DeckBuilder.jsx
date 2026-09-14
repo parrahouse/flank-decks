@@ -15,6 +15,7 @@ import BinPanel from '@/components/cards/BinPanel';
 import CardPreviewModal from '@/components/cards/CardPreviewModal';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import useDominantColor from '@/hooks/useDominantColor';
 
 export default function DeckBuilder() {
   const { deckId } = useParams();
@@ -220,26 +221,13 @@ export default function DeckBuilder() {
   });
 
   const hasCover = !!deck?.cover_image_url;
+  const dominantColor = useDominantColor(deck?.cover_image_url);
 
-  return (
-    <div className="flex min-h-[calc(100vh-3.5rem)] -mx-4 -mt-6">
-    {/* Main content */}
-    <div className="flex-1 px-4 pb-4">
-
-      {/* Sticky header + filter region — full width, meets nav bar */}
-      <div className={cn("sticky top-14 z-30 pt-4 pb-2 -mx-4 px-4", hasCover ? "" : "bg-card border-b border-border/60")}>
-        {hasCover && (
-          <>
-            <img src={deck.cover_image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-primary/80 backdrop-grayscale" />
-            <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-card pointer-events-none" />
-          </>
-        )}
-      <div className="relative max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="mb-4">
-        {/* Title + description */}
-        <div className="px-4 pt-4 pb-3">
+  // Shared header content (title + description + card count + action toolbar)
+  const headerContent = (
+    <div className="mb-4">
+      {/* Title + description */}
+      <div className="px-4 pt-4 pb-3">
           {editingTitle ? (
             <div className="flex items-center gap-2">
               <input
@@ -333,25 +321,75 @@ export default function DeckBuilder() {
           </Link>
         </div>
       </div>
+  );
 
-      {/* Filter bar */}
+  return (
+    <div className="flex min-h-[calc(100vh-3.5rem)] -mx-4 -mt-6">
+    {/* Main content */}
+    <div className="flex-1 px-4 pb-4">
+
+      {hasCover ? (
+        <>
+      {/* ── Hero region (non-sticky, scrolls normally) ── */}
+      <div className="relative overflow-hidden -mx-4" style={{ minHeight: '50vh' }}>
+        <img src={deck.cover_image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        {dominantColor ? (
+          <div className="absolute inset-0" style={{ backgroundColor: `rgb(${dominantColor})`, opacity: 0.55, mixBlendMode: 'overlay' }} />
+        ) : (
+          <div className="absolute inset-0 bg-primary/60 backdrop-blur-sm" />
+        )}
+        <div className="absolute inset-x-0 bottom-0 pointer-events-none" style={{ height: '45%' }}>
+          <div className="w-full h-full bg-gradient-to-b from-transparent to-background" />
+        </div>
+        <div className="relative z-10 flex flex-col justify-end max-w-7xl w-full mx-auto px-4 pb-4" style={{ minHeight: '50vh' }}>
+          {headerContent}
+        </div>
+      </div>
+
+      {/* ── Sticky filter bar ── */}
       {activeCards.length > 0 && (
-        <div className={cn("rounded-lg border p-3 mt-1 mx-4", hasCover ? "bg-card border-border shadow-sm" : "bg-card border-border")}>
-          <CardFilterBar
-            search={search}
-            onSearch={setSearch}
-            sortBy={sortBy}
-            onSort={setSortBy}
-            masteryFilter={masteryFilter}
-            onMasteryFilter={setMasteryFilter}
-            allTags={allTags}
-            tagFilters={tagFilters}
-            onTagFilters={setTagFilters}
-          />
+        <div className="sticky top-14 z-30 -mx-4 px-4 bg-card border-b border-border/40">
+          <div className="max-w-7xl mx-auto py-3">
+            <CardFilterBar
+              search={search}
+              onSearch={setSearch}
+              sortBy={sortBy}
+              onSort={setSortBy}
+              masteryFilter={masteryFilter}
+              onMasteryFilter={setMasteryFilter}
+              allTags={allTags}
+              tagFilters={tagFilters}
+              onTagFilters={setTagFilters}
+            />
+          </div>
+          <div className="absolute left-0 right-0 -bottom-12 h-12 bg-gradient-to-b from-card to-transparent pointer-events-none" />
         </div>
       )}
+      </>
+      ) : (
+      <div className="sticky top-14 z-30 pt-4 pb-2 -mx-4 px-4 bg-card border-b border-border/60">
+        {/* ── Non-cover fallback: compact sticky header ── */}
+        <div className="relative max-w-7xl mx-auto">
+          {headerContent}
+          {activeCards.length > 0 && (
+            <div className="rounded-lg border p-3 mt-1 mx-4 bg-card border-border">
+              <CardFilterBar
+                search={search}
+                onSearch={setSearch}
+                sortBy={sortBy}
+                onSort={setSortBy}
+                masteryFilter={masteryFilter}
+                onMasteryFilter={setMasteryFilter}
+                allTags={allTags}
+                tagFilters={tagFilters}
+                onTagFilters={setTagFilters}
+              />
+            </div>
+          )}
+        </div>
+        <div className="absolute left-0 right-0 -bottom-12 h-12 bg-gradient-to-b from-card to-transparent pointer-events-none" />
       </div>
-      </div>
+      )}
 
       {/* Cards grid */}
       <div className="max-w-7xl mx-auto pt-6">
