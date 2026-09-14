@@ -17,6 +17,10 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import useDominantColor from '@/hooks/useDominantColor';
 
+/** Darken an "R, G, B" string to ~30% brightness for use as a toolbar background. */
+const darkenColor = (rgb, factor = 0.3) =>
+  rgb ? rgb.split(',').map(c => Math.round(Number(c.trim()) * factor)).join(', ') : null;
+
 export default function DeckBuilder() {
   const { deckId } = useParams();
   const qc = useQueryClient();
@@ -223,104 +227,103 @@ export default function DeckBuilder() {
   const hasCover = !!deck?.cover_image_url;
   const dominantColor = useDominantColor(deck?.cover_image_url);
 
-  // Shared header content (title + description + card count + action toolbar)
-  const headerContent = (
-    <div className="mb-4">
-      {/* Title + description */}
-      <div className="px-4 pt-4 pb-3">
-          {editingTitle ? (
-            <div className="flex items-center gap-2">
-              <input
-                autoFocus
-                value={titleValue}
-                onChange={e => setTitleValue(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') saveTitle(); if (e.key === 'Escape') cancelEditTitle(); }}
-                placeholder="Deck title"
-                className="text-xl font-bold bg-transparent border-b border-primary focus:outline-none flex-1 min-w-0"
-              />
-              <button onClick={saveTitle} className="flex items-center gap-1 text-xs text-primary hover:underline font-medium shrink-0">
-                <Check className="w-3.5 h-3.5" /> Save
-              </button>
-              <button onClick={cancelEditTitle} className="text-xs text-muted-foreground hover:text-foreground shrink-0">Cancel</button>
-            </div>
-          ) : (
-            <h1 className={cn("text-xl font-bold group/title flex items-center gap-1.5 cursor-text", hasCover && "text-white")} onClick={startEditTitle} title="Click to edit title">
-              {deck?.title || 'Loading…'}
-              <Pencil className={cn("w-3.5 h-3.5 opacity-0 group-hover/title:opacity-100 transition-opacity", hasCover ? "text-white/70" : "text-muted-foreground")} />
-            </h1>
-          )}
-          {editingDesc ? (
-            <div className="mt-1.5 flex flex-col gap-1.5">
-              <div className="relative">
-                <textarea
-                  autoFocus
-                  value={descValue}
-                  onChange={e => setDescValue(e.target.value.slice(0, DESC_MAX))}
-                  placeholder="Add a description…"
-                  rows={2}
-                  maxLength={DESC_MAX}
-                  className="w-full text-sm border border-border rounded-md px-2.5 py-1.5 bg-background text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-ring pr-14"
-                />
-                <span className={`absolute bottom-2 right-2 text-xs tabular-nums ${descValue.length >= DESC_MAX ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
-                  {descValue.length}/{DESC_MAX}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button onClick={saveDesc} className="flex items-center gap-1 text-xs text-primary hover:underline font-medium">
-                  <Check className="w-3.5 h-3.5" /> Save
-                </button>
-                <button onClick={cancelEditDesc} className="text-xs text-muted-foreground hover:text-foreground">Cancel</button>
-                {activeCards.length > 0 && (
-                  <button
-                    onClick={draftDescription}
-                    disabled={draftingDesc}
-                    className="ml-auto flex items-center gap-1 text-xs text-accent-foreground bg-accent hover:bg-accent/80 px-2 py-0.5 rounded-md disabled:opacity-50"
-                  >
-                    <Sparkles className="w-3 h-3" />
-                    {draftingDesc ? 'Drafting…' : 'AI draft'}
-                  </button>
-                )}
-              </div>
-            </div>
-          ) : (
-            <button onClick={startEditDesc} className="group flex items-start gap-1 text-left mt-0.5">
-              {deck?.description
-                ? <span className={cn("text-sm transition-colors line-clamp-2", hasCover ? "text-white/80 group-hover:text-white" : "text-muted-foreground group-hover:text-foreground")}>{deck.description}</span>
-                : <span className={cn("text-sm italic transition-colors", hasCover ? "text-white/50 group-hover:text-white/80" : "text-muted-foreground/50 group-hover:text-muted-foreground")}>Add description…</span>
-              }
-              <Pencil className={cn("w-3 h-3 shrink-0 mt-0.5 transition-colors", hasCover ? "text-white/40 group-hover:text-white/70" : "text-muted-foreground/40 group-hover:text-muted-foreground")} />
+  // ── Title block: title, description, card count ──
+  const titleBlock = (
+    <div className="px-4 pt-4 pb-3">
+      {editingTitle ? (
+        <div className="flex items-center gap-2">
+          <input
+            autoFocus
+            value={titleValue}
+            onChange={e => setTitleValue(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') saveTitle(); if (e.key === 'Escape') cancelEditTitle(); }}
+            placeholder="Deck title"
+            className="text-xl font-bold bg-transparent border-b border-primary focus:outline-none flex-1 min-w-0"
+          />
+          <button onClick={saveTitle} className="flex items-center gap-1 text-xs text-primary hover:underline font-medium shrink-0">
+            <Check className="w-3.5 h-3.5" /> Save
+          </button>
+          <button onClick={cancelEditTitle} className="text-xs text-muted-foreground hover:text-foreground shrink-0">Cancel</button>
+        </div>
+      ) : (
+        <h1 className={cn("text-xl font-bold group/title flex items-center gap-1.5 cursor-text", hasCover && "text-white")} onClick={startEditTitle} title="Click to edit title">
+          {deck?.title || 'Loading…'}
+          <Pencil className={cn("w-3.5 h-3.5 opacity-0 group-hover/title:opacity-100 transition-opacity", hasCover ? "text-white/70" : "text-muted-foreground")} />
+        </h1>
+      )}
+      {editingDesc ? (
+        <div className="mt-1.5 flex flex-col gap-1.5">
+          <div className="relative">
+            <textarea
+              autoFocus
+              value={descValue}
+              onChange={e => setDescValue(e.target.value.slice(0, DESC_MAX))}
+              placeholder="Add a description…"
+              rows={2}
+              maxLength={DESC_MAX}
+              className="w-full text-sm border border-border rounded-md px-2.5 py-1.5 bg-background text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-ring pr-14"
+            />
+            <span className={`absolute bottom-2 right-2 text-xs tabular-nums ${descValue.length >= DESC_MAX ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
+              {descValue.length}/{DESC_MAX}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={saveDesc} className="flex items-center gap-1 text-xs text-primary hover:underline font-medium">
+              <Check className="w-3.5 h-3.5" /> Save
             </button>
-          )}
-          <p className={cn("text-xs mt-1", hasCover ? "text-white/70" : "text-muted-foreground")}>{activeCards.length} {activeCards.length === 1 ? 'card' : 'cards'}</p>
+            <button onClick={cancelEditDesc} className="text-xs text-muted-foreground hover:text-foreground">Cancel</button>
+            {activeCards.length > 0 && (
+              <button
+                onClick={draftDescription}
+                disabled={draftingDesc}
+                className="ml-auto flex items-center gap-1 text-xs text-accent-foreground bg-accent hover:bg-accent/80 px-2 py-0.5 rounded-md disabled:opacity-50"
+              >
+                <Sparkles className="w-3 h-3" />
+                {draftingDesc ? 'Drafting…' : 'AI draft'}
+              </button>
+            )}
+          </div>
         </div>
+      ) : (
+        <button onClick={startEditDesc} className="group flex items-start gap-1 text-left mt-0.5">
+          {deck?.description
+            ? <span className={cn("text-sm transition-colors line-clamp-2", hasCover ? "text-white/80 group-hover:text-white" : "text-muted-foreground group-hover:text-foreground")}>{deck.description}</span>
+            : <span className={cn("text-sm italic transition-colors", hasCover ? "text-white/50 group-hover:text-white/80" : "text-muted-foreground/50 group-hover:text-muted-foreground")}>Add description…</span>
+          }
+          <Pencil className={cn("w-3 h-3 shrink-0 mt-0.5 transition-colors", hasCover ? "text-white/40 group-hover:text-white/70" : "text-muted-foreground/40 group-hover:text-muted-foreground")} />
+        </button>
+      )}
+      <p className={cn("text-xs mt-1", hasCover ? "text-white/70" : "text-muted-foreground")}>{activeCards.length} {activeCards.length === 1 ? 'card' : 'cards'}</p>
+    </div>
+  );
 
-        {/* Action toolbar */}
-        <div className="px-3 pt-0.5 pb-2 flex flex-wrap items-center gap-1">
-          <Link to={`/stats/${deckId}`}>
-            <Button variant="ghost" size="sm" className={cn("gap-1.5 h-9", hasCover ? "text-white/80 hover:text-white" : "text-muted-foreground hover:text-foreground")}>
-              <PieChart className="w-4 h-4" /> Stats
-            </Button>
-          </Link>
-          <Link to={`/settings/${deckId}`}>
-            <Button variant="ghost" size="sm" className={cn("gap-1.5 h-9", hasCover ? "text-white/80 hover:text-white" : "text-muted-foreground hover:text-foreground")}>
-              <Cog className="w-4 h-4" /> Settings
-            </Button>
-          </Link>
+  // ── Toolbar block: action buttons ──
+  const toolbarBlock = (
+    <div className="px-3 pt-0.5 pb-2 flex flex-wrap items-center gap-1">
+      <Link to={`/stats/${deckId}`}>
+        <Button variant="ghost" size="sm" className={cn("gap-1.5 h-9", hasCover ? "text-white/80 hover:text-white" : "text-muted-foreground hover:text-foreground")}>
+          <PieChart className="w-4 h-4" /> Stats
+        </Button>
+      </Link>
+      <Link to={`/settings/${deckId}`}>
+        <Button variant="ghost" size="sm" className={cn("gap-1.5 h-9", hasCover ? "text-white/80 hover:text-white" : "text-muted-foreground hover:text-foreground")}>
+          <Cog className="w-4 h-4" /> Settings
+        </Button>
+      </Link>
 
-          <Button variant="ghost" size="sm" onClick={openAdd} className={cn("gap-1.5 h-9", hasCover && "text-white hover:text-white")}>
-            <Plus className="w-4 h-4" /> Add Card
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setShowCsvUpload(true)} className={cn("gap-1.5 h-9", hasCover ? "text-white/80 hover:text-white" : "text-muted-foreground hover:text-foreground")}>
-            <Upload className="w-4 h-4" /> Import CSV
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setShowCollections(true)} className={cn("gap-1.5 h-9", hasCover ? "text-white/80 hover:text-white" : "text-muted-foreground hover:text-foreground")}>
-            <FolderOpen className="w-4 h-4" /> Collections
-          </Button>
-          <Link to={`/study/${deckId}`} className={cn("ml-auto flex items-center gap-1.5 text-sm font-semibold transition-colors", hasCover ? "text-white hover:text-white/80" : "text-primary hover:text-primary/80")}>
-            <GalleryVerticalEnd className="w-4 h-4" /> Study
-          </Link>
-        </div>
-      </div>
+      <Button variant="ghost" size="sm" onClick={openAdd} className={cn("gap-1.5 h-9", hasCover && "text-white hover:text-white")}>
+        <Plus className="w-4 h-4" /> Add Card
+      </Button>
+      <Button variant="ghost" size="sm" onClick={() => setShowCsvUpload(true)} className={cn("gap-1.5 h-9", hasCover ? "text-white/80 hover:text-white" : "text-muted-foreground hover:text-foreground")}>
+        <Upload className="w-4 h-4" /> Import CSV
+      </Button>
+      <Button variant="ghost" size="sm" onClick={() => setShowCollections(true)} className={cn("gap-1.5 h-9", hasCover ? "text-white/80 hover:text-white" : "text-muted-foreground hover:text-foreground")}>
+        <FolderOpen className="w-4 h-4" /> Collections
+      </Button>
+      <Link to={`/study/${deckId}`} className={cn("ml-auto flex items-center gap-1.5 text-sm font-semibold transition-colors", hasCover ? "text-white hover:text-white/80" : "text-primary hover:text-primary/80")}>
+        <GalleryVerticalEnd className="w-4 h-4" /> Study
+      </Link>
+    </div>
   );
 
   return (
@@ -329,71 +332,83 @@ export default function DeckBuilder() {
     <div className="flex-1 px-4 pb-4">
 
       {hasCover ? (
-        <div className="sticky top-14 z-30 -mx-4 px-4 pt-4 pb-2">
-          {/* ── Image shell: cover + overlay, masked to fade at bottom ── */}
+        <>
+          {/* ═══ A. Scrollable hero — scrolls away ═══ */}
+          <div className="relative overflow-hidden -mx-4" style={{ minHeight: '280px' }}>
+            {/* Image + scrim + overlay, masked to fade at bottom */}
+            <div
+              className="absolute inset-0"
+              style={{
+                maskImage: 'linear-gradient(to bottom, black 0%, black 55%, transparent 100%)',
+                WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 55%, transparent 100%)',
+              }}
+            >
+              <img
+                src={deck.cover_image_url}
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              {/* Dark scrim — guarantees contrast for white text */}
+              <div className="absolute inset-0 bg-black/40" />
+              {/* Dominant-color overlay */}
+              {dominantColor && (
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    backgroundColor: `rgb(${dominantColor})`,
+                    opacity: 0.4,
+                    mixBlendMode: 'overlay',
+                  }}
+                />
+              )}
+            </div>
+
+            {/* Title content, pinned to the bottom of the hero */}
+            <div className="relative z-10 flex flex-col justify-end h-full max-w-7xl mx-auto" style={{ minHeight: '280px' }}>
+              {titleBlock}
+            </div>
+          </div>
+
+          {/* ═══ B. Sticky toolbar — sticks when hero scrolls away ═══ */}
           <div
-            className="absolute inset-0 overflow-hidden"
+            className="sticky top-14 z-30 -mx-4 px-4"
             style={{
-              maskImage: 'linear-gradient(to bottom, black 0%, black 55%, transparent 100%)',
-              WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 55%, transparent 100%)',
+              backgroundColor: dominantColor
+                ? `rgb(${darkenColor(dominantColor)})`
+                : 'hsl(var(--card))',
             }}
           >
-            <img
-              src={deck.cover_image_url}
-              alt=""
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-            {dominantColor ? (
-              <div
-                className="absolute inset-0"
-                style={{
-                  backgroundColor: `rgb(${dominantColor})`,
-                  opacity: 0.55,
-                  mixBlendMode: 'overlay',
-                }}
-              />
-            ) : (
-              <div className="absolute inset-0 bg-primary/60 backdrop-blur-sm" />
-            )}
+            <div className="relative z-10 max-w-7xl mx-auto">
+              {/* Action toolbar */}
+              {toolbarBlock}
+
+              {/* Filter bar */}
+              {activeCards.length > 0 && (
+                <div className="rounded-lg border p-3 mt-1 mx-4 mb-3 bg-card/95 backdrop-blur-sm border-border/50 shadow-sm">
+                  <CardFilterBar
+                    search={search}
+                    onSearch={setSearch}
+                    sortBy={sortBy}
+                    onSort={setSortBy}
+                    masteryFilter={masteryFilter}
+                    onMasteryFilter={setMasteryFilter}
+                    allTags={allTags}
+                    tagFilters={tagFilters}
+                    onTagFilters={setTagFilters}
+                  />
+                </div>
+              )}
+            </div>
           </div>
-
-          {/* ── Content: title, toolbar, filter — fully opaque, not masked ── */}
-          <div className="relative z-10 max-w-7xl mx-auto">
-            {headerContent}
-
-            {activeCards.length > 0 && (
-              <div className="rounded-lg border p-3 mt-1 mx-4 bg-card/95 backdrop-blur-sm border-border shadow-sm">
-                <CardFilterBar
-                  search={search}
-                  onSearch={setSearch}
-                  sortBy={sortBy}
-                  onSort={setSortBy}
-                  masteryFilter={masteryFilter}
-                  onMasteryFilter={setMasteryFilter}
-                  allTags={allTags}
-                  tagFilters={tagFilters}
-                  onTagFilters={setTagFilters}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* ── Fade tail: extends below the sticky block so cards dissolve ── */}
-          <div
-            className="absolute left-0 right-0 h-16 pointer-events-none"
-            style={{
-              top: '100%',
-              background: dominantColor
-                ? `linear-gradient(to bottom, rgba(${dominantColor}, 0.25), transparent)`
-                : 'linear-gradient(to bottom, hsl(var(--card) / 0.3), transparent)',
-            }}
-          />
-        </div>
+        </>
       ) : (
-        /* ── Non-cover fallback: compact sticky header, no hero ── */
+        /* ═══ Non-cover fallback: compact sticky header ═══ */
         <div className="sticky top-14 z-30 pt-4 pb-2 -mx-4 px-4 bg-card border-b border-border/60">
           <div className="relative max-w-7xl mx-auto">
-            {headerContent}
+            <div className="mb-4">
+              {titleBlock}
+              {toolbarBlock}
+            </div>
             {activeCards.length > 0 && (
               <div className="rounded-lg border p-3 mt-1 mx-4 bg-card border-border">
                 <CardFilterBar
@@ -410,7 +425,6 @@ export default function DeckBuilder() {
               </div>
             )}
           </div>
-          <div className="absolute left-0 right-0 -bottom-12 h-12 bg-gradient-to-b from-card to-transparent pointer-events-none" />
         </div>
       )}
 
