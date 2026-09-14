@@ -53,6 +53,10 @@
       "type": "string",
       "description": "Pre-crop original cover image URL. Set on first crop; absent means cover_image_url is the original."
     },
+    "accent_color": {
+      "type": "string",
+      "description": "Optional manual override for the header scrim color, as a hex string like #4A7C2F. When absent, the color is auto-extracted from the cover image."
+    },
     "mastery_min_sessions": {
       "type": "number",
       "default": 3,

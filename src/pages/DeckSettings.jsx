@@ -131,6 +131,34 @@ export default function DeckSettings() {
           </Row>
         </Section>
 
+        {/* Appearance */}
+        <Section title="Appearance">
+          <Row
+            label="Header accent color"
+            description="Overrides the color extracted from the cover image. Clear it to go back to automatic."
+          >
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={deck.accent_color || '#4a7c2f'}
+                onChange={(e) => updateDeckMutation.mutate({ accent_color: e.target.value })}
+                className="w-9 h-9 rounded-md border border-border bg-transparent cursor-pointer p-0.5"
+                aria-label="Header accent color"
+              />
+              {deck.accent_color && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs text-muted-foreground"
+                  onClick={() => updateDeckMutation.mutate({ accent_color: null })}
+                >
+                  Reset
+                </Button>
+              )}
+            </div>
+          </Row>
+        </Section>
+
         {/* Data */}
         <Section title="Data">
           <Row label="Export cards" description="Download all cards in this deck as a CSV file.">

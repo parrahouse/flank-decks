@@ -73,6 +73,18 @@ const buildScrim = (rgb, lightness = 20) => {
   };
 };
 
+/** "#4A7C2F" → "74, 124, 47". Returns null on anything malformed. */
+const hexToRgbString = (hex) => {
+  if (typeof hex !== 'string') return null;
+  const m = hex.trim().replace(/^#/, '');
+  if (!/^[0-9a-fA-F]{6}$/.test(m)) return null;
+  return [
+    parseInt(m.slice(0, 2), 16),
+    parseInt(m.slice(2, 4), 16),
+    parseInt(m.slice(4, 6), 16),
+  ].join(', ');
+};
+
 export default function DeckBuilder() {
   const { deckId } = useParams();
   const qc = useQueryClient();
@@ -290,7 +302,8 @@ export default function DeckBuilder() {
   });
 
   const hasCover = !!deck?.cover_image_url;
-  const dominantColor = useDominantColor(deck?.cover_image_url);
+  const extractedColor = useDominantColor(deck?.cover_image_url);
+  const scrimSourceColor = hexToRgbString(deck?.accent_color) || extractedColor;
 
   // Scroll-driven collapse: 0 = fully expanded, 1 = fully collapsed
   const [collapseProgress, setCollapseProgress] = useState(0);
@@ -329,7 +342,7 @@ export default function DeckBuilder() {
 
   // Fade geometry, measured in px up from the bottom of the hero.
   // Both ends tighten as the header collapses so the fade stays clear of the toolbar.
-  const scrim = buildScrim(dominantColor);
+  const scrim = buildScrim(scrimSourceColor);
   const scrimGradient = scrim
     ? `linear-gradient(to bottom,
         hsla(${scrim.h}, ${scrim.s}%, ${scrim.l}%, ${scrim.aTop}) 0%,
