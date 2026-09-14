@@ -68,6 +68,8 @@ export default function DeckBuilder() {
   const [showCollections, setShowCollections] = useState(false);
   const [previewCard, setPreviewCard] = useState(null);
   const [showCoverPicker, setShowCoverPicker] = useState(false);
+  const headerRef = useRef(null);
+  const [headerH, setHeaderH] = useState(0);
 
   // Description editing
   const [editingDesc, setEditingDesc] = useState(false);
@@ -253,21 +255,42 @@ export default function DeckBuilder() {
     }
   }, [deck?.cover_image_url, deck?.cover_accent_color, deckId]);
 
+  // Measure the sticky header height so the background gradient can start exactly at its bottom edge.
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const measure = () => setHeaderH(el.offsetHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [deck?.id, hasCover, activeCards.length]);
+
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)] -mx-4 -mt-6">
     {/* Main content */}
     <div className="flex-1 px-4 pb-4 relative z-10">
 
       {/* Sticky header + filter region — full width, meets nav bar */}
-      <div className={cn("sticky top-14 z-30 pt-4 pb-2 -mx-4 px-4", hasCover ? "" : "bg-card border-b border-border/60")}>
+      <div ref={headerRef} className={cn("sticky top-14 z-30 pt-4 pb-3 -mx-4 px-4", hasCover ? "bg-background" : "bg-card border-b border-border/60")}>
+      <div className="relative max-w-7xl mx-auto">
+      {/* Brown hero — title + actions on the cover image, fading to transparent at the bottom */}
+      <div className="relative">
         {hasCover && (
           <>
-            <img src={deck.cover_image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
-            <div className="absolute inset-0 backdrop-grayscale" style={overlayBg ? { backgroundColor: overlayBg } : undefined} />
-            <div className="absolute inset-x-0 bottom-0 h-32 pointer-events-none" style={gradientTop ? { background: `linear-gradient(to bottom, transparent, ${gradientTop})` } : undefined} />
+            <img
+              src={deck.cover_image_url}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover"
+              style={{ WebkitMaskImage: 'linear-gradient(to bottom, #000 70%, transparent)', maskImage: 'linear-gradient(to bottom, #000 70%, transparent)' }}
+            />
+            <div
+              className="absolute inset-0 backdrop-grayscale"
+              style={overlayBg ? { background: `linear-gradient(to bottom, ${overlayBg} 70%, transparent)` } : undefined}
+            />
           </>
         )}
-      <div className="relative max-w-7xl mx-auto">
+        <div className={cn("relative", hasCover && "pb-8")}>
       {/* Header */}
       <div className="mb-4">
         {/* Title + description */}
@@ -369,10 +392,12 @@ export default function DeckBuilder() {
           </Link>
         </div>
       </div>
+        </div>
+      </div>
 
       {/* Filter bar */}
       {activeCards.length > 0 && (
-        <div className={cn("rounded-lg border p-3 mt-1 mx-4", hasCover ? "bg-card border-border shadow-sm" : "bg-card border-border")}>
+        <div className="rounded-lg border p-3 mt-2 mx-4 bg-card border-border shadow-sm">
           <CardFilterBar
             search={search}
             onSearch={setSearch}
@@ -389,9 +414,9 @@ export default function DeckBuilder() {
       </div>
       </div>
 
-      {/* Cover-derived gradient behind cards */}
-      {gradientTop && (
-        <div className="fixed top-14 inset-x-0 h-[100vh] pointer-events-none" style={{ background: `linear-gradient(to bottom, ${gradientTop}, transparent)`, zIndex: 0 }} />
+      {/* Cover-derived gradient behind cards — starts at header bottom, fades in and out */}
+      {gradientTop && headerH > 0 && (
+        <div className="fixed left-0 right-0 pointer-events-none" style={{ top: `calc(3.5rem + ${headerH}px)`, height: '80vh', background: `linear-gradient(to bottom, transparent, ${gradientTop} 30%, transparent)`, zIndex: 0 }} />
       )}
 
       {/* Cards grid */}
