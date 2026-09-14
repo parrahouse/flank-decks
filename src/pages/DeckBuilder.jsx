@@ -20,6 +20,36 @@ import useDominantColor from '@/hooks/useDominantColor';
 const HERO_EXPANDED = 380;   // px — full height at scroll top
 const HERO_COLLAPSED = 200;  // px — height once collapsed (toolbar + filter bar)
 
+/**
+ * Convert an "R, G, B" string into a dark, saturated scrim color.
+ * Preserves hue, boosts saturation (pixel averaging washes it out),
+ * and clamps lightness so white text stays readable.
+ * Returns { h, s, l } or null.
+ */
+const toScrimHsl = (rgb, lightness = 14) => {
+  if (!rgb) return null;
+  const [r, g, b] = rgb.split(',').map(c => Number(c.trim()) / 255);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  const d = max - min;
+  let h = 0;
+  let s = 0;
+  if (d !== 0) {
+    s = d / (1 - Math.abs(2 * l - 1));
+    if (max === r) h = ((g - b) / d) % 6;
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h *= 60;
+    if (h < 0) h += 360;
+  }
+  return {
+    h: Math.round(h),
+    s: Math.min(100, Math.round(s * 140)),
+    l: lightness,
+  };
+};
+
 export default function DeckBuilder() {
   const { deckId } = useParams();
   const qc = useQueryClient();
@@ -262,6 +292,17 @@ export default function DeckBuilder() {
 
   const heroMask = `linear-gradient(to bottom, black 0px, black ${fadeStartPx}px, transparent ${fadeEndPx}px)`;
 
+  const scrim = toScrimHsl(dominantColor);
+  const scrimGradient = scrim
+    ? `linear-gradient(to bottom,
+        hsla(${scrim.h}, ${scrim.s}%, ${scrim.l}%, 0.25) 0%,
+        hsla(${scrim.h}, ${scrim.s}%, ${scrim.l}%, 0.60) 55%,
+        hsla(${scrim.h}, ${scrim.s}%, ${scrim.l}%, 0.90) 100%)`
+    : `linear-gradient(to bottom,
+        rgba(0,0,0,0.30) 0%,
+        rgba(0,0,0,0.55) 55%,
+        rgba(0,0,0,0.75) 100%)`;
+
   // ── Title block: title, description, card count ──
   const titleBlock = (
     <div className="px-4 pb-3">
@@ -389,22 +430,8 @@ export default function DeckBuilder() {
                 className="absolute inset-0 w-full h-full object-cover"
               />
 
-              {/* Subtle dominant-color tint — flat alpha, NO blend mode */}
-              {dominantColor && (
-                <div
-                  className="absolute inset-0"
-                  style={{ backgroundColor: `rgba(${dominantColor}, 0.18)` }}
-                />
-              )}
-
-              {/* Black scrim — this is what makes white text readable on any cover */}
-              <div
-                className="absolute inset-0"
-                style={{
-                  background:
-                    'linear-gradient(to bottom, rgba(0,0,0,0.30) 0%, rgba(0,0,0,0.55) 55%, rgba(0,0,0,0.75) 100%)',
-                }}
-              />
+              {/* Chromatic scrim — hue from the cover, lightness clamped for contrast */}
+              <div className="absolute inset-0" style={{ background: scrimGradient }} />
             </div>
 
             {/* ── Content, pinned to the bottom of the shrinking container ── */}
