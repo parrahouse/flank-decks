@@ -57,7 +57,7 @@ const buildScrim = (rgb, lightness = 13) => {
 
   // ── Alpha needed to bring the composite to a readable luminance ──
   // Solving  TARGET = L(1 - a) + SCRIM_L(a)  for a.
-  const TARGET = 0.18;    // composite luminance ≈ 4.5:1 against white
+  const TARGET = 0.24;    // composite luminance ≈ 4.5:1 against white
   const SCRIM_L = 0.02;   // the scrim's own luminance at l≈13%
   const L = relLuminance(r, g, b);
   const raw = L <= TARGET ? 0 : (L - TARGET) / Math.max(L - SCRIM_L, 0.01);
