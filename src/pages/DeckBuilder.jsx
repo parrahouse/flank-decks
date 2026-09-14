@@ -232,7 +232,7 @@ export default function DeckBuilder() {
           <>
             <img src={deck.cover_image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
             <div className="absolute inset-0 bg-primary/80 backdrop-grayscale" />
-            <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-b from-transparent to-card pointer-events-none" />
+            <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-card pointer-events-none" />
           </>
         )}
       <div className="relative max-w-7xl mx-auto">
