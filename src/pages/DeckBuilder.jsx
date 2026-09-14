@@ -432,23 +432,23 @@ export default function DeckBuilder() {
   const toolbarBlock = (
     <div className="px-3 pb-2 flex flex-wrap items-center gap-1">
       <Link to={`/stats/${deckId}`}>
-        <Button variant="ghost" size="sm" className={cn("gap-1.5 h-9", hasCover ? "text-white/80 hover:text-white" : "text-muted-foreground hover:text-foreground")}>
+        <Button variant="ghost" size="sm" className={cn("gap-1.5 h-9", hasCover ? "text-white/80 hover:!bg-white/10 hover:!text-white" : "text-muted-foreground hover:text-foreground")}>
           <PieChart className="w-4 h-4" /> Stats
         </Button>
       </Link>
       <Link to={`/settings/${deckId}`}>
-        <Button variant="ghost" size="sm" className={cn("gap-1.5 h-9", hasCover ? "text-white/80 hover:text-white" : "text-muted-foreground hover:text-foreground")}>
+        <Button variant="ghost" size="sm" className={cn("gap-1.5 h-9", hasCover ? "text-white/80 hover:!bg-white/10 hover:!text-white" : "text-muted-foreground hover:text-foreground")}>
           <Cog className="w-4 h-4" /> Settings
         </Button>
       </Link>
 
-      <Button variant="ghost" size="sm" onClick={openAdd} className={cn("gap-1.5 h-9", hasCover && "text-white hover:text-white")}>
+      <Button variant="ghost" size="sm" onClick={openAdd} className={cn("gap-1.5 h-9", hasCover && "text-white hover:!bg-white/10 hover:!text-white")}>
         <Plus className="w-4 h-4" /> Add Card
       </Button>
-      <Button variant="ghost" size="sm" onClick={() => setShowCsvUpload(true)} className={cn("gap-1.5 h-9", hasCover ? "text-white/80 hover:text-white" : "text-muted-foreground hover:text-foreground")}>
+      <Button variant="ghost" size="sm" onClick={() => setShowCsvUpload(true)} className={cn("gap-1.5 h-9", hasCover ? "text-white/80 hover:!bg-white/10 hover:!text-white" : "text-muted-foreground hover:text-foreground")}>
         <Upload className="w-4 h-4" /> Import CSV
       </Button>
-      <Button variant="ghost" size="sm" onClick={() => setShowCollections(true)} className={cn("gap-1.5 h-9", hasCover ? "text-white/80 hover:text-white" : "text-muted-foreground hover:text-foreground")}>
+      <Button variant="ghost" size="sm" onClick={() => setShowCollections(true)} className={cn("gap-1.5 h-9", hasCover ? "text-white/80 hover:!bg-white/10 hover:!text-white" : "text-muted-foreground hover:text-foreground")}>
         <FolderOpen className="w-4 h-4" /> Collections
       </Button>
       <Link to={`/study/${deckId}`} className={cn("ml-auto flex items-center gap-1.5 text-sm font-semibold transition-colors", hasCover ? "text-white hover:text-white/80" : "text-primary hover:text-primary/80")}>
