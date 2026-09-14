@@ -35,7 +35,7 @@ const relLuminance = (r, g, b) =>
  * dark enough for white text regardless of how light the cover is.
  * Returns { h, s, l, aTop, aMid, aBottom } or null.
  */
-const buildScrim = (rgb, lightness = 20) => {
+const buildScrim = (rgb, lightness = 15) => {
   if (!rgb) return null;
   const [r, g, b] = rgb.split(',').map(c => Number(c.trim()) / 255);
 
@@ -57,7 +57,7 @@ const buildScrim = (rgb, lightness = 20) => {
 
   // ── Alpha needed to bring the composite to a readable luminance ──
   // Solving  TARGET = L(1 - a) + SCRIM_L(a)  for a.
-  const TARGET = 0.24;    // composite luminance ≈ 4.5:1 against white
+  const TARGET = 0.18;    // composite luminance ≈ 4.5:1 against white
   const SCRIM_L = 0.02;   // the scrim's own luminance at l≈13%
   const L = relLuminance(r, g, b);
   const raw = L <= TARGET ? 0 : (L - TARGET) / Math.max(L - SCRIM_L, 0.01);
