@@ -1,10 +1,11 @@
 import { Check, SquareCheck, ToggleLeft, PencilLine } from 'lucide-react';
 import MathRenderer from '@/components/ui/MathRenderer';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getQuestionBgLayers } from '@/lib/questionPaneBg';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
-export default function CardThumbnail({ card, imageEmpty = null, imageOverlay = null, layout = 'vertical' }) {
+export default function CardThumbnail({ card, deck, imageEmpty = null, imageOverlay = null, layout = 'vertical' }) {
   if (!card) return null;
 
   const correctAnswers = (card.correct_answers || card.correct_answer || '')
@@ -27,14 +28,23 @@ export default function CardThumbnail({ card, imageEmpty = null, imageOverlay = 
 
   const hasImage = !!card.image_url;
 
+  const { paneBg: questionBg, imageLayer: qBgImageLayer, overlayLayer: qBgOverlayLayer } = getQuestionBgLayers({ deck, card, hintVisible: false, fallback: '#DFEDF5' });
+  const renderBgLayers = () => (
+    <>
+      {qBgImageLayer && <div aria-hidden style={qBgImageLayer} />}
+      {qBgOverlayLayer && <div aria-hidden style={qBgOverlayLayer} />}
+    </>
+  );
+
   const mediaInner = hasImage
     ? <img src={card.image_url} alt="card" className="w-full h-full" style={imgStyle} draggable={false} />
     : imageEmpty;
 
   // Question pane — always present, holds its space (blank until a clue is typed).
   const questionPane = (
-    <div className="w-full rounded px-3 py-2 flex items-center" style={{ backgroundColor: '#DFEDF5', minHeight: 44 }}>
-      {card.clue && <MathRenderer text={card.clue} style={{ color: '#113656', fontSize: 14, fontWeight: 500, lineHeight: 1.4 }} />}
+    <div className="w-full rounded px-3 py-2 flex items-center relative overflow-hidden" style={{ backgroundColor: questionBg, minHeight: 44 }}>
+      {renderBgLayers()}
+      {card.clue && <MathRenderer text={card.clue} style={{ position: 'relative', color: '#113656', fontSize: 14, fontWeight: 500, lineHeight: 1.4 }} />}
     </div>
   );
 
@@ -135,12 +145,13 @@ export default function CardThumbnail({ card, imageEmpty = null, imageOverlay = 
                 <img src={card.image_url} alt="card" className="w-full h-full" style={imgStyle} draggable={false} />
                 {imageOverlay}
               </div>
-              <div className="rounded px-3 py-2 flex items-center min-h-0" style={{ flex: '1 1 0', backgroundColor: '#DFEDF5' }}>
-                {card.clue && <MathRenderer text={card.clue} style={{ color: '#113656', fontSize: 14, fontWeight: 500, lineHeight: 1.4 }} />}
+              <div className="rounded px-3 py-2 flex items-center min-h-0 relative overflow-hidden" style={{ flex: '1 1 0', backgroundColor: questionBg }}>
+                {renderBgLayers()}
+                {card.clue && <MathRenderer text={card.clue} style={{ position: 'relative', color: '#113656', fontSize: 14, fontWeight: 500, lineHeight: 1.4 }} />}
               </div>
             </>
           ) : (
-            <div className="rounded flex flex-col w-full h-full" style={{ backgroundColor: '#DFEDF5' }}>
+            <div className="rounded flex flex-col w-full h-full" style={{ backgroundColor: questionBg }}>
               <div className="flex-1 flex items-center justify-start px-4 py-3 min-h-0">
                 {card.clue && <MathRenderer text={card.clue} style={{ color: '#113656', fontSize: 15, fontWeight: 500, lineHeight: 1.4 }} />}
               </div>
@@ -169,7 +180,7 @@ export default function CardThumbnail({ card, imageEmpty = null, imageOverlay = 
           {questionPane}
         </>
       ) : (
-        <div className="rounded flex flex-col" style={{ backgroundColor: '#DFEDF5', minHeight: 100 }}>
+        <div className="rounded flex flex-col" style={{ backgroundColor: questionBg, minHeight: 100 }}>
           <div className="flex-1 flex items-center justify-start px-4 py-3">
             {card.clue && <MathRenderer text={card.clue} style={{ color: '#113656', fontSize: 14, fontWeight: 500, lineHeight: 1.4 }} />}
           </div>

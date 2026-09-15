@@ -8,7 +8,7 @@ export default function CardPreviewModal({ card, deck, open, onClose }) {
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className="max-w-md p-4">
         <p className="text-xs text-muted-foreground mb-3 text-center">Preview</p>
-        <CardThumbnail card={card} />
+        <CardThumbnail card={card} deck={deck} />
       </DialogContent>
     </Dialog>
   );

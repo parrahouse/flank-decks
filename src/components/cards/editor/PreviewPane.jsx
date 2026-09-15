@@ -74,6 +74,7 @@ export default function PreviewPane({
           >
             <CardThumbnail
               card={card}
+              deck={state.deck}
               layout={previewLayout}
               imageEmpty={imageEmpty}
               imageOverlay={imageOverlay}

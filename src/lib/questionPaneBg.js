@@ -14,13 +14,13 @@
  * divs (absolute, zIndex 0) as the first children of the pane and keeps the
  * pane content positioned (relative) so it stacks above them.
  */
-export function getQuestionBgLayers({ deck, card, hintVisible }) {
+export function getQuestionBgLayers({ deck, card, hintVisible, fallback }) {
   const customColor = deck?.question_bg_color;
   const useImageBg = !!deck?.question_bg_image && !!card?.image_url;
 
   const blockColor = hintVisible
     ? 'hsl(var(--study-hint-bg))'
-    : (customColor || 'hsl(var(--study-pane))');
+    : (customColor || fallback || 'hsl(var(--study-pane))');
 
   if (!useImageBg) {
     return { paneBg: blockColor, imageLayer: null, overlayLayer: null };

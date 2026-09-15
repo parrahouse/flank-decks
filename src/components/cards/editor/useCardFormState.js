@@ -490,7 +490,7 @@ Return:
 
   return {
     // identity
-    isCreate, card,
+    isCreate, card, deck,
     // question type
     qType, handleQTypeChange,
     isShortAnswer, isTrueFalse, isSelectAll, isMultipleChoice, usesBank,
