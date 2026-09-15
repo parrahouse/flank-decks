@@ -27,6 +27,8 @@ export default function CardThumbnail({ card, deck, imageEmpty = null, imageOver
   };
 
   const hasImage = !!card.image_url;
+  const useImageAsBg = !!deck?.question_bg_image && hasImage;
+  const showImage = hasImage && !useImageAsBg;
 
   const { paneBg: questionBg, imageLayer: qBgImageLayer, overlayLayer: qBgOverlayLayer } = getQuestionBgLayers({ deck, card, hintVisible: false, fallback: '#DFEDF5' });
   const renderBgLayers = () => (
@@ -139,7 +141,7 @@ export default function CardThumbnail({ card, deck, imageEmpty = null, imageOver
     return (
       <div className="flex gap-3 w-full" style={{ aspectRatio: '2.4' }}>
         <div className="flex flex-col gap-2 min-h-0" style={{ flex: '0 0 48%', minWidth: 0 }}>
-          {hasImage ? (
+          {showImage ? (
             <>
               <div className="relative overflow-hidden rounded min-h-0" style={{ flex: '0 0 75%' }}>
                 <img src={card.image_url} alt="card" className="w-full h-full" style={imgStyle} draggable={false} />
@@ -151,12 +153,13 @@ export default function CardThumbnail({ card, deck, imageEmpty = null, imageOver
               </div>
             </>
           ) : (
-            <div className="rounded flex flex-col w-full h-full" style={{ backgroundColor: questionBg }}>
-              <div className="flex-1 flex items-center justify-start px-4 py-3 min-h-0">
-                {card.clue && <MathRenderer text={card.clue} style={{ color: '#113656', fontSize: 15, fontWeight: 500, lineHeight: 1.4 }} />}
+            <div className="rounded flex flex-col w-full h-full relative overflow-hidden" style={{ backgroundColor: questionBg }}>
+              {renderBgLayers()}
+              <div className="flex-1 flex items-center justify-start px-4 py-3 min-h-0 relative">
+                {card.clue && <MathRenderer text={card.clue} style={{ position: 'relative', color: '#113656', fontSize: 15, fontWeight: 500, lineHeight: 1.4 }} />}
               </div>
               {imageEmpty && (
-                <div className="shrink-0 pb-3 flex justify-center">{imageEmpty}</div>
+                <div className="shrink-0 pb-3 flex justify-center relative">{imageEmpty}</div>
               )}
             </div>
           )}
@@ -171,7 +174,7 @@ export default function CardThumbnail({ card, deck, imageEmpty = null, imageOver
   // ── Vertical layout (default): image top, answers below ─────────────────
   return (
     <div className="flex flex-col gap-2 w-full">
-      {hasImage ? (
+      {showImage ? (
         <>
           <div className="relative w-full overflow-hidden rounded" style={{ height: 'min(360px, 40vh)' }}>
             <img src={card.image_url} alt="card" className="w-full h-full" style={imgStyle} draggable={false} />
@@ -180,12 +183,13 @@ export default function CardThumbnail({ card, deck, imageEmpty = null, imageOver
           {questionPane}
         </>
       ) : (
-        <div className="rounded flex flex-col" style={{ backgroundColor: questionBg, minHeight: 100 }}>
-          <div className="flex-1 flex items-center justify-start px-4 py-3">
-            {card.clue && <MathRenderer text={card.clue} style={{ color: '#113656', fontSize: 14, fontWeight: 500, lineHeight: 1.4 }} />}
+        <div className="rounded flex flex-col relative overflow-hidden" style={{ backgroundColor: questionBg, minHeight: 100 }}>
+          {renderBgLayers()}
+          <div className="flex-1 flex items-center justify-start px-4 py-3 relative">
+            {card.clue && <MathRenderer text={card.clue} style={{ position: 'relative', color: '#113656', fontSize: 14, fontWeight: 500, lineHeight: 1.4 }} />}
           </div>
           {imageEmpty && (
-            <div className="shrink-0 pb-3 flex justify-center">{imageEmpty}</div>
+            <div className="shrink-0 pb-3 flex justify-center relative">{imageEmpty}</div>
           )}
         </div>
       )}

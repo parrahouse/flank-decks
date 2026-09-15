@@ -122,6 +122,8 @@ export default function StudyCard({
   const isSelectAll = card.question_type === 'select_all';
   const isShortAnswer = card.question_type === 'short_answer';
   const hasImage = !!card.image_url;
+  const useImageAsBg = !!deck?.question_bg_image && hasImage;
+  const showImage = hasImage && !useImageAsBg;
   const cardPoints = card.point_value ?? 20;
   const { paneBg: questionPaneBg, imageLayer: qBgImage, overlayLayer: qBgOverlay } = getQuestionBgLayers({ deck, card, hintVisible });
 
@@ -366,7 +368,7 @@ export default function StudyCard({
 
       {/* ── Top section — fixed height whether or not an image is present ── */}
       <div style={{ width: '100%', height: STUDY_CARD_H.vertical, display: 'flex', flexDirection: 'column', gap: 12, boxSizing: 'border-box', overflow: 'hidden' }}>
-        {hasImage && (
+        {showImage && (
           <Pane
             {...paneProps}
             style={{
@@ -385,7 +387,7 @@ export default function StudyCard({
           {...paneProps}
           style={{
             width: '100%',
-            ...(hasImage
+            ...(showImage
               ? { height: 120, flexShrink: 0, padding: '20px 20px 40px 20px' }
               : { flex: 1, display: 'flex', alignItems: 'center', padding: '24px 28px 48px 28px' }),
             backgroundColor: questionPaneBg,
@@ -397,7 +399,7 @@ export default function StudyCard({
         >
           {qBgImage && <div aria-hidden style={qBgImage} />}
           {qBgOverlay && <div aria-hidden style={qBgOverlay} />}
-          <MathRenderer text={card.clue || ''} className="block" style={{ position: 'relative', color: 'hsl(var(--study-pane-text))', fontSize: hasImage ? 'clamp(14px, 2.2vw, 22px)' : 'clamp(22px, 4.5vw, 44px)', fontWeight: 500, lineHeight: 1.3, visibility: hintVisible ? 'hidden' : 'visible' }} />
+          <MathRenderer text={card.clue || ''} className="block" style={{ position: 'relative', color: 'hsl(var(--study-pane-text))', fontSize: showImage ? 'clamp(14px, 2.2vw, 22px)' : 'clamp(22px, 4.5vw, 44px)', fontWeight: 500, lineHeight: 1.3, visibility: hintVisible ? 'hidden' : 'visible' }} />
 
           {/* Hint overlay — absolutely positioned so it doesn't affect pane height */}
           {hintVisible && note && (

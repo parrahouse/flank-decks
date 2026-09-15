@@ -88,6 +88,8 @@ export default function StudyCardHorizontal({
   const isSelectAll = card.question_type === 'select_all';
   const isShortAnswer = card.question_type === 'short_answer';
   const hasImage = !!card.image_url;
+  const useImageAsBg = !!deck?.question_bg_image && hasImage;
+  const showImage = hasImage && !useImageAsBg;
   const cardPoints = card.point_value ?? 20;
   const { paneBg: questionPaneBg, imageLayer: qBgImage, overlayLayer: qBgOverlay } = getQuestionBgLayers({ deck, card, hintVisible });
 
@@ -278,7 +280,7 @@ export default function StudyCardHorizontal({
     <Pane {...paneProps} style={{ display: 'flex', flexDirection: 'column', flex: '0 0 48%', minWidth: 0, gap: 0 }}>
       {/* Image region — 75% of the column. Absent entirely on image-less cards,
           which give the whole column to the question. */}
-      {hasImage && (
+      {showImage && (
         <div style={{ width: '100%', flex: '0 0 75%', minHeight: 0, overflow: 'hidden',         backgroundColor: 'hsl(var(--study-image-bg))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <img src={card.image_url} alt="card" style={{ width: '100%', height: '100%', objectFit: card.image_fit || 'cover', objectPosition: (card.image_fit !== 'contain' && card.image_focal_point) ? `${card.image_focal_point.x}% ${card.image_focal_point.y}%` : 'center' }} />
         </div>
@@ -287,10 +289,10 @@ export default function StudyCardHorizontal({
       {/* Question pane — 25% of the column, or the whole column in a no-image session */}
       <div style={{
         width: '100%',
-        flex: hasImage ? '0 0 25%' : '1 1 0',
+        flex: showImage ? '0 0 25%' : '1 1 0',
         minHeight: 0,
         backgroundColor: questionPaneBg,
-        borderTop: hasImage ? '1px solid hsl(var(--study-pane-text) / 0.08)' : 'none',
+        borderTop: showImage ? '1px solid hsl(var(--study-pane-text) / 0.08)' : 'none',
         position: 'relative',
         boxSizing: 'border-box', overflow: 'hidden', transition: 'background-color 0.2s',
       }}>
@@ -300,11 +302,11 @@ export default function StudyCardHorizontal({
         <div style={{
           width: '100%', height: '100%', boxSizing: 'border-box',
           display: 'flex',
-          alignItems: hasImage ? 'flex-start' : 'center',
-          padding: hasImage ? GEO.qPadImage : GEO.qPadNoImage,
+          alignItems: showImage ? 'flex-start' : 'center',
+          padding: showImage ? GEO.qPadImage : GEO.qPadNoImage,
           position: 'relative',
         }}>
-          <p style={{ color: 'hsl(var(--study-pane-text))', fontSize: hasImage ? GEO.qFontImage : GEO.qFontNoImage, fontWeight: 500, lineHeight: 1.35, margin: 0, visibility: hintVisible ? 'hidden' : 'visible' }}>
+          <p style={{ color: 'hsl(var(--study-pane-text))', fontSize: showImage ? GEO.qFontImage : GEO.qFontNoImage, fontWeight: 500, lineHeight: 1.35, margin: 0, visibility: hintVisible ? 'hidden' : 'visible' }}>
             {card.clue || ''}
           </p>
         </div>
