@@ -214,7 +214,7 @@ export default function DeckStats() {
             <BarChart2 className="w-7 h-7 text-accent-foreground" />
           </div>
           <h2 className="font-semibold">No study sessions yet</h2>
-          <p className="text-muted-foreground text-sm max-w-md">Complete a study session to see your stats here.</p>
+          <p className="text-muted-foreground text-sm max-w-sm">Complete a study session to see your stats here.</p>
           <Link to={`/study/${deckId}`}><Button className="mt-1 gap-1.5"><BookOpen className="w-4 h-4" /> Start Studying</Button></Link>
         </div>
       ) : (
