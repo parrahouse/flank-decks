@@ -507,7 +507,7 @@ Return:
     // explanation
     explanation, setExplanation, quillRef, handleGenerateExplanation, generatingExplanation,
     // image
-    imageUrl, setImageUrl, originalImageUrl, focalPoint, setFocalPoint,
+    imageUrl, setImageUrl, originalImageUrl, setOriginalImageUrl, focalPoint, setFocalPoint,
     imageFit, setImageFit,
     fileRef, previewImgRef, draggingPreview, beginFocalDrag, moveFocalDrag, endFocalDrag,
     handleImageUpload, uploading,
