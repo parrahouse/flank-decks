@@ -162,13 +162,13 @@ export default function CardEditorModal({ open, onClose, mode = 'edit', card, de
             onMouseEnter={() => setCloseHovered(true)}
             onMouseLeave={() => setCloseHovered(false)}
           >
-            <X className="w-4 h-4" />
             <span
               className="overflow-hidden text-xs font-medium transition-all duration-200"
               style={{ width: closeHovered ? '1.75rem' : 0, opacity: closeHovered ? 1 : 0 }}
             >
               Esc
             </span>
+            <X className="w-4 h-4" />
           </DialogClose>
         <AnimatePresence mode="wait">
 
