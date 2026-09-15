@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, BarChart2, BookOpen, PieChart } from 'lucide-react';
+import { ArrowLeft, BarChart2, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { CORRECT_KEYS, capped, mean, median } from '@/lib/statsUtils';
@@ -200,9 +200,12 @@ export default function DeckStats() {
         <div className="flex-1">
           <h1 className="text-xl font-bold">{deck?.title}</h1>
           <p className="text-sm text-muted-foreground flex items-center gap-1.5">
-            <PieChart className="w-3.5 h-3.5" /> Progress & Stats
+            <BarChart2 className="w-3.5 h-3.5" /> Progress & Stats
           </p>
         </div>
+        <Link to={`/study/${deckId}`}>
+          <Button size="sm" className="gap-1.5"><BookOpen className="w-4 h-4" /> Study Now</Button>
+        </Link>
       </div>
 
       {!sessions.length ? (
@@ -211,7 +214,7 @@ export default function DeckStats() {
             <BarChart2 className="w-7 h-7 text-accent-foreground" />
           </div>
           <h2 className="font-semibold">No study sessions yet</h2>
-          <p className="text-muted-foreground text-sm max-w-xs">Complete a study session to see your stats here.</p>
+          <p className="text-muted-foreground text-sm max-w-md">Complete a study session to see your stats here.</p>
           <Link to={`/study/${deckId}`}><Button className="mt-1 gap-1.5"><BookOpen className="w-4 h-4" /> Start Studying</Button></Link>
         </div>
       ) : (
