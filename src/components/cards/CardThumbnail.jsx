@@ -141,7 +141,7 @@ export default function CardThumbnail({ card, imageEmpty = null, imageOverlay = 
             </>
           ) : (
             <div className="rounded flex flex-col w-full h-full" style={{ backgroundColor: '#DFEDF5' }}>
-              <div className="flex-1 flex items-center justify-center px-4 py-3 min-h-0 text-center">
+              <div className="flex-1 flex items-center justify-start px-4 py-3 min-h-0">
                 {card.clue && <MathRenderer text={card.clue} style={{ color: '#113656', fontSize: 15, fontWeight: 500, lineHeight: 1.4 }} />}
               </div>
               {imageEmpty && (
@@ -170,7 +170,7 @@ export default function CardThumbnail({ card, imageEmpty = null, imageOverlay = 
         </>
       ) : (
         <div className="rounded flex flex-col" style={{ backgroundColor: '#DFEDF5', minHeight: 100 }}>
-          <div className="flex-1 flex items-center justify-center px-4 py-3 text-center">
+          <div className="flex-1 flex items-center justify-start px-4 py-3">
             {card.clue && <MathRenderer text={card.clue} style={{ color: '#113656', fontSize: 14, fontWeight: 500, lineHeight: 1.4 }} />}
           </div>
           {imageEmpty && (
