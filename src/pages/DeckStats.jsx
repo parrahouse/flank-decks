@@ -2,11 +2,10 @@ import { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { BarChart2, BookOpen } from 'lucide-react';
+import { ArrowLeft, BarChart2, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { CORRECT_KEYS, capped, mean, median } from '@/lib/statsUtils';
-import DeckHeroHeader from '@/components/deck/DeckHeroHeader';
 import OverviewTiles from '@/components/stats/OverviewTiles';
 import TrendCharts from '@/components/stats/TrendCharts';
 import MasteryTimelineSection from '@/components/stats/MasteryTimelineSection';
@@ -183,15 +182,33 @@ export default function DeckStats() {
     };
   }, [sessions, cardStats, cards]);
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-7 h-7 border-4 border-muted border-t-primary rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <>
-      <DeckHeroHeader deck={deck} activePage="stats" cardCount={cards.length} />
-
-      {isLoading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="w-7 h-7 border-4 border-muted border-t-primary rounded-full animate-spin" />
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-8">
+        <Link to={`/deck/${deckId}`} className="text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft className="w-5 h-5" />
+        </Link>
+        <div className="flex-1">
+          <h1 className="text-xl font-bold">{deck?.title}</h1>
+          <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+            <BarChart2 className="w-3.5 h-3.5" /> Progress & Stats
+          </p>
         </div>
-      ) : !sessions.length ? (
+        <Link to={`/study/${deckId}`}>
+          <Button size="sm" className="gap-1.5"><BookOpen className="w-4 h-4" /> Study Now</Button>
+        </Link>
+      </div>
+
+      {!sessions.length ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
           <div className="w-14 h-14 rounded-2xl bg-accent flex items-center justify-center">
             <BarChart2 className="w-7 h-7 text-accent-foreground" />
