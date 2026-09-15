@@ -6,8 +6,8 @@ import { FolderOpen, Plus, Pencil, Trash2, ChevronUp, ChevronDown, LibraryBig, W
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from
+'@/components/ui/alert-dialog';
 import CollectionFormDialog from '@/components/collections/CollectionFormDialog';
 import AddDecksToCollectionDialog from '@/components/collections/AddDecksToCollectionDialog';
 import ShareCollectionModal from '@/components/collections/ShareCollectionModal';
@@ -18,17 +18,17 @@ export default function Collections() {
 
   const { data: collections = [], isLoading } = useQuery({
     queryKey: ['collections'],
-    queryFn: () => base44.entities.Collection.list('sort_order'),
+    queryFn: () => base44.entities.Collection.list('sort_order')
   });
 
   const { data: memberships = [] } = useQuery({
     queryKey: ['collection-decks-all'],
-    queryFn: () => base44.entities.CollectionDeck.list(),
+    queryFn: () => base44.entities.CollectionDeck.list()
   });
 
   const counts = useMemo(() => {
     const map = {};
-    memberships.forEach((m) => { map[m.collection] = (map[m.collection] || 0) + 1; });
+    memberships.forEach((m) => {map[m.collection] = (map[m.collection] || 0) + 1;});
     return map;
   }, [memberships]);
 
@@ -42,7 +42,7 @@ export default function Collections() {
     mutationFn: async (col) => {
       await base44.functions.invoke('mutateCollectionDecks', {
         action: 'clear',
-        collection_id: col.id,
+        collection_id: col.id
       });
       await base44.entities.Collection.delete(col.id);
     },
@@ -54,7 +54,7 @@ export default function Collections() {
       toast.success('Collection deleted');
       setDeleting(null);
     },
-    onError: (e) => toast.error(e.message || 'Could not delete collection'),
+    onError: (e) => toast.error(e.message || 'Could not delete collection')
   });
 
   const reorder = async (idx, dir) => {
@@ -63,9 +63,9 @@ export default function Collections() {
     const a = collections[idx];
     const b = collections[swap];
     await base44.entities.Collection.bulkUpdate([
-      { id: a.id, sort_order: b.sort_order },
-      { id: b.id, sort_order: a.sort_order },
-    ]);
+    { id: a.id, sort_order: b.sort_order },
+    { id: b.id, sort_order: a.sort_order }]
+    );
     qc.invalidateQueries(['collections']);
   };
 
@@ -76,28 +76,28 @@ export default function Collections() {
           <h1 className="text-2xl font-bold tracking-tight">Collections</h1>
           <p className="text-muted-foreground text-sm mt-0.5">Group your decks into themed collections.</p>
         </div>
-        <Button className="gap-1.5 rounded-[20px]" onClick={() => { setEditing(null); setFormOpen(true); }}>
+        <Button className="gap-1.5 rounded-lg" onClick={() => {setEditing(null);setFormOpen(true);}}>
           <Plus className="w-4 h-4" /> New Collection
         </Button>
       </div>
 
-      {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {isLoading ?
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => <div key={i} className="h-28 rounded-xl bg-muted animate-pulse" />)}
-        </div>
-      ) : collections.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
+        </div> :
+      collections.length === 0 ?
+      <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
           <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center">
             <FolderOpen className="w-8 h-8 text-accent-foreground" />
           </div>
           <h2 className="font-semibold text-lg">No collections yet</h2>
           <p className="text-muted-foreground text-sm max-w-xs">Organize your decks into collections like “Spanish vocab” or “Midterm review”.</p>
-          <Button onClick={() => { setEditing(null); setFormOpen(true); }} className="mt-2 gap-1.5"><Plus className="w-4 h-4" /> New Collection</Button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {collections.map((c, idx) => (
-            <div key={c.id} className="group bg-card border border-border rounded-md overflow-hidden flex flex-col hover:shadow-md transition-all">
+          <Button onClick={() => {setEditing(null);setFormOpen(true);}} className="mt-2 gap-1.5"><Plus className="w-4 h-4" /> New Collection</Button>
+        </div> :
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {collections.map((c, idx) =>
+        <div key={c.id} className="group bg-card border border-border rounded-md overflow-hidden flex flex-col hover:shadow-md transition-all">
               <div className="h-1.5" style={{ backgroundColor: c.accent_color || '#64748b' }} />
               <Link to={`/collections/${c.id}`} className="flex flex-col gap-2 p-4 flex-1">
                 <div className="flex items-start justify-between gap-2">
@@ -107,17 +107,17 @@ export default function Collections() {
                 {c.description && <p className="text-xs text-muted-foreground line-clamp-2">{c.description}</p>}
                 <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
                   <span>{counts[c.id] || 0} {counts[c.id] === 1 ? 'deck' : 'decks'}</span>
-                  {c.is_public && (
-                    <span className="inline-flex items-center gap-1 text-primary font-medium">
+                  {c.is_public &&
+              <span className="inline-flex items-center gap-1 text-primary font-medium">
                       <Share2 className="w-3 h-3" /> Shared
                     </span>
-                  )}
+              }
                 </div>
-                {(counts[c.id] || 0) > 0 && (
-                  <Link to={`/collections/${c.id}/study`} onClick={e => e.stopPropagation()} className="mt-1 flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors w-fit">
+                {(counts[c.id] || 0) > 0 &&
+            <Link to={`/collections/${c.id}/study`} onClick={(e) => e.stopPropagation()} className="mt-1 flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors w-fit">
                     <WalletCards className="w-3.5 h-3.5" /> Study
                   </Link>
-                )}
+            }
               </Link>
               <div className="flex items-center gap-1 px-3 pb-3">
                 <div className="flex flex-col">
@@ -127,20 +127,20 @@ export default function Collections() {
                 <div className="ml-auto flex items-center gap-1">
                   <Button variant="ghost" size="icon" className="h-8 w-8" title="Add decks" onClick={() => setAddingDecksTo(c.id)}><LibraryBig className="w-4 h-4" /></Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8" title="Share collection" onClick={() => setSharingCollection(c)}><Share2 className="w-4 h-4" /></Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditing(c); setFormOpen(true); }}><Pencil className="w-4 h-4" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {setEditing(c);setFormOpen(true);}}><Pencil className="w-4 h-4" /></Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleting(c)}><Trash2 className="w-4 h-4" /></Button>
                 </div>
               </div>
             </div>
-          ))}
+        )}
         </div>
-      )}
+      }
 
       <CollectionFormDialog open={formOpen} onClose={() => setFormOpen(false)} collection={editing} />
       <AddDecksToCollectionDialog open={!!addingDecksTo} onClose={() => setAddingDecksTo(null)} collectionId={addingDecksTo} />
       <ShareCollectionModal collection={sharingCollection} open={!!sharingCollection} onClose={() => setSharingCollection(null)} />
 
-      <AlertDialog open={!!deleting} onOpenChange={(o) => { if (!o) setDeleting(null); }}>
+      <AlertDialog open={!!deleting} onOpenChange={(o) => {if (!o) setDeleting(null);}}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete “{deleting?.name}”?</AlertDialogTitle>
@@ -156,6 +156,6 @@ export default function Collections() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
-  );
+    </>);
+
 }
