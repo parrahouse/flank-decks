@@ -196,10 +196,10 @@ export default function Home() {
           <p className="text-muted-foreground text-sm mt-0.5">Create, study and share image flashcard decks.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setShowAddLink(true)} className="gap-1.5">
+          <Button variant="outline" onClick={() => setShowAddLink(true)} className="gap-1.5 rounded-lg">
             <Link2 className="w-4 h-4" /> Add via Link
           </Button>
-          <Button onClick={openCreate} className="gap-1.5 rounded-[20px]">
+          <Button onClick={openCreate} className="gap-1.5 rounded-lg">
             <Plus className="w-4 h-4" /> New Deck
           </Button>
         </div>
@@ -305,8 +305,8 @@ export default function Home() {
         open={!!collectionsDeck}
         onClose={() => setCollectionsDeck(null)}
         deckId={collectionsDeck?.id}
-        deckTitle={collectionsDeck?.title}
-      />
+        deckTitle={collectionsDeck?.title} />
+      
 
       {coverDeck &&
       <CoverImagePicker
