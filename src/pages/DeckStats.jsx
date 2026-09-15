@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, BarChart2, BookOpen } from 'lucide-react';
+import { ArrowLeft, BarChart2, BookOpen, PieChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { CORRECT_KEYS, capped, mean, median } from '@/lib/statsUtils';
@@ -200,12 +200,9 @@ export default function DeckStats() {
         <div className="flex-1">
           <h1 className="text-xl font-bold">{deck?.title}</h1>
           <p className="text-sm text-muted-foreground flex items-center gap-1.5">
-            <BarChart2 className="w-3.5 h-3.5" /> Progress & Stats
+            <PieChart className="w-3.5 h-3.5" /> Progress & Stats
           </p>
         </div>
-        <Link to={`/study/${deckId}`}>
-          <Button size="sm" className="gap-1.5"><BookOpen className="w-4 h-4" /> Study Now</Button>
-        </Link>
       </div>
 
       {!sessions.length ? (
