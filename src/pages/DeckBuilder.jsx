@@ -2,14 +2,14 @@ import { useState, useMemo, useEffect, useLayoutEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, ArrowLeft, Pencil, Trash2, GalleryVerticalEnd, Image as ImageIcon, Cog, X, Upload, RotateCcw, PieChart, Archive, CircleDot, CheckSquare, ToggleRight, Play, Sparkles, Check, FolderOpen, ChevronDown, Loader2, PencilLine } from 'lucide-react';
+import { Plus, ArrowLeft, Pencil, Trash2, Image as ImageIcon, X, Upload, RotateCcw, Archive, CircleDot, CheckSquare, ToggleRight, Play, Sparkles, Check, ChevronDown, Loader2, PencilLine } from 'lucide-react';
 import AiCardSuggestionsModal from '@/components/cards/AiCardSuggestionsModal';
 import CardEditorModal from '@/components/cards/CardEditorModal';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import CsvUploadModal from '@/components/cards/CsvUploadModal';
-import DeckCollectionsDialog from '@/components/collections/DeckCollectionsDialog';
+import CoverImagePicker from '@/components/deck/CoverImagePicker';
 import CardFilterBar from '@/components/cards/CardFilterBar';
 import BinPanel from '@/components/cards/BinPanel';
 import CardPreviewModal from '@/components/cards/CardPreviewModal';
@@ -132,7 +132,7 @@ export default function DeckBuilder() {
   const [showCsvUpload, setShowCsvUpload] = useState(false);
   const [showBin, setShowBin] = useState(false);
   const [showAiSuggest, setShowAiSuggest] = useState(false);
-  const [showCollections, setShowCollections] = useState(false);
+  const [showCoverPicker, setShowCoverPicker] = useState(false);
   const [previewCard, setPreviewCard] = useState(null);
 
   // Description editing
@@ -301,6 +301,11 @@ export default function DeckBuilder() {
     onSuccess: () => { qc.invalidateQueries(['deck', deckId]); toast.success('Deck settings saved'); },
   });
 
+  const saveCoverMutation = useMutation({
+    mutationFn: ({ url, focalPoint, originalUrl }) => base44.entities.Deck.update(deckId, { cover_image_url: url, cover_focal_point: focalPoint, cover_image_original_url: originalUrl }),
+    onSuccess: () => { qc.invalidateQueries(['deck', deckId]); toast.success('Cover updated'); },
+  });
+
   const hasCover = !!deck?.cover_image_url;
   const extractedColor = useDominantColor(deck?.cover_image_url);
   const scrimSourceColor = hexToRgbString(deck?.accent_color) || extractedColor;
@@ -431,29 +436,15 @@ export default function DeckBuilder() {
   // ── Toolbar block: action buttons ──
   const toolbarBlock = (
     <div className="px-3 pb-2 flex flex-wrap items-center gap-1">
-      <Link to={`/stats/${deckId}`}>
-        <Button variant="ghost" size="sm" className={cn("gap-1.5 h-9", hasCover ? "text-white/80 hover:!bg-white/10 hover:!text-white" : "text-muted-foreground hover:text-foreground")}>
-          <PieChart className="w-4 h-4" /> Stats
-        </Button>
-      </Link>
-      <Link to={`/settings/${deckId}`}>
-        <Button variant="ghost" size="sm" className={cn("gap-1.5 h-9", hasCover ? "text-white/80 hover:!bg-white/10 hover:!text-white" : "text-muted-foreground hover:text-foreground")}>
-          <Cog className="w-4 h-4" /> Settings
-        </Button>
-      </Link>
-
       <Button variant="ghost" size="sm" onClick={openAdd} className={cn("gap-1.5 h-9", hasCover && "text-white hover:!bg-white/10 hover:!text-white")}>
         <Plus className="w-4 h-4" /> Add Card
       </Button>
       <Button variant="ghost" size="sm" onClick={() => setShowCsvUpload(true)} className={cn("gap-1.5 h-9", hasCover ? "text-white/80 hover:!bg-white/10 hover:!text-white" : "text-muted-foreground hover:text-foreground")}>
         <Upload className="w-4 h-4" /> Import CSV
       </Button>
-      <Button variant="ghost" size="sm" onClick={() => setShowCollections(true)} className={cn("gap-1.5 h-9", hasCover ? "text-white/80 hover:!bg-white/10 hover:!text-white" : "text-muted-foreground hover:text-foreground")}>
-        <FolderOpen className="w-4 h-4" /> Collections
+      <Button variant="ghost" size="sm" onClick={() => setShowCoverPicker(true)} className={cn("gap-1.5 h-9 ml-auto", hasCover ? "text-white/80 hover:!bg-white/10 hover:!text-white" : "text-muted-foreground hover:text-foreground")}>
+        <ImageIcon className="w-4 h-4" /> Set cover
       </Button>
-      <Link to={`/study/${deckId}`} className={cn("ml-auto flex items-center gap-1.5 text-sm font-semibold transition-colors", hasCover ? "text-white hover:text-white/80" : "text-primary hover:text-primary/80")}>
-        <GalleryVerticalEnd className="w-4 h-4" /> Study
-      </Link>
     </div>
   );
 
@@ -697,11 +688,16 @@ export default function DeckBuilder() {
       }}
     />
 
-    <DeckCollectionsDialog
-      open={showCollections}
-      onClose={() => setShowCollections(false)}
-      deckId={deckId}
+    <CoverImagePicker
+      open={showCoverPicker}
+      onClose={() => setShowCoverPicker(false)}
+      cards={allDeckCards}
+      currentUrl={deck?.cover_image_url || null}
+      currentFocalPoint={deck?.cover_focal_point || null}
+      currentOriginalUrl={deck?.cover_image_original_url || null}
       deckTitle={deck?.title}
+      deckDescription={deck?.description}
+      onSave={(url, focalPoint, originalUrl) => saveCoverMutation.mutate({ url, focalPoint, originalUrl })}
     />
 
     <AiCardSuggestionsModal

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { MoreHorizontal, GalleryVerticalEnd, Copy, Trash2, Share2, Pencil, Image as ImageIcon, PlayCircle, LogOut, FolderMinus, BarChart2 } from 'lucide-react';
+import { MoreHorizontal, GalleryVerticalEnd, Copy, Trash2, Share2, Pencil, Image as ImageIcon, PlayCircle, LogOut, FolderMinus, BarChart2, Cog, FolderOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -123,7 +123,7 @@ function WaterFill({ pct }) {
   );
 }
 
-export default function DeckCard({ deck, cardCount, coverUrl, stats, masteryPct = 0, savedHoursLeft, onEdit, onDelete, onDuplicate, onShare, onSetCover, isShared = false, onLeave, onRemoveFromCollection }) {
+export default function DeckCard({ deck, cardCount, coverUrl, stats, masteryPct = 0, savedHoursLeft, onEdit, onDelete, onDuplicate, onShare, onSetCover, isShared = false, onLeave, onRemoveFromCollection, onCollections }) {
   const fp = deck.cover_focal_point;
   const objectPosition = fp ? `${fp.x}% ${fp.y}%` : '50% 50%';
   const avgScore = stats && stats.highScore !== null && stats.lowScore !== null
@@ -206,9 +206,17 @@ export default function DeckCard({ deck, cardCount, coverUrl, stats, masteryPct 
                       <DropdownMenuItem onClick={() => navigate(`/deck/${deck.id}`)}>
                         <Pencil className="w-4 h-4 mr-2" /> Edit deck
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onSetCover(deck)}>
-                        <ImageIcon className="w-4 h-4 mr-2" /> Set cover
+                      <DropdownMenuItem onClick={() => navigate(`/stats/${deck.id}`)}>
+                        <BarChart2 className="w-4 h-4 mr-2" /> Stats
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate(`/settings/${deck.id}`)}>
+                        <Cog className="w-4 h-4 mr-2" /> Settings
+                      </DropdownMenuItem>
+                      {onCollections && (
+                        <DropdownMenuItem onClick={() => onCollections(deck)}>
+                          <FolderOpen className="w-4 h-4 mr-2" /> Collections
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem onClick={() => onDuplicate(deck)}>
                         <Copy className="w-4 h-4 mr-2" /> Duplicate
                       </DropdownMenuItem>

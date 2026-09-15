@@ -12,6 +12,7 @@ import DeckCard from '@/components/deck/DeckCard';
 import ShareModal from '@/components/deck/ShareModal';
 import ShareCollectionModal from '@/components/collections/ShareCollectionModal';
 import CoverImagePicker from '@/components/deck/CoverImagePicker';
+import DeckCollectionsDialog from '@/components/collections/DeckCollectionsDialog';
 
 function makeToken() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -118,6 +119,7 @@ export default function CollectionDetail() {
   const [shareDeck, setShareDeck] = useState(null);
   const [shareCollectionOpen, setShareCollectionOpen] = useState(false);
   const [coverDeck, setCoverDeck] = useState(null);
+  const [collectionsDeck, setCollectionsDeck] = useState(null);
   const [editingDeck, setEditingDeck] = useState(null);
   const [formTitle, setFormTitle] = useState('');
   const [formDesc, setFormDesc] = useState('');
@@ -268,6 +270,7 @@ export default function CollectionDetail() {
                 onDuplicate={(d) => duplicateDeckMutation.mutate(d)}
                 onShare={(d) => setShareDeck(d)}
                 onSetCover={(d) => setCoverDeck(d)}
+                onCollections={(d) => setCollectionsDeck(d)}
                 onRemoveFromCollection={(d) => removeMut.mutate(m.id)}
               />
             );
@@ -318,6 +321,13 @@ export default function CollectionDetail() {
           onSave={(url, focalPoint, originalUrl) => saveCoverMutation.mutate({ deck: coverDeck, url, focalPoint, originalUrl })}
         />
       )}
+
+      <DeckCollectionsDialog
+        open={!!collectionsDeck}
+        onClose={() => setCollectionsDeck(null)}
+        deckId={collectionsDeck?.id}
+        deckTitle={collectionsDeck?.title}
+      />
     </>
   );
 }

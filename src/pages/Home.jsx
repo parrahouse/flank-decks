@@ -13,6 +13,7 @@ import ShareModal from '@/components/deck/ShareModal';
 import AddDeckByLinkDialog from '@/components/deck/AddDeckByLinkDialog';
 import CoverImagePicker from '@/components/deck/CoverImagePicker';
 import NewDeckDialog from '@/components/deck/NewDeckDialog';
+import DeckCollectionsDialog from '@/components/collections/DeckCollectionsDialog';
 import { toast } from 'sonner';
 function makeToken() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -112,6 +113,7 @@ export default function Home() {
   const [editingDeck, setEditingDeck] = useState(null);
   const [shareDeck, setShareDeck] = useState(null);
   const [coverDeck, setCoverDeck] = useState(null);
+  const [collectionsDeck, setCollectionsDeck] = useState(null);
   const [showAddLink, setShowAddLink] = useState(false);
   const [formTitle, setFormTitle] = useState('');
   const [formDesc, setFormDesc] = useState('');
@@ -258,6 +260,7 @@ export default function Home() {
             onDuplicate={(d) => duplicateMutation.mutate(d)}
             onShare={(d) => setShareDeck(d)}
             onSetCover={(d) => setCoverDeck(d)}
+            onCollections={(d) => setCollectionsDeck(d)}
             isShared={!ownedIds.has(deck.id)}
             onLeave={(d) => leaveMutation.mutate(d)} />
 
@@ -297,6 +300,13 @@ export default function Home() {
       <AddDeckByLinkDialog open={showAddLink} onClose={() => setShowAddLink(false)} />
 
       <NewDeckDialog open={showCreate} onClose={() => setShowCreate(false)} />
+
+      <DeckCollectionsDialog
+        open={!!collectionsDeck}
+        onClose={() => setCollectionsDeck(null)}
+        deckId={collectionsDeck?.id}
+        deckTitle={collectionsDeck?.title}
+      />
 
       {coverDeck &&
       <CoverImagePicker
