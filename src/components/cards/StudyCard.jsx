@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import CardNoteEditor from './CardNoteEditor';
 import { STUDY_CARD_H } from '@/lib/studyLayout';
+import { getQuestionBgLayers } from '@/lib/questionPaneBg';
 import ShortAnswerInput from './ShortAnswerInput';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -122,6 +123,7 @@ export default function StudyCard({
   const isShortAnswer = card.question_type === 'short_answer';
   const hasImage = !!card.image_url;
   const cardPoints = card.point_value ?? 20;
+  const { paneBg: questionPaneBg, imageLayer: qBgImage, overlayLayer: qBgOverlay } = getQuestionBgLayers({ deck, card, hintVisible });
 
   const cancelCountdown = () => {
     clearInterval(countdownRef.current);
@@ -386,14 +388,16 @@ export default function StudyCard({
             ...(hasImage
               ? { height: 120, flexShrink: 0, padding: '20px 20px 40px 20px' }
               : { flex: 1, display: 'flex', alignItems: 'center', padding: '24px 28px 48px 28px' }),
-            backgroundColor: hintVisible ? 'hsl(var(--study-hint-bg))' : 'hsl(var(--study-pane))',
+            backgroundColor: questionPaneBg,
             position: 'relative',
             boxSizing: 'border-box',
             overflow: 'hidden',
             transition: 'background-color 0.2s',
           }}
         >
-          <MathRenderer text={card.clue || ''} className="block" style={{ color: 'hsl(var(--study-pane-text))', fontSize: hasImage ? 'clamp(14px, 2.2vw, 22px)' : 'clamp(22px, 4.5vw, 44px)', fontWeight: 500, lineHeight: 1.3, visibility: hintVisible ? 'hidden' : 'visible' }} />
+          {qBgImage && <div aria-hidden style={qBgImage} />}
+          {qBgOverlay && <div aria-hidden style={qBgOverlay} />}
+          <MathRenderer text={card.clue || ''} className="block" style={{ position: 'relative', color: 'hsl(var(--study-pane-text))', fontSize: hasImage ? 'clamp(14px, 2.2vw, 22px)' : 'clamp(22px, 4.5vw, 44px)', fontWeight: 500, lineHeight: 1.3, visibility: hintVisible ? 'hidden' : 'visible' }} />
 
           {/* Hint overlay — absolutely positioned so it doesn't affect pane height */}
           {hintVisible && note && (

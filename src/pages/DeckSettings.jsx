@@ -6,6 +6,7 @@ import { ArrowLeft, Settings2, Volume2, VolumeX, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 
 export default function DeckSettings() {
@@ -156,6 +157,41 @@ export default function DeckSettings() {
                 </Button>
               )}
             </div>
+          </Row>
+
+          <Row
+            label="Question block color"
+            description="Background color of the clue/question block during study. Defaults to the standard light blue."
+          >
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={deck.question_bg_color || '#e0edf5'}
+                onChange={(e) => updateDeckMutation.mutate({ question_bg_color: e.target.value })}
+                className="w-9 h-9 rounded-md border border-border bg-transparent cursor-pointer p-0.5"
+                aria-label="Question block color"
+              />
+              {deck.question_bg_color && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs text-muted-foreground"
+                  onClick={() => updateDeckMutation.mutate({ question_bg_color: null })}
+                >
+                  Reset
+                </Button>
+              )}
+            </div>
+          </Row>
+
+          <Row
+            label="Card image as question background"
+            description="Show the card's image behind the question block, tinted with the block color using screen blend."
+          >
+            <Switch
+              checked={!!deck.question_bg_image}
+              onCheckedChange={(v) => updateDeckMutation.mutate({ question_bg_image: v })}
+            />
           </Row>
         </Section>
 

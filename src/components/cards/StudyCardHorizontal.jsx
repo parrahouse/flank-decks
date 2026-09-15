@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import CardNoteEditor from './CardNoteEditor';
 import { STUDY_CARD_BOX_H, CARD_GEO as GEO } from '@/lib/studyLayout';
+import { getQuestionBgLayers } from '@/lib/questionPaneBg';
 import ShortAnswerInput from './ShortAnswerInput';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -88,6 +89,7 @@ export default function StudyCardHorizontal({
   const isShortAnswer = card.question_type === 'short_answer';
   const hasImage = !!card.image_url;
   const cardPoints = card.point_value ?? 20;
+  const { paneBg: questionPaneBg, imageLayer: qBgImage, overlayLayer: qBgOverlay } = getQuestionBgLayers({ deck, card, hintVisible });
 
   const correctAnswers = (card.correct_answers || card.correct_answer || '')
     .split('|').map(s => s.trim()).filter(Boolean);
@@ -287,17 +289,20 @@ export default function StudyCardHorizontal({
         width: '100%',
         flex: hasImage ? '0 0 25%' : '1 1 0',
         minHeight: 0,
-        backgroundColor: hintVisible ? 'hsl(var(--study-hint-bg))' : 'hsl(var(--study-pane))',
+        backgroundColor: questionPaneBg,
         borderTop: hasImage ? '1px solid hsl(var(--study-pane-text) / 0.08)' : 'none',
         position: 'relative',
         boxSizing: 'border-box', overflow: 'hidden', transition: 'background-color 0.2s',
       }}>
+        {qBgImage && <div aria-hidden style={qBgImage} />}
+        {qBgOverlay && <div aria-hidden style={qBgOverlay} />}
         {/* Padding lives on an inner wrapper so it can't inflate the flex item */}
         <div style={{
           width: '100%', height: '100%', boxSizing: 'border-box',
           display: 'flex',
           alignItems: hasImage ? 'flex-start' : 'center',
           padding: hasImage ? GEO.qPadImage : GEO.qPadNoImage,
+          position: 'relative',
         }}>
           <p style={{ color: 'hsl(var(--study-pane-text))', fontSize: hasImage ? GEO.qFontImage : GEO.qFontNoImage, fontWeight: 500, lineHeight: 1.35, margin: 0, visibility: hintVisible ? 'hidden' : 'visible' }}>
             {card.clue || ''}

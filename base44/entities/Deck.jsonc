@@ -57,6 +57,15 @@
       "type": "string",
       "description": "Optional manual override for the header scrim color, as a hex string like #4A7C2F. When absent, the color is auto-extracted from the cover image."
     },
+    "question_bg_color": {
+      "type": "string",
+      "description": "Optional hex color for the study question block background. When absent, defaults to the theme's light-blue study pane color."
+    },
+    "question_bg_image": {
+      "type": "boolean",
+      "default": false,
+      "description": "When true, cards with an image render that image as the question block background, overlaid with the block color using screen blend mode."
+    },
     "mastery_min_sessions": {
       "type": "number",
       "default": 3,
