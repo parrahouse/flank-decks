@@ -194,7 +194,7 @@ export default function DeckStats() {
     <>
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
-        <Link to={`/deck/${deckId}`} className="text-muted-foreground hover:text-foreground transition-colors">
+        <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div className="flex-1">
