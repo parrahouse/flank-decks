@@ -16,10 +16,10 @@ import SessionLog from '@/components/stats/SessionLog';
 
 function ReadinessBar({ pct }) {
   const level =
-    pct >= 90 ? { label: 'Test Ready', color: 'bg-success', text: 'text-success' } :
-    pct >= 75 ? { label: 'Almost There', color: 'bg-amber-400', text: 'text-amber-600' } :
-    pct >= 50 ? { label: 'Getting There', color: 'bg-orange-400', text: 'text-orange-600' } :
-               { label: 'Needs Practice', color: 'bg-destructive', text: 'text-destructive' };
+  pct >= 90 ? { label: 'Test Ready', color: 'bg-success', text: 'text-success' } :
+  pct >= 75 ? { label: 'Almost There', color: 'bg-amber-400', text: 'text-amber-600' } :
+  pct >= 50 ? { label: 'Getting There', color: 'bg-orange-400', text: 'text-orange-600' } :
+  { label: 'Needs Practice', color: 'bg-destructive', text: 'text-destructive' };
 
   return (
     <div className="space-y-2">
@@ -30,12 +30,12 @@ function ReadinessBar({ pct }) {
       <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
         <div
           className={cn('h-3 rounded-full transition-all duration-700', level.color)}
-          style={{ width: `${pct}%` }}
-        />
+          style={{ width: `${pct}%` }} />
+        
       </div>
       <p className="text-xs text-muted-foreground text-right">{Math.round(pct)}% average score</p>
-    </div>
-  );
+    </div>);
+
 }
 
 function SectionHeading({ children }) {
@@ -47,31 +47,31 @@ export default function DeckStats() {
 
   const { data: deck } = useQuery({
     queryKey: ['deck', deckId],
-    queryFn: () => base44.entities.Deck.filter({ id: deckId }).then(r => r[0]),
-    enabled: !!deckId,
+    queryFn: () => base44.entities.Deck.filter({ id: deckId }).then((r) => r[0]),
+    enabled: !!deckId
   });
 
   const { data: currentUser } = useQuery({
     queryKey: ['me'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => base44.auth.me()
   });
 
   const { data: sessions = [], isLoading } = useQuery({
     queryKey: ['study-sessions', deckId, currentUser?.email],
     queryFn: () => base44.entities.StudySession.filter({ deck_id: deckId, created_by: currentUser.email }, '-created_date'),
-    enabled: !!deckId && !!currentUser?.email,
+    enabled: !!deckId && !!currentUser?.email
   });
 
   const { data: cards = [] } = useQuery({
     queryKey: ['cards', deckId],
-    queryFn: () => base44.entities.Card.filter({ deck_id: deckId }, 'order').then(r => r.filter(c => !c.deleted)),
-    enabled: !!deckId,
+    queryFn: () => base44.entities.Card.filter({ deck_id: deckId }, 'order').then((r) => r.filter((c) => !c.deleted)),
+    enabled: !!deckId
   });
 
   const { data: cardStats = [] } = useQuery({
     queryKey: ['card-stats', deckId, currentUser?.id],
     queryFn: () => base44.entities.UserCardStats.filter({ deck_id: deckId, user_id: currentUser.id }),
-    enabled: !!deckId && !!currentUser?.id,
+    enabled: !!deckId && !!currentUser?.id
   });
 
   const sessionsAsc = useMemo(
@@ -89,7 +89,7 @@ export default function DeckStats() {
           points: r.points,
           first_wrong: r.first_wrong,
           time_to_answer_ms: r.time_to_answer_ms,
-          session_created: s.created_date,
+          session_created: s.created_date
         });
       });
     });
@@ -116,19 +116,19 @@ export default function DeckStats() {
       const overallAcc = results.length ? correctResults.length / results.length : null;
       let trend = 'flat';
       if (last5Acc != null && overallAcc != null) {
-        if (last5Acc > overallAcc + 0.1) trend = 'up';
-        else if (last5Acc < overallAcc - 0.1) trend = 'down';
+        if (last5Acc > overallAcc + 0.1) trend = 'up';else
+        if (last5Acc < overallAcc - 0.1) trend = 'down';
       }
 
       const mastered = !!stat?.mastered;
-      const timeToMasterMs = (stat?.mastered_at && stat?.first_studied_date)
-        ? new Date(stat.mastered_at) - new Date(stat.first_studied_date)
-        : null;
+      const timeToMasterMs = stat?.mastered_at && stat?.first_studied_date ?
+      new Date(stat.mastered_at) - new Date(stat.first_studied_date) :
+      null;
 
       const missCounts = {};
-      results.forEach((r) => { if (r.first_wrong) missCounts[r.first_wrong] = (missCounts[r.first_wrong] || 0) + 1; });
+      results.forEach((r) => {if (r.first_wrong) missCounts[r.first_wrong] = (missCounts[r.first_wrong] || 0) + 1;});
       let commonMiss = null;
-      Object.entries(missCounts).forEach(([t, n]) => { if (!commonMiss || n > commonMiss.count) commonMiss = { text: t, count: n }; });
+      Object.entries(missCounts).forEach(([t, n]) => {if (!commonMiss || n > commonMiss.count) commonMiss = { text: t, count: n };});
 
       return { card: c, stat, results, accuracy, attempts, firstTryPct, avgTime, fastest, trend, mastered, timeToMasterMs, commonMiss };
     });
@@ -146,22 +146,22 @@ export default function DeckStats() {
 
     const allTimes = [];
     sessions.forEach((s) => {
-      (s.card_results || []).forEach((r) => { if (r.time_to_answer_ms != null) allTimes.push(capped(r.time_to_answer_ms)); });
+      (s.card_results || []).forEach((r) => {if (r.time_to_answer_ms != null) allTimes.push(capped(r.time_to_answer_ms));});
     });
     const avgTimePerCard = allTimes.length ? mean(allTimes) : null;
 
     const activeIds = new Set(cards.map((c) => c.id));
     const masteredActive = cardStats.filter((s) => s.mastered && activeIds.has(s.card_id));
-    const ttm = masteredActive
-      .map((s) => (s.mastered_at && s.first_studied_date) ? new Date(s.mastered_at) - new Date(s.first_studied_date) : null)
-      .filter((x) => x != null && isFinite(x));
+    const ttm = masteredActive.
+    map((s) => s.mastered_at && s.first_studied_date ? new Date(s.mastered_at) - new Date(s.first_studied_date) : null).
+    filter((x) => x != null && isFinite(x));
     const medianTtm = ttm.length ? median(ttm) : null;
     const atm = cardStats.map((s) => s.attempts_to_master).filter((x) => x != null);
     const avgAttemptsMaster = atm.length ? mean(atm) : null;
     const streaks = sessions.map((s) => s.best_streak).filter((x) => x != null);
     const longestStreak = streaks.length ? Math.max(...streaks) : null;
 
-    let ftTotal = 0, ftFirst = 0;
+    let ftTotal = 0,ftFirst = 0;
     sessions.forEach((s) => {
       (s.card_results || []).forEach((r) => {
         ftTotal++;
@@ -178,7 +178,7 @@ export default function DeckStats() {
       medianTtm, ttmCount: ttm.length,
       avgAttemptsMaster, atmCount: atm.length,
       longestStreak,
-      firstTryAcc, ftTotal,
+      firstTryAcc, ftTotal
     };
   }, [sessions, cardStats, cards]);
 
@@ -186,8 +186,8 @@ export default function DeckStats() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="w-7 h-7 border-4 border-muted border-t-primary rounded-full animate-spin" />
-      </div>
-    );
+      </div>);
+
   }
 
   return (
@@ -205,17 +205,17 @@ export default function DeckStats() {
         </div>
       </div>
 
-      {!sessions.length ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
+      {!sessions.length ?
+      <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
           <div className="w-14 h-14 rounded-2xl bg-accent flex items-center justify-center">
             <BarChart2 className="w-7 h-7 text-accent-foreground" />
           </div>
           <h2 className="font-semibold">No study sessions yet</h2>
           <p className="text-muted-foreground text-sm max-w-sm">Complete a study session to see your stats here.</p>
-          <Link to={`/study/${deckId}`}><Button className="mt-1 gap-1.5"><BookOpen className="w-4 h-4" /> Start Studying</Button></Link>
-        </div>
-      ) : (
-        <div className="space-y-8">
+          <Link to={`/study/${deckId}`}><Button className="mt-1 gap-1.5 rounded-lg"><BookOpen className="w-4 h-4" /> Start Studying</Button></Link>
+        </div> :
+
+      <div className="space-y-8">
           {/* Readiness */}
           <div className="bg-card border border-border rounded-xl p-5">
             <ReadinessBar pct={overview.avgScore ?? 0} />
@@ -263,7 +263,7 @@ export default function DeckStats() {
             <SessionLog sessions={sessions} />
           </section>
         </div>
-      )}
-    </>
-  );
+      }
+    </>);
+
 }
