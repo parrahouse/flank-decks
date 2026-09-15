@@ -209,7 +209,7 @@ export default function DeckStats() {
       <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
           <CircleDashed className="w-7 h-7 text-muted-foreground" />
           <h2 className="font-semibold">No study sessions yet</h2>
-          <p className="text-muted-foreground text-sm max-w-sm">Complete a study session to see your stats here.</p>
+          <p className="text-muted-foreground text-sm max-w-sm">Complete a study session to begin building a dazzling array of statist</p>
           <Link to={`/study/${deckId}`}><Button className="mt-1 gap-1.5 rounded-lg"><BookOpen className="w-4 h-4" /> Start Studying</Button></Link>
         </div> :
 
