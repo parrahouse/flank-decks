@@ -35,7 +35,7 @@ export default function PreviewPane({
 
   return (
     <div className={cn('relative flex flex-col min-h-0', maxHeightClass)}>
-      <div className="flex items-center gap-3 mb-3 shrink-0">
+      <div className="hidden xl:flex items-center gap-3 mb-3 shrink-0">
         <p className="text-sm font-medium">Card Preview</p>
         <div className="flex rounded-md border border-border overflow-hidden">
           <button
@@ -70,6 +70,7 @@ export default function PreviewPane({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.2 }}
+            className="hidden xl:block"
           >
             <CardThumbnail
               card={card}
@@ -79,6 +80,9 @@ export default function PreviewPane({
             />
           </motion.div>
         </AnimatePresence>
+        <div className="xl:hidden flex items-center justify-center py-16 text-center">
+          <p className="text-sm text-muted-foreground">Card preview is not available on small screens.</p>
+        </div>
         {children}
       </div>
     </div>
