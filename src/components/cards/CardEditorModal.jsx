@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
-import { Check, Loader2, Plus, Pencil, Zap, ChevronRight } from 'lucide-react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Check, Loader2, Plus, Pencil, Zap, ChevronRight, X } from 'lucide-react';
+import { Dialog, DialogContent, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { base44 } from '@/api/base44Client';
@@ -35,6 +35,7 @@ export default function CardEditorModal({ open, onClose, mode = 'edit', card, de
   const [overrideValue, setOverrideValue] = useState('');
   const [previewLayout, setPreviewLayout] = useState('horizontal');
   const [showDiscard, setShowDiscard] = useState(false);
+  const [closeHovered, setCloseHovered] = useState(false);
   const pendingClose = useRef(false);
 
   const state = useCardFormState({ mode, card, deck, activeCards });
@@ -155,7 +156,20 @@ export default function CardEditorModal({ open, onClose, mode = 'edit', card, de
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) requestClose(); }}>
-      <DialogContent className="!inset-0 !translate-x-0 !translate-y-0 w-screen h-screen max-w-none rounded-none sm:rounded-none p-0 overflow-hidden flex flex-col" onKeyDown={onKeyDown}>
+      <DialogContent className="!inset-0 !translate-x-0 !translate-y-0 w-screen h-screen max-w-none rounded-none sm:rounded-none p-0 overflow-hidden flex flex-col" onKeyDown={onKeyDown} hideClose>
+          <DialogClose
+            className="absolute right-3 top-2 z-50 flex items-center gap-1 rounded-md px-2 py-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            onMouseEnter={() => setCloseHovered(true)}
+            onMouseLeave={() => setCloseHovered(false)}
+          >
+            <X className="w-4 h-4" />
+            <span
+              className="overflow-hidden text-xs font-medium transition-all duration-200"
+              style={{ width: closeHovered ? '1.75rem' : 0, opacity: closeHovered ? 1 : 0 }}
+            >
+              Esc
+            </span>
+          </DialogClose>
         <AnimatePresence mode="wait">
 
           {/* ── STEP: input / saving / done ─────────────────────────────── */}
