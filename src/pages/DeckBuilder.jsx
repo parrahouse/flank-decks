@@ -481,6 +481,15 @@ export default function DeckBuilder() {
               <div className="absolute inset-0" style={{ background: scrimGradient }} />
             </div>
 
+            {/* ── Back arrow, aligned with the content container ── */}
+            <div className="absolute top-0 left-0 right-0 z-20">
+              <div className="max-w-7xl mx-auto px-4 pt-3">
+                <Link to="/" className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-black/30 hover:bg-black/50 text-white transition-colors" aria-label="Back to My Decks">
+                  <ArrowLeft className="w-5 h-5" />
+                </Link>
+              </div>
+            </div>
+
             {/* ── Content, pinned to the bottom of the shrinking container ── */}
             <div className="relative z-10 w-full max-w-7xl mx-auto px-4">
               {/* Title fades out and clips away as the header collapses */}
