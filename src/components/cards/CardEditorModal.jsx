@@ -171,7 +171,7 @@ export default function CardEditorModal({ open, onClose, mode = 'edit', card, de
               {/* Header — title + top-level tabs */}
               <div className="flex items-center justify-between px-6 pt-4 pb-0 border-b border-border shrink-0">
                 <h2 className="font-semibold text-base pr-4">{isCreate ? 'Create a Card' : 'Edit Card'}</h2>
-                <div className="flex items-center">
+                <div className="flex items-center pr-10">
                   {TABS.map(tab => (
                     <button
                       key={tab.key}
