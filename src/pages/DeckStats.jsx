@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, BarChart2, BookOpen, PieChart } from 'lucide-react';
+import { ArrowLeft, BarChart2, BookOpen, CircleDashed, PieChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { CORRECT_KEYS, capped, mean, median } from '@/lib/statsUtils';
@@ -207,9 +207,7 @@ export default function DeckStats() {
 
       {!sessions.length ?
       <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-accent flex items-center justify-center">
-            <BarChart2 className="w-7 h-7 text-accent-foreground" />
-          </div>
+          <CircleDashed className="w-7 h-7 text-muted-foreground" />
           <h2 className="font-semibold">No study sessions yet</h2>
           <p className="text-muted-foreground text-sm max-w-sm">Complete a study session to see your stats here.</p>
           <Link to={`/study/${deckId}`}><Button className="mt-1 gap-1.5 rounded-lg"><BookOpen className="w-4 h-4" /> Start Studying</Button></Link>
