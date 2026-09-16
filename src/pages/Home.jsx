@@ -200,7 +200,7 @@ export default function Home() {
             <Link2 className="w-4 h-4" /> Add via Link
           </Button>
           <Button onClick={openCreate} className="gap-1.5 rounded-lg">
-            <Plus className="w-4 h-4" /> New Deck
+            <Plus className="w-4 h-4" /> Create a Deck
           </Button>
         </div>
       </div>
