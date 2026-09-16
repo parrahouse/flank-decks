@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { cardLabel } from '@/lib/utils';
 import StudyCard from '@/components/cards/StudyCard';
 import StudyCardHorizontal from '@/components/cards/StudyCardHorizontal';
@@ -96,6 +97,16 @@ function SessionNotice({ title, body, deckId, onRetry }) {
     </div>);
 
 }
+
+const SettingRow = ({ label, hint, htmlFor, children }) => (
+  <div className="flex items-start justify-between gap-4 py-3">
+    <div className="min-w-0">
+      <Label htmlFor={htmlFor} className="text-sm font-medium leading-none cursor-pointer">{label}</Label>
+      <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
+    </div>
+    <div className="shrink-0 pt-0.5">{children}</div>
+  </div>
+);
 
 export default function StudySession() {
   const { deckId } = useParams();
@@ -732,6 +743,13 @@ export default function StudySession() {
 
   const current = shuffledCards[cardIndex];
 
+  const saveDefaults = async () => {
+    setSavingDefaults(true);
+    await base44.auth.updateMe({ default_layout_mode: layoutMode, default_handedness: handedness });
+    refetchMe();
+    setSavingDefaults(false);
+  };
+
   // Filter selection screen
   if (!filterChosen) {
     return (
@@ -764,9 +782,9 @@ export default function StudySession() {
           </div>
         }
 
-        <div className="flex flex-col gap-8 py-8 lg:flex-row lg:items-start lg:gap-16">
+        <div className="mx-auto grid w-full max-w-sm gap-8 py-8 lg:max-w-none lg:grid-cols-[minmax(0,384px)_minmax(0,1fr)] lg:gap-16">
           {/* Left: study mode selection */}
-          <div className="flex-1 flex flex-col items-center gap-6">
+          <div className="flex flex-col gap-6">
           <div className="text-center">
             <h2 className="text-2xl [font-family:'Recoleta',_sans-serif] font-bold">What would you like to study?</h2>
           </div>
@@ -847,43 +865,34 @@ export default function StudySession() {
             </button>
 
             {/* Learning mode toggle */}
-            <div className="flex items-center justify-between px-1 pt-2">
-              <div>
-                <Label htmlFor="learning-mode" className="cursor-pointer">
-                  <p className="text-sm font-medium">Learning mode</p>
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  Auto-show explanation when you answer incorrectly
-                  {!hasCompletedFullSession && <span className="ml-1 text-amber-600 font-medium">(auto-on until first full session)</span>}
-                </p>
-              </div>
+            <SettingRow
+              htmlFor="learning-mode"
+              label="Learning mode"
+              hint={<>Auto-show explanation when you answer incorrectly{!hasCompletedFullSession && <span className="ml-1 text-amber-600 font-medium">(auto-on until first full session)</span>}</>}
+            >
               <Switch
                 id="learning-mode"
                 checked={learningMode}
                 onCheckedChange={(next) => setLearningModeOverride(next)}
-                className="ml-4"
               />
-            </div>
+            </SettingRow>
 
-            {selectedQualifies &&
-              <div className="flex items-center justify-between px-1 pt-2">
-              <div>
-                <Label htmlFor="game-mode" className="cursor-pointer">
-                  <p className="text-sm font-medium">Game Mode</p>
-                </Label>
-                <p className="text-xs text-muted-foreground">Three hearts on the line ({GAME_MODE_MIN_CARDS}+ cards)</p>
-              </div>
-              <Switch
-                id="game-mode"
-                checked={gameModeWanted}
-                onCheckedChange={(next) => {
-                  setGameModeWanted(next);
-                  localStorage.setItem('flashdeck_gamemode', next ? '1' : '0');
-                }}
-                className="ml-4"
-              />
-            </div>
-              }
+            {selectedQualifies && (
+              <SettingRow
+                htmlFor="game-mode"
+                label="Game Mode"
+                hint={`Three hearts on the line (${GAME_MODE_MIN_CARDS}+ cards)`}
+              >
+                <Switch
+                  id="game-mode"
+                  checked={gameModeWanted}
+                  onCheckedChange={(next) => {
+                    setGameModeWanted(next);
+                    localStorage.setItem('flashdeck_gamemode', next ? '1' : '0');
+                  }}
+                />
+              </SettingRow>
+            )}
 
             <button
                 onClick={() => selectedPool && startSession(selectedPool)}
@@ -900,161 +909,107 @@ export default function StudySession() {
           </div>
 
           {/* Right: session options & layout preferences */}
-          <div className="flex-1 w-full">
-          <div className="flex flex-col gap-3 w-full max-w-sm lg:max-w-md">
-
-            {/* Helper Settings group */}
-            <div className="border-t border-border pt-2">
-              <p className="text-xs font-semibold text-muted-foreground mb-2">Helpers</p>
-            </div>
-
-            {/* Allow 2nd guesses toggle */}
-            <div className="flex items-center justify-between px-1 pt-1">
-              <div>
-                <Label htmlFor="allow-2nd-guesses" className="cursor-pointer">
-                  <p className="text-sm font-medium">Allow 2nd guesses</p>
-                </Label>
-                <p className="text-xs text-muted-foreground">Let a wrong first pick be retried once</p>
-              </div>
-              <Switch
-                id="allow-2nd-guesses"
-                checked={secondGuessAllowed}
-                onCheckedChange={(next) => {
-                  setSecondGuessAllowed(next);
-                  localStorage.setItem('flashdeck_secondguess', next ? '1' : '0');
-                }}
-                className="ml-4"
-              />
-            </div>
-
-            {/* Hints toggle */}
-            <div className="flex items-center justify-between px-1 pt-1">
-              <div>
-                <Label htmlFor="allow-notes" className="cursor-pointer">
-                  <p className="text-sm font-medium">Allow notes</p>
-                </Label>
-                <p className="text-xs text-muted-foreground">Show the clue toggle on each card</p>
-              </div>
-              <Switch
-                id="allow-notes"
-                checked={hintsAllowed}
-                onCheckedChange={(next) => {
-                  setHintsAllowed(next);
-                  localStorage.setItem('flashdeck_hints', next ? '1' : '0');
-                }}
-                className="ml-4"
-              />
-            </div>
-
-            {/* Eliminate toggle */}
-            <div className="flex items-center justify-between px-1 pt-1">
-              <div>
-                <Label htmlFor="allow-eliminate" className="cursor-pointer">
-                  <p className="text-sm font-medium">Allow eliminate one</p>
-                </Label>
-                <p className="text-xs text-muted-foreground">Let the sparkle button remove a wrong answer choice</p>
-              </div>
-              <Switch
-                id="allow-eliminate"
-                checked={eliminateAllowed}
-                onCheckedChange={(next) => {
-                  setEliminateAllowed(next);
-                  localStorage.setItem('flashdeck_eliminate', next ? '1' : '0');
-                }}
-                className="ml-4"
-              />
-            </div>
-
-            {/* UI Preferences group */}
-            <div className="border-t border-border pt-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1 mb-2">UI Settings</p>
-            </div>
-
-            {/* Auto-advance toggle */}
-            <div className="flex items-center justify-between px-1 pt-1">
-              <div>
-                <Label htmlFor="auto-advance" className="cursor-pointer">
-                  <p className="text-sm font-medium">Auto-advance</p>
-                </Label>
-                <p className="text-xs text-muted-foreground">Move to next card automatically after a correct answer</p>
-              </div>
-              <Switch
-                id="auto-advance"
-                checked={autoAdvance}
-                onCheckedChange={(next) => {
-                  setAutoAdvance(next);
-                  localStorage.setItem('flashdeck_autoadvance', next ? '1' : '0');
-                }}
-                className="ml-4"
-              />
-            </div>
-
-            {/* Layout mode */}
-            <div className="flex items-center justify-between px-1">
-              <div>
-                <p className="text-sm font-medium">Card layout</p>
-                <p className="text-xs text-muted-foreground">How cards are displayed during study</p>
-              </div>
-              <div className="flex gap-1 ml-4">
-                {['auto', 'vertical', 'horizontal'].map((mode) =>
-                  <button
-                    key={mode}
-                    onClick={() => {
-                      setLayoutMode(mode);
-                      localStorage.setItem('flashdeck_layout', mode);
+          <div className="flex w-full flex-col gap-4">
+            <Card>
+              <CardHeader className="pb-1">
+                <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  During the session
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="divide-y divide-border pt-0">
+                <SettingRow htmlFor="allow-2nd-guesses" label="Allow 2nd guesses" hint="Let a wrong first pick be retried once">
+                  <Switch
+                    id="allow-2nd-guesses"
+                    checked={secondGuessAllowed}
+                    onCheckedChange={(next) => {
+                      setSecondGuessAllowed(next);
+                      localStorage.setItem('flashdeck_secondguess', next ? '1' : '0');
                     }}
-                    className={cn(
-                      'px-2.5 py-1 rounded text-xs font-medium border transition-colors',
-                      layoutMode === mode ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground'
-                    )}>
-                  
-                    {mode.charAt(0).toUpperCase() + mode.slice(1)}
-                  </button>
-                  )}
-              </div>
-            </div>
-
-            {/* Handedness */}
-            <div className="flex items-center justify-between px-1 pt-1">
-              <div>
-                <p className="text-sm font-medium">Image position</p>
-                <p className="text-xs text-muted-foreground">Which side the image appears on (horizontal layout only)</p>
-              </div>
-              <div className="flex gap-1 ml-4">
-                {[{ value: 'left', label: 'Left' }, { value: 'right', label: 'Right' }].map(({ value, label }) =>
-                  <button
-                    key={value}
-                    onClick={() => {
-                      setHandedness(value);
-                      localStorage.setItem('flashdeck_handedness', value);
+                  />
+                </SettingRow>
+                <SettingRow htmlFor="allow-notes" label="Allow notes" hint="Show the clue toggle on each card">
+                  <Switch
+                    id="allow-notes"
+                    checked={hintsAllowed}
+                    onCheckedChange={(next) => {
+                      setHintsAllowed(next);
+                      localStorage.setItem('flashdeck_hints', next ? '1' : '0');
                     }}
-                    className={cn(
-                      'px-2.5 py-1 rounded text-xs font-medium border transition-colors',
-                      handedness === value ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground'
-                    )}>
-                  
-                    {label}
-                  </button>
-                  )}
-              </div>
-            </div>
+                  />
+                </SettingRow>
+                <SettingRow htmlFor="allow-eliminate" label="Allow eliminate one" hint="Let the sparkle button remove a wrong answer choice">
+                  <Switch
+                    id="allow-eliminate"
+                    checked={eliminateAllowed}
+                    onCheckedChange={(next) => {
+                      setEliminateAllowed(next);
+                      localStorage.setItem('flashdeck_eliminate', next ? '1' : '0');
+                    }}
+                  />
+                </SettingRow>
+                <SettingRow htmlFor="auto-advance" label="Auto-advance" hint="Move to next card automatically after a correct answer">
+                  <Switch
+                    id="auto-advance"
+                    checked={autoAdvance}
+                    onCheckedChange={(next) => {
+                      setAutoAdvance(next);
+                      localStorage.setItem('flashdeck_autoadvance', next ? '1' : '0');
+                    }}
+                  />
+                </SettingRow>
+              </CardContent>
+            </Card>
 
-            {/* Save as default */}
-            <div className="flex justify-end px-1 pt-1">
-              <button
-                  onClick={async () => {
-                    setSavingDefaults(true);
-                    await base44.auth.updateMe({ default_layout_mode: layoutMode, default_handedness: handedness });
-                    refetchMe();
-                    setSavingDefaults(false);
-                  }}
-                  className="text-xs text-primary hover:underline disabled:opacity-50"
-                  disabled={savingDefaults}>
-                
-                {savingDefaults ? 'Saving…' : 'Save as my default'}
-              </button>
-            </div>
-          </div>
+            <Card>
+              <CardHeader className="pb-1">
+                <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Display
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="divide-y divide-border pt-0">
+                <SettingRow label="Card layout" hint="How cards are displayed during study">
+                  <div className="flex gap-1">
+                    {['auto', 'vertical', 'horizontal'].map((mode) =>
+                      <button
+                        key={mode}
+                        onClick={() => {
+                          setLayoutMode(mode);
+                          localStorage.setItem('flashdeck_layout', mode);
+                        }}
+                        className={cn(
+                          'px-2.5 py-1 rounded text-xs font-medium border transition-colors',
+                          layoutMode === mode ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground'
+                        )}>
+                        {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                      </button>
+                    )}
+                  </div>
+                </SettingRow>
+                <SettingRow label="Image position" hint="Which side the image appears on (horizontal layout only)">
+                  <div className="flex gap-1">
+                    {[{ value: 'left', label: 'Left' }, { value: 'right', label: 'Right' }].map(({ value, label }) =>
+                      <button
+                        key={value}
+                        onClick={() => {
+                          setHandedness(value);
+                          localStorage.setItem('flashdeck_handedness', value);
+                        }}
+                        className={cn(
+                          'px-2.5 py-1 rounded text-xs font-medium border transition-colors',
+                          handedness === value ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground'
+                        )}>
+                        {label}
+                      </button>
+                    )}
+                  </div>
+                </SettingRow>
+              </CardContent>
+              <CardFooter className="justify-end pt-0">
+                <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={saveDefaults} disabled={savingDefaults}>
+                  {savingDefaults ? 'Saving…' : 'Save display as my default'}
+                </Button>
+              </CardFooter>
+            </Card>
           </div>
         </div>
       </div>);
