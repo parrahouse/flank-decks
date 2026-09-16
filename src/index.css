@@ -80,6 +80,7 @@
     --study-partial: 32 95% 44%;
     --study-partial-bg: 48 100% 96%;
     --study-disabled: 220 13% 84%;
+    --switch-off: 212 8% 57%;
     --radius: 0.25rem;
     --font-inter: 'Inter', sans-serif;
     --font-bricolage: 'Bricolage Grotesque', sans-serif;
@@ -145,6 +146,7 @@
     --study-partial: 32 90% 55%;
     --study-partial-bg: 48 30% 15%;
     --study-disabled: 220 10% 40%;
+    --switch-off: 212 8% 46%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;

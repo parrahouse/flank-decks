@@ -5,6 +5,8 @@ import { base44 } from '@/api/base44Client';
 import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Volume2, VolumeX, Info, Trophy, PlayCircle, RefreshCw, Clock, AlertTriangle, Settings, SlidersVertical, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { cardLabel } from '@/lib/utils';
 import StudyCard from '@/components/cards/StudyCard';
 import StudyCardHorizontal from '@/components/cards/StudyCardHorizontal';
@@ -847,46 +849,39 @@ export default function StudySession() {
             {/* Learning mode toggle */}
             <div className="flex items-center justify-between px-1 pt-2">
               <div>
-                <p className="text-sm font-medium">Learning mode</p>
+                <Label htmlFor="learning-mode" className="cursor-pointer">
+                  <p className="text-sm font-medium">Learning mode</p>
+                </Label>
                 <p className="text-xs text-muted-foreground">
                   Auto-show explanation when you answer incorrectly
                   {!hasCompletedFullSession && <span className="ml-1 text-amber-600 font-medium">(auto-on until first full session)</span>}
                 </p>
               </div>
-              <button
-                  onClick={() => setLearningModeOverride(!learningMode)}
-                  className={cn(
-                    'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer ml-4',
-                    learningMode ? 'bg-primary' : 'bg-muted'
-                  )}>
-                <span className={cn(
-                    'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform',
-                    learningMode ? 'translate-x-5' : 'translate-x-0'
-                  )} />
-              </button>
+              <Switch
+                id="learning-mode"
+                checked={learningMode}
+                onCheckedChange={(next) => setLearningModeOverride(next)}
+                className="ml-4"
+              />
             </div>
 
             {selectedQualifies &&
               <div className="flex items-center justify-between px-1 pt-2">
               <div>
-                <p className="text-sm font-medium">Game Mode</p>
+                <Label htmlFor="game-mode" className="cursor-pointer">
+                  <p className="text-sm font-medium">Game Mode</p>
+                </Label>
                 <p className="text-xs text-muted-foreground">Three hearts on the line ({GAME_MODE_MIN_CARDS}+ cards)</p>
               </div>
-              <button
-                  onClick={() => {
-                    const next = !gameModeWanted;
-                    setGameModeWanted(next);
-                    localStorage.setItem('flashdeck_gamemode', next ? '1' : '0');
-                  }}
-                  className={cn(
-                    'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer ml-4',
-                    gameModeWanted ? 'bg-primary' : 'bg-muted'
-                  )}>
-                <span className={cn(
-                    'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform',
-                    gameModeWanted ? 'translate-x-5' : 'translate-x-0'
-                  )} />
-              </button>
+              <Switch
+                id="game-mode"
+                checked={gameModeWanted}
+                onCheckedChange={(next) => {
+                  setGameModeWanted(next);
+                  localStorage.setItem('flashdeck_gamemode', next ? '1' : '0');
+                }}
+                className="ml-4"
+              />
             </div>
               }
 
@@ -916,72 +911,58 @@ export default function StudySession() {
             {/* Allow 2nd guesses toggle */}
             <div className="flex items-center justify-between px-1 pt-1">
               <div>
-                <p className="text-sm font-medium">Allow 2nd guesses</p>
+                <Label htmlFor="allow-2nd-guesses" className="cursor-pointer">
+                  <p className="text-sm font-medium">Allow 2nd guesses</p>
+                </Label>
                 <p className="text-xs text-muted-foreground">Let a wrong first pick be retried once</p>
               </div>
-              <button
-                  onClick={() => {
-                    const next = !secondGuessAllowed;
-                    setSecondGuessAllowed(next);
-                    localStorage.setItem('flashdeck_secondguess', next ? '1' : '0');
-                  }}
-                  className={cn(
-                    'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer ml-4',
-                    secondGuessAllowed ? 'bg-primary' : 'bg-muted'
-                  )}>
-                
-                <span className={cn(
-                    'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform',
-                    secondGuessAllowed ? 'translate-x-5' : 'translate-x-0'
-                  )} />
-              </button>
+              <Switch
+                id="allow-2nd-guesses"
+                checked={secondGuessAllowed}
+                onCheckedChange={(next) => {
+                  setSecondGuessAllowed(next);
+                  localStorage.setItem('flashdeck_secondguess', next ? '1' : '0');
+                }}
+                className="ml-4"
+              />
             </div>
 
             {/* Hints toggle */}
             <div className="flex items-center justify-between px-1 pt-1">
               <div>
-                <p className="text-sm font-medium">Allow notes</p>
+                <Label htmlFor="allow-notes" className="cursor-pointer">
+                  <p className="text-sm font-medium">Allow notes</p>
+                </Label>
                 <p className="text-xs text-muted-foreground">Show the clue toggle on each card</p>
               </div>
-              <button
-                  onClick={() => {
-                    const next = !hintsAllowed;
-                    setHintsAllowed(next);
-                    localStorage.setItem('flashdeck_hints', next ? '1' : '0');
-                  }}
-                  className={cn(
-                    'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer ml-4',
-                    hintsAllowed ? 'bg-primary' : 'bg-muted'
-                  )}>
-                
-                <span className={cn(
-                    'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform',
-                    hintsAllowed ? 'translate-x-5' : 'translate-x-0'
-                  )} />
-              </button>
+              <Switch
+                id="allow-notes"
+                checked={hintsAllowed}
+                onCheckedChange={(next) => {
+                  setHintsAllowed(next);
+                  localStorage.setItem('flashdeck_hints', next ? '1' : '0');
+                }}
+                className="ml-4"
+              />
             </div>
 
             {/* Eliminate toggle */}
             <div className="flex items-center justify-between px-1 pt-1">
               <div>
-                <p className="text-sm font-medium">Allow eliminate one</p>
+                <Label htmlFor="allow-eliminate" className="cursor-pointer">
+                  <p className="text-sm font-medium">Allow eliminate one</p>
+                </Label>
                 <p className="text-xs text-muted-foreground">Let the sparkle button remove a wrong answer choice</p>
               </div>
-              <button
-                  onClick={() => {
-                    const next = !eliminateAllowed;
-                    setEliminateAllowed(next);
-                    localStorage.setItem('flashdeck_eliminate', next ? '1' : '0');
-                  }}
-                  className={cn(
-                    'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer ml-4',
-                    eliminateAllowed ? 'bg-primary' : 'bg-muted'
-                  )}>
-                <span className={cn(
-                    'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform',
-                    eliminateAllowed ? 'translate-x-5' : 'translate-x-0'
-                  )} />
-              </button>
+              <Switch
+                id="allow-eliminate"
+                checked={eliminateAllowed}
+                onCheckedChange={(next) => {
+                  setEliminateAllowed(next);
+                  localStorage.setItem('flashdeck_eliminate', next ? '1' : '0');
+                }}
+                className="ml-4"
+              />
             </div>
 
             {/* UI Preferences group */}
@@ -992,25 +973,20 @@ export default function StudySession() {
             {/* Auto-advance toggle */}
             <div className="flex items-center justify-between px-1 pt-1">
               <div>
-                <p className="text-sm font-medium">Auto-advance</p>
+                <Label htmlFor="auto-advance" className="cursor-pointer">
+                  <p className="text-sm font-medium">Auto-advance</p>
+                </Label>
                 <p className="text-xs text-muted-foreground">Move to next card automatically after a correct answer</p>
               </div>
-              <button
-                  onClick={() => {
-                    const next = !autoAdvance;
-                    setAutoAdvance(next);
-                    localStorage.setItem('flashdeck_autoadvance', next ? '1' : '0');
-                  }}
-                  className={cn(
-                    'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer ml-4',
-                    autoAdvance ? 'bg-primary' : 'bg-muted'
-                  )}>
-                
-                <span className={cn(
-                    'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform',
-                    autoAdvance ? 'translate-x-5' : 'translate-x-0'
-                  )} />
-              </button>
+              <Switch
+                id="auto-advance"
+                checked={autoAdvance}
+                onCheckedChange={(next) => {
+                  setAutoAdvance(next);
+                  localStorage.setItem('flashdeck_autoadvance', next ? '1' : '0');
+                }}
+                className="ml-4"
+              />
             </div>
 
             {/* Layout mode */}
