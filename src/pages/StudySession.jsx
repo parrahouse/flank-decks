@@ -8,6 +8,8 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { cardLabel } from '@/lib/utils';
 import StudyCard from '@/components/cards/StudyCard';
 import StudyCardHorizontal from '@/components/cards/StudyCardHorizontal';
@@ -59,7 +61,7 @@ function MasteryTooltip({ minSessions, masteryPct }) {
         onClick={(e) => {e.stopPropagation();setOpen((v) => !v);}}
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
-        className="p-0.5 rounded focus:outline-none">
+        className="p-0.5 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
         
         <Info className="w-3.5 h-3.5 text-muted-foreground/60" />
       </button>
@@ -286,10 +288,7 @@ export default function StudySession() {
   const MAX_HEARTS = 3;
   const poolFor = (mode) =>
   mode === 'unmastered' ? unmasteredCards : mode === 'bookmarked' ? bookmarkedCards : activeCards;
-  const selectedQualifies =
-  selectedPool != null &&
-  poolFor(selectedPool).length >= GAME_MODE_MIN_CARDS &&
-  canZombify(getSkin(DEFAULT_SKIN_ID));
+  const gameEligible = selectedPool != null && poolFor(selectedPool).length >= GAME_MODE_MIN_CARDS;
 
   const handleToggleBookmark = async (cardId, newVal) => {
     // Bookmarking writes to the card record, which only the deck owner may do.
@@ -752,6 +751,36 @@ export default function StudySession() {
 
   // Filter selection screen
   if (!filterChosen) {
+    const scopeOptions = [
+      { value: 'all', label: 'All cards', sub: `${activeCards.length} cards`, disabled: false, badge: null, tooltip: null },
+      {
+        value: 'unmastered',
+        label: 'Unmastered only',
+        sub: allMastered ? '🎉 All cards mastered!' : `${unmasteredCards.length} card${unmasteredCards.length !== 1 ? 's' : ''} not yet mastered`,
+        disabled: allMastered,
+        badge: unmasteredCards.length < activeCards.length ? (
+          <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">
+            {unmasteredCards.length} remaining
+          </span>
+        ) : null,
+        tooltip: <MasteryTooltip minSessions={deck?.mastery_min_sessions ?? 3} masteryPct={deck?.mastery_pct ?? 90} />,
+      },
+      {
+        value: 'bookmarked',
+        label: 'Bookmarked only',
+        sub: bookmarkedCards.length === 0 ? 'No bookmarked cards yet'
+          : bookmarkedCards.length < 10 ? `Need 10 bookmarked cards (${bookmarkedCards.length} so far)`
+          : 'Study only your bookmarked cards',
+        disabled: bookmarkedCards.length < 10,
+        badge: bookmarkedCards.length >= 10 ? (
+          <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">
+            {bookmarkedCards.length} card{bookmarkedCards.length !== 1 ? 's' : ''}
+          </span>
+        ) : null,
+        tooltip: null,
+      },
+    ];
+
     return (
       <div className="max-w-5xl mx-auto px-4 py-8">
         <div className="flex items-center gap-3 mb-8">
@@ -790,85 +819,34 @@ export default function StudySession() {
           </div>
 
           <div className="flex flex-col gap-3 w-full max-w-sm">
-            <button
-                onClick={() => setSelectedPool('all')}
-                className={cn(
-                  'w-full border-2 rounded-[4px] p-4 text-left transition-all',
-                  selectedPool === 'all' ?
-                  'border-primary bg-accent/40' :
-                  'border-border hover:border-primary hover:bg-accent/40'
-                )}>
-              
-              <div className="font-semibold" style={{ fontSize: '18px' }}>All cards</div>
-              <div className="text-sm text-muted-foreground mt-0.5">{activeCards.length} cards</div>
-            </button>
-
-            <button
-                onClick={() => setSelectedPool('unmastered')}
-                disabled={allMastered}
-                className={cn(
-                  'w-full border-2 rounded-[4px] p-4 text-left transition-all',
-                  allMastered ?
-                  'border-border opacity-50 cursor-not-allowed' :
-                  selectedPool === 'unmastered' ?
-                  'border-primary bg-accent/40' :
-                  'border-border hover:border-primary hover:bg-accent/40'
-                )}>
-              
-              <div className="font-semibold flex items-center gap-2" style={{ fontSize: '18px' }}>
-                Unmastered only
-                {unmasteredCards.length < activeCards.length &&
-                  <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">
-                    {unmasteredCards.length} remaining
-                  </span>
-                  }
-              </div>
-              <div className="text-sm text-muted-foreground mt-0.5 flex items-center gap-1.5">
-                {allMastered ?
-                  '🎉 All cards mastered!' :
-
-                  <>
-                     {unmasteredCards.length} card{unmasteredCards.length !== 1 ? 's' : ''} not yet mastered
-                     <MasteryTooltip minSessions={deck?.mastery_min_sessions ?? 3} masteryPct={deck?.mastery_pct ?? 90} />
-                   </>
-                  }
-              </div>
-            </button>
-
-            <button
-                onClick={() => setSelectedPool('bookmarked')}
-                disabled={bookmarkedCards.length < 10}
-                className={cn(
-                  'w-full border-2 rounded-[4px] p-4 text-left transition-all',
-                  bookmarkedCards.length < 10 ?
-                  'border-border opacity-50 cursor-not-allowed' :
-                  selectedPool === 'bookmarked' ?
-                  'border-primary bg-accent/40' :
-                  'border-border hover:border-primary hover:bg-accent/40'
-                )}>
-              
-              <div className="font-semibold flex items-center gap-2" style={{ fontSize: '18px' }}>
-                Bookmarked only
-                {bookmarkedCards.length >= 10 &&
-                  <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">
-                    {bookmarkedCards.length} card{bookmarkedCards.length !== 1 ? 's' : ''}
-                  </span>
-                  }
-              </div>
-              <div className="text-sm text-muted-foreground mt-0.5">
-                {bookmarkedCards.length === 0 ?
-                  'No bookmarked cards yet' :
-                  bookmarkedCards.length < 10 ?
-                  `Need 10 bookmarked cards (${bookmarkedCards.length} so far)` :
-                  'Study only your bookmarked cards'}
-              </div>
-            </button>
+            <RadioGroup value={selectedPool} onValueChange={setSelectedPool} className="gap-3">
+              {scopeOptions.map((o) => (
+                <div key={o.value} className="flex items-start gap-2">
+                  <Label
+                    htmlFor={`scope-${o.value}`}
+                    className="flex-1 flex cursor-pointer items-start gap-3 rounded-[4px] border-2 border-border p-4 transition-colors has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-accent/40 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50"
+                  >
+                    <RadioGroupItem id={`scope-${o.value}`} value={o.value} disabled={o.disabled} className="mt-0.5" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-semibold flex items-center gap-2" style={{ fontSize: '18px' }}>
+                        {o.label}
+                        {o.badge}
+                      </span>
+                      <span className="mt-0.5 block text-sm text-muted-foreground">
+                        {o.sub}
+                      </span>
+                    </span>
+                  </Label>
+                  {o.tooltip}
+                </div>
+              ))}
+            </RadioGroup>
 
             {/* Learning mode toggle */}
             <SettingRow
               htmlFor="learning-mode"
               label="Learning mode"
-              hint={<>Auto-show explanation when you answer incorrectly{!hasCompletedFullSession && <span className="ml-1 text-amber-600 font-medium">(auto-on until first full session)</span>}</>}
+              hint={<>Auto-show explanation when you answer incorrectly{!hasCompletedFullSession && <span className="ml-1 text-amber-600 font-medium">On by default until your first full session</span>}</>}
             >
               <Switch
                 id="learning-mode"
@@ -877,22 +855,21 @@ export default function StudySession() {
               />
             </SettingRow>
 
-            {selectedQualifies && (
-              <SettingRow
-                htmlFor="game-mode"
-                label="Game Mode"
-                hint={`Three hearts on the line (${GAME_MODE_MIN_CARDS}+ cards)`}
-              >
-                <Switch
-                  id="game-mode"
-                  checked={gameModeWanted}
-                  onCheckedChange={(next) => {
-                    setGameModeWanted(next);
-                    localStorage.setItem('flashdeck_gamemode', next ? '1' : '0');
-                  }}
-                />
-              </SettingRow>
-            )}
+            <SettingRow
+              htmlFor="game-mode"
+              label="Game mode"
+              hint={gameEligible ? 'Three hearts on the line' : `Needs ${GAME_MODE_MIN_CARDS}+ cards in the selected set`}
+            >
+              <Switch
+                id="game-mode"
+                checked={gameModeWanted && gameEligible}
+                disabled={!gameEligible}
+                onCheckedChange={(next) => {
+                  setGameModeWanted(next);
+                  localStorage.setItem('flashdeck_gamemode', next ? '1' : '0');
+                }}
+              />
+            </SettingRow>
 
             <button
                 onClick={() => selectedPool && startSession(selectedPool)}
@@ -927,7 +904,7 @@ export default function StudySession() {
                     }}
                   />
                 </SettingRow>
-                <SettingRow htmlFor="allow-notes" label="Allow notes" hint="Show the clue toggle on each card">
+                <SettingRow htmlFor="allow-notes" label="Allow notes" hint="Show the notes toggle on each card">
                   <Switch
                     id="allow-notes"
                     checked={hintsAllowed}
@@ -968,40 +945,51 @@ export default function StudySession() {
               </CardHeader>
               <CardContent className="divide-y divide-border pt-0">
                 <SettingRow label="Card layout" hint="How cards are displayed during study">
-                  <div className="flex gap-1">
-                    {['auto', 'vertical', 'horizontal'].map((mode) =>
-                      <button
-                        key={mode}
-                        onClick={() => {
-                          setLayoutMode(mode);
-                          localStorage.setItem('flashdeck_layout', mode);
-                        }}
-                        className={cn(
-                          'px-2.5 py-1 rounded text-xs font-medium border transition-colors',
-                          layoutMode === mode ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground'
-                        )}>
-                        {mode.charAt(0).toUpperCase() + mode.slice(1)}
-                      </button>
+                  <ToggleGroup
+                    type="single"
+                    role="radiogroup"
+                    value={layoutMode}
+                    onValueChange={(v) => {
+                      if (!v) return;
+                      setLayoutMode(v);
+                      localStorage.setItem('flashdeck_layout', v);
+                    }}
+                    className="gap-0 rounded-[4px] border border-input"
+                  >
+                    {['auto', 'vertical', 'horizontal'].map((v) =>
+                      <ToggleGroupItem
+                        key={v}
+                        value={v}
+                        className="rounded-none border-0 h-auto px-2.5 py-1 text-xs font-medium first:rounded-l-[4px] last:rounded-r-[4px] data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                      >
+                        {v[0].toUpperCase() + v.slice(1)}
+                      </ToggleGroupItem>
                     )}
-                  </div>
+                  </ToggleGroup>
                 </SettingRow>
-                <SettingRow label="Image position" hint="Which side the image appears on (horizontal layout only)">
-                  <div className="flex gap-1">
+                <SettingRow label="Image position" hint="Which side the image appears on">
+                  <ToggleGroup
+                    type="single"
+                    role="radiogroup"
+                    value={handedness}
+                    onValueChange={(v) => {
+                      if (!v) return;
+                      setHandedness(v);
+                      localStorage.setItem('flashdeck_handedness', v);
+                    }}
+                    disabled={layoutMode !== 'horizontal'}
+                    className={cn('gap-0 rounded-[4px] border border-input', layoutMode !== 'horizontal' && 'opacity-50')}
+                  >
                     {[{ value: 'left', label: 'Left' }, { value: 'right', label: 'Right' }].map(({ value, label }) =>
-                      <button
+                      <ToggleGroupItem
                         key={value}
-                        onClick={() => {
-                          setHandedness(value);
-                          localStorage.setItem('flashdeck_handedness', value);
-                        }}
-                        className={cn(
-                          'px-2.5 py-1 rounded text-xs font-medium border transition-colors',
-                          handedness === value ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground'
-                        )}>
+                        value={value}
+                        className="rounded-none border-0 h-auto px-2.5 py-1 text-xs font-medium first:rounded-l-[4px] last:rounded-r-[4px] data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                      >
                         {label}
-                      </button>
+                      </ToggleGroupItem>
                     )}
-                  </div>
+                  </ToggleGroup>
                 </SettingRow>
               </CardContent>
               <CardFooter className="justify-end pt-0">
