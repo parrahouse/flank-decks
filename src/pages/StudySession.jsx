@@ -752,7 +752,7 @@ export default function StudySession() {
   // Filter selection screen
   if (!filterChosen) {
     const scopeOptions = [
-      { value: 'all', label: 'All cards', sub: `${activeCards.length} cards`, disabled: false, badge: null, tooltip: null },
+      { value: 'all', label: 'The whole deck', sub: `${activeCards.length} cards`, disabled: false, badge: null, tooltip: null },
       {
         value: 'unmastered',
         label: 'Unmastered only',
