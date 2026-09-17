@@ -20,6 +20,7 @@ import SwabbieSpeechBubble from '@/components/cards/SwabbieSpeechBubble';
 import SessionSummaryBubble from '@/components/cards/SessionSummaryBubble';
 import LeaveSessionDialog from '@/components/cards/LeaveSessionDialog';
 import DeckInfoTooltip from '@/components/cards/DeckInfoTooltip';
+import DeckHeroHeader from '@/components/deck/DeckHeroHeader';
 import HeartsHud from '@/components/cards/HeartsHud';
 import { getSkin, DEFAULT_SKIN_ID, canZombify } from '@/components/cards/skins';
 import StreakCounter from '@/components/cards/StreakCounter';
@@ -785,15 +786,12 @@ export default function StudySession() {
 
     return (
       <div className="max-w-5xl mx-auto px-4 py-8">
-        <div className="flex items-center gap-3 mb-8">
-          <button onClick={() => navigate(`/deck/${deckId}`)} className="text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div className="flex-1">
-            <h1 className="font-semibold">{deck?.title}</h1>
-            <p className="text-xs text-muted-foreground">{activeCards.length} cards total</p>
-          </div>
-        </div>
+        <DeckHeroHeader
+          deck={deck}
+          backTo={`/deck/${deckId}`}
+          backLabel="Back to deck"
+          subtitle={<><SlidersVertical className="w-3.5 h-3.5" /> {activeCards.length} cards total</>}
+        />
 
         {/* Resume banner */}
         {savedSession &&
