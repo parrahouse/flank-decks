@@ -19,6 +19,7 @@ import ProgressGameBand from '@/components/cards/ProgressGameBand';
 import SwabbieSpeechBubble from '@/components/cards/SwabbieSpeechBubble';
 import SessionSummaryBubble from '@/components/cards/SessionSummaryBubble';
 import LeaveSessionDialog from '@/components/cards/LeaveSessionDialog';
+import DeckHeroHeader from '@/components/deck/DeckHeroHeader';
 import DeckInfoTooltip from '@/components/cards/DeckInfoTooltip';
 import HeartsHud from '@/components/cards/HeartsHud';
 import { getSkin, DEFAULT_SKIN_ID, canZombify } from '@/components/cards/skins';
@@ -1064,39 +1065,41 @@ export default function StudySession() {
         onSave={handleExitSave}
         onDiscard={handleExitDiscard} />
 
-      {/* Header section — deck name + settings + end session */}
-      <div className="flex items-center justify-between gap-3 px-1 pb-2">
-        <div className="min-w-0">
-          <h1 className="text-lg font-semibold text-foreground [font-family:'Recoleta',_sans-serif] flex items-center gap-1.5 min-w-0">
-            <span>{deck?.title}</span>
-            <DeckInfoTooltip
-              deck={deck}
-              totalCards={activeCards.length}
-              masteredCount={cardStats.filter((s) => s.mastered).length} />
-            
-          </h1>
-          <p className="text-xs mt-0.5">
-            {filterMode === 'unmastered' && <span className="text-amber-600">Unmastered only</span>}
-            {filterMode === 'bookmarked' && <span className="text-amber-600">Bookmarked only</span>}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={() => setFilterChosen(false)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm text-foreground hover:bg-muted transition-colors"
-            title="Settings">
-            <SlidersVertical className="w-4 h-4" />
-            <span className="[font-family:'Inter',_sans-serif] font-medium">Settings</span>
-          </button>
-          <button
-            onClick={() => requestExit(`/deck/${deckId}`)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 transition-colors"
-            title="End session">
-            <LogOut className="w-4 h-4" />
-            <span>End Session</span>
-          </button>
-        </div>
-      </div>
+      <DeckHeroHeader
+        deck={deck}
+        backTo={`/deck/${deckId}`}
+        backLabel="Back to deck"
+        onBack={() => requestExit(`/deck/${deckId}`)}
+        titleExtra={
+          <DeckInfoTooltip
+            deck={deck}
+            totalCards={activeCards.length}
+            masteredCount={cardStats.filter((s) => s.mastered).length} />
+        }
+        subtitle={
+          (filterMode === 'unmastered' || filterMode === 'bookmarked') ? (
+            <span className="text-amber-300">{filterMode === 'unmastered' ? 'Unmastered only' : 'Bookmarked only'}</span>
+          ) : null
+        }
+        actions={
+          <>
+            <button
+              onClick={() => setFilterChosen(false)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm text-white bg-black/30 hover:bg-black/50 transition-colors"
+              title="Settings">
+              <SlidersVertical className="w-4 h-4" />
+              <span className="[font-family:'Inter',_sans-serif] font-medium">Settings</span>
+            </button>
+            <button
+              onClick={() => requestExit(`/deck/${deckId}`)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 transition-colors"
+              title="End session">
+              <LogOut className="w-4 h-4" />
+              <span>End Session</span>
+            </button>
+          </>
+        }
+      />
 
       {/* Game world — bordered box holding the scene + HUD */}
       <motion.div
