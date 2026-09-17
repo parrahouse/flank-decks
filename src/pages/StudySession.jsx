@@ -790,7 +790,7 @@ export default function StudySession() {
           deck={deck}
           backTo={`/deck/${deckId}`}
           backLabel="Back to deck"
-          subtitle={<><SlidersVertical className="w-3.5 h-3.5" /> {activeCards.length} cards total</>}
+          subtitle={<><SlidersVertical className="w-3.5 h-3.5" /> Study Session Settings</>}
         />
 
         {/* Resume banner */}
