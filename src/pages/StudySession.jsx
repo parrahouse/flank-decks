@@ -789,23 +789,8 @@ export default function StudySession() {
 
 
     const hasCover = !!deck?.cover_image_url;
-    const scrimSourceColor = hexToRgbString(deck?.accent_color) || dominantColor;
-    const scrim = buildScrim(scrimSourceColor);
     const fp = deck?.cover_focal_point;
     const coverObjectPosition = fp ? `${fp.x}% ${fp.y}%` : '50% 50%';
-
-    // Extended fade: scrim at top for header legibility → transparent at bottom
-    const fadeGradient = scrim
-      ? `linear-gradient(to bottom,
-          hsla(${scrim.h}, ${scrim.s}%, ${scrim.l}%, ${scrim.aTop}) 0%,
-          hsla(${scrim.h}, ${scrim.s}%, ${scrim.l}%, ${scrim.aBottom}) 18%,
-          hsla(${scrim.h}, ${scrim.s}%, ${scrim.l}%, ${scrim.aBottom * 0.55}) 45%,
-          hsla(${scrim.h}, ${scrim.s}%, ${scrim.l}%, 0) 100%)`
-      : `linear-gradient(to bottom,
-          rgba(0,0,0,0.20) 0%,
-          rgba(0,0,0,0.72) 18%,
-          rgba(0,0,0,0.40) 45%,
-          rgba(0,0,0,0) 100%)`;
 
     return (
       <div className="relative max-w-5xl mx-auto px-4 py-8">
@@ -823,7 +808,6 @@ export default function StudySession() {
               alt=""
               className="absolute inset-0 w-full h-full object-cover"
               style={{ objectPosition: coverObjectPosition }} />
-            <div className="absolute inset-0" style={{ background: fadeGradient }} />
           </div>
         )}
         {!hasCover ? (
@@ -873,7 +857,203 @@ export default function StudySession() {
         <div className="relative z-10 bg-card/90 backdrop-blur-sm rounded-xl border border-border/60 p-6 shadow-sm">
         <div className="mx-auto grid w-full max-w-sm gap-8 py-4 lg:max-w-none lg:grid-cols-[minmax(0,384px)_minmax(0,1fr)] lg:gap-16">
           {/* Left: study mode selection */}
-...
+          <div className="flex flex-col gap-6">
+          <div className="text-center">
+            <h2 className="text-2xl [font-family:'Recoleta',_sans-serif] font-bold">What would you like to study?</h2>
+          </div>
+
+          <div className="flex flex-col gap-3 w-full max-w-sm">
+            <RadioGroup value={selectedPool} onValueChange={setSelectedPool} className="gap-3">
+              {scopeOptions.flatMap((o) => {
+                  const els = [];
+                  if (o.value === 'unmastered') {
+                    els.push(
+                      <div key="scope-heading-targeted" className="pt-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      Targeted Sessions
+                    </div>
+                    );
+                  }
+                  els.push(
+                    <div key={o.value} className="flex items-start gap-2">
+                    <Label
+                        htmlFor={`scope-${o.value}`}
+                        className="flex-1 flex cursor-pointer items-start gap-3 rounded-[4px] border-2 border-border p-4 transition-colors has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-accent/40 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50">
+                        
+                      <RadioGroupItem id={`scope-${o.value}`} value={o.value} disabled={o.disabled} className="mt-0.5" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-semibold flex items-center gap-2 capitalize" style={{ fontSize: '18px' }}>
+                          {o.label}
+                          {o.badge}
+                        </span>
+                        <span className="mt-0.5 block text-sm text-muted-foreground">
+                          {o.sub}
+                        </span>
+                      </span>
+                    </Label>
+                    {o.tooltip}
+                  </div>
+                  );
+                  return els;
+                })}
+            </RadioGroup>
+
+            {/* Learning mode toggle */}
+            <SettingRow
+                htmlFor="learning-mode"
+                label="Learning mode"
+                hint={<>Auto-show explanation when you answer incorrectly{!hasCompletedFullSession && <span className="ml-1 text-amber-600 font-medium">On by default until your first full session</span>}</>}>
+                
+              <Switch
+                  id="learning-mode"
+                  checked={learningMode}
+                  onCheckedChange={(next) => setLearningModeOverride(next)} />
+                
+            </SettingRow>
+
+            <SettingRow
+                htmlFor="game-mode"
+                label="Game mode"
+                hint={gameEligible ? 'Three hearts on the line' : `Needs ${GAME_MODE_MIN_CARDS}+ cards in the selected set`}>
+                
+              <Switch
+                  id="game-mode"
+                  checked={gameModeWanted && gameEligible}
+                  disabled={!gameEligible}
+                  onCheckedChange={(next) => {
+                    setGameModeWanted(next);
+                    localStorage.setItem('flashdeck_gamemode', next ? '1' : '0');
+                  }} />
+                
+            </SettingRow>
+
+            <button
+                onClick={() => startSession(selectedPool)}
+                disabled={!selectedPool}
+                className={cn(
+                  'w-full border-2 rounded-[4px] py-3 font-semibold transition-all',
+                  selectedPool ?
+                  'border-primary bg-primary text-primary-foreground hover:opacity-90' :
+                  'border-border text-muted-foreground opacity-50 cursor-not-allowed'
+                )}>
+              Start session
+            </button>
+          </div>
+          </div>
+
+          {/* Right: session options & layout preferences */}
+          <div className="flex w-full flex-col gap-4">
+            <Card>
+              <CardHeader className="pb-1">
+                <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  During the session
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="divide-y divide-border pt-0">
+                <SettingRow htmlFor="allow-2nd-guesses" label="Allow 2nd guesses" hint="Let a wrong first pick be retried once">
+                  <Switch
+                    id="allow-2nd-guesses"
+                    checked={secondGuessAllowed}
+                    onCheckedChange={(next) => {
+                      setSecondGuessAllowed(next);
+                      localStorage.setItem('flashdeck_secondguess', next ? '1' : '0');
+                    }} />
+                  
+                </SettingRow>
+                <SettingRow htmlFor="allow-notes" label="Allow notes" hint="Show the notes toggle on each card">
+                  <Switch
+                    id="allow-notes"
+                    checked={hintsAllowed}
+                    onCheckedChange={(next) => {
+                      setHintsAllowed(next);
+                      localStorage.setItem('flashdeck_hints', next ? '1' : '0');
+                    }} />
+                  
+                </SettingRow>
+                <SettingRow htmlFor="allow-eliminate" label="Allow eliminate one" hint="Let the sparkle button remove a wrong answer choice">
+                  <Switch
+                    id="allow-eliminate"
+                    checked={eliminateAllowed}
+                    onCheckedChange={(next) => {
+                      setEliminateAllowed(next);
+                      localStorage.setItem('flashdeck_eliminate', next ? '1' : '0');
+                    }} />
+                  
+                </SettingRow>
+                <SettingRow htmlFor="auto-advance" label="Auto-advance" hint="Move to next card automatically after a correct answer">
+                  <Switch
+                    id="auto-advance"
+                    checked={autoAdvance}
+                    onCheckedChange={(next) => {
+                      setAutoAdvance(next);
+                      localStorage.setItem('flashdeck_autoadvance', next ? '1' : '0');
+                    }} />
+                  
+                </SettingRow>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-1">
+                <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Display
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="divide-y divide-border pt-0">
+                <SettingRow label="Card layout" hint="How cards are displayed during study">
+                  <ToggleGroup
+                    type="single"
+                    role="radiogroup"
+                    value={layoutMode}
+                    onValueChange={(v) => {
+                      if (!v) return;
+                      setLayoutMode(v);
+                      localStorage.setItem('flashdeck_layout', v);
+                    }}
+                    className="gap-0 rounded-[4px] border border-input">
+                    
+                    {['auto', 'vertical', 'horizontal'].map((v) =>
+                    <ToggleGroupItem
+                      key={v}
+                      value={v}
+                      className="rounded-none border-0 h-auto px-2.5 py-1 text-xs font-medium first:rounded-l-[4px] last:rounded-r-[4px] data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+                      
+                        {v[0].toUpperCase() + v.slice(1)}
+                      </ToggleGroupItem>
+                    )}
+                  </ToggleGroup>
+                </SettingRow>
+                <SettingRow label="Image position" hint="Which side the image appears on">
+                  <ToggleGroup
+                    type="single"
+                    role="radiogroup"
+                    value={handedness}
+                    onValueChange={(v) => {
+                      if (!v) return;
+                      setHandedness(v);
+                      localStorage.setItem('flashdeck_handedness', v);
+                    }}
+                    disabled={layoutMode !== 'horizontal'}
+                    className={cn('gap-0 rounded-[4px] border border-input', layoutMode !== 'horizontal' && 'opacity-50')}>
+                    
+                    {[{ value: 'left', label: 'Left' }, { value: 'right', label: 'Right' }].map(({ value, label }) =>
+                    <ToggleGroupItem
+                      key={value}
+                      value={value}
+                      className="rounded-none border-0 h-auto px-2.5 py-1 text-xs font-medium first:rounded-l-[4px] last:rounded-r-[4px] data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+                      
+                        {label}
+                      </ToggleGroupItem>
+                    )}
+                  </ToggleGroup>
+                </SettingRow>
+              </CardContent>
+              <CardFooter className="justify-end pt-0">
+                <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={saveDefaults} disabled={savingDefaults}>
+                  {savingDefaults ? 'Saving…' : 'Save display as my default'}
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
         </div>
         </div>
       </div>);
