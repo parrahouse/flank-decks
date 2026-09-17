@@ -20,7 +20,6 @@ import SwabbieSpeechBubble from '@/components/cards/SwabbieSpeechBubble';
 import SessionSummaryBubble from '@/components/cards/SessionSummaryBubble';
 import LeaveSessionDialog from '@/components/cards/LeaveSessionDialog';
 import DeckInfoTooltip from '@/components/cards/DeckInfoTooltip';
-import DeckHeroHeader from '@/components/deck/DeckHeroHeader';
 import HeartsHud from '@/components/cards/HeartsHud';
 import { getSkin, DEFAULT_SKIN_ID, canZombify } from '@/components/cards/skins';
 import StreakCounter from '@/components/cards/StreakCounter';
@@ -101,15 +100,15 @@ function SessionNotice({ title, body, deckId, onRetry }) {
 
 }
 
-const SettingRow = ({ label, hint, htmlFor, children }) =>
-<div className="flex items-start justify-between gap-4 py-3">
+const SettingRow = ({ label, hint, htmlFor, children }) => (
+  <div className="flex items-start justify-between gap-4 py-3">
     <div className="min-w-0">
       <Label htmlFor={htmlFor} className="text-sm font-medium leading-none cursor-pointer">{label}</Label>
       <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
     </div>
     <div className="shrink-0 pt-0.5">{children}</div>
-  </div>;
-
+  </div>
+);
 
 export default function StudySession() {
   const { deckId } = useParams();
@@ -449,9 +448,9 @@ export default function StudySession() {
 
 
 
-
           // already studied today, no change
-        } else if (last === yesterday) {newStreak = streak.current_streak + 1;} else {newStreak = 1;}const newLongest = Math.max(streak.longest_streak || 0, newStreak);const newMilestone = [3, 7, 14, 30, 60, 100].filter((m) => newStreak >= m).pop() || 0;await base44.entities.Streak.update(streak.id, { current_streak: newStreak, longest_streak: newLongest, last_study_date: today, milestone_reached: Math.max(streak.milestone_reached || 0, newMilestone) });
+        } else if (last === yesterday) {newStreak = streak.current_streak + 1;} else {newStreak = 1;}const newLongest = Math.max(streak.longest_streak || 0, newStreak);const newMilestone = [3, 7, 14, 30, 60, 100].filter((m) => newStreak >= m).pop() || 0;await base44.entities.Streak.update(streak.id, { current_streak: newStreak, longest_streak: newLongest, last_study_date: today, milestone_reached: Math.max(streak.milestone_reached || 0, newMilestone)
+          });
       } else if (currentUser?.id) {
         await base44.entities.Streak.create({
           user_id: currentUser.id,
@@ -753,45 +752,48 @@ export default function StudySession() {
   // Filter selection screen
   if (!filterChosen) {
     const scopeOptions = [
-    { value: 'all', label: 'The whole deck', sub: `${activeCards.length} cards`, disabled: false, badge: null, tooltip: null },
-    {
-      value: 'unmastered',
-      label: 'Unmastered only',
-      sub: unmasteredCards.length === activeCards.length ?
-      'Same as the whole deck' :
-      allMastered ? '🎉 All cards mastered!' : `${unmasteredCards.length} card${unmasteredCards.length !== 1 ? 's' : ''} not yet mastered`,
-      disabled: allMastered || unmasteredCards.length === activeCards.length,
-      badge: unmasteredCards.length < activeCards.length ?
-      <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">
+      { value: 'all', label: 'The whole deck', sub: `${activeCards.length} cards`, disabled: false, badge: null, tooltip: null },
+      {
+        value: 'unmastered',
+        label: 'Unmastered only',
+        sub: unmasteredCards.length === activeCards.length
+          ? 'Same as the whole deck'
+          : allMastered ? '🎉 All cards mastered!' : `${unmasteredCards.length} card${unmasteredCards.length !== 1 ? 's' : ''} not yet mastered`,
+        disabled: allMastered || unmasteredCards.length === activeCards.length,
+        badge: unmasteredCards.length < activeCards.length ? (
+          <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">
             {unmasteredCards.length} remaining
-          </span> :
-      null,
-      tooltip: null
-    },
-    {
-      value: 'bookmarked',
-      label: 'Bookmarked only',
-      sub: bookmarkedCards.length === 0 ? 'No bookmarked cards yet' :
-      bookmarkedCards.length < 10 ? `Need 10 bookmarked cards (${bookmarkedCards.length} so far)` :
-      'Study only your bookmarked cards',
-      disabled: bookmarkedCards.length < 10,
-      badge: bookmarkedCards.length >= 10 ?
-      <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">
+          </span>
+        ) : null,
+        tooltip: null,
+      },
+      {
+        value: 'bookmarked',
+        label: 'Bookmarked only',
+        sub: bookmarkedCards.length === 0 ? 'No bookmarked cards yet'
+          : bookmarkedCards.length < 10 ? `Need 10 bookmarked cards (${bookmarkedCards.length} so far)`
+          : 'Study only your bookmarked cards',
+        disabled: bookmarkedCards.length < 10,
+        badge: bookmarkedCards.length >= 10 ? (
+          <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">
             {bookmarkedCards.length} card{bookmarkedCards.length !== 1 ? 's' : ''}
-          </span> :
-      null,
-      tooltip: null
-    }];
-
+          </span>
+        ) : null,
+        tooltip: null,
+      },
+    ];
 
     return (
       <div className="max-w-5xl mx-auto px-4 py-8">
-        <DeckHeroHeader
-          deck={deck}
-          backTo={`/deck/${deckId}`}
-          backLabel="Back to deck"
-          subtitle={<><SlidersVertical className="w-3.5 h-3.5" /> Study Session Settings</>}
-        />
+        <div className="flex items-center gap-3 mb-8">
+          <button onClick={() => navigate(`/deck/${deckId}`)} className="text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div className="flex-1">
+            <h1 className="font-semibold">{deck?.title}</h1>
+            <p className="text-xs text-muted-foreground">{activeCards.length} cards total</p>
+          </div>
+        </div>
 
         {/* Resume banner */}
         {savedSession &&
@@ -821,23 +823,23 @@ export default function StudySession() {
           <div className="flex flex-col gap-3 w-full max-w-sm">
             <RadioGroup value={selectedPool} onValueChange={setSelectedPool} className="gap-3">
               {scopeOptions.flatMap((o) => {
-                  const els = [];
-                  if (o.value === 'unmastered') {
-                    els.push(
-                      <div key="scope-heading-targeted" className="pt-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                const els = [];
+                if (o.value === 'unmastered') {
+                  els.push(
+                    <div key="scope-heading-targeted" className="pt-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                       Targeted Sessions
                     </div>
-                    );
-                  }
-                  els.push(
-                    <div key={o.value} className="flex items-start gap-2">
+                  );
+                }
+                els.push(
+                  <div key={o.value} className="flex items-start gap-2">
                     <Label
-                        htmlFor={`scope-${o.value}`}
-                        className="flex-1 flex cursor-pointer items-start gap-3 rounded-[4px] border-2 border-border p-4 transition-colors has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-accent/40 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50">
-                        
+                      htmlFor={`scope-${o.value}`}
+                      className="flex-1 flex cursor-pointer items-start gap-3 rounded-[4px] border-2 border-border p-4 transition-colors has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-accent/40 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50"
+                    >
                       <RadioGroupItem id={`scope-${o.value}`} value={o.value} disabled={o.disabled} className="mt-0.5" />
                       <span className="min-w-0 flex-1">
-                        <span className="block font-semibold flex items-center gap-2 capitalize" style={{ fontSize: '18px' }}>
+                        <span className="block font-semibold flex items-center gap-2" style={{ fontSize: '18px' }}>
                           {o.label}
                           {o.badge}
                         </span>
@@ -848,38 +850,38 @@ export default function StudySession() {
                     </Label>
                     {o.tooltip}
                   </div>
-                  );
-                  return els;
-                })}
+                );
+                return els;
+              })}
             </RadioGroup>
 
             {/* Learning mode toggle */}
             <SettingRow
-                htmlFor="learning-mode"
-                label="Learning mode"
-                hint={<>Auto-show explanation when you answer incorrectly{!hasCompletedFullSession && <span className="ml-1 text-amber-600 font-medium">On by default until your first full session</span>}</>}>
-                
+              htmlFor="learning-mode"
+              label="Learning mode"
+              hint={<>Auto-show explanation when you answer incorrectly{!hasCompletedFullSession && <span className="ml-1 text-amber-600 font-medium">On by default until your first full session</span>}</>}
+            >
               <Switch
-                  id="learning-mode"
-                  checked={learningMode}
-                  onCheckedChange={(next) => setLearningModeOverride(next)} />
-                
+                id="learning-mode"
+                checked={learningMode}
+                onCheckedChange={(next) => setLearningModeOverride(next)}
+              />
             </SettingRow>
 
             <SettingRow
-                htmlFor="game-mode"
-                label="Game mode"
-                hint={gameEligible ? 'Three hearts on the line' : `Needs ${GAME_MODE_MIN_CARDS}+ cards in the selected set`}>
-                
+              htmlFor="game-mode"
+              label="Game mode"
+              hint={gameEligible ? 'Three hearts on the line' : `Needs ${GAME_MODE_MIN_CARDS}+ cards in the selected set`}
+            >
               <Switch
-                  id="game-mode"
-                  checked={gameModeWanted && gameEligible}
-                  disabled={!gameEligible}
-                  onCheckedChange={(next) => {
-                    setGameModeWanted(next);
-                    localStorage.setItem('flashdeck_gamemode', next ? '1' : '0');
-                  }} />
-                
+                id="game-mode"
+                checked={gameModeWanted && gameEligible}
+                disabled={!gameEligible}
+                onCheckedChange={(next) => {
+                  setGameModeWanted(next);
+                  localStorage.setItem('flashdeck_gamemode', next ? '1' : '0');
+                }}
+              />
             </SettingRow>
 
             <button
@@ -912,8 +914,8 @@ export default function StudySession() {
                     onCheckedChange={(next) => {
                       setSecondGuessAllowed(next);
                       localStorage.setItem('flashdeck_secondguess', next ? '1' : '0');
-                    }} />
-                  
+                    }}
+                  />
                 </SettingRow>
                 <SettingRow htmlFor="allow-notes" label="Allow notes" hint="Show the notes toggle on each card">
                   <Switch
@@ -922,8 +924,8 @@ export default function StudySession() {
                     onCheckedChange={(next) => {
                       setHintsAllowed(next);
                       localStorage.setItem('flashdeck_hints', next ? '1' : '0');
-                    }} />
-                  
+                    }}
+                  />
                 </SettingRow>
                 <SettingRow htmlFor="allow-eliminate" label="Allow eliminate one" hint="Let the sparkle button remove a wrong answer choice">
                   <Switch
@@ -932,8 +934,8 @@ export default function StudySession() {
                     onCheckedChange={(next) => {
                       setEliminateAllowed(next);
                       localStorage.setItem('flashdeck_eliminate', next ? '1' : '0');
-                    }} />
-                  
+                    }}
+                  />
                 </SettingRow>
                 <SettingRow htmlFor="auto-advance" label="Auto-advance" hint="Move to next card automatically after a correct answer">
                   <Switch
@@ -942,8 +944,8 @@ export default function StudySession() {
                     onCheckedChange={(next) => {
                       setAutoAdvance(next);
                       localStorage.setItem('flashdeck_autoadvance', next ? '1' : '0');
-                    }} />
-                  
+                    }}
+                  />
                 </SettingRow>
               </CardContent>
             </Card>
@@ -965,14 +967,14 @@ export default function StudySession() {
                       setLayoutMode(v);
                       localStorage.setItem('flashdeck_layout', v);
                     }}
-                    className="gap-0 rounded-[4px] border border-input">
-                    
+                    className="gap-0 rounded-[4px] border border-input"
+                  >
                     {['auto', 'vertical', 'horizontal'].map((v) =>
-                    <ToggleGroupItem
-                      key={v}
-                      value={v}
-                      className="rounded-none border-0 h-auto px-2.5 py-1 text-xs font-medium first:rounded-l-[4px] last:rounded-r-[4px] data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
-                      
+                      <ToggleGroupItem
+                        key={v}
+                        value={v}
+                        className="rounded-none border-0 h-auto px-2.5 py-1 text-xs font-medium first:rounded-l-[4px] last:rounded-r-[4px] data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                      >
                         {v[0].toUpperCase() + v.slice(1)}
                       </ToggleGroupItem>
                     )}
@@ -989,14 +991,14 @@ export default function StudySession() {
                       localStorage.setItem('flashdeck_handedness', v);
                     }}
                     disabled={layoutMode !== 'horizontal'}
-                    className={cn('gap-0 rounded-[4px] border border-input', layoutMode !== 'horizontal' && 'opacity-50')}>
-                    
+                    className={cn('gap-0 rounded-[4px] border border-input', layoutMode !== 'horizontal' && 'opacity-50')}
+                  >
                     {[{ value: 'left', label: 'Left' }, { value: 'right', label: 'Right' }].map(({ value, label }) =>
-                    <ToggleGroupItem
-                      key={value}
-                      value={value}
-                      className="rounded-none border-0 h-auto px-2.5 py-1 text-xs font-medium first:rounded-l-[4px] last:rounded-r-[4px] data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
-                      
+                      <ToggleGroupItem
+                        key={value}
+                        value={value}
+                        className="rounded-none border-0 h-auto px-2.5 py-1 text-xs font-medium first:rounded-l-[4px] last:rounded-r-[4px] data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                      >
                         {label}
                       </ToggleGroupItem>
                     )}
