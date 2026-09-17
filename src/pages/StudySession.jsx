@@ -21,8 +21,6 @@ import SessionSummaryBubble from '@/components/cards/SessionSummaryBubble';
 import LeaveSessionDialog from '@/components/cards/LeaveSessionDialog';
 import DeckInfoTooltip from '@/components/cards/DeckInfoTooltip';
 import DeckHeroHeader from '@/components/deck/DeckHeroHeader';
-import useDominantColor from '@/hooks/useDominantColor';
-import { buildScrim, buildScrimGradient, hexToRgbString } from '@/lib/deckHero';
 import HeartsHud from '@/components/cards/HeartsHud';
 import { getSkin, DEFAULT_SKIN_ID, canZombify } from '@/components/cards/skins';
 import StreakCounter from '@/components/cards/StreakCounter';
@@ -212,8 +210,6 @@ export default function StudySession() {
     queryFn: () => base44.entities.Deck.filter({ id: deckId }).then((r) => r[0]),
     enabled: !!deckId
   });
-
-  const dominantColor = useDominantColor(deck?.cover_image_url);
 
   const { data: allCards = [], isLoading, error: cardsError, refetch: refetchCards } = useQuery({
     queryKey: ['cards', deckId],
@@ -788,57 +784,18 @@ export default function StudySession() {
     }];
 
 
-    const hasCover = !!deck?.cover_image_url;
-    const fp = deck?.cover_focal_point;
-    const coverObjectPosition = fp ? `${fp.x}% ${fp.y}%` : '50% 50%';
-
     return (
-      <div className="relative max-w-5xl mx-auto px-4 py-8">
-        {/* Extended cover background — fades to transparent toward the bottom */}
-        {hasCover && (
-          <div
-            className="absolute top-0 bottom-0 z-0"
-            style={{
-              width: '100vw',
-              marginLeft: 'calc(50% - 50vw)',
-              marginRight: 'calc(50% - 50vw)',
-            }}>
-            <img
-              src={deck.cover_image_url}
-              alt=""
-              className="absolute inset-0 w-full h-full object-cover"
-              style={{ objectPosition: coverObjectPosition }} />
-          </div>
-        )}
-        {!hasCover ? (
-          <DeckHeroHeader
-            deck={deck}
-            backTo={`/deck/${deckId}`}
-            backLabel="Back to deck"
-            subtitle={<><SlidersVertical className="w-3.5 h-3.5" /> Study Session Settings</>}
-          />
-        ) : (
-          <>
-            <div className="relative z-10 mb-6">
-              <Link
-                to={`/deck/${deckId}`}
-                className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-black/30 hover:bg-black/50 text-white transition-colors"
-                aria-label="Back to deck">
-                <ArrowLeft className="w-5 h-5" />
-              </Link>
-            </div>
-            <div className="relative z-10 mb-8">
-              <h1 className="text-xl font-bold text-white">{deck?.title}</h1>
-              <div className="text-sm text-white/80 flex items-center gap-1.5 mt-0.5">
-                <SlidersVertical className="w-3.5 h-3.5" /> Study Session Settings
-              </div>
-            </div>
-          </>
-        )}
+      <div className="max-w-5xl mx-auto px-4 py-8">
+        <DeckHeroHeader
+          deck={deck}
+          backTo={`/deck/${deckId}`}
+          backLabel="Back to deck"
+          subtitle={<><SlidersVertical className="w-3.5 h-3.5" /> Study Session Settings</>}
+        />
 
         {/* Resume banner */}
         {savedSession &&
-        <div className="relative z-10 mb-6 border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 rounded-xl p-4 flex items-start gap-3">
+        <div className="mb-6 border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 rounded-xl p-4 flex items-start gap-3">
             <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">You have a saved session</p>
@@ -854,8 +811,7 @@ export default function StudySession() {
           </div>
         }
 
-        <div className="relative z-10 bg-card/90 backdrop-blur-sm rounded-xl border border-border/60 p-6 shadow-sm">
-        <div className="mx-auto grid w-full max-w-sm gap-8 py-4 lg:max-w-none lg:grid-cols-[minmax(0,384px)_minmax(0,1fr)] lg:gap-16">
+        <div className="mx-auto grid w-full max-w-sm gap-8 py-8 lg:max-w-none lg:grid-cols-[minmax(0,384px)_minmax(0,1fr)] lg:gap-16">
           {/* Left: study mode selection */}
           <div className="flex flex-col gap-6">
           <div className="text-center">
@@ -927,10 +883,10 @@ export default function StudySession() {
             </SettingRow>
 
             <button
-                onClick={() => startSession(selectedPool)}
+                onClick={() => selectedPool && startSession(selectedPool)}
                 disabled={!selectedPool}
                 className={cn(
-                  'w-full border-2 rounded-[4px] py-3 font-semibold transition-all',
+                  'w-full border-2 rounded-[4px] p-3 text-center font-semibold transition-all',
                   selectedPool ?
                   'border-primary bg-primary text-primary-foreground hover:opacity-90' :
                   'border-border text-muted-foreground opacity-50 cursor-not-allowed'
@@ -1054,7 +1010,6 @@ export default function StudySession() {
               </CardFooter>
             </Card>
           </div>
-        </div>
         </div>
       </div>);
 
