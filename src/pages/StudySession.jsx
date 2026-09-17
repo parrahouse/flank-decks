@@ -756,14 +756,16 @@ export default function StudySession() {
       {
         value: 'unmastered',
         label: 'Unmastered only',
-        sub: allMastered ? '🎉 All cards mastered!' : `${unmasteredCards.length} card${unmasteredCards.length !== 1 ? 's' : ''} not yet mastered`,
-        disabled: allMastered,
+        sub: unmasteredCards.length === activeCards.length
+          ? 'Same as the whole deck'
+          : allMastered ? '🎉 All cards mastered!' : `${unmasteredCards.length} card${unmasteredCards.length !== 1 ? 's' : ''} not yet mastered`,
+        disabled: allMastered || unmasteredCards.length === activeCards.length,
         badge: unmasteredCards.length < activeCards.length ? (
           <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">
             {unmasteredCards.length} remaining
           </span>
         ) : null,
-        tooltip: <MasteryTooltip minSessions={deck?.mastery_min_sessions ?? 3} masteryPct={deck?.mastery_pct ?? 90} />,
+        tooltip: null,
       },
       {
         value: 'bookmarked',
@@ -820,26 +822,37 @@ export default function StudySession() {
 
           <div className="flex flex-col gap-3 w-full max-w-sm">
             <RadioGroup value={selectedPool} onValueChange={setSelectedPool} className="gap-3">
-              {scopeOptions.map((o) => (
-                <div key={o.value} className="flex items-start gap-2">
-                  <Label
-                    htmlFor={`scope-${o.value}`}
-                    className="flex-1 flex cursor-pointer items-start gap-3 rounded-[4px] border-2 border-border p-4 transition-colors has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-accent/40 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50"
-                  >
-                    <RadioGroupItem id={`scope-${o.value}`} value={o.value} disabled={o.disabled} className="mt-0.5" />
-                    <span className="min-w-0 flex-1">
-                      <span className="block font-semibold flex items-center gap-2" style={{ fontSize: '18px' }}>
-                        {o.label}
-                        {o.badge}
+              {scopeOptions.flatMap((o) => {
+                const els = [];
+                if (o.value === 'unmastered') {
+                  els.push(
+                    <div key="scope-heading-targeted" className="pt-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      Targeted Sessions
+                    </div>
+                  );
+                }
+                els.push(
+                  <div key={o.value} className="flex items-start gap-2">
+                    <Label
+                      htmlFor={`scope-${o.value}`}
+                      className="flex-1 flex cursor-pointer items-start gap-3 rounded-[4px] border-2 border-border p-4 transition-colors has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-accent/40 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50"
+                    >
+                      <RadioGroupItem id={`scope-${o.value}`} value={o.value} disabled={o.disabled} className="mt-0.5" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-semibold flex items-center gap-2" style={{ fontSize: '18px' }}>
+                          {o.label}
+                          {o.badge}
+                        </span>
+                        <span className="mt-0.5 block text-sm text-muted-foreground">
+                          {o.sub}
+                        </span>
                       </span>
-                      <span className="mt-0.5 block text-sm text-muted-foreground">
-                        {o.sub}
-                      </span>
-                    </span>
-                  </Label>
-                  {o.tooltip}
-                </div>
-              ))}
+                    </Label>
+                    {o.tooltip}
+                  </div>
+                );
+                return els;
+              })}
             </RadioGroup>
 
             {/* Learning mode toggle */}
