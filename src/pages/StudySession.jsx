@@ -52,6 +52,14 @@ const SCORE_LABELS = {
 
 const CORRECT_KEYS = new Set(['correct', 'second_guess', 'correct_after_clue', 'second_guess_after_clue', 'partial']);
 
+const QUESTION_TYPE_ORDER = ['multiple_choice', 'select_all', 'true_false', 'short_answer'];
+const QUESTION_TYPE_LABELS = {
+  multiple_choice: 'Multiple Choice',
+  select_all: 'Select All',
+  true_false: 'True/False',
+  short_answer: 'Short Answer'
+};
+
 function MasteryTooltip({ minSessions, masteryPct }) {
   const [open, setOpen] = useState(false);
   return (
@@ -110,6 +118,44 @@ const SettingRow = ({ label, hint, htmlFor, children }) => (
   </div>
 );
 
+// Multi-select pill row. Empty selection means the group is inactive.
+const FilterPillGroup = ({ title, options, selected, onChange }) => {
+  if (!options.length) return null;
+  const toggle = (v) =>
+    onChange(selected.includes(v) ? selected.filter((x) => x !== v) : [...selected, v]);
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2">
+        <p className="text-sm font-semibold">{title}</p>
+        {selected.length > 0 &&
+          <button
+            onClick={() => onChange([])}
+            className="text-xs text-muted-foreground hover:text-foreground underline"
+          >
+            Clear
+          </button>
+        }
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {options.map((o) =>
+          <button
+            key={o.value}
+            onClick={() => toggle(o.value)}
+            className={cn(
+              'text-xs px-2.5 py-1 rounded-full border transition-colors',
+              selected.includes(o.value)
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'bg-transparent text-muted-foreground border-border hover:border-primary hover:text-foreground'
+            )}
+          >
+            {o.label}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export default function StudySession() {
   const { deckId } = useParams();
   const navigate = useNavigate();
@@ -138,6 +184,14 @@ export default function StudySession() {
   const [filterMode, setFilterMode] = useState('all');
   const [filterChosen, setFilterChosen] = useState(false);
   const [selectedPool, setSelectedPool] = useState('all'); // 'all' | 'unmastered' | 'bookmarked' | 'quick'
+  const [tagFilters, setTagFilters] = useState([]);
+  const [typeFilters, setTypeFilters] = useState([]);
+  // Clear filters when switching decks so a previous deck's selection can't
+  // narrow the new one (especially when the new deck hides the filter block).
+  useEffect(() => {
+    setTagFilters([]);
+    setTypeFilters([]);
+  }, [deckId]);
   // Quick-session size. Held loosely (may be '' while typing); clamped on blur and at use.
   const [quickCount, setQuickCount] = useState(() => {
     const v = parseInt(localStorage.getItem('flashdeck_quickcount'), 10);
@@ -285,16 +339,41 @@ export default function StudySession() {
 
   const masteredCardIds = new Set(cardStats.filter((s) => s.mastered).map((s) => s.card_id));
   const unmasteredCards = activeCards.filter((c) => !masteredCardIds.has(c.id));
-  const allMastered = unmasteredCards.length === 0 && activeCards.length > 0;
   const bookmarkedCards = activeCards.filter((c) => c.bookmarked);
+
+  // Tag pills, ordered by how often each tag appears across the UNFILTERED deck, so the
+  // order stays put while the user is selecting.
+  const tagOptions = useMemo(() => {
+    const counts = new Map();
+    activeCards.forEach((c) => (c.tags || []).forEach((t) => counts.set(t, (counts.get(t) || 0) + 1)));
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([value]) => ({ value, label: value }));
+  }, [activeCards]);
+
+  // Only offer types the deck actually contains. Legacy rows without the field are MC.
+  const typeOptions = useMemo(() => {
+    const present = new Set(activeCards.map((c) => c.question_type || 'multiple_choice'));
+    return QUESTION_TYPE_ORDER.filter((t) => present.has(t))
+      .map((value) => ({ value, label: QUESTION_TYPE_LABELS[value] }));
+  }, [activeCards]);
+
+  // OR within each group, AND between groups. Empty group = inactive.
+  const applyFilters = (cards) => {
+    let out = cards;
+    if (typeFilters.length) out = out.filter((c) => typeFilters.includes(c.question_type || 'multiple_choice'));
+    if (tagFilters.length) out = out.filter((c) => tagFilters.some((t) => (c.tags || []).includes(t)));
+    return out;
+  };
 
   // Game Mode gate — evaluated against the EFFECTIVE session size, engaged at start time.
   const GAME_MODE_MIN_CARDS = 20;
   const QUICK_MIN_CARDS = 5;
   const MAX_HEARTS = 3;
   // 'quick' draws from the whole active deck, so it falls through to the default branch.
+  // Filters are applied last, so every scope, count and gate downstream sees them.
   const poolFor = (mode) =>
-  mode === 'unmastered' ? unmasteredCards : mode === 'bookmarked' ? bookmarkedCards : activeCards;
+    applyFilters(mode === 'unmastered' ? unmasteredCards : mode === 'bookmarked' ? bookmarkedCards : activeCards);
   // How many cards the session will actually contain. Only 'quick' differs from its pool size.
   const sizeFor = (mode) => {
     const n = poolFor(mode).length;
@@ -766,18 +845,32 @@ export default function StudySession() {
 
   // Filter selection screen
   if (!filterChosen) {
+    const allPool = poolFor('all');
+    const unmasteredPool = poolFor('unmastered');
+    const bookmarkedPool = poolFor('bookmarked');
+    const filtersActive = tagFilters.length > 0 || typeFilters.length > 0;
+    const allMastered = unmasteredPool.length === 0 && allPool.length > 0;
+    const canStart = !!selectedPool && sizeFor(selectedPool) > 0;
+
     const scopeOptions = [
-      { value: 'all', label: 'The whole deck', sub: `${activeCards.length} cards`, disabled: false, badge: null, tooltip: null },
+      {
+        value: 'all',
+        label: filtersActive ? 'Everything that matches' : 'The whole deck',
+        sub: `${allPool.length} card${allPool.length !== 1 ? 's' : ''}`,
+        disabled: allPool.length === 0,
+        badge: null,
+        tooltip: null,
+      },
       {
         value: 'unmastered',
         label: 'Unmastered only',
-        sub: unmasteredCards.length === activeCards.length
+        sub: unmasteredPool.length === allPool.length
           ? 'Same as the whole deck'
-          : allMastered ? '🎉 All cards mastered!' : `${unmasteredCards.length} card${unmasteredCards.length !== 1 ? 's' : ''} not yet mastered`,
-        disabled: allMastered || unmasteredCards.length === activeCards.length,
-        badge: unmasteredCards.length < activeCards.length ? (
+          : allMastered ? '🎉 All cards mastered!' : `${unmasteredPool.length} card${unmasteredPool.length !== 1 ? 's' : ''} not yet mastered`,
+        disabled: allMastered || unmasteredPool.length === allPool.length,
+        badge: unmasteredPool.length < allPool.length ? (
           <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">
-            {unmasteredCards.length} remaining
+            {unmasteredPool.length} remaining
           </span>
         ) : null,
         tooltip: null,
@@ -785,13 +878,15 @@ export default function StudySession() {
       {
         value: 'bookmarked',
         label: 'Bookmarked only',
-        sub: bookmarkedCards.length === 0 ? 'No bookmarked cards yet'
-          : bookmarkedCards.length < 10 ? `Need 10 bookmarked cards (${bookmarkedCards.length} so far)`
-          : 'Study only your bookmarked cards',
-        disabled: bookmarkedCards.length < 10,
-        badge: bookmarkedCards.length >= 10 ? (
+        sub: bookmarkedPool.length === 0
+          ? (filtersActive ? 'No bookmarked cards match these filters' : 'No bookmarked cards yet')
+          : bookmarkedPool.length < 10
+            ? (filtersActive ? `Only ${bookmarkedPool.length} of your bookmarks match` : `Need 10 bookmarked cards (${bookmarkedPool.length} so far)`)
+            : 'Study only your bookmarked cards',
+        disabled: bookmarkedPool.length < 10,
+        badge: bookmarkedPool.length >= 10 ? (
           <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">
-            {bookmarkedCards.length} card{bookmarkedCards.length !== 1 ? 's' : ''}
+            {bookmarkedPool.length} card{bookmarkedPool.length !== 1 ? 's' : ''}
           </span>
         ) : null,
         tooltip: null,
@@ -805,10 +900,10 @@ export default function StudySession() {
             <input
               type="number"
               min={QUICK_MIN_CARDS}
-              max={activeCards.length}
+              max={allPool.length}
               step={1}
               value={quickCount}
-              disabled={activeCards.length < QUICK_MIN_CARDS}
+              disabled={allPool.length < QUICK_MIN_CARDS}
               onFocus={() => setSelectedPool('quick')}
               onMouseDown={(e) => e.stopPropagation()}
               onClick={(e) => e.stopPropagation()}
@@ -816,7 +911,7 @@ export default function StudySession() {
               onBlur={() => {
                 const next = Math.min(
                   Math.max(Number(quickCount) || 0, QUICK_MIN_CARDS),
-                  Math.max(activeCards.length, QUICK_MIN_CARDS)
+                  Math.max(allPool.length, QUICK_MIN_CARDS)
                 );
                 setQuickCount(next);
                 localStorage.setItem('flashdeck_quickcount', String(next));
@@ -826,10 +921,10 @@ export default function StudySession() {
             cards
           </span>
         ),
-        sub: activeCards.length < QUICK_MIN_CARDS
-          ? `Needs at least ${QUICK_MIN_CARDS} cards in the deck`
-          : `Drawn at random from ${activeCards.length} cards`,
-        disabled: activeCards.length < QUICK_MIN_CARDS,
+        sub: allPool.length < QUICK_MIN_CARDS
+          ? (filtersActive ? `Needs at least ${QUICK_MIN_CARDS} matching cards` : `Needs at least ${QUICK_MIN_CARDS} cards in the deck`)
+          : `Drawn at random from ${allPool.length} card${allPool.length !== 1 ? 's' : ''}`,
+        disabled: allPool.length < QUICK_MIN_CARDS,
         badge: null,
         tooltip: null,
       },
@@ -907,6 +1002,32 @@ export default function StudySession() {
               })}
             </RadioGroup>
 
+            {/* Additional filters — narrow every scope above */}
+            {(tagOptions.length > 0 || typeOptions.length > 1) &&
+              <div className="flex flex-col gap-4 pt-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Additional Filters
+                </p>
+                <FilterPillGroup
+                  title="Filter by Tags"
+                  options={tagOptions}
+                  selected={tagFilters}
+                  onChange={setTagFilters}
+                />
+                {typeOptions.length > 1 &&
+                  <FilterPillGroup
+                    title="Filter by Question Type"
+                    options={typeOptions}
+                    selected={typeFilters}
+                    onChange={setTypeFilters}
+                  />
+                }
+                {filtersActive && allPool.length === 0 &&
+                  <p className="text-xs text-destructive">No cards match these filters.</p>
+                }
+              </div>
+            }
+
             {/* Learning mode toggle */}
             <SettingRow
               htmlFor="learning-mode"
@@ -937,11 +1058,11 @@ export default function StudySession() {
             </SettingRow>
 
             <button
-                onClick={() => selectedPool && startSession(selectedPool)}
-                disabled={!selectedPool}
+                onClick={() => canStart && startSession(selectedPool)}
+                disabled={!canStart}
                 className={cn(
                   'w-full border-2 rounded-[4px] p-3 text-center font-semibold transition-all',
-                  selectedPool ?
+                  canStart ?
                   'border-primary bg-primary text-primary-foreground hover:opacity-90' :
                   'border-border text-muted-foreground opacity-50 cursor-not-allowed'
                 )}>
