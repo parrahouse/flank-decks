@@ -1100,11 +1100,11 @@ export default function StudySession() {
     ];
 
     return (
-      <div className="relative max-w-5xl mx-auto px-4 py-8">
+      <div className="relative isolate max-w-5xl mx-auto px-4 py-8">
         {/* Cover wash — full-bleed past the Layout's max-w-7xl px-4 gutter */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-y-0 overflow-hidden isolate"
+          className="pointer-events-none absolute inset-y-0 -z-10 overflow-hidden isolate"
           style={{
             width: '100vw',
             marginLeft: 'calc(50% - 50vw)',
