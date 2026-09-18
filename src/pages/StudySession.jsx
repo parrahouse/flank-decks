@@ -1050,13 +1050,20 @@ export default function StudySession() {
 
     return (
       <div className="max-w-5xl mx-auto px-4 py-8">
-        <div className="flex items-center gap-3 mb-8">
-          <button onClick={() => navigate(`/deck/${deckId}`)} className="text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="w-5 h-5" />
+        <div className="flex items-center gap-3 mb-6">
+          <button
+            onClick={() => navigate(`/deck/${deckId}`)}
+            aria-label="Back to deck"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-card text-foreground shadow-sm transition-colors hover:bg-muted"
+          >
+            <ArrowLeft className="w-4 h-4" />
           </button>
-          <div className="flex-1">
-            <h1 className="font-semibold">{deck?.title}</h1>
-            <p className="text-xs text-muted-foreground">{activeCards.length} cards total</p>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl font-bold [font-family:'Recoleta',_sans-serif] truncate">{deck?.title}</h1>
+            <p className="mt-0.5 flex items-center gap-1.5 text-sm text-muted-foreground">
+              <SlidersVertical className="w-3.5 h-3.5" />
+              Study Settings
+            </p>
           </div>
         </div>
 
@@ -1078,11 +1085,11 @@ export default function StudySession() {
           </div>
         }
 
-        <div className="mx-auto grid w-full max-w-sm gap-8 py-8 lg:max-w-none lg:grid-cols-[minmax(0,384px)_minmax(0,1fr)] lg:gap-16">
+        <div className="mx-auto grid w-full max-w-sm gap-8 rounded-2xl border border-border bg-card p-6 shadow-sm lg:max-w-none lg:grid-cols-[minmax(0,384px)_minmax(0,1fr)] lg:gap-12 lg:p-8">
           {/* Left: study mode selection */}
           <div className="flex flex-col gap-6">
-          <div className="text-center">
-            <h2 className="text-2xl [font-family:'Recoleta',_sans-serif] font-bold">What would you like to study?</h2>
+          <div>
+            <h2 className="text-xl [font-family:'Recoleta',_sans-serif] font-bold">What are we studying today?</h2>
           </div>
 
           <div className="flex flex-col gap-3 w-full max-w-sm">
@@ -1155,57 +1162,20 @@ export default function StudySession() {
               selected={tagFilters}
               onChange={setTagFilters}
             />
-
-            {/* Learning mode toggle */}
-            <SettingRow
-              htmlFor="learning-mode"
-              label="Learning mode"
-              hint={<>Auto-show explanation when you answer incorrectly{!hasCompletedFullSession && <span className="ml-1 text-amber-600 font-medium">On by default until your first full session</span>}</>}
-            >
-              <Switch
-                id="learning-mode"
-                checked={learningMode}
-                onCheckedChange={(next) => setLearningModeOverride(next)}
-              />
-            </SettingRow>
-
-            <SettingRow
-              htmlFor="game-mode"
-              label="Game mode"
-              hint={gameEligible ? 'Three hearts on the line' : `Needs ${GAME_MODE_MIN_CARDS}+ cards in the selected set`}
-            >
-              <Switch
-                id="game-mode"
-                checked={gameModeWanted && gameEligible}
-                disabled={!gameEligible}
-                onCheckedChange={(next) => {
-                  setGameModeWanted(next);
-                  localStorage.setItem('flashdeck_gamemode', next ? '1' : '0');
-                }}
-              />
-            </SettingRow>
-
-            <button
-                onClick={() => canStart && startSession(selectedPool)}
-                disabled={!canStart}
-                className={cn(
-                  'w-full border-2 rounded-[4px] p-3 text-center font-semibold transition-all',
-                  canStart ?
-                  'border-primary bg-primary text-primary-foreground hover:opacity-90' :
-                  'border-border text-muted-foreground opacity-50 cursor-not-allowed'
-                )}>
-              Start session
-            </button>
           </div>
           </div>
 
-          {/* Right: session options & layout preferences */}
-          <div className="flex w-full flex-col gap-4">
+          {/* Right: brain boosters, study buddy modes, layout, start */}
+          <div className="flex w-full flex-col gap-5">
             <Card>
-              <CardHeader className="pb-1">
-                <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  During the session
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg [font-family:'Recoleta',_sans-serif] font-bold">
+                  Can we interest you in a little cheating?
                 </CardTitle>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Just kidding! We actually call these options “Brain Boosters” and there’s nothing
+                  wrong with using them… as long as you don’t mind being a cheater.
+                </p>
               </CardHeader>
               <CardContent className="divide-y divide-border pt-0">
                 <SettingRow htmlFor="allow-2nd-guesses" label="Allow 2nd guesses" hint="Let a wrong first pick be retried once">
@@ -1242,44 +1212,109 @@ export default function StudySession() {
             </Card>
 
             <Card>
-              <CardHeader className="pb-1">
-                <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Display
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg [font-family:'Recoleta',_sans-serif] font-bold">
+                  The <s className="opacity-50">many</s> two modes of Study Buddy
                 </CardTitle>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Your study buddy can do more than just keep track of your progress. Before you get
+                  too excited, no — it doesn’t include saving you from AI.
+                </p>
               </CardHeader>
               <CardContent className="divide-y divide-border pt-0">
-                <SettingRow label="Card layout" hint="How cards are displayed during study">
-                  <div className="flex gap-2" role="radiogroup" aria-label="Card layout">
-                    {LAYOUT_CHOICES.map((c) => {
-                      const active = layoutChoice === c.value;
-                      return (
-                        <button
-                          key={c.value}
-                          type="button"
-                          role="radio"
-                          aria-checked={active}
-                          onClick={() => setLayoutChoice(c.value)}
-                          className={cn(
-                            'flex flex-col items-center gap-1 rounded-[4px] border-2 px-2 py-1.5 transition-colors',
-                            active
-                              ? 'border-primary text-primary bg-accent/40'
-                              : 'border-dashed border-border text-muted-foreground hover:border-primary hover:text-foreground'
-                          )}
-                        >
-                          <LayoutGlyph variant={c.value} className="w-11 h-8" />
-                          <span className="text-[10px] font-medium leading-none">{c.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
+                <SettingRow
+                  htmlFor="learning-mode"
+                  label="Learning Mode"
+                  hint={
+                    <>
+                      Study buddy drops some extra knowledge when you answer incorrectly. Only works
+                      if the card has an explanation. If not, you’re on your own.
+                      {!hasCompletedFullSession &&
+                        <span className="mt-1 block font-medium text-amber-600">
+                          On by default until your first full session
+                        </span>
+                      }
+                    </>
+                  }
+                >
+                  <Switch
+                    id="learning-mode"
+                    checked={learningMode}
+                    onCheckedChange={(next) => setLearningModeOverride(next)}
+                  />
+                </SettingRow>
+                <SettingRow
+                  htmlFor="game-mode"
+                  label="Game Mode"
+                  hint={
+                    <>
+                      Your study buddy will lose a heart when you blow it. So try not to. Replenish
+                      them with streaks. What happens if you run out?
+                      {!gameEligible &&
+                        <span className="mt-1 block font-medium text-amber-600">
+                          Needs {GAME_MODE_MIN_CARDS}+ cards in the selected set
+                        </span>
+                      }
+                    </>
+                  }
+                >
+                  <Switch
+                    id="game-mode"
+                    checked={gameModeWanted && gameEligible}
+                    disabled={!gameEligible}
+                    onCheckedChange={(next) => {
+                      setGameModeWanted(next);
+                      localStorage.setItem('flashdeck_gamemode', next ? '1' : '0');
+                    }}
+                  />
                 </SettingRow>
               </CardContent>
-              <CardFooter className="justify-end pt-0">
+            </Card>
+
+            <div>
+              <SettingRow label="Card Layout?" hint="You’d be surprised how many people get this one wrong.">
+                <div className="flex gap-2" role="radiogroup" aria-label="Card layout">
+                  {LAYOUT_CHOICES.map((c) => {
+                    const active = layoutChoice === c.value;
+                    return (
+                      <button
+                        key={c.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={active}
+                        onClick={() => setLayoutChoice(c.value)}
+                        className={cn(
+                          'flex flex-col items-center gap-1 rounded-[4px] border-2 px-2 py-1.5 transition-colors',
+                          active
+                            ? 'border-primary text-primary bg-accent/40'
+                            : 'border-dashed border-border text-muted-foreground hover:border-primary hover:text-foreground'
+                        )}
+                      >
+                        <LayoutGlyph variant={c.value} className="w-11 h-8" />
+                        <span className="text-[10px] font-medium leading-none">{c.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </SettingRow>
+              <div className="flex justify-end">
                 <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={saveDefaults} disabled={savingDefaults}>
                   {savingDefaults ? 'Saving…' : 'Save display as my default'}
                 </Button>
-              </CardFooter>
-            </Card>
+              </div>
+            </div>
+
+            <button
+              onClick={() => canStart && startSession(selectedPool)}
+              disabled={!canStart}
+              className={cn(
+                'w-full rounded-[4px] border-2 p-3.5 text-center text-lg font-semibold transition-all',
+                canStart ?
+                'border-primary bg-primary text-primary-foreground hover:opacity-90' :
+                'border-border text-muted-foreground opacity-50 cursor-not-allowed'
+              )}>
+              Start Session
+            </button>
           </div>
         </div>
       </div>);
