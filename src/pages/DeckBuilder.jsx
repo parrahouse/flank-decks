@@ -382,7 +382,7 @@ export default function DeckBuilder() {
           <button onClick={cancelEditTitle} className="text-xs text-muted-foreground hover:text-foreground shrink-0">Cancel</button>
         </div> :
 
-    <h1 className={cn("font-bold group/title flex items-center gap-1.5 cursor-text [font-family:'new-spirit',_serif] text-3xl", hasCover && "text-white")} onClick={startEditTitle} title="Click to edit title">
+    <h1 className={cn("font-bold group/title flex items-center gap-1.5 cursor-text [font-family:'new-spirit',_serif] text-2xl", hasCover && "text-white")} onClick={startEditTitle} title="Click to edit title">
           {deck?.title || 'Loading…'}
           <Pencil className={cn("w-3.5 h-3.5 opacity-0 group-hover/title:opacity-100 transition-opacity", hasCover ? "text-white/70" : "text-muted-foreground")} />
         </h1>
