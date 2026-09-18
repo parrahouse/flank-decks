@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import LayoutGlyph from '@/components/cards/LayoutIcons';
 import { cardLabel } from '@/lib/utils';
 import StudyCard from '@/components/cards/StudyCard';
 import StudyCardHorizontal from '@/components/cards/StudyCardHorizontal';
@@ -55,6 +55,12 @@ const CORRECT_KEYS = new Set(['correct', 'second_guess', 'correct_after_clue', '
 
 // Tuned to the 384px settings column — roughly three lines of pills at typical tag lengths.
 const MAX_VISIBLE_TAGS = 12;
+
+const LAYOUT_CHOICES = [
+  { value: 'landscape-l', label: 'Landscape-L' },
+  { value: 'portrait', label: 'Portrait' },
+  { value: 'landscape-r', label: 'Landscape-R' }
+];
 const QUESTION_TYPE_ORDER = ['multiple_choice', 'select_all', 'true_false', 'short_answer'];
 const QUESTION_TYPE_LABELS = {
   multiple_choice: 'Multiple Choice',
@@ -292,7 +298,12 @@ export default function StudySession() {
   const [hearts, setHearts] = useState(3); // Game Mode hearts remaining (0..MAX_HEARTS)
   const [contactSheetOpen, setContactSheetOpen] = useState(false);
   // Layout defaults: seeded from user profile, then overrideable per-session
-  const [layoutMode, setLayoutMode] = useState(() => localStorage.getItem('flashdeck_layout') || 'auto');
+  // 'auto' is retired. Legacy values normalize to landscape; the viewport gate below
+  // reproduces what 'auto' used to do.
+  const [layoutMode, setLayoutMode] = useState(() => {
+    const v = localStorage.getItem('flashdeck_layout');
+    return !v || v === 'auto' ? 'horizontal' : v;
+  });
   const [handedness, setHandedness] = useState(() => localStorage.getItem('flashdeck_handedness') || 'left');
   const [isWide, setIsWide] = useState(
     () => window.innerWidth >= CARD_MIN_W && window.innerHeight >= STUDY_MIN_VH
@@ -376,7 +387,9 @@ export default function StudySession() {
   // Seed layout prefs from user profile on first load
   useEffect(() => {
     if (!currentUser) return;
-    if (currentUser.default_layout_mode) setLayoutMode(currentUser.default_layout_mode);
+    if (currentUser.default_layout_mode) {
+      setLayoutMode(currentUser.default_layout_mode === 'auto' ? 'horizontal' : currentUser.default_layout_mode);
+    }
     if (currentUser.default_handedness) setHandedness(currentUser.default_handedness);
   }, [currentUser?.id]);
 
@@ -925,6 +938,22 @@ export default function StudySession() {
 
   const current = shuffledCards[cardIndex];
 
+  // The three-way control is a view over (layoutMode, handedness). Portrait deliberately
+  // leaves handedness untouched so returning to a landscape restores the same side.
+  const layoutChoice =
+  layoutMode === 'vertical' ? 'portrait' : handedness === 'right' ? 'landscape-r' : 'landscape-l';
+
+  const setLayoutChoice = (choice) => {
+    const nextMode = choice === 'portrait' ? 'vertical' : 'horizontal';
+    setLayoutMode(nextMode);
+    localStorage.setItem('flashdeck_layout', nextMode);
+    if (choice !== 'portrait') {
+      const nextHand = choice === 'landscape-r' ? 'right' : 'left';
+      setHandedness(nextHand);
+      localStorage.setItem('flashdeck_handedness', nextHand);
+    }
+  };
+
   const saveDefaults = async () => {
     setSavingDefaults(true);
     await base44.auth.updateMe({ default_layout_mode: layoutMode, default_handedness: handedness });
@@ -1209,16 +1238,6 @@ export default function StudySession() {
                     }}
                   />
                 </SettingRow>
-                <SettingRow htmlFor="auto-advance" label="Auto-advance" hint="Move to next card automatically after a correct answer">
-                  <Switch
-                    id="auto-advance"
-                    checked={autoAdvance}
-                    onCheckedChange={(next) => {
-                      setAutoAdvance(next);
-                      localStorage.setItem('flashdeck_autoadvance', next ? '1' : '0');
-                    }}
-                  />
-                </SettingRow>
               </CardContent>
             </Card>
 
@@ -1230,51 +1249,29 @@ export default function StudySession() {
               </CardHeader>
               <CardContent className="divide-y divide-border pt-0">
                 <SettingRow label="Card layout" hint="How cards are displayed during study">
-                  <ToggleGroup
-                    type="single"
-                    role="radiogroup"
-                    value={layoutMode}
-                    onValueChange={(v) => {
-                      if (!v) return;
-                      setLayoutMode(v);
-                      localStorage.setItem('flashdeck_layout', v);
-                    }}
-                    className="gap-0 rounded-[4px] border border-input"
-                  >
-                    {['auto', 'vertical', 'horizontal'].map((v) =>
-                      <ToggleGroupItem
-                        key={v}
-                        value={v}
-                        className="rounded-none border-0 h-auto px-2.5 py-1 text-xs font-medium first:rounded-l-[4px] last:rounded-r-[4px] data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-                      >
-                        {v[0].toUpperCase() + v.slice(1)}
-                      </ToggleGroupItem>
-                    )}
-                  </ToggleGroup>
-                </SettingRow>
-                <SettingRow label="Image position" hint="Which side the image appears on">
-                  <ToggleGroup
-                    type="single"
-                    role="radiogroup"
-                    value={handedness}
-                    onValueChange={(v) => {
-                      if (!v) return;
-                      setHandedness(v);
-                      localStorage.setItem('flashdeck_handedness', v);
-                    }}
-                    disabled={layoutMode !== 'horizontal'}
-                    className={cn('gap-0 rounded-[4px] border border-input', layoutMode !== 'horizontal' && 'opacity-50')}
-                  >
-                    {[{ value: 'left', label: 'Left' }, { value: 'right', label: 'Right' }].map(({ value, label }) =>
-                      <ToggleGroupItem
-                        key={value}
-                        value={value}
-                        className="rounded-none border-0 h-auto px-2.5 py-1 text-xs font-medium first:rounded-l-[4px] last:rounded-r-[4px] data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-                      >
-                        {label}
-                      </ToggleGroupItem>
-                    )}
-                  </ToggleGroup>
+                  <div className="flex gap-2" role="radiogroup" aria-label="Card layout">
+                    {LAYOUT_CHOICES.map((c) => {
+                      const active = layoutChoice === c.value;
+                      return (
+                        <button
+                          key={c.value}
+                          type="button"
+                          role="radio"
+                          aria-checked={active}
+                          onClick={() => setLayoutChoice(c.value)}
+                          className={cn(
+                            'flex flex-col items-center gap-1 rounded-[4px] border-2 px-2 py-1.5 transition-colors',
+                            active
+                              ? 'border-primary text-primary bg-accent/40'
+                              : 'border-dashed border-border text-muted-foreground hover:border-primary hover:text-foreground'
+                          )}
+                        >
+                          <LayoutGlyph variant={c.value} className="w-11 h-8" />
+                          <span className="text-[10px] font-medium leading-none">{c.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </SettingRow>
               </CardContent>
               <CardFooter className="justify-end pt-0">
@@ -1324,7 +1321,9 @@ export default function StudySession() {
     </div> :
   null;
 
-  const useHorizontal = layoutMode === 'horizontal' || layoutMode === 'auto' && isWide;
+  // Vertical is always vertical. Landscape is honored only where the viewport can hold it —
+  // the fallback 'auto' used to provide, now applied to every choice.
+  const useHorizontal = layoutMode !== 'vertical' && isWide;
 
   return (
     <div className="min-h-screen bg-background">
@@ -1482,7 +1481,7 @@ export default function StudySession() {
               onJump={(i) => {setCardIndex(i);setContactSheetOpen(false);}} /></div> :
 
           (() => {
-            const useHorizontal = layoutMode === 'horizontal' || layoutMode === 'auto' && isWide;
+            const useHorizontal = layoutMode !== 'vertical' && isWide;
             const introReady = questionReady;
             const sharedProps = {
               key: `${current.id}-${cardIndex}`,
