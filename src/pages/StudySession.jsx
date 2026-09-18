@@ -697,9 +697,9 @@ export default function StudySession() {
 
 
 
+
           // already studied today, no change
-        } else if (last === yesterday) {newStreak = streak.current_streak + 1;} else {newStreak = 1;}const newLongest = Math.max(streak.longest_streak || 0, newStreak);const newMilestone = [3, 7, 14, 30, 60, 100].filter((m) => newStreak >= m).pop() || 0;await base44.entities.Streak.update(streak.id, { current_streak: newStreak, longest_streak: newLongest, last_study_date: today, milestone_reached: Math.max(streak.milestone_reached || 0, newMilestone) });} else if (currentUser?.id) {
-        await base44.entities.Streak.create({
+        } else if (last === yesterday) {newStreak = streak.current_streak + 1;} else {newStreak = 1;}const newLongest = Math.max(streak.longest_streak || 0, newStreak);const newMilestone = [3, 7, 14, 30, 60, 100].filter((m) => newStreak >= m).pop() || 0;await base44.entities.Streak.update(streak.id, { current_streak: newStreak, longest_streak: newLongest, last_study_date: today, milestone_reached: Math.max(streak.milestone_reached || 0, newMilestone) });} else if (currentUser?.id) {await base44.entities.Streak.create({
           user_id: currentUser.id,
           current_streak: 1,
           longest_streak: 1,
@@ -1253,7 +1253,7 @@ export default function StudySession() {
           <div className="flex w-full flex-col gap-4">
             <Card className="rounded-[6px] shadow-none">
               <CardHeader className="space-y-0 p-5 pb-2">
-                <CardTitle className="text-lg font-bold font-inter">
+                <CardTitle className="text-lg font-inter font-semibold">
                   Can we interest you in a little cheating?
                 </CardTitle>
                 <p className="mt-1 text-[13px] leading-snug text-muted-foreground">
