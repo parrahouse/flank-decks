@@ -27,6 +27,7 @@ import StreakCounter from '@/components/cards/StreakCounter';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSavedSession } from '@/hooks/useSavedSession';
+import useDominantColor from '@/hooks/useDominantColor';
 import { useSound } from '@/hooks/useSound';
 
 const INTRO_REVEAL_MS = 700;
@@ -55,6 +56,51 @@ const CORRECT_KEYS = new Set(['correct', 'second_guess', 'correct_after_clue', '
 
 // Tuned to the 384px settings column — roughly three lines of pills at typical tag lengths.
 const MAX_VISIBLE_TAGS = 12;
+
+// ── Cover wash ───────────────────────────────────────────────────────────────
+// Hue and saturation come from the cover; lightness is pinned at --wash-l, then raised
+// until the header text clears 4.5:1 against it. Equal HSL lightness is not equal
+// luminance, so a navy cover needs a lighter wash than a yellow one to stay readable.
+const WASH_FALLBACK = { h: 44, s: 92 };
+const WASH_MIN_LUM = 0.34;   // ≈4.6:1 against hsl(208 42% 18%), the light-mode foreground
+const WASH_MAX_L = 88;
+
+const srgbToLinear = (c) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+
+const hslToLuminance = (h, s, l) => {
+  s /= 100; l /= 100;
+  const k = (n) => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  return 0.2126 * srgbToLinear(f(0)) + 0.7152 * srgbToLinear(f(8)) + 0.0722 * srgbToLinear(f(4));
+};
+
+/** "R, G, B" (or null) → { h, s, l }. Falls back to the fixed yellow. */
+const resolveWash = (rgb, baseL) => {
+  let h = WASH_FALLBACK.h;
+  let s = WASH_FALLBACK.s;
+
+  if (rgb) {
+    const [r, g, b] = rgb.split(',').map((c) => Number(c.trim()) / 255);
+    if ([r, g, b].every((v) => Number.isFinite(v))) {
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      const l = (max + min) / 2;
+      const d = max - min;
+      if (d !== 0) {
+        let hh = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+        hh = (hh * 60 + 360) % 360;
+        h = Math.round(hh);
+        s = Math.min(100, Math.round((d / (1 - Math.abs(2 * l - 1))) * 130));
+      }
+    }
+  }
+
+  // Raise lightness until the wash is bright enough to carry the dark header text.
+  let l = baseL;
+  while (l < WASH_MAX_L && hslToLuminance(h, s, l) < WASH_MIN_LUM) l += 2;
+  return { h, s, l: Math.min(l, WASH_MAX_L) };
+};
 
 const LAYOUT_CHOICES = [
   { value: 'landscape-l', label: 'Landscape-L' },
@@ -368,6 +414,11 @@ export default function StudySession() {
     queryFn: () => base44.entities.Deck.filter({ id: deckId }).then((r) => r[0]),
     enabled: !!deckId
   });
+
+  // Cover wash — hue/saturation from the deck's cover art (null → fixed yellow).
+  // Must run before the early returns below to satisfy the Rules of Hooks.
+  const coverColor = useDominantColor(deck?.cover_image_url);
+  const wash = useMemo(() => resolveWash(coverColor, 64), [coverColor]);
 
   const { data: allCards = [], isLoading, error: cardsError, refetch: refetchCards } = useQuery({
     queryKey: ['cards', deckId],
@@ -1049,7 +1100,40 @@ export default function StudySession() {
     ];
 
     return (
-      <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="relative max-w-5xl mx-auto px-4 py-8">
+        {/* Cover wash — full-bleed past the Layout's max-w-7xl px-4 gutter */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 overflow-hidden isolate"
+          style={{
+            width: '100vw',
+            marginLeft: 'calc(50% - 50vw)',
+            left: 0,
+            top: '-1.5rem',
+            bottom: 'auto',
+            height: 'calc(100% + 1.5rem)',
+            background: `linear-gradient(180deg,
+              hsl(${wash.h} ${wash.s}% var(--wash-l, ${wash.l}%)) 0%,
+              hsl(${wash.h} ${wash.s}% ${Math.min(97, wash.l + 18)}%) 49%,
+              hsl(var(--background)) 96%)`
+          }}
+        >
+          {deck?.cover_image_url &&
+            <img
+              src={deck.cover_image_url}
+              alt=""
+              className="absolute top-1/2 left-0 w-auto"
+              style={{
+                height: '118%',
+                maxWidth: 'none',
+                transform: 'translate(-14%, -50%)',
+                filter: 'grayscale(100%)',
+                opacity: 0.55,
+                mixBlendMode: 'soft-light'
+              }}
+            />
+          }
+        </div>
         <div className="flex items-center gap-3 mb-6">
           <button
             onClick={() => navigate(`/deck/${deckId}`)}
