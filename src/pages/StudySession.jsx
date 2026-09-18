@@ -1143,7 +1143,7 @@ export default function StudySession() {
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold [font-family:'Recoleta',_sans-serif] truncate">{deck?.title}</h1>
+            <h1 className="text-xl font-bold font-fraunces truncate">{deck?.title}</h1>
             <p className="mt-0.5 flex items-center gap-1.5 text-sm text-muted-foreground">
               <SlidersVertical className="w-3.5 h-3.5" />
               Study Settings
@@ -1173,7 +1173,7 @@ export default function StudySession() {
           {/* Left: study mode selection */}
           <div className="flex flex-col gap-6">
           <div>
-            <h2 className="text-xl [font-family:'Recoleta',_sans-serif] font-bold">What are we studying today?</h2>
+            <h2 className="text-xl font-fraunces font-bold">What are we studying today?</h2>
           </div>
 
           <div className="flex flex-col gap-3 w-full max-w-sm">
@@ -1253,7 +1253,7 @@ export default function StudySession() {
           <div className="flex w-full flex-col gap-5">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg [font-family:'Recoleta',_sans-serif] font-bold">
+                <CardTitle className="text-lg font-fraunces font-bold">
                   Can we interest you in a little cheating?
                 </CardTitle>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -1297,7 +1297,7 @@ export default function StudySession() {
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg [font-family:'Recoleta',_sans-serif] font-bold">
+                <CardTitle className="text-lg font-fraunces font-bold">
                   The <s className="opacity-50">many</s> two modes of Study Buddy
                 </CardTitle>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -1457,7 +1457,7 @@ export default function StudySession() {
       {/* Header section — deck name + settings + end session */}
       <div className="flex items-center justify-between gap-3 px-1 pb-2">
         <div className="min-w-0">
-          <h1 className="text-lg font-semibold text-foreground [font-family:'Recoleta',_sans-serif] flex items-center gap-1.5 min-w-0">
+          <h1 className="text-lg font-semibold text-foreground font-fraunces flex items-center gap-1.5 min-w-0">
             <span>{deck?.title}</span>
             <DeckInfoTooltip
               deck={deck}
