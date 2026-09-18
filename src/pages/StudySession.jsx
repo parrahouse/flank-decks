@@ -137,7 +137,12 @@ export default function StudySession() {
   // 'all' | 'unmastered'
   const [filterMode, setFilterMode] = useState('all');
   const [filterChosen, setFilterChosen] = useState(false);
-  const [selectedPool, setSelectedPool] = useState('all'); // 'all' | 'unmastered' | 'bookmarked'
+  const [selectedPool, setSelectedPool] = useState('all'); // 'all' | 'unmastered' | 'bookmarked' | 'quick'
+  // Quick-session size. Held loosely (may be '' while typing); clamped on blur and at use.
+  const [quickCount, setQuickCount] = useState(() => {
+    const v = parseInt(localStorage.getItem('flashdeck_quickcount'), 10);
+    return Number.isFinite(v) && v >= 5 ? v : 10;
+  });
   const [gameModeWanted, setGameModeWanted] = useState(() => localStorage.getItem('flashdeck_gamemode') === '1');
   const [gameMode, setGameMode] = useState(false); // engaged for the running session only
   const [skipsUsed, setSkipsUsed] = useState(0); // deferrals used this session (display only)
@@ -283,12 +288,20 @@ export default function StudySession() {
   const allMastered = unmasteredCards.length === 0 && activeCards.length > 0;
   const bookmarkedCards = activeCards.filter((c) => c.bookmarked);
 
-  // Game Mode gate — evaluated against the SELECTED pool, engaged at start time.
+  // Game Mode gate — evaluated against the EFFECTIVE session size, engaged at start time.
   const GAME_MODE_MIN_CARDS = 20;
+  const QUICK_MIN_CARDS = 5;
   const MAX_HEARTS = 3;
+  // 'quick' draws from the whole active deck, so it falls through to the default branch.
   const poolFor = (mode) =>
   mode === 'unmastered' ? unmasteredCards : mode === 'bookmarked' ? bookmarkedCards : activeCards;
-  const gameEligible = selectedPool != null && poolFor(selectedPool).length >= GAME_MODE_MIN_CARDS;
+  // How many cards the session will actually contain. Only 'quick' differs from its pool size.
+  const sizeFor = (mode) => {
+    const n = poolFor(mode).length;
+    if (mode !== 'quick') return n;
+    return Math.min(Math.max(Number(quickCount) || 0, QUICK_MIN_CARDS), n);
+  };
+  const gameEligible = selectedPool != null && sizeFor(selectedPool) >= GAME_MODE_MIN_CARDS;
 
   const handleToggleBookmark = async (cardId, newVal) => {
     // Bookmarking writes to the card record, which only the deck owner may do.
@@ -301,9 +314,11 @@ export default function StudySession() {
   const startSession = (mode) => {
     clearSession(); // discard any saved session on fresh start
     beginIntro();
-    const pool = poolFor(mode);
+    // Shuffle first, then slice — the quick subset is a fresh random draw each session.
+    const drawn = shuffle(poolFor(mode));
+    const pool = mode === 'quick' ? drawn.slice(0, sizeFor(mode)) : drawn;
     setGameMode(gameModeWanted && pool.length >= GAME_MODE_MIN_CARDS && canZombify(getSkin(DEFAULT_SKIN_ID)));
-    setShuffledCards(shuffle(pool));
+    setShuffledCards(pool);
     setCardIndex(0);
     setDone(false);
     setScores([]);
@@ -781,6 +796,43 @@ export default function StudySession() {
         ) : null,
         tooltip: null,
       },
+      {
+        value: 'quick',
+        label: 'Quick session',
+        labelNode: (
+          <span className="flex items-center gap-1.5">
+            Quick session: study
+            <input
+              type="number"
+              min={QUICK_MIN_CARDS}
+              max={activeCards.length}
+              step={1}
+              value={quickCount}
+              disabled={activeCards.length < QUICK_MIN_CARDS}
+              onFocus={() => setSelectedPool('quick')}
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => setQuickCount(e.target.value === '' ? '' : Number(e.target.value))}
+              onBlur={() => {
+                const next = Math.min(
+                  Math.max(Number(quickCount) || 0, QUICK_MIN_CARDS),
+                  Math.max(activeCards.length, QUICK_MIN_CARDS)
+                );
+                setQuickCount(next);
+                localStorage.setItem('flashdeck_quickcount', String(next));
+              }}
+              className="w-16 rounded-[4px] border border-input bg-background px-1.5 py-0.5 text-base font-semibold tabular-nums focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+            cards
+          </span>
+        ),
+        sub: activeCards.length < QUICK_MIN_CARDS
+          ? `Needs at least ${QUICK_MIN_CARDS} cards in the deck`
+          : `Drawn at random from ${activeCards.length} cards`,
+        disabled: activeCards.length < QUICK_MIN_CARDS,
+        badge: null,
+        tooltip: null,
+      },
     ];
 
     return (
@@ -840,7 +892,7 @@ export default function StudySession() {
                       <RadioGroupItem id={`scope-${o.value}`} value={o.value} disabled={o.disabled} className="mt-0.5" />
                       <span className="min-w-0 flex-1">
                         <span className="block font-semibold flex items-center gap-2" style={{ fontSize: '18px' }}>
-                          {o.label}
+                          {o.labelNode || o.label}
                           {o.badge}
                         </span>
                         <span className="mt-0.5 block text-sm text-muted-foreground">
@@ -1078,6 +1130,7 @@ export default function StudySession() {
           <p className="text-xs mt-0.5">
             {filterMode === 'unmastered' && <span className="text-amber-600">Unmastered only</span>}
             {filterMode === 'bookmarked' && <span className="text-amber-600">Bookmarked only</span>}
+            {filterMode === 'quick' && <span className="text-amber-600">Quick session</span>}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
