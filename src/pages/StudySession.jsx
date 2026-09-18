@@ -62,13 +62,13 @@ const MAX_VISIBLE_TAGS = 12;
 // until the header text clears 4.5:1 against it. Equal HSL lightness is not equal
 // luminance, so a navy cover needs a lighter wash than a yellow one to stay readable.
 const WASH_FALLBACK = { h: 44, s: 92 };
-const WASH_MIN_LUM = 0.34;   // ≈4.6:1 against hsl(208 42% 18%), the light-mode foreground
+const WASH_MIN_LUM = 0.34; // ≈4.6:1 against hsl(208 42% 18%), the light-mode foreground
 const WASH_MAX_L = 88;
 
-const srgbToLinear = (c) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+const srgbToLinear = (c) => c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
 
 const hslToLuminance = (h, s, l) => {
-  s /= 100; l /= 100;
+  s /= 100;l /= 100;
   const k = (n) => (n + h / 30) % 12;
   const a = s * Math.min(l, 1 - l);
   const f = (n) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
@@ -88,10 +88,10 @@ const resolveWash = (rgb, baseL) => {
       const l = (max + min) / 2;
       const d = max - min;
       if (d !== 0) {
-        let hh = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+        let hh = max === r ? (g - b) / d % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
         hh = (hh * 60 + 360) % 360;
         h = Math.round(hh);
-        s = Math.min(100, Math.round((d / (1 - Math.abs(2 * l - 1))) * 130));
+        s = Math.min(100, Math.round(d / (1 - Math.abs(2 * l - 1)) * 130));
       }
     }
   }
@@ -103,10 +103,10 @@ const resolveWash = (rgb, baseL) => {
 };
 
 const LAYOUT_CHOICES = [
-  { value: 'landscape-l', label: 'Landscape-L' },
-  { value: 'portrait', label: 'Portrait' },
-  { value: 'landscape-r', label: 'Landscape-R' }
-];
+{ value: 'landscape-l', label: 'Landscape-L' },
+{ value: 'portrait', label: 'Portrait' },
+{ value: 'landscape-r', label: 'Landscape-R' }];
+
 const QUESTION_TYPE_ORDER = ['multiple_choice', 'select_all', 'true_false', 'short_answer'];
 const QUESTION_TYPE_LABELS = {
   multiple_choice: 'Multiple Choice',
@@ -163,70 +163,70 @@ function SessionNotice({ title, body, deckId, onRetry }) {
 
 }
 
-const SettingRow = ({ label, hint, htmlFor, children }) => (
-  <div className="flex items-start justify-between gap-4 py-2.5">
+const SettingRow = ({ label, hint, htmlFor, children }) =>
+<div className="flex items-start justify-between gap-4 py-2.5">
     <div className="min-w-0">
       <Label htmlFor={htmlFor} className="text-sm font-medium leading-none cursor-pointer">{label}</Label>
       <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
     </div>
     <div className="shrink-0 pt-0.5">{children}</div>
-  </div>
-);
+  </div>;
+
 
 // Multi-select pill row. Empty selection means the group is inactive.
 const FilterPillGroup = ({ title, options, selected, onChange, maxVisible, onMore }) => {
   if (!options.length) return null;
   const toggle = (v) =>
-    onChange(selected.includes(v) ? selected.filter((x) => x !== v) : [...selected, v]);
+  onChange(selected.includes(v) ? selected.filter((x) => x !== v) : [...selected, v]);
   // Top-N by frequency, then any selected tag that fell outside it, appended so the
   // frequency order of the head never shifts under the pointer.
   const head = maxVisible ? options.slice(0, maxVisible) : options;
   const headSet = new Set(head.map((o) => o.value));
-  const visible = maxVisible
-    ? [...head, ...options.filter((o) => selected.includes(o.value) && !headSet.has(o.value))]
-    : options;
+  const visible = maxVisible ?
+  [...head, ...options.filter((o) => selected.includes(o.value) && !headSet.has(o.value))] :
+  options;
   const hiddenCount = options.length - visible.length;
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
         <p className="text-sm font-semibold">{title}</p>
         {selected.length > 0 &&
-          <button
-            onClick={() => onChange([])}
-            className="text-xs text-muted-foreground hover:text-foreground underline"
-          >
+        <button
+          onClick={() => onChange([])}
+          className="text-xs text-muted-foreground hover:text-foreground underline">
+          
             Clear
           </button>
         }
       </div>
       <div className="flex flex-wrap gap-1.5">
         {visible.map((o) =>
-          <button
-            key={o.value}
-            onClick={() => toggle(o.value)}
-            className={cn(
-              'text-xs px-2.5 py-1 rounded-full border transition-colors',
-              selected.includes(o.value)
-                ? 'bg-primary text-primary-foreground border-primary'
-                : 'bg-transparent text-muted-foreground border-border hover:border-primary hover:text-foreground'
-            )}
-          >
+        <button
+          key={o.value}
+          onClick={() => toggle(o.value)}
+          className={cn(
+            'text-xs px-2.5 py-1 rounded-full border transition-colors',
+            selected.includes(o.value) ?
+            'bg-primary text-primary-foreground border-primary' :
+            'bg-transparent text-muted-foreground border-border hover:border-primary hover:text-foreground'
+          )}>
+          
             {o.label}
           </button>
         )}
         {hiddenCount > 0 &&
-          <button
-            onClick={onMore}
-            title={`${hiddenCount} more tag${hiddenCount !== 1 ? 's' : ''}`}
-            aria-label={`Show ${hiddenCount} more tags`}
-            className="text-xs px-2.5 py-1 rounded-full border border-dashed border-border text-muted-foreground hover:border-primary hover:text-foreground transition-colors leading-none tracking-widest"
-          >
+        <button
+          onClick={onMore}
+          title={`${hiddenCount} more tag${hiddenCount !== 1 ? 's' : ''}`}
+          aria-label={`Show ${hiddenCount} more tags`}
+          className="text-xs px-2.5 py-1 rounded-full border border-dashed border-border text-muted-foreground hover:border-primary hover:text-foreground transition-colors leading-none tracking-widest">
+          
             ···
           </button>
         }
       </div>
-    </div>
-  );
+    </div>);
+
 };
 
 // Searchable full-tag picker. Selections apply immediately — this is a second view of the
@@ -236,7 +236,7 @@ const TagPickerDialog = ({ open, onOpenChange, options, selected, onChange }) =>
   const query = q.trim().toLowerCase();
   const shown = query ? options.filter((o) => o.value.toLowerCase().includes(query)) : options;
   const toggle = (v) =>
-    onChange(selected.includes(v) ? selected.filter((x) => x !== v) : [...selected, v]);
+  onChange(selected.includes(v) ? selected.filter((x) => x !== v) : [...selected, v]);
   return (
     <Dialog open={open} onOpenChange={(v) => {if (!v) setQ('');onOpenChange(v);}}>
       <DialogContent className="max-w-sm">
@@ -249,34 +249,34 @@ const TagPickerDialog = ({ open, onOpenChange, options, selected, onChange }) =>
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search tags…"
-            className="pl-8 h-8 text-sm"
-          />
+            className="pl-8 h-8 text-sm" />
+          
         </div>
         <div className="max-h-[50vh] overflow-y-auto -mx-1 px-1">
           {shown.length === 0 ?
-            <p className="py-6 text-center text-xs text-muted-foreground">No tags match that search.</p> :
-            shown.map((o) => {
-              const on = selected.includes(o.value);
-              return (
-                <button
-                  key={o.value}
-                  onClick={() => toggle(o.value)}
-                  className={cn(
-                    'w-full flex items-center gap-2 rounded-[4px] px-2 py-1.5 text-left text-sm transition-colors',
-                    on ? 'bg-accent/60' : 'hover:bg-muted'
-                  )}
-                >
+          <p className="py-6 text-center text-xs text-muted-foreground">No tags match that search.</p> :
+          shown.map((o) => {
+            const on = selected.includes(o.value);
+            return (
+              <button
+                key={o.value}
+                onClick={() => toggle(o.value)}
+                className={cn(
+                  'w-full flex items-center gap-2 rounded-[4px] px-2 py-1.5 text-left text-sm transition-colors',
+                  on ? 'bg-accent/60' : 'hover:bg-muted'
+                )}>
+                
                   <span className={cn(
-                    'flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] border',
-                    on ? 'border-primary bg-primary text-primary-foreground' : 'border-input'
-                  )}>
+                  'flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] border',
+                  on ? 'border-primary bg-primary text-primary-foreground' : 'border-input'
+                )}>
                     {on && <Check className="w-3 h-3" />}
                   </span>
                   <span className="flex-1 truncate">{o.label}</span>
                   <span className="text-xs tabular-nums text-muted-foreground">{o.count}</span>
-                </button>
-              );
-            })
+                </button>);
+
+          })
           }
         </div>
         <DialogFooter className="sm:justify-between gap-2">
@@ -285,15 +285,15 @@ const TagPickerDialog = ({ open, onOpenChange, options, selected, onChange }) =>
             size="sm"
             className="text-xs text-muted-foreground"
             onClick={() => onChange([])}
-            disabled={selected.length === 0}
-          >
+            disabled={selected.length === 0}>
+            
             Clear all
           </Button>
           <Button size="sm" onClick={() => onOpenChange(false)}>Done</Button>
         </DialogFooter>
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>);
+
 };
 
 export default function StudySession() {
@@ -499,16 +499,16 @@ export default function StudySession() {
   const tagOptions = useMemo(() => {
     const counts = new Map();
     activeCards.forEach((c) => (c.tags || []).forEach((t) => counts.set(t, (counts.get(t) || 0) + 1)));
-    return Array.from(counts.entries())
-      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-      .map(([value, count]) => ({ value, label: value, count }));
+    return Array.from(counts.entries()).
+    sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).
+    map(([value, count]) => ({ value, label: value, count }));
   }, [activeCards]);
 
   // Only offer types the deck actually contains. Legacy rows without the field are MC.
   const typeOptions = useMemo(() => {
     const present = new Set(activeCards.map((c) => c.question_type || 'multiple_choice'));
-    return QUESTION_TYPE_ORDER.filter((t) => present.has(t))
-      .map((value) => ({ value, label: QUESTION_TYPE_LABELS[value] }));
+    return QUESTION_TYPE_ORDER.filter((t) => present.has(t)).
+    map((value) => ({ value, label: QUESTION_TYPE_LABELS[value] }));
   }, [activeCards]);
 
   // OR within each group, AND between groups. Empty group = inactive.
@@ -526,7 +526,7 @@ export default function StudySession() {
   // 'quick' draws from the whole active deck, so it falls through to the default branch.
   // Filters are applied last, so every scope, count and gate downstream sees them.
   const poolFor = (mode) =>
-    applyFilters(mode === 'unmastered' ? unmasteredCards : mode === 'bookmarked' ? bookmarkedCards : activeCards);
+  applyFilters(mode === 'unmastered' ? unmasteredCards : mode === 'bookmarked' ? bookmarkedCards : activeCards);
   // How many cards the session will actually contain. Only 'quick' differs from its pool size.
   const sizeFor = (mode) => {
     const n = poolFor(mode).length;
@@ -695,9 +695,9 @@ export default function StudySession() {
 
 
 
+
           // already studied today, no change
-        } else if (last === yesterday) {newStreak = streak.current_streak + 1;} else {newStreak = 1;}const newLongest = Math.max(streak.longest_streak || 0, newStreak);const newMilestone = [3, 7, 14, 30, 60, 100].filter((m) => newStreak >= m).pop() || 0;await base44.entities.Streak.update(streak.id, { current_streak: newStreak, longest_streak: newLongest, last_study_date: today, milestone_reached: Math.max(streak.milestone_reached || 0, newMilestone)
-          });
+        } else if (last === yesterday) {newStreak = streak.current_streak + 1;} else {newStreak = 1;}const newLongest = Math.max(streak.longest_streak || 0, newStreak);const newMilestone = [3, 7, 14, 30, 60, 100].filter((m) => newStreak >= m).pop() || 0;await base44.entities.Streak.update(streak.id, { current_streak: newStreak, longest_streak: newLongest, last_study_date: today, milestone_reached: Math.max(streak.milestone_reached || 0, newMilestone) });
       } else if (currentUser?.id) {
         await base44.entities.Streak.create({
           user_id: currentUser.id,
@@ -1022,82 +1022,82 @@ export default function StudySession() {
     const canStart = !!selectedPool && sizeFor(selectedPool) > 0;
 
     const scopeOptions = [
-      {
-        value: 'all',
-        label: filtersActive ? 'Everything that matches' : 'The whole deck',
-        sub: `${allPool.length} card${allPool.length !== 1 ? 's' : ''}`,
-        disabled: allPool.length === 0,
-        badge: null,
-        tooltip: null,
-      },
-      {
-        value: 'unmastered',
-        label: 'Unmastered only',
-        sub: unmasteredPool.length === allPool.length
-          ? 'Same as the whole deck'
-          : allMastered ? '🎉 All cards mastered!' : `${unmasteredPool.length} card${unmasteredPool.length !== 1 ? 's' : ''} not yet mastered`,
-        disabled: allMastered || unmasteredPool.length === allPool.length,
-        badge: unmasteredPool.length < allPool.length ? (
-          <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">
+    {
+      value: 'all',
+      label: filtersActive ? 'Everything that matches' : 'The whole deck',
+      sub: `${allPool.length} card${allPool.length !== 1 ? 's' : ''}`,
+      disabled: allPool.length === 0,
+      badge: null,
+      tooltip: null
+    },
+    {
+      value: 'unmastered',
+      label: 'Unmastered only',
+      sub: unmasteredPool.length === allPool.length ?
+      'Same as the whole deck' :
+      allMastered ? '🎉 All cards mastered!' : `${unmasteredPool.length} card${unmasteredPool.length !== 1 ? 's' : ''} not yet mastered`,
+      disabled: allMastered || unmasteredPool.length === allPool.length,
+      badge: unmasteredPool.length < allPool.length ?
+      <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">
             {unmasteredPool.length} remaining
-          </span>
-        ) : null,
-        tooltip: null,
-      },
-      {
-        value: 'bookmarked',
-        label: 'Bookmarked only',
-        sub: bookmarkedPool.length === 0
-          ? (filtersActive ? 'No bookmarked cards match these filters' : 'No bookmarked cards yet')
-          : bookmarkedPool.length < 10
-            ? (filtersActive ? `Only ${bookmarkedPool.length} of your bookmarks match` : `Need 10 bookmarked cards (${bookmarkedPool.length} so far)`)
-            : 'Study only your bookmarked cards',
-        disabled: bookmarkedPool.length < 10,
-        badge: bookmarkedPool.length >= 10 ? (
-          <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">
+          </span> :
+      null,
+      tooltip: null
+    },
+    {
+      value: 'bookmarked',
+      label: 'Bookmarked only',
+      sub: bookmarkedPool.length === 0 ?
+      filtersActive ? 'No bookmarked cards match these filters' : 'No bookmarked cards yet' :
+      bookmarkedPool.length < 10 ?
+      filtersActive ? `Only ${bookmarkedPool.length} of your bookmarks match` : `Need 10 bookmarked cards (${bookmarkedPool.length} so far)` :
+      'Study only your bookmarked cards',
+      disabled: bookmarkedPool.length < 10,
+      badge: bookmarkedPool.length >= 10 ?
+      <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">
             {bookmarkedPool.length} card{bookmarkedPool.length !== 1 ? 's' : ''}
-          </span>
-        ) : null,
-        tooltip: null,
-      },
-      {
-        value: 'quick',
-        label: 'Quick session',
-        labelNode: (
-          <span className="flex items-center gap-1.5">
+          </span> :
+      null,
+      tooltip: null
+    },
+    {
+      value: 'quick',
+      label: 'Quick session',
+      labelNode:
+      <span className="flex items-center gap-1.5">
             Quick session: study
             <input
-              type="number"
-              min={QUICK_MIN_CARDS}
-              max={allPool.length}
-              step={1}
-              value={quickCount}
-              disabled={allPool.length < QUICK_MIN_CARDS}
-              onFocus={() => setSelectedPool('quick')}
-              onMouseDown={(e) => e.stopPropagation()}
-              onClick={(e) => e.stopPropagation()}
-              onChange={(e) => setQuickCount(e.target.value === '' ? '' : Number(e.target.value))}
-              onBlur={() => {
-                const next = Math.min(
-                  Math.max(Number(quickCount) || 0, QUICK_MIN_CARDS),
-                  Math.max(allPool.length, QUICK_MIN_CARDS)
-                );
-                setQuickCount(next);
-                localStorage.setItem('flashdeck_quickcount', String(next));
-              }}
-              className="w-16 rounded-[4px] border border-input bg-background px-1.5 py-0.5 text-base font-semibold tabular-nums focus:outline-none focus:ring-1 focus:ring-ring"
-            />
+          type="number"
+          min={QUICK_MIN_CARDS}
+          max={allPool.length}
+          step={1}
+          value={quickCount}
+          disabled={allPool.length < QUICK_MIN_CARDS}
+          onFocus={() => setSelectedPool('quick')}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+          onChange={(e) => setQuickCount(e.target.value === '' ? '' : Number(e.target.value))}
+          onBlur={() => {
+            const next = Math.min(
+              Math.max(Number(quickCount) || 0, QUICK_MIN_CARDS),
+              Math.max(allPool.length, QUICK_MIN_CARDS)
+            );
+            setQuickCount(next);
+            localStorage.setItem('flashdeck_quickcount', String(next));
+          }}
+          className="w-16 rounded-[4px] border border-input bg-background px-1.5 py-0.5 text-base font-semibold tabular-nums focus:outline-none focus:ring-1 focus:ring-ring" />
+        
             cards
-          </span>
-        ),
-        sub: allPool.length < QUICK_MIN_CARDS
-          ? (filtersActive ? `Needs at least ${QUICK_MIN_CARDS} matching cards` : `Needs at least ${QUICK_MIN_CARDS} cards in the deck`)
-          : `Drawn at random from ${allPool.length} card${allPool.length !== 1 ? 's' : ''}`,
-        disabled: allPool.length < QUICK_MIN_CARDS,
-        badge: null,
-        tooltip: null,
-      },
-    ];
+          </span>,
+
+      sub: allPool.length < QUICK_MIN_CARDS ?
+      filtersActive ? `Needs at least ${QUICK_MIN_CARDS} matching cards` : `Needs at least ${QUICK_MIN_CARDS} cards in the deck` :
+      `Drawn at random from ${allPool.length} card${allPool.length !== 1 ? 's' : ''}`,
+      disabled: allPool.length < QUICK_MIN_CARDS,
+      badge: null,
+      tooltip: null
+    }];
+
 
     return (
       <div className="relative isolate max-w-5xl mx-auto px-4 py-8">
@@ -1116,30 +1116,30 @@ export default function StudySession() {
               hsl(${wash.h} ${wash.s}% var(--wash-l, ${wash.l}%)) 0%,
               hsl(${wash.h} ${wash.s}% ${Math.min(97, wash.l + 18)}%) 49%,
               hsl(var(--background)) 96%)`
-          }}
-        >
+          }}>
+          
           {deck?.cover_image_url &&
-            <img
-              src={deck.cover_image_url}
-              alt=""
-              className="absolute top-1/2 left-0 w-auto"
-              style={{
-                height: '118%',
-                maxWidth: 'none',
-                transform: 'translate(-14%, -50%)',
-                filter: 'grayscale(100%)',
-                opacity: 0.55,
-                mixBlendMode: 'soft-light'
-              }}
-            />
+          <img
+            src={deck.cover_image_url}
+            alt=""
+            className="absolute top-1/2 left-0 w-auto"
+            style={{
+              height: '118%',
+              maxWidth: 'none',
+              transform: 'translate(-14%, -50%)',
+              filter: 'grayscale(100%)',
+              opacity: 0.55,
+              mixBlendMode: 'soft-light'
+            }} />
+
           }
         </div>
         <div className="flex items-center gap-3 mb-6">
           <button
             onClick={() => navigate(`/deck/${deckId}`)}
             aria-label="Back to deck"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-card text-foreground shadow-sm transition-colors hover:bg-muted"
-          >
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-card text-foreground shadow-sm transition-colors hover:bg-muted">
+            
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div className="flex-1 min-w-0">
@@ -1173,26 +1173,26 @@ export default function StudySession() {
           {/* Left: study mode selection */}
           <div className="flex flex-col gap-4">
           <div>
-            <h2 className="text-xl font-fraunces font-bold">What are we studying today?</h2>
+            <h2 className="text-xl [font-family:'Inter',_sans-serif] font-medium">What are we studying today?</h2>
           </div>
 
           <div className="flex flex-col gap-3 w-full max-w-sm">
             <RadioGroup value={selectedPool} onValueChange={setSelectedPool} className="gap-3">
               {scopeOptions.flatMap((o) => {
-                const els = [];
-                if (o.value === 'unmastered') {
-                  els.push(
-                    <div key="scope-heading-targeted" className="pt-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  const els = [];
+                  if (o.value === 'unmastered') {
+                    els.push(
+                      <div key="scope-heading-targeted" className="pt-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                       Targeted Sessions
                     </div>
-                  );
-                }
-                els.push(
-                  <div key={o.value} className="flex items-start gap-2">
+                    );
+                  }
+                  els.push(
+                    <div key={o.value} className="flex items-start gap-2">
                     <Label
-                      htmlFor={`scope-${o.value}`}
-                      className="flex-1 flex cursor-pointer items-start gap-3 rounded-[4px] border-2 border-border p-4 transition-colors has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-accent/40 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50"
-                    >
+                        htmlFor={`scope-${o.value}`}
+                        className="flex-1 flex cursor-pointer items-start gap-3 rounded-[4px] border-2 border-border p-4 transition-colors has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-accent/40 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50">
+                        
                       <RadioGroupItem id={`scope-${o.value}`} value={o.value} disabled={o.disabled} className="mt-0.5" />
                       <span className="min-w-0 flex-1">
                         <span className="block font-semibold flex items-center gap-2" style={{ fontSize: '18px' }}>
@@ -1206,9 +1206,9 @@ export default function StudySession() {
                     </Label>
                     {o.tooltip}
                   </div>
-                );
-                return els;
-              })}
+                  );
+                  return els;
+                })}
             </RadioGroup>
 
             {/* Additional filters — narrow every scope above */}
@@ -1223,29 +1223,29 @@ export default function StudySession() {
                   selected={tagFilters}
                   onChange={setTagFilters}
                   maxVisible={MAX_VISIBLE_TAGS}
-                  onMore={() => setTagPickerOpen(true)}
-                />
+                  onMore={() => setTagPickerOpen(true)} />
+                
                 {typeOptions.length > 1 &&
-                  <FilterPillGroup
-                    title="Filter by Question Type"
-                    options={typeOptions}
-                    selected={typeFilters}
-                    onChange={setTypeFilters}
-                  />
+                <FilterPillGroup
+                  title="Filter by Question Type"
+                  options={typeOptions}
+                  selected={typeFilters}
+                  onChange={setTypeFilters} />
+
                 }
                 {filtersActive && allPool.length === 0 &&
-                  <p className="text-xs text-destructive">No cards match these filters.</p>
+                <p className="text-xs text-destructive">No cards match these filters.</p>
                 }
               </div>
-            }
+              }
 
             <TagPickerDialog
-              open={tagPickerOpen}
-              onOpenChange={setTagPickerOpen}
-              options={tagOptions}
-              selected={tagFilters}
-              onChange={setTagFilters}
-            />
+                open={tagPickerOpen}
+                onOpenChange={setTagPickerOpen}
+                options={tagOptions}
+                selected={tagFilters}
+                onChange={setTagFilters} />
+              
           </div>
           </div>
 
@@ -1269,8 +1269,8 @@ export default function StudySession() {
                     onCheckedChange={(next) => {
                       setSecondGuessAllowed(next);
                       localStorage.setItem('flashdeck_secondguess', next ? '1' : '0');
-                    }}
-                  />
+                    }} />
+                  
                 </SettingRow>
                 <SettingRow htmlFor="allow-notes" label="Allow notes" hint="Show the notes toggle on each card">
                   <Switch
@@ -1279,8 +1279,8 @@ export default function StudySession() {
                     onCheckedChange={(next) => {
                       setHintsAllowed(next);
                       localStorage.setItem('flashdeck_hints', next ? '1' : '0');
-                    }}
-                  />
+                    }} />
+                  
                 </SettingRow>
                 <SettingRow htmlFor="allow-eliminate" label="Allow eliminate one" hint="Let the sparkle button remove a wrong answer choice">
                   <Switch
@@ -1289,8 +1289,8 @@ export default function StudySession() {
                     onCheckedChange={(next) => {
                       setEliminateAllowed(next);
                       localStorage.setItem('flashdeck_eliminate', next ? '1' : '0');
-                    }}
-                  />
+                    }} />
+                  
                 </SettingRow>
               </CardContent>
             </Card>
@@ -1310,38 +1310,38 @@ export default function StudySession() {
                   htmlFor="learning-mode"
                   label="Learning Mode"
                   hint={
-                    <>
+                  <>
                       Study buddy drops some extra knowledge when you answer incorrectly. Only works
                       if the card has an explanation. If not, you’re on your own.
                       {!hasCompletedFullSession &&
-                        <span className="mt-1 block font-medium text-amber-600">
+                    <span className="mt-1 block font-medium text-amber-600">
                           On by default until your first full session
                         </span>
-                      }
+                    }
                     </>
-                  }
-                >
+                  }>
+                  
                   <Switch
                     id="learning-mode"
                     checked={learningMode}
-                    onCheckedChange={(next) => setLearningModeOverride(next)}
-                  />
+                    onCheckedChange={(next) => setLearningModeOverride(next)} />
+                  
                 </SettingRow>
                 <SettingRow
                   htmlFor="game-mode"
                   label="Game Mode"
                   hint={
-                    <>
+                  <>
                       Your study buddy will lose a heart when you blow it. So try not to. Replenish
                       them with streaks. What happens if you run out?
                       {!gameEligible &&
-                        <span className="mt-1 block font-medium text-amber-600">
+                    <span className="mt-1 block font-medium text-amber-600">
                           Needs {GAME_MODE_MIN_CARDS}+ cards in the selected set
                         </span>
-                      }
+                    }
                     </>
-                  }
-                >
+                  }>
+                  
                   <Switch
                     id="game-mode"
                     checked={gameModeWanted && gameEligible}
@@ -1349,8 +1349,8 @@ export default function StudySession() {
                     onCheckedChange={(next) => {
                       setGameModeWanted(next);
                       localStorage.setItem('flashdeck_gamemode', next ? '1' : '0');
-                    }}
-                  />
+                    }} />
+                  
                 </SettingRow>
               </CardContent>
             </Card>
@@ -1369,15 +1369,15 @@ export default function StudySession() {
                         onClick={() => setLayoutChoice(c.value)}
                         className={cn(
                           'flex flex-col items-center gap-1 rounded-[4px] border-2 px-2 py-1.5 transition-colors',
-                          active
-                            ? 'border-primary text-primary bg-accent/40'
-                            : 'border-dashed border-border text-muted-foreground hover:border-primary hover:text-foreground'
-                        )}
-                      >
+                          active ?
+                          'border-primary text-primary bg-accent/40' :
+                          'border-dashed border-border text-muted-foreground hover:border-primary hover:text-foreground'
+                        )}>
+                        
                         <LayoutGlyph variant={c.value} className="w-11 h-8" />
                         <span className="text-[10px] font-medium leading-none">{c.label}</span>
-                      </button>
-                    );
+                      </button>);
+
                   })}
                 </div>
               </SettingRow>
