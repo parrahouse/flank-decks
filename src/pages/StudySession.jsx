@@ -2,9 +2,10 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Volume2, VolumeX, Info, Trophy, PlayCircle, RefreshCw, Clock, AlertTriangle, Settings, SlidersVertical, LogOut } from 'lucide-react';
+import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Volume2, VolumeX, Info, Trophy, PlayCircle, RefreshCw, Clock, AlertTriangle, Settings, SlidersVertical, LogOut, Search, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
@@ -52,6 +53,8 @@ const SCORE_LABELS = {
 
 const CORRECT_KEYS = new Set(['correct', 'second_guess', 'correct_after_clue', 'second_guess_after_clue', 'partial']);
 
+// Tuned to the 384px settings column — roughly three lines of pills at typical tag lengths.
+const MAX_VISIBLE_TAGS = 12;
 const QUESTION_TYPE_ORDER = ['multiple_choice', 'select_all', 'true_false', 'short_answer'];
 const QUESTION_TYPE_LABELS = {
   multiple_choice: 'Multiple Choice',
@@ -119,10 +122,18 @@ const SettingRow = ({ label, hint, htmlFor, children }) => (
 );
 
 // Multi-select pill row. Empty selection means the group is inactive.
-const FilterPillGroup = ({ title, options, selected, onChange }) => {
+const FilterPillGroup = ({ title, options, selected, onChange, maxVisible, onMore }) => {
   if (!options.length) return null;
   const toggle = (v) =>
     onChange(selected.includes(v) ? selected.filter((x) => x !== v) : [...selected, v]);
+  // Top-N by frequency, then any selected tag that fell outside it, appended so the
+  // frequency order of the head never shifts under the pointer.
+  const head = maxVisible ? options.slice(0, maxVisible) : options;
+  const headSet = new Set(head.map((o) => o.value));
+  const visible = maxVisible
+    ? [...head, ...options.filter((o) => selected.includes(o.value) && !headSet.has(o.value))]
+    : options;
+  const hiddenCount = options.length - visible.length;
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
@@ -137,7 +148,7 @@ const FilterPillGroup = ({ title, options, selected, onChange }) => {
         }
       </div>
       <div className="flex flex-wrap gap-1.5">
-        {options.map((o) =>
+        {visible.map((o) =>
           <button
             key={o.value}
             onClick={() => toggle(o.value)}
@@ -151,8 +162,85 @@ const FilterPillGroup = ({ title, options, selected, onChange }) => {
             {o.label}
           </button>
         )}
+        {hiddenCount > 0 &&
+          <button
+            onClick={onMore}
+            title={`${hiddenCount} more tag${hiddenCount !== 1 ? 's' : ''}`}
+            aria-label={`Show ${hiddenCount} more tags`}
+            className="text-xs px-2.5 py-1 rounded-full border border-dashed border-border text-muted-foreground hover:border-primary hover:text-foreground transition-colors leading-none tracking-widest"
+          >
+            ···
+          </button>
+        }
       </div>
     </div>
+  );
+};
+
+// Searchable full-tag picker. Selections apply immediately — this is a second view of the
+// same array the pills render, not a staged edit.
+const TagPickerDialog = ({ open, onOpenChange, options, selected, onChange }) => {
+  const [q, setQ] = useState('');
+  const query = q.trim().toLowerCase();
+  const shown = query ? options.filter((o) => o.value.toLowerCase().includes(query)) : options;
+  const toggle = (v) =>
+    onChange(selected.includes(v) ? selected.filter((x) => x !== v) : [...selected, v]);
+  return (
+    <Dialog open={open} onOpenChange={(v) => {if (!v) setQ('');onOpenChange(v);}}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="text-base">Filter by tags</DialogTitle>
+        </DialogHeader>
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+          <Input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search tags…"
+            className="pl-8 h-8 text-sm"
+          />
+        </div>
+        <div className="max-h-[50vh] overflow-y-auto -mx-1 px-1">
+          {shown.length === 0 ?
+            <p className="py-6 text-center text-xs text-muted-foreground">No tags match that search.</p> :
+            shown.map((o) => {
+              const on = selected.includes(o.value);
+              return (
+                <button
+                  key={o.value}
+                  onClick={() => toggle(o.value)}
+                  className={cn(
+                    'w-full flex items-center gap-2 rounded-[4px] px-2 py-1.5 text-left text-sm transition-colors',
+                    on ? 'bg-accent/60' : 'hover:bg-muted'
+                  )}
+                >
+                  <span className={cn(
+                    'flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] border',
+                    on ? 'border-primary bg-primary text-primary-foreground' : 'border-input'
+                  )}>
+                    {on && <Check className="w-3 h-3" />}
+                  </span>
+                  <span className="flex-1 truncate">{o.label}</span>
+                  <span className="text-xs tabular-nums text-muted-foreground">{o.count}</span>
+                </button>
+              );
+            })
+          }
+        </div>
+        <DialogFooter className="sm:justify-between gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs text-muted-foreground"
+            onClick={() => onChange([])}
+            disabled={selected.length === 0}
+          >
+            Clear all
+          </Button>
+          <Button size="sm" onClick={() => onOpenChange(false)}>Done</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -186,6 +274,7 @@ export default function StudySession() {
   const [selectedPool, setSelectedPool] = useState('all'); // 'all' | 'unmastered' | 'bookmarked' | 'quick'
   const [tagFilters, setTagFilters] = useState([]);
   const [typeFilters, setTypeFilters] = useState([]);
+  const [tagPickerOpen, setTagPickerOpen] = useState(false);
   // Clear filters when switching decks so a previous deck's selection can't
   // narrow the new one (especially when the new deck hides the filter block).
   useEffect(() => {
@@ -348,7 +437,7 @@ export default function StudySession() {
     activeCards.forEach((c) => (c.tags || []).forEach((t) => counts.set(t, (counts.get(t) || 0) + 1)));
     return Array.from(counts.entries())
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-      .map(([value]) => ({ value, label: value }));
+      .map(([value, count]) => ({ value, label: value, count }));
   }, [activeCards]);
 
   // Only offer types the deck actually contains. Legacy rows without the field are MC.
@@ -1013,6 +1102,8 @@ export default function StudySession() {
                   options={tagOptions}
                   selected={tagFilters}
                   onChange={setTagFilters}
+                  maxVisible={MAX_VISIBLE_TAGS}
+                  onMore={() => setTagPickerOpen(true)}
                 />
                 {typeOptions.length > 1 &&
                   <FilterPillGroup
@@ -1027,6 +1118,14 @@ export default function StudySession() {
                 }
               </div>
             }
+
+            <TagPickerDialog
+              open={tagPickerOpen}
+              onOpenChange={setTagPickerOpen}
+              options={tagOptions}
+              selected={tagFilters}
+              onChange={setTagFilters}
+            />
 
             {/* Learning mode toggle */}
             <SettingRow
