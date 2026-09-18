@@ -164,7 +164,7 @@ function SessionNotice({ title, body, deckId, onRetry }) {
 }
 
 const SettingRow = ({ label, hint, htmlFor, children }) => (
-  <div className="flex items-start justify-between gap-4 py-3">
+  <div className="flex items-start justify-between gap-4 py-2.5">
     <div className="min-w-0">
       <Label htmlFor={htmlFor} className="text-sm font-medium leading-none cursor-pointer">{label}</Label>
       <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
@@ -1169,9 +1169,9 @@ export default function StudySession() {
           </div>
         }
 
-        <div className="mx-auto grid w-full max-w-sm gap-8 rounded-2xl border border-border bg-card p-6 shadow-sm lg:max-w-none lg:grid-cols-[minmax(0,384px)_minmax(0,1fr)] lg:gap-12 lg:p-8">
+        <div className="mx-auto grid w-full max-w-sm gap-6 rounded-[8px] border border-border bg-card p-5 shadow-sm lg:max-w-none lg:grid-cols-[minmax(0,384px)_minmax(0,1fr)] lg:gap-8 lg:p-6">
           {/* Left: study mode selection */}
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-4">
           <div>
             <h2 className="text-xl font-fraunces font-bold">What are we studying today?</h2>
           </div>
@@ -1250,18 +1250,18 @@ export default function StudySession() {
           </div>
 
           {/* Right: brain boosters, study buddy modes, layout, start */}
-          <div className="flex w-full flex-col gap-5">
-            <Card>
-              <CardHeader className="pb-2">
+          <div className="flex w-full flex-col gap-4">
+            <Card className="rounded-[6px] shadow-none">
+              <CardHeader className="space-y-0 p-5 pb-2">
                 <CardTitle className="text-lg font-fraunces font-bold">
                   Can we interest you in a little cheating?
                 </CardTitle>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className="mt-1 text-[13px] leading-snug text-muted-foreground">
                   Just kidding! We actually call these options “Brain Boosters” and there’s nothing
                   wrong with using them… as long as you don’t mind being a cheater.
                 </p>
               </CardHeader>
-              <CardContent className="divide-y divide-border pt-0">
+              <CardContent className="divide-y divide-border px-5 pb-3 pt-0">
                 <SettingRow htmlFor="allow-2nd-guesses" label="Allow 2nd guesses" hint="Let a wrong first pick be retried once">
                   <Switch
                     id="allow-2nd-guesses"
@@ -1295,17 +1295,17 @@ export default function StudySession() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="pb-2">
+            <Card className="rounded-[6px] shadow-none">
+              <CardHeader className="space-y-0 p-5 pb-2">
                 <CardTitle className="text-lg font-fraunces font-bold">
                   The <s className="opacity-50">many</s> two modes of Study Buddy
                 </CardTitle>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className="mt-1 text-[13px] leading-snug text-muted-foreground">
                   Your study buddy can do more than just keep track of your progress. Before you get
                   too excited, no — it doesn’t include saving you from AI.
                 </p>
               </CardHeader>
-              <CardContent className="divide-y divide-border pt-0">
+              <CardContent className="divide-y divide-border px-5 pb-3 pt-0">
                 <SettingRow
                   htmlFor="learning-mode"
                   label="Learning Mode"
@@ -1392,7 +1392,7 @@ export default function StudySession() {
               onClick={() => canStart && startSession(selectedPool)}
               disabled={!canStart}
               className={cn(
-                'w-full rounded-[4px] border-2 p-3.5 text-center text-lg font-semibold transition-all',
+                'mt-auto w-full rounded-[4px] border-2 p-3 text-center text-lg font-semibold transition-all',
                 canStart ?
                 'border-primary bg-primary text-primary-foreground hover:opacity-90' :
                 'border-border text-muted-foreground opacity-50 cursor-not-allowed'
