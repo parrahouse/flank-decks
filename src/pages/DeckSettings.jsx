@@ -193,6 +193,16 @@ export default function DeckSettings() {
               onCheckedChange={(v) => updateDeckMutation.mutate({ question_bg_image: v })}
             />
           </Row>
+
+          <Row
+            label="Disable header scrim"
+            description="Show the hero image with no darkening overlay on the deck header. Turn this on only if the hero already has enough contrast for white text."
+          >
+            <Switch
+              checked={!!deck.hero_scrim_disabled}
+              onCheckedChange={(v) => updateDeckMutation.mutate({ hero_scrim_disabled: v })}
+            />
+          </Row>
         </Section>
 
         {/* Data */}

@@ -16,6 +16,7 @@ import CardPreviewModal from '@/components/cards/CardPreviewModal';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import useDominantColor from '@/hooks/useDominantColor';
+import { resolveHero } from '@/lib/deckImages';
 
 const HERO_EXPANDED = 380; // px — full height at scroll top
 const HERO_COLLAPSED = 200; // px — height once collapsed (toolbar + filter bar)
@@ -133,6 +134,7 @@ export default function DeckBuilder() {
   const [showBin, setShowBin] = useState(false);
   const [showAiSuggest, setShowAiSuggest] = useState(false);
   const [showCoverPicker, setShowCoverPicker] = useState(false);
+  const [showHeroPicker, setShowHeroPicker] = useState(false);
   const [previewCard, setPreviewCard] = useState(null);
 
   // Description editing
@@ -306,8 +308,17 @@ export default function DeckBuilder() {
     onSuccess: () => {qc.invalidateQueries(['deck', deckId]);toast.success('Cover updated');}
   });
 
-  const hasCover = !!deck?.cover_image_url;
-  const extractedColor = useDominantColor(deck?.cover_image_url);
+  const saveHeroMutation = useMutation({
+    mutationFn: ({ url, focalPoint, originalUrl }) => base44.entities.Deck.update(deckId, { hero_image_url: url, hero_focal_point: focalPoint, hero_image_original_url: originalUrl }),
+    onSuccess: () => {qc.invalidateQueries(['deck', deckId]);toast.success('Hero image updated');}
+  });
+
+  // Header background = hero if set, else the thumbnail cover.
+  const hero = resolveHero(deck);
+  // Name retained: this gates the hero header's existence and its white-on-image
+  // text treatment throughout this file.
+  const hasCover = !!hero.url;
+  const extractedColor = useDominantColor(hero.url);
   const scrimSourceColor = hexToRgbString(deck?.accent_color) || extractedColor;
 
   // Scroll-driven collapse: 0 = fully expanded, 1 = fully collapsed
@@ -336,8 +347,7 @@ export default function DeckBuilder() {
   const heroHeight = HERO_EXPANDED - (HERO_EXPANDED - HERO_COLLAPSED) * collapseProgress;
   const spacerHeight = HERO_EXPANDED - heroHeight;
 
-  const fp = deck?.cover_focal_point;
-  const coverObjectPosition = fp ? `${fp.x}% ${fp.y}%` : '50% 50%';
+  const coverObjectPosition = hero.objectPosition;
 
   const FILTER_BOTTOM_GAP = 12; // the filter card's mb-3
   const SEARCH_ROW_CENTER = 28; // card p-3 (12) + half the h-8 search input (16)
@@ -452,6 +462,9 @@ export default function DeckBuilder() {
       <Button variant="ghost" size="sm" onClick={() => setShowCoverPicker(true)} className={cn("gap-1.5 h-9", hasCover && "ml-auto", hasCover ? "text-white/80 hover:!bg-white/10 hover:!text-white" : "text-muted-foreground hover:text-foreground")}>
         <ImageIcon className="w-4 h-4" /> Set cover
       </Button>
+      <Button variant="ghost" size="sm" onClick={() => setShowHeroPicker(true)} className={cn("gap-1.5 h-9", hasCover ? "text-white/80 hover:!bg-white/10 hover:!text-white" : "text-muted-foreground hover:text-foreground")}>
+        <ImageIcon className="w-4 h-4" /> Set hero
+      </Button>
     </div>;
 
 
@@ -475,14 +488,17 @@ export default function DeckBuilder() {
               style={{ height: `${imageHeight}px` }}>
               
               <img
-                src={deck.cover_image_url}
+                src={hero.url}
                 alt=""
                 className="absolute inset-0 w-full h-full object-cover"
                 style={{ objectPosition: coverObjectPosition }} />
               
 
-              {/* Chromatic scrim — hue from the cover, lightness clamped for contrast */}
-              <div className="absolute inset-0" style={{ background: scrimGradient }} />
+              {/* Chromatic scrim — hue from the hero image, lightness clamped for
+                  contrast. Suppressed entirely when the deck opts out. */}
+              {!hero.scrimDisabled && (
+                <div className="absolute inset-0" style={{ background: scrimGradient }} />
+              )}
             </div>
 
             {/* ── Back arrow, aligned with the content container ── */}
@@ -709,6 +725,7 @@ export default function DeckBuilder() {
       
 
     <CoverImagePicker
+        mode="cover"
         open={showCoverPicker}
         onClose={() => setShowCoverPicker(false)}
         cards={allDeckCards}
@@ -718,6 +735,18 @@ export default function DeckBuilder() {
         deckTitle={deck?.title}
         deckDescription={deck?.description}
         onSave={(url, focalPoint, originalUrl) => saveCoverMutation.mutate({ url, focalPoint, originalUrl })} />
+
+    <CoverImagePicker
+        mode="hero"
+        open={showHeroPicker}
+        onClose={() => setShowHeroPicker(false)}
+        cards={allDeckCards}
+        currentUrl={deck?.hero_image_url || null}
+        currentFocalPoint={deck?.hero_focal_point || null}
+        currentOriginalUrl={deck?.hero_image_original_url || null}
+        deckTitle={deck?.title}
+        deckDescription={deck?.description}
+        onSave={(url, focalPoint, originalUrl) => saveHeroMutation.mutate({ url, focalPoint, originalUrl })} />
       
 
     <AiCardSuggestionsModal

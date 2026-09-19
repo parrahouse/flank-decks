@@ -53,6 +53,31 @@
       "type": "string",
       "description": "Pre-crop original cover image URL. Set on first crop; absent means cover_image_url is the original."
     },
+    "hero_image_url": {
+      "type": "string",
+      "description": "URL of the deck hero image, used as the background of the deck editing header and the study settings page. When absent, cover_image_url is used instead."
+    },
+    "hero_focal_point": {
+      "type": "object",
+      "description": "Focal point for hero image cropping, as {x, y} percentages (0-100)",
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      }
+    },
+    "hero_image_original_url": {
+      "type": "string",
+      "description": "Pre-crop original hero image URL. Set on first crop; absent means hero_image_url is the original."
+    },
+    "hero_scrim_disabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "When true, the chromatic scrim over the deck editing header hero is suppressed entirely."
+    },
     "accent_color": {
       "type": "string",
       "description": "Optional manual override for the header scrim color, as a hex string like #4A7C2F. When absent, the color is auto-extracted from the cover image."

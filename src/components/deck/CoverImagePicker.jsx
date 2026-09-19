@@ -9,7 +9,8 @@ import ImageEditor from '@/components/cards/ImageEditor';
 import ImagePoolGallery from '@/components/deck/ImagePoolGallery';
 import { toast } from 'sonner';
 
-export default function CoverImagePicker({ open, onClose, cards, currentUrl, currentFocalPoint, currentOriginalUrl, onSave, deckTitle, deckDescription }) {
+export default function CoverImagePicker({ mode = 'cover', open, onClose, cards, currentUrl, currentFocalPoint, currentOriginalUrl, onSave, deckTitle, deckDescription }) {
+  const isHero = mode === 'hero';
   const qc = useQueryClient();
   const [selected, setSelected] = useState(currentUrl || null);
   const [originalUrl, setOriginalUrl] = useState(currentOriginalUrl || null);
@@ -126,8 +127,13 @@ export default function CoverImagePicker({ open, onClose, cards, currentUrl, cur
       <Dialog open={open && !showEditor} onOpenChange={onClose}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Deck Cover Image</DialogTitle>
+            <DialogTitle>{isHero ? 'Deck Hero Image' : 'Deck Cover Image'}</DialogTitle>
           </DialogHeader>
+          <p className="text-xs text-muted-foreground -mt-2">
+            {isHero
+              ? 'Background of the deck header and study settings screen. Leave empty to use the cover image.'
+              : 'Thumbnail shown on deck cards and in collections.'}
+          </p>
 
           <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
             {/* Preview with drag-to-reposition focal point */}
@@ -135,7 +141,7 @@ export default function CoverImagePicker({ open, onClose, cards, currentUrl, cur
               <div className="space-y-2">
                 <div
                   ref={previewRef}
-                  className="relative rounded-xl overflow-hidden h-36 bg-muted select-none"
+                  className={cn('relative rounded-xl overflow-hidden bg-muted select-none', isHero ? 'h-44' : 'h-36')}
                   style={{
                     touchAction: 'none',
                     cursor: draggingPreview ? 'grabbing' : 'grab',
@@ -274,8 +280,8 @@ export default function CoverImagePicker({ open, onClose, cards, currentUrl, cur
 
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="ghost" onClick={onClose}>Cancel</Button>
-            <Button onClick={handleSave} disabled={saving || !selected}>
-              {saving ? 'Saving…' : 'Save Cover'}
+            <Button onClick={handleSave} disabled={saving || (!selected && !(isHero && currentUrl))}>
+              {saving ? 'Saving…' : isHero ? 'Save Hero' : 'Save Cover'}
             </Button>
           </div>
         </DialogContent>

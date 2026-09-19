@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSavedSession } from '@/hooks/useSavedSession';
 import useDominantColor from '@/hooks/useDominantColor';
+import { resolveHero } from '@/lib/deckImages';
 import { useSound } from '@/hooks/useSound';
 
 const INTRO_REVEAL_MS = 700;
@@ -416,9 +417,11 @@ export default function StudySession() {
     enabled: !!deckId
   });
 
-  // Cover wash — hue/saturation from the deck's cover art (null → fixed yellow).
+  // Cover wash — hue/saturation from the deck's hero art, falling back to the
+  // thumbnail cover (null → fixed yellow).
   // Must run before the early returns below to satisfy the Rules of Hooks.
-  const coverColor = useDominantColor(deck?.cover_image_url);
+  const hero = resolveHero(deck);
+  const coverColor = useDominantColor(hero.url);
   const wash = useMemo(() => resolveWash(coverColor, 64), [coverColor]);
 
   const { data: allCards = [], isLoading, error: cardsError, refetch: refetchCards } = useQuery({
@@ -1126,9 +1129,9 @@ export default function StudySession() {
               hsl(var(--background)) 96%)`
           }}>
           
-          {deck?.cover_image_url &&
+          {hero.url &&
           <img
-            src={deck.cover_image_url}
+            src={hero.url}
             alt=""
             className="absolute top-1/2 left-0 w-auto"
             style={{
