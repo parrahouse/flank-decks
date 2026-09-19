@@ -1296,10 +1296,6 @@ export default function StudySession() {
                 <CardTitle className="text-lg font-fraunces font-bold">
                   The <s className="opacity-50">many</s> two modes of Study Buddy
                 </CardTitle>
-                <p className="mt-1 text-[13px] leading-snug text-muted-foreground">
-                  Your study buddy can do more than just keep track of your progress. Before you get
-                  too excited, no — it doesn’t include saving you from AI.
-                </p>
               </CardHeader>
               <CardContent className="divide-y divide-border px-5 pb-3 pt-0">
                 <SettingRow
