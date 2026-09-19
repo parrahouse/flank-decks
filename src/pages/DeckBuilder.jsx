@@ -261,8 +261,13 @@ export default function DeckBuilder() {
   });
 
   const saveHeroMutation = useMutation({
-    mutationFn: ({ url, focalPoint, originalUrl }) => base44.entities.Deck.update(deckId, { hero_image_url: url, hero_focal_point: focalPoint, hero_image_original_url: originalUrl }),
-    onSuccess: () => {qc.invalidateQueries(['deck', deckId]);toast.success('Hero image updated');}
+    mutationFn: ({ url, focalPoint, originalUrl, appearance }) => base44.entities.Deck.update(deckId, {
+      hero_image_url: url,
+      hero_focal_point: focalPoint,
+      hero_image_original_url: originalUrl,
+      ...(appearance ? { hero_text_tone: appearance.text_tone, hero_scrim_disabled: appearance.scrim_disabled } : {})
+    }),
+    onSuccess: () => {qc.invalidateQueries(['deck', deckId]);toast.success('Header updated');}
   });
 
   // Header background = hero if set, else the thumbnail cover.
@@ -706,9 +711,13 @@ export default function DeckBuilder() {
         currentUrl={deck?.hero_image_url || null}
         currentFocalPoint={deck?.hero_focal_point || null}
         currentOriginalUrl={deck?.hero_image_original_url || null}
+        inheritedUrl={deck?.cover_image_url || null}
+        inheritedFocalPoint={deck?.cover_focal_point || null}
+        currentTextTone={deck?.hero_text_tone || 'light'}
+        currentScrimDisabled={!!deck?.hero_scrim_disabled}
         deckTitle={deck?.title}
         deckDescription={deck?.description}
-        onSave={(url, focalPoint, originalUrl) => saveHeroMutation.mutate({ url, focalPoint, originalUrl })} />
+        onSave={(url, focalPoint, originalUrl, appearance) => saveHeroMutation.mutate({ url, focalPoint, originalUrl, appearance })} />
       
 
     <AiCardSuggestionsModal

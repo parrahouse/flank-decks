@@ -135,24 +135,6 @@ export default function DeckSettings() {
         {/* Appearance */}
         <Section title="Appearance">
           <Row
-            label="Header text color"
-            description="Dark text removes the darkening scrim and sits directly on the cover art. Use it for bright or flat-color covers that the scrim muddies."
-          >
-            <Select
-              value={deck.hero_text_tone || 'light'}
-              onValueChange={(val) => updateDeckMutation.mutate({ hero_text_tone: val })}
-            >
-              <SelectTrigger className="h-9 text-sm w-28">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="light">Light</SelectItem>
-                <SelectItem value="dark">Dark</SelectItem>
-              </SelectContent>
-            </Select>
-          </Row>
-
-          <Row
             label="Header accent color"
             description="Overrides the color extracted from the cover image. Clear it to go back to automatic."
           >
@@ -212,15 +194,6 @@ export default function DeckSettings() {
             />
           </Row>
 
-          <Row
-            label="Disable header scrim"
-            description="Show the hero image with no darkening overlay on the deck header. Turn this on only if the hero already has enough contrast for white text."
-          >
-            <Switch
-              checked={!!deck.hero_scrim_disabled}
-              onCheckedChange={(v) => updateDeckMutation.mutate({ hero_scrim_disabled: v })}
-            />
-          </Row>
         </Section>
 
         {/* Data */}

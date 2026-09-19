@@ -174,7 +174,12 @@ export default function CoverImagePicker({ mode = 'cover', open, onClose, cards,
       finalUrl = file_url;
       setSaving(false);
     }
-    onSave(finalUrl, focalPoint, originalUrl);
+    onSave(
+      finalUrl,
+      focalPoint,
+      originalUrl,
+      isHero ? { text_tone: textTone, scrim_disabled: scrimDisabled } : undefined
+    );
     onClose();
   };
 
@@ -345,7 +350,7 @@ export default function CoverImagePicker({ mode = 'cover', open, onClose, cards,
                 className="flex items-center gap-2 w-full border-2 border-dashed border-border rounded-xl px-4 py-3 text-sm text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors"
               >
                 {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                {uploading ? 'Uploading…' : 'Click to upload a custom cover'}
+                {uploading ? 'Uploading…' : isHero ? 'Click to upload a custom hero image' : 'Click to upload a custom cover'}
               </button>
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
 
@@ -406,13 +411,13 @@ export default function CoverImagePicker({ mode = 'cover', open, onClose, cards,
             />
 
             {cardImages.length === 0 && !selected && (
-              <p className="text-sm text-muted-foreground text-center py-2">No card images yet. Upload a custom cover above.</p>
+              <p className="text-sm text-muted-foreground text-center py-2">No card images yet. Upload an image above or pick one from the pool.</p>
             )}
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="ghost" onClick={onClose}>Cancel</Button>
-            <Button onClick={handleSave} disabled={saving || (!selected && !(isHero && currentUrl))}>
+            <Button onClick={handleSave} disabled={saving || (!isHero && !selected)}>
               {saving ? 'Saving…' : isHero ? 'Save Hero' : 'Save Cover'}
             </Button>
           </div>
