@@ -323,6 +323,7 @@ export default function StudySession() {
   // 'all' | 'unmastered'
   const [filterMode, setFilterMode] = useState('all');
   const [filterChosen, setFilterChosen] = useState(false);
+  const [launching, setLaunching] = useState(false);
   const [selectedPool, setSelectedPool] = useState('all'); // 'all' | 'unmastered' | 'bookmarked' | 'quick'
   const [tagFilters, setTagFilters] = useState([]);
   const [typeFilters, setTypeFilters] = useState([]);
@@ -543,8 +544,15 @@ export default function StudySession() {
     refetchCards();
   };
 
+  const handleStartSession = () => {
+    if (launching) return;
+    setLaunching(true);
+    setTimeout(() => startSession(selectedPool), 800);
+  };
+
   const startSession = (mode) => {
     clearSession(); // discard any saved session on fresh start
+    setLaunching(false);
     beginIntro();
     // Shuffle first, then slice — the quick subset is a fresh random draw each session.
     const drawn = shuffle(poolFor(mode));
@@ -1134,7 +1142,12 @@ export default function StudySession() {
 
           }
         </div>
-        <div className="flex items-center gap-3 mb-6">
+        {launching &&
+        <div className="absolute inset-0 z-20 flex items-center justify-center">
+          <div className="w-8 h-8 border-4 border-muted-foreground/30 border-t-primary rounded-full animate-spin" />
+        </div>
+        }
+        <div className={cn('flex items-center gap-3 mb-6 transition-opacity duration-500', launching && 'opacity-0')}>
           <button
             onClick={() => navigate(`/deck/${deckId}`)}
             aria-label="Back to deck"
@@ -1153,7 +1166,7 @@ export default function StudySession() {
 
         {/* Resume banner */}
         {savedSession &&
-        <div className="mb-6 border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 rounded-xl p-4 flex items-start gap-3">
+        <div className={cn('mb-6 border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 rounded-xl p-4 flex items-start gap-3 transition-opacity duration-500', launching && 'opacity-0')}>
             <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">You have a saved session</p>
@@ -1169,7 +1182,7 @@ export default function StudySession() {
           </div>
         }
 
-        <div className="mx-auto grid w-full max-w-sm gap-6 rounded-[8px] border border-border bg-card p-5 shadow-sm lg:max-w-none lg:grid-cols-[minmax(0,384px)_minmax(0,1fr)] lg:gap-8 lg:p-6">
+        <div className={cn('mx-auto grid w-full max-w-sm gap-6 rounded-[8px] border border-border bg-card p-5 shadow-sm transition-opacity duration-500 lg:max-w-none lg:grid-cols-[minmax(0,384px)_minmax(0,1fr)] lg:gap-8 lg:p-6', launching && 'opacity-0')}>
           {/* Left: study mode selection */}
           <div className="flex flex-col gap-4">
           <div>
@@ -1381,8 +1394,8 @@ export default function StudySession() {
             </div>
 
             <button
-              onClick={() => canStart && startSession(selectedPool)}
-              disabled={!canStart}
+              onClick={handleStartSession}
+              disabled={!canStart || launching}
               className={cn(
                 'mt-auto w-full rounded-[4px] border-2 p-3 text-center text-lg font-semibold transition-all',
                 canStart ?
