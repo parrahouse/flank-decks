@@ -1293,7 +1293,7 @@ export default function StudySession() {
 
             <Card className="rounded-[6px] shadow-none">
               <CardHeader className="space-y-0 pr-5 pl-5 pb-2 pt-3">
-                <CardTitle className="text-lg font-bold">
+                <CardTitle className="text-lg font-bold" style={{ fontFamily: "'VT323', monospace" }}>
                   The <s className="opacity-50">many</s> two modes of Study Buddy
                 </CardTitle>
               </CardHeader>
