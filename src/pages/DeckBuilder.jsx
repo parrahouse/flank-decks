@@ -442,7 +442,14 @@ export default function DeckBuilder() {
       <Button variant="ghost" size="sm" onClick={() => setShowCsvUpload(true)} className={cn("gap-1.5 h-9", hasCover ? "text-white/80 hover:!bg-white/10 hover:!text-white" : "text-muted-foreground hover:text-foreground")}>
         <Upload className="w-4 h-4" /> Import CSV
       </Button>
-      <Button variant="ghost" size="sm" onClick={() => setShowCoverPicker(true)} className={cn("gap-1.5 h-9 ml-auto", hasCover ? "text-white/80 hover:!bg-white/10 hover:!text-white" : "text-muted-foreground hover:text-foreground")}>
+      {!hasCover && activeCards.length > 0 && (
+        <Link to={`/study/${deckId}`} className="ml-auto">
+          <Button size="sm" className="gap-1.5 h-9">
+            <Play className="w-4 h-4" /> Study
+          </Button>
+        </Link>
+      )}
+      <Button variant="ghost" size="sm" onClick={() => setShowCoverPicker(true)} className={cn("gap-1.5 h-9", hasCover && "ml-auto", hasCover ? "text-white/80 hover:!bg-white/10 hover:!text-white" : "text-muted-foreground hover:text-foreground")}>
         <ImageIcon className="w-4 h-4" /> Set cover
       </Button>
     </div>;
@@ -480,10 +487,17 @@ export default function DeckBuilder() {
 
             {/* ── Back arrow, aligned with the content container ── */}
             <div className="absolute top-0 left-0 right-0 z-20">
-              <div className="max-w-7xl mx-auto px-4 pt-3">
+              <div className="max-w-7xl mx-auto px-4 pt-3 flex items-center justify-between">
                 <Link to="/" className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-black/30 hover:bg-black/50 text-white transition-colors" aria-label="Back to My Decks">
                   <ArrowLeft className="w-5 h-5" />
                 </Link>
+                {activeCards.length > 0 && (
+                  <Link to={`/study/${deckId}`}>
+                    <Button size="sm" className="gap-1.5 h-9 bg-white/90 hover:bg-white text-foreground shadow-sm">
+                      <Play className="w-4 h-4" /> Study
+                    </Button>
+                  </Link>
+                )}
               </div>
             </div>
 
