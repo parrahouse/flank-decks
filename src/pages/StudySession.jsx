@@ -63,7 +63,7 @@ const MAX_VISIBLE_TAGS = 12;
 // luminance, so a navy cover needs a lighter wash than a yellow one to stay readable.
 const WASH_FALLBACK = { h: 44, s: 92 };
 const WASH_MIN_LUM = 0.34; // ≈4.6:1 against hsl(208 42% 18%), the light-mode foreground
-const WASH_MAX_L = 88;
+const WASH_MAX_L = 95;
 
 const srgbToLinear = (c) => c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
 
