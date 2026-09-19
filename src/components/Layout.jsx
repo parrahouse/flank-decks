@@ -115,19 +115,22 @@ export default function Layout() {
           </button>
         </>
       )}
-      <header
-        onMouseEnter={isStudyMode ? revealNav : undefined}
-        onMouseLeave={isStudyMode ? scheduleHideNav : undefined}
-        className={cn(
-          'border-b border-border bg-card',
-          isStudyMode
-            ? cn('fixed top-0 left-0 right-0 z-40 transition-all duration-300 ease-out',
-                navRevealed ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none')
-            : 'sticky top-0 z-40'
-        )}
-      >
-        {headerInner}
-      </header>
+      {isStudyMode ? (
+        <div
+          onMouseEnter={revealNav}
+          onMouseLeave={scheduleHideNav}
+          className="grid transition-all duration-300 ease-out"
+          style={{ gridTemplateRows: navRevealed ? '1fr' : '0fr' }}
+        >
+          <div className="overflow-hidden border-b border-border bg-card">
+            {headerInner}
+          </div>
+        </div>
+      ) : (
+        <header className="sticky top-0 z-40 border-b border-border bg-card">
+          {headerInner}
+        </header>
+      )}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 py-6">
         <Outlet />
       </main>
