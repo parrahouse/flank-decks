@@ -16,6 +16,7 @@ import CardPreviewModal from '@/components/cards/CardPreviewModal';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import useDominantColor from '@/hooks/useDominantColor';
+import useBandLuminance from '@/hooks/useBandLuminance';
 import { resolveHero } from '@/lib/deckImages';
 
 const HERO_EXPANDED = 380; // px — full height at scroll top
@@ -29,14 +30,26 @@ c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
 const relLuminance = (r, g, b) =>
 0.2126 * srgbToLinear(r) + 0.7152 * srgbToLinear(g) + 0.0722 * srgbToLinear(b);
 
+/** Chroma the scrim may carry before the coverage taper is applied. */
+const SCRIM_SAT_CEILING = 45;
+
 /**
  * Build a scrim from an "R, G, B" dominant color.
- * Hue and saturation come from the cover; lightness is clamped dark.
- * Alpha is derived from the cover's luminance so the composite lands
- * dark enough for white text regardless of how light the cover is.
- * Returns { h, s, l, aTop, aMid, aBottom } or null.
+ *
+ * Hue comes from the cover. Saturation is capped and then falls as coverage
+ * rises: the scrim keeps the cover's hue while it is decorative, and goes
+ * near-neutral once it is doing contrast work. A saturated tint at high alpha
+ * collapses every hue in the artwork onto one hue, which is what made graphic
+ * covers read as muddy — photos escaped it only because their dominant color
+ * is near-grey to begin with.
+ *
+ * Alpha is derived from `bandLuminance`, the luminance of the strip the text
+ * actually sits on. Falls back to whole-image luminance when that is null.
+ *
+ * Returns { h, s, l, aMid, aBottom } or null. There is no longer an aTop —
+ * the gradient now terminates at full transparency above the text zone.
  */
-const buildScrim = (rgb, lightness = 15) => {
+const buildScrim = (rgb, bandLuminance = null, lightness = 15) => {
   if (!rgb) return null;
   const [r, g, b] = rgb.split(',').map((c) => Number(c.trim()) / 255);
 
@@ -60,16 +73,21 @@ const buildScrim = (rgb, lightness = 15) => {
   // Solving  TARGET = L(1 - a) + SCRIM_L(a)  for a.
   const TARGET = 0.18; // composite luminance ≈ 4.5:1 against white
   const SCRIM_L = 0.02; // the scrim's own luminance at l≈13%
-  const L = relLuminance(r, g, b);
+  const L = bandLuminance !== null && bandLuminance !== undefined ?
+  bandLuminance :
+  relLuminance(r, g, b);
   const raw = L <= TARGET ? 0 : (L - TARGET) / Math.max(L - SCRIM_L, 0.01);
   const aBottom = Math.min(0.88, Math.max(0.42, raw));
 
+  // ── Chroma taper: more coverage, less hue ──
+  const sPct = Math.min(100, Math.round(s * 100));
+  const chroma = Math.round(Math.min(SCRIM_SAT_CEILING, sPct) * (1 - aBottom));
+
   return {
     h: Math.round(h),
-    s: Math.min(100, Math.round(s * 140)),
+    s: chroma,
     l: lightness,
-    aTop: Number((aBottom * 0.28).toFixed(3)),
-    aMid: Number((aBottom * 0.72).toFixed(3)),
+    aMid: Number((aBottom * 0.55).toFixed(3)),
     aBottom: Number(aBottom.toFixed(3))
   };
 };
@@ -196,6 +214,21 @@ export default function DeckBuilder() {
     return () => ro.disconnect();
   }, [activeCards.length, allTags.length]);
 
+  // Height of the whole pinned content stack (title + toolbar + filter card).
+  // The scrim fade covers exactly this and nothing above it.
+  const textStackRef = useRef(null);
+  const [textStackH, setTextStackH] = useState(190);
+
+  useLayoutEffect(() => {
+    const el = textStackRef.current;
+    if (!el) return;
+    const measure = () => setTextStackH(el.offsetHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [activeCards.length, allTags.length, editingTitle, editingDesc]);
+
   const displayedCards = useMemo(() => {
     let cards = [...activeCards];
 
@@ -320,6 +353,11 @@ export default function DeckBuilder() {
   const hasCover = !!hero.url;
   const extractedColor = useDominantColor(hero.url);
   const scrimSourceColor = hexToRgbString(deck?.accent_color) || extractedColor;
+  // Fixed band rather than one derived from live geometry, which would
+  // re-sample on every scroll tick. Approximate by design: the image is
+  // object-cover cropped by focal point, so an extreme focal point shifts what
+  // is actually displayed in this band. Null falls back to whole-image.
+  const bandLuminance = useBandLuminance(hero.url, 0.55, 1);
 
   // Scroll-driven collapse: 0 = fully expanded, 1 = fully collapsed
   const [collapseProgress, setCollapseProgress] = useState(0);
@@ -358,20 +396,31 @@ export default function DeckBuilder() {
   Math.max(0, heroHeight - filterCardH - FILTER_BOTTOM_GAP + SEARCH_ROW_CENTER) :
   heroHeight;
 
-  // Fade geometry, measured in px up from the bottom of the hero.
-  // Both ends tighten as the header collapses so the fade stays clear of the toolbar.
-  const scrim = buildScrim(scrimSourceColor);
+  // Fade geometry, in px up from the bottom of the IMAGE LAYER (the gradient
+  // div is inset-0 inside a container of height imageHeight, not heroHeight).
+  //
+  // The comment this replaces claimed px-from-bottom geometry that tightened on
+  // collapse; the implementation was fixed percentages that did neither. Both
+  // are now true. Collapse tightening is free: the visible text zone is
+  // min(textStackH, heroHeight), which clamps down as the hero shrinks.
+  const heroBottomToImageBottom = heroHeight - imageHeight;
+  const textStackVisible = Math.min(textStackH, heroHeight);
+  const fadeTop = Math.max(64, Math.round(textStackVisible - heroBottomToImageBottom));
+  const holdStop = Math.round(fadeTop * 0.30);
+  const midStop = Math.round(fadeTop * 0.62);
+
+  const scrim = buildScrim(scrimSourceColor, bandLuminance);
   const scrimGradient = scrim ?
-  `linear-gradient(to bottom,
-        hsla(${scrim.h}, ${scrim.s}%, ${scrim.l}%, ${scrim.aTop}) 0%,
-        hsla(${scrim.h}, ${scrim.s}%, ${scrim.l}%, ${scrim.aMid}) 40%,
-        hsla(${scrim.h}, ${scrim.s}%, ${scrim.l}%, ${scrim.aBottom}) 72%,
-        hsla(${scrim.h}, ${scrim.s}%, ${scrim.l}%, ${scrim.aBottom}) 100%)` :
-  `linear-gradient(to bottom,
-        rgba(0,0,0,0.20) 0%,
-        rgba(0,0,0,0.52) 40%,
-        rgba(0,0,0,0.72) 72%,
-        rgba(0,0,0,0.72) 100%)`;
+  `linear-gradient(to top,
+        hsla(${scrim.h}, ${scrim.s}%, ${scrim.l}%, ${scrim.aBottom}) 0px,
+        hsla(${scrim.h}, ${scrim.s}%, ${scrim.l}%, ${scrim.aBottom}) ${holdStop}px,
+        hsla(${scrim.h}, ${scrim.s}%, ${scrim.l}%, ${scrim.aMid}) ${midStop}px,
+        hsla(${scrim.h}, ${scrim.s}%, ${scrim.l}%, 0) ${fadeTop}px)` :
+  `linear-gradient(to top,
+        rgba(0,0,0,0.72) 0px,
+        rgba(0,0,0,0.72) ${holdStop}px,
+        rgba(0,0,0,0.40) ${midStop}px,
+        rgba(0,0,0,0) ${fadeTop}px)`;
 
   // ── Title block: title, description, card count ──
   const titleBlock =
@@ -518,7 +567,7 @@ export default function DeckBuilder() {
             </div>
 
             {/* ── Content, pinned to the bottom of the shrinking container ── */}
-            <div className="relative z-10 w-full max-w-7xl mx-auto px-4">
+            <div ref={textStackRef} className="relative z-10 w-full max-w-7xl mx-auto px-4">
               {/* Title fades out and clips away as the header collapses */}
               <div
                 style={{
