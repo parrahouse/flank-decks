@@ -707,9 +707,9 @@ export default function StudySession() {
 
 
 
+
           // already studied today, no change
-        } else if (last === yesterday) {newStreak = streak.current_streak + 1;} else {newStreak = 1;}const newLongest = Math.max(streak.longest_streak || 0, newStreak);const newMilestone = [3, 7, 14, 30, 60, 100].filter((m) => newStreak >= m).pop() || 0;await base44.entities.Streak.update(streak.id, { current_streak: newStreak, longest_streak: newLongest, last_study_date: today, milestone_reached: Math.max(streak.milestone_reached || 0, newMilestone) });} else if (currentUser?.id) {await base44.entities.Streak.create({ user_id: currentUser.id, current_streak: 1, longest_streak: 1, last_study_date: today, milestone_reached: 0 });}refetchStreak();
-      // Milestone toast
+        } else if (last === yesterday) {newStreak = streak.current_streak + 1;} else {newStreak = 1;}const newLongest = Math.max(streak.longest_streak || 0, newStreak);const newMilestone = [3, 7, 14, 30, 60, 100].filter((m) => newStreak >= m).pop() || 0;await base44.entities.Streak.update(streak.id, { current_streak: newStreak, longest_streak: newLongest, last_study_date: today, milestone_reached: Math.max(streak.milestone_reached || 0, newMilestone) });} else if (currentUser?.id) {await base44.entities.Streak.create({ user_id: currentUser.id, current_streak: 1, longest_streak: 1, last_study_date: today, milestone_reached: 0 });}refetchStreak(); // Milestone toast
       const newMilestoneVal = [3, 7, 14, 30, 60, 100].filter((m) => newStreak >= m).pop() || 0;
       const prevMilestone = streak?.milestone_reached || 0;
       if (newMilestoneVal > prevMilestone) {
@@ -1293,7 +1293,7 @@ export default function StudySession() {
 
             <Card className="rounded-[6px] shadow-none">
               <CardHeader className="space-y-0 pr-5 pl-5 pb-2 pt-3">
-                <CardTitle className="text-lg font-fraunces font-bold">
+                <CardTitle className="text-lg font-bold font-">
                   The <s className="opacity-50">many</s> two modes of Study Buddy
                 </CardTitle>
               </CardHeader>
