@@ -192,71 +192,147 @@ export default function CoverImagePicker({ mode = 'cover', open, onClose, cards,
           </p>
 
           <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
-            {/* Preview with drag-to-reposition focal point */}
-            {selected && (
+            {/* Preview with drag-to-reposition focal point. In hero mode this
+                also renders the inherited cover when no hero is set, so the
+                appearance controls always have something to preview. */}
+            {previewUrl && (
               <div className="space-y-2">
                 <div
                   ref={previewRef}
                   className={cn('relative rounded-xl overflow-hidden bg-muted select-none', isHero ? 'h-44' : 'h-36')}
                   style={{
                     touchAction: 'none',
-                    cursor: draggingPreview ? 'grabbing' : 'grab',
+                    cursor: isInherited ? 'default' : draggingPreview ? 'grabbing' : 'grab',
                   }}
-                  onPointerDown={(e) => { e.preventDefault(); beginFocalDrag(e); }}
+                  onPointerDown={(e) => { if (isInherited) return; e.preventDefault(); beginFocalDrag(e); }}
                   onPointerMove={moveFocalDrag}
                   onPointerUp={endFocalDrag}
                   onPointerCancel={endFocalDrag}
                 >
                   <img
                     ref={previewImgRef}
-                    src={selected}
-                    alt="cover preview"
+                    src={previewUrl}
+                    alt={isHero ? 'hero preview' : 'cover preview'}
                     className="w-full h-full object-cover pointer-events-none"
-                    style={{ objectPosition: `${focalPoint.x}% ${focalPoint.y}%` }}
+                    style={{ objectPosition: previewObjectPosition }}
                     draggable={false}
                   />
-                  {/* Focal point indicator */}
-                  <div
-                    className="absolute w-5 h-5 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-                    style={{ left: `${focalPoint.x}%`, top: `${focalPoint.y}%` }}
-                  >
-                    <div className="w-full h-full rounded-full border-2 border-white shadow-md bg-primary/60" />
-                  </div>
-                  {!draggingPreview && (
-                    <div className="absolute bottom-2 left-2 bg-black/50 text-white text-[10px] px-2 py-0.5 rounded-full pointer-events-none">
+
+                  {/* Scrim + sample text, hero mode only */}
+                  {isHero && !scrimDisabled && (
+                    <div className="absolute inset-0 pointer-events-none" style={{ background: previewGradient }} />
+                  )}
+                  {isHero && (
+                    <div className="absolute bottom-0 left-0 right-0 px-3 pb-2 pointer-events-none">
+                      <p className={cn("font-bold text-lg [font-family:'new-spirit',_serif] truncate", previewTone.title)}>
+                        {deckTitle || 'Deck title'}
+                      </p>
+                      {deckDescription && (
+                        <p className={cn("text-xs truncate", previewTone.desc)}>{deckDescription}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Editing affordances — only for an image this dialog owns */}
+                  {!isInherited && (
+                    <>
+                      <div
+                        className="absolute w-5 h-5 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                        style={{ left: `${focalPoint.x}%`, top: `${focalPoint.y}%` }}
+                      >
+                        <div className="w-full h-full rounded-full border-2 border-white shadow-md bg-primary/60" />
+                      </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setSelected(null); setOriginalUrl(null); setFocalPoint({ x: 50, y: 50 }); }}
+                        className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setShowEditor(true); }}
+                        className="absolute top-2 left-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                    </>
+                  )}
+
+                  {!isInherited && !draggingPreview && (
+                    <div className={cn(
+                      "absolute bg-black/50 text-white text-[10px] px-2 py-0.5 rounded-full pointer-events-none",
+                      isHero ? "top-2 left-10" : "bottom-2 left-2"
+                    )}>
                       Drag to reposition
                     </div>
                   )}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setSelected(null); setOriginalUrl(null); setFocalPoint({ x: 50, y: 50 }); }}
-                    className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setShowEditor(true); }}
-                    className="absolute top-2 left-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-muted-foreground">
-                    Focal point: {focalPoint.x}%, {focalPoint.y}%
-                  </p>
-                  {originalUrl && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelected(originalUrl);
-                        setOriginalUrl(null);
-                        setFocalPoint({ x: 50, y: 50 });
-                      }}
-                      className="text-xs text-muted-foreground hover:underline"
-                    >
-                      Revert to original (undo crop)
-                    </button>
+                  {isInherited && (
+                    <div className="absolute top-2 left-2 bg-black/50 text-white text-[10px] px-2 py-0.5 rounded-full pointer-events-none">
+                      Using cover image
+                    </div>
                   )}
+                </div>
+
+                {isInherited ? (
+                  <p className="text-xs text-muted-foreground">
+                    No hero set — the header uses the cover image. Upload or pick one below to override it. Appearance settings below apply either way.
+                  </p>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground">
+                      Focal point: {focalPoint.x}%, {focalPoint.y}%
+                    </p>
+                    {originalUrl && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelected(originalUrl);
+                          setOriginalUrl(null);
+                          setFocalPoint({ x: 50, y: 50 });
+                        }}
+                        className="text-xs text-muted-foreground hover:underline"
+                      >
+                        Revert to original (undo crop)
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {isHero && previewUrl && (
+              <div className="rounded-xl border bg-muted/30 p-3 space-y-3">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Header appearance</p>
+
+                <div className="flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-sm">Text color</p>
+                    <p className="text-xs text-muted-foreground">How the deck title and toolbar render over this image.</p>
+                  </div>
+                  <Select value={textTone} onValueChange={changeTextTone}>
+                    <SelectTrigger className="h-9 text-sm w-28 shrink-0">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="light">Light</SelectItem>
+                      <SelectItem value="dark">Dark</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className={cn("text-sm", textTone === 'dark' && "text-muted-foreground")}>Darkening scrim</p>
+                    <p className="text-xs text-muted-foreground">
+                      {textTone === 'dark'
+                        ? 'Off with dark text — dark text over a darkened image is unreadable.'
+                        : 'Fades the bottom of the image so white text stays legible.'}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={!scrimDisabled}
+                    disabled={textTone === 'dark'}
+                    onCheckedChange={(v) => setScrimDisabled(!v)}
+                  />
                 </div>
               </div>
             )}
