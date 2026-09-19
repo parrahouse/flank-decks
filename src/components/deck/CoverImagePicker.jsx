@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Upload, Check, Loader2, X, Pencil } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -8,8 +8,13 @@ import { cn } from '@/lib/utils';
 import ImageEditor from '@/components/cards/ImageEditor';
 import ImagePoolGallery from '@/components/deck/ImagePoolGallery';
 import { toast } from 'sonner';
+import useDominantColor from '@/hooks/useDominantColor';
+import useBandLuminance from '@/hooks/useBandLuminance';
+import { TONE_LIGHT, TONE_DARK, buildScrim, buildScrimGradient } from '@/lib/heroAppearance';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-export default function CoverImagePicker({ mode = 'cover', open, onClose, cards, currentUrl, currentFocalPoint, currentOriginalUrl, onSave, deckTitle, deckDescription }) {
+export default function CoverImagePicker({ mode = 'cover', open, onClose, cards, currentUrl, currentFocalPoint, currentOriginalUrl, inheritedUrl, inheritedFocalPoint, currentTextTone, currentScrimDisabled, onSave, deckTitle, deckDescription }) {
   const isHero = mode === 'hero';
   const qc = useQueryClient();
   const [selected, setSelected] = useState(currentUrl || null);
@@ -21,12 +26,63 @@ export default function CoverImagePicker({ mode = 'cover', open, onClose, cards,
   const [showEditor, setShowEditor] = useState(false);
   const [addToPool, setAddToPool] = useState(false);
   const [poolTags, setPoolTags] = useState('');
+  const [textTone, setTextTone] = useState(currentTextTone || 'light');
+  const [scrimDisabled, setScrimDisabled] = useState(!!currentScrimDisabled);
+  // Remembers the author's scrim choice under light tone, so a round-trip
+  // through dark tone does not silently discard it.
+  const lightScrimPrefRef = useRef(!!currentScrimDisabled);
   const fileRef = useRef();
 
   const parseTags = (str) => str.split(',').map((t) => t.trim()).filter(Boolean);
   const previewRef = useRef();
   const previewImgRef = useRef();
   const focalDragRef = useRef();
+
+  // Dark text over a darkened image is the one always-wrong combination, so the
+  // tone owns the scrim. The switch is disabled, not merely overridden, so that
+  // state is never reachable by clicking.
+  const changeTextTone = (next) => {
+    if (next === 'dark') {
+      lightScrimPrefRef.current = scrimDisabled;
+      setScrimDisabled(true);
+    } else {
+      setScrimDisabled(lightScrimPrefRef.current);
+    }
+    setTextTone(next);
+  };
+
+  // In hero mode the header falls back to the cover when no hero is set, so the
+  // preview must show that fallback. It is display-only: the focal point and
+  // crop of an inherited cover belong to the cover picker, not this dialog.
+  const previewUrl = selected || (isHero ? inheritedUrl || null : null);
+  const isInherited = !selected && !!previewUrl;
+  const inheritedFp = inheritedFocalPoint || { x: 50, y: 50 };
+  const previewObjectPosition = isInherited
+    ? `${inheritedFp.x}% ${inheritedFp.y}%`
+    : `${focalPoint.x}% ${focalPoint.y}%`;
+
+  // Live scrim preview. Same extraction hooks and same gradient builder as the
+  // header, so what is previewed is what renders.
+  const PREVIEW_FADE_RATIO = 0.62; // fraction of the pane the fade covers
+  const previewColor = useDominantColor(isHero ? previewUrl : null);
+  const previewBandL = useBandLuminance(isHero ? previewUrl : null, 0.55, 1);
+  const previewScrim = buildScrim(previewColor, previewBandL);
+  const previewTone = textTone === 'dark' ? TONE_DARK : TONE_LIGHT;
+  const previewGradient = buildScrimGradient(previewScrim, Math.round(176 * PREVIEW_FADE_RATIO)); // h-44 = 176px
+
+  // All state above initializes from props on FIRST MOUNT only, and this dialog
+  // stays mounted between opens. Without this, cancelling and reopening shows
+  // the abandoned edit rather than what is saved. Pre-existing for the image
+  // fields; fixed here rather than reproduced for the two new ones.
+  useEffect(() => {
+    if (!open) return;
+    setSelected(currentUrl || null);
+    setOriginalUrl(currentOriginalUrl || null);
+    setFocalPoint(currentFocalPoint || { x: 50, y: 50 });
+    setTextTone(currentTextTone || 'light');
+    setScrimDisabled(!!currentScrimDisabled);
+    lightScrimPrefRef.current = !!currentScrimDisabled;
+  }, [open]);
 
   const cardImages = cards.filter(c => c.image_url);
 
