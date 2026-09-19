@@ -1256,10 +1256,6 @@ export default function StudySession() {
                 <CardTitle className="text-lg font-inter font-semibold">
                   Can we interest you in a little cheating?
                 </CardTitle>
-                <p className="mt-1 text-[13px] leading-snug text-muted-foreground">
-                  Just kidding! We actually call these options “Brain Boosters” and there’s nothing
-                  wrong with using them… as long as you don’t mind being a cheater.
-                </p>
               </CardHeader>
               <CardContent className="divide-y divide-border px-5 pb-3 pt-0">
                 <SettingRow htmlFor="allow-2nd-guesses" label="Allow 2nd guesses" hint="Let a wrong first pick be retried once">
