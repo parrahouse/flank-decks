@@ -78,6 +78,15 @@
       "default": false,
       "description": "When true, the chromatic scrim over the deck editing header hero is suppressed entirely."
     },
+    "hero_text_tone": {
+      "type": "string",
+      "enum": [
+        "light",
+        "dark"
+      ],
+      "default": "light",
+      "description": "Text color treatment for the deck editing header. 'light' is white text over the chromatic scrim. 'dark' is near-black text with the scrim suppressed, for bright or flat-color cover art that the scrim muddies."
+    },
     "accent_color": {
       "type": "string",
       "description": "Optional manual override for the header scrim color, as a hex string like #4A7C2F. When absent, the color is auto-extracted from the cover image."
