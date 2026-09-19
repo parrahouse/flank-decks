@@ -1252,7 +1252,7 @@ export default function StudySession() {
           {/* Right: brain boosters, study buddy modes, layout, start */}
           <div className="flex w-full flex-col gap-4">
             <Card className="rounded-[6px] shadow-none">
-              <CardHeader className="space-y-0 pr-6 pl-6 pt-1 pb-2">
+              <CardHeader className="space-y-0 pr-6 pl-6 pt-2 pb-1">
                 <CardTitle className="font-inter font-semibold">
                   Study Aids
                 </CardTitle>
@@ -1292,7 +1292,7 @@ export default function StudySession() {
             </Card>
 
             <Card className="rounded-[6px] shadow-none">
-              <CardHeader className="space-y-0 pr-5 pl-5 pb-1 pt-3">
+              <CardHeader className="space-y-0 pr-5 pl-5 pb-1 pt-2">
                 <CardTitle className="font-inter font-semibold">
                   Study Buddy Modes
                 </CardTitle>
