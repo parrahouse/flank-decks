@@ -457,12 +457,9 @@ export default function DeckBuilder() {
         <>
           {/* ═══ Sticky collapsing hero ═══ */}
           <div
-            className="sticky top-14 z-30 overflow-hidden flex flex-col justify-end"
+            className="sticky top-14 z-30 overflow-hidden flex flex-col justify-end -mx-4"
             style={{
-              height: `${heroHeight}px`,
-              width: '100vw',
-              marginLeft: 'calc(50% - 50vw)',
-              marginRight: 'calc(50% - 50vw)'
+              height: `${heroHeight}px`
             }}>
             
             {/* ── Image layer: top-anchored, stops at mid-search-input ── */}
