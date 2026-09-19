@@ -22,6 +22,50 @@ import { resolveHero } from '@/lib/deckImages';
 const HERO_EXPANDED = 380; // px — full height at scroll top
 const HERO_COLLAPSED = 200; // px — height once collapsed (toolbar + filter bar)
 
+/**
+ * Header text treatments. One is selected per render and its class strings are
+ * spread across the title, description and toolbar.
+ *
+ * Every value is a literal string so Tailwind's scanner emits the CSS. Do not
+ * build these by concatenation or interpolation.
+ *
+ * LIGHT and DARK both sit on cover art, so their colors are hardcoded rather
+ * than themed — they must not follow dark mode. PLAIN is the no-cover header,
+ * which sits on the app surface and does follow it.
+ */
+const TONE_LIGHT = {
+  title: 'text-white',
+  titleIcon: 'text-white/70',
+  desc: 'text-white/80 group-hover:text-white',
+  descPlaceholder: 'text-white/50 group-hover:text-white/80',
+  descIcon: 'text-white/40 group-hover:text-white/70',
+  count: 'text-white/70',
+  btnPrimary: 'text-white hover:!bg-white/10 hover:!text-white',
+  btnSecondary: 'text-white/80 hover:!bg-white/10 hover:!text-white'
+};
+
+const TONE_DARK = {
+  title: 'text-slate-900',
+  titleIcon: 'text-slate-900/70',
+  desc: 'text-slate-900/80 group-hover:text-slate-900',
+  descPlaceholder: 'text-slate-900/50 group-hover:text-slate-900/80',
+  descIcon: 'text-slate-900/40 group-hover:text-slate-900/70',
+  count: 'text-slate-900/70',
+  btnPrimary: 'text-slate-900 hover:!bg-black/10 hover:!text-slate-900',
+  btnSecondary: 'text-slate-900/80 hover:!bg-black/10 hover:!text-slate-900'
+};
+
+const TONE_PLAIN = {
+  title: '',
+  titleIcon: 'text-muted-foreground',
+  desc: 'text-muted-foreground group-hover:text-foreground',
+  descPlaceholder: 'text-muted-foreground/50 group-hover:text-muted-foreground',
+  descIcon: 'text-muted-foreground/40 group-hover:text-muted-foreground',
+  count: 'text-muted-foreground',
+  btnPrimary: '',
+  btnSecondary: 'text-muted-foreground hover:text-foreground'
+};
+
 /** sRGB channel → linear, for luminance math. */
 const srgbToLinear = (c) =>
 c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
@@ -353,6 +397,13 @@ export default function DeckBuilder() {
   const hasCover = !!hero.url;
   const extractedColor = useDominantColor(hero.url);
   const scrimSourceColor = hexToRgbString(deck?.accent_color) || extractedColor;
+
+  const darkTone = hasCover && deck?.hero_text_tone === 'dark';
+  const tone = !hasCover ? TONE_PLAIN : darkTone ? TONE_DARK : TONE_LIGHT;
+  // Dark text over a darkened image is the one always-wrong combination, so the
+  // tone owns the scrim rather than leaving the two independently settable.
+  const scrimSuppressed = darkTone || !!deck?.hero_scrim_disabled;
+
   // Fixed band rather than one derived from live geometry, which would
   // re-sample on every scroll tick. Approximate by design: the image is
   // object-cover cropped by focal point, so an extreme focal point shifts what
@@ -441,9 +492,9 @@ export default function DeckBuilder() {
           <button onClick={cancelEditTitle} className="text-xs text-muted-foreground hover:text-foreground shrink-0">Cancel</button>
         </div> :
 
-    <h1 className={cn("font-bold group/title flex items-center gap-1.5 cursor-text [font-family:'new-spirit',_serif] text-2xl", hasCover && "text-white")} onClick={startEditTitle} title="Click to edit title">
+    <h1 className={cn("font-bold group/title flex items-center gap-1.5 cursor-text [font-family:'new-spirit',_serif] text-2xl", tone.title)} onClick={startEditTitle} title="Click to edit title">
           {deck?.title || 'Loading…'}
-          <Pencil className={cn("w-3.5 h-3.5 opacity-0 group-hover/title:opacity-100 transition-opacity", hasCover ? "text-white/70" : "text-muted-foreground")} />
+          <Pencil className={cn("w-3.5 h-3.5 opacity-0 group-hover/title:opacity-100 transition-opacity", tone.titleIcon)} />
         </h1>
     }
       {editingDesc ?
@@ -482,23 +533,23 @@ export default function DeckBuilder() {
 
     <button onClick={startEditDesc} className="group flex items-start gap-1 text-left mt-0.5">
           {deck?.description ?
-      <span className={cn("text-sm transition-colors line-clamp-2", hasCover ? "text-white/80 group-hover:text-white" : "text-muted-foreground group-hover:text-foreground")}>{deck.description}</span> :
-      <span className={cn("text-sm italic transition-colors", hasCover ? "text-white/50 group-hover:text-white/80" : "text-muted-foreground/50 group-hover:text-muted-foreground")}>Add description…</span>
+      <span className={cn("text-sm transition-colors line-clamp-2", tone.desc)}>{deck.description}</span> :
+      <span className={cn("text-sm italic transition-colors", tone.descPlaceholder)}>Add description…</span>
       }
-          <Pencil className={cn("w-3 h-3 shrink-0 mt-0.5 transition-colors", hasCover ? "text-white/40 group-hover:text-white/70" : "text-muted-foreground/40 group-hover:text-muted-foreground")} />
+          <Pencil className={cn("w-3 h-3 shrink-0 mt-0.5 transition-colors", tone.descIcon)} />
         </button>
     }
-      <p className={cn("text-xs mt-1", hasCover ? "text-white/70" : "text-muted-foreground")}>{activeCards.length} {activeCards.length === 1 ? 'card' : 'cards'}</p>
+      <p className={cn("text-xs mt-1", tone.count)}>{activeCards.length} {activeCards.length === 1 ? 'card' : 'cards'}</p>
     </div>;
 
 
   // ── Toolbar block: action buttons ──
   const toolbarBlock =
   <div className="px-3 pb-2 flex flex-wrap items-center gap-1">
-      <Button variant="ghost" size="sm" onClick={openAdd} className={cn("gap-1.5 h-9", hasCover && "text-white hover:!bg-white/10 hover:!text-white")}>
+      <Button variant="ghost" size="sm" onClick={openAdd} className={cn("gap-1.5 h-9", tone.btnPrimary)}>
         <Plus className="w-4 h-4" /> Add Card
       </Button>
-      <Button variant="ghost" size="sm" onClick={() => setShowCsvUpload(true)} className={cn("gap-1.5 h-9", hasCover ? "text-white/80 hover:!bg-white/10 hover:!text-white" : "text-muted-foreground hover:text-foreground")}>
+      <Button variant="ghost" size="sm" onClick={() => setShowCsvUpload(true)} className={cn("gap-1.5 h-9", tone.btnSecondary)}>
         <Upload className="w-4 h-4" /> Import CSV
       </Button>
       {!hasCover && activeCards.length > 0 && (
@@ -508,10 +559,10 @@ export default function DeckBuilder() {
           </Button>
         </Link>
       )}
-      <Button variant="ghost" size="sm" onClick={() => setShowCoverPicker(true)} className={cn("gap-1.5 h-9", hasCover && "ml-auto", hasCover ? "text-white/80 hover:!bg-white/10 hover:!text-white" : "text-muted-foreground hover:text-foreground")}>
+      <Button variant="ghost" size="sm" onClick={() => setShowCoverPicker(true)} className={cn("gap-1.5 h-9", hasCover && "ml-auto", tone.btnSecondary)}>
         <ImageIcon className="w-4 h-4" /> Set cover
       </Button>
-      <Button variant="ghost" size="sm" onClick={() => setShowHeroPicker(true)} className={cn("gap-1.5 h-9", hasCover ? "text-white/80 hover:!bg-white/10 hover:!text-white" : "text-muted-foreground hover:text-foreground")}>
+      <Button variant="ghost" size="sm" onClick={() => setShowHeroPicker(true)} className={cn("gap-1.5 h-9", tone.btnSecondary)}>
         <ImageIcon className="w-4 h-4" /> Set hero
       </Button>
     </div>;
@@ -543,9 +594,9 @@ export default function DeckBuilder() {
                 style={{ objectPosition: coverObjectPosition }} />
               
 
-              {/* Chromatic scrim — hue from the hero image, lightness clamped for
-                  contrast. Suppressed entirely when the deck opts out. */}
-              {!hero.scrimDisabled && (
+              {/* Chromatic scrim — suppressed under dark text tone, which relies
+                  on the untouched image for contrast. */}
+              {!scrimSuppressed && (
                 <div className="absolute inset-0" style={{ background: scrimGradient }} />
               )}
             </div>

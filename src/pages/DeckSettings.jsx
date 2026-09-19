@@ -135,6 +135,24 @@ export default function DeckSettings() {
         {/* Appearance */}
         <Section title="Appearance">
           <Row
+            label="Header text color"
+            description="Dark text removes the darkening scrim and sits directly on the cover art. Use it for bright or flat-color covers that the scrim muddies."
+          >
+            <Select
+              value={deck.hero_text_tone || 'light'}
+              onValueChange={(val) => updateDeckMutation.mutate({ hero_text_tone: val })}
+            >
+              <SelectTrigger className="h-9 text-sm w-28">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="light">Light</SelectItem>
+                <SelectItem value="dark">Dark</SelectItem>
+              </SelectContent>
+            </Select>
+          </Row>
+
+          <Row
             label="Header accent color"
             description="Overrides the color extracted from the cover image. Clear it to go back to automatic."
           >
