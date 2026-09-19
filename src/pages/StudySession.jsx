@@ -1254,7 +1254,7 @@ export default function StudySession() {
             <Card className="rounded-[6px] shadow-none">
               <CardHeader className="space-y-0 p-5 pb-2">
                 <CardTitle className="text-lg font-inter font-semibold">
-                  Can we interest you in a little cheating?
+                  Study Aids
                 </CardTitle>
               </CardHeader>
               <CardContent className="divide-y divide-border px-5 pb-3 pt-0">
