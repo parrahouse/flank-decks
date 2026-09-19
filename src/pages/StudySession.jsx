@@ -547,7 +547,7 @@ export default function StudySession() {
   const handleStartSession = () => {
     if (launching) return;
     setLaunching(true);
-    setTimeout(() => startSession(selectedPool), 800);
+    setTimeout(() => startSession(selectedPool), 1200);
   };
 
   const startSession = (mode) => {
