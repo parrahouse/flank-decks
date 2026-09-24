@@ -111,7 +111,10 @@ export default function Home() {
   const [showForm, setShowForm] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [editingDeck, setEditingDeck] = useState(null);
-  const [shareDeck, setShareDeck] = useState(null);
+  const [shareDeckId, setShareDeckId] = useState(null);
+  // Derive from the decks array so the modal reflects updates (e.g. after
+  // enabling sharing) without holding a stale snapshot.
+  const shareDeck = useMemo(() => decks.find((d) => d.id === shareDeckId) || null, [decks, shareDeckId]);
   const [coverDeck, setCoverDeck] = useState(null);
   const [collectionsDeck, setCollectionsDeck] = useState(null);
   const [showAddLink, setShowAddLink] = useState(false);
@@ -258,7 +261,7 @@ export default function Home() {
             onEdit={openEdit}
             onDelete={(d) => deleteMutation.mutate(d)}
             onDuplicate={(d) => duplicateMutation.mutate(d)}
-            onShare={(d) => setShareDeck(d)}
+            onShare={(d) => setShareDeckId(d.id)}
             onSetCover={(d) => setCoverDeck(d)}
             onCollections={(d) => setCollectionsDeck(d)}
             isShared={!ownedIds.has(deck.id)}
@@ -295,7 +298,7 @@ export default function Home() {
         </DialogContent>
       </Dialog>
 
-      <ShareModal deck={shareDeck} open={!!shareDeck} onClose={() => setShareDeck(null)} />
+      <ShareModal deck={shareDeck} open={!!shareDeck} onClose={() => setShareDeckId(null)} />
 
       <AddDeckByLinkDialog open={showAddLink} onClose={() => setShowAddLink(false)} />
 
