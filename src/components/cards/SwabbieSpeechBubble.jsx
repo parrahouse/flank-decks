@@ -27,9 +27,30 @@ const CONTENT_CSS = `
 // Pixel-art 2px chamfered corners (replaces smooth border-radius).
 const PIXEL_CLIP = 'polygon(0 2px, 2px 2px, 2px 0, calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px))';
 
+// Block elements are flattened into one inline stream, so adjacent blocks
+// (Quill emits <p>a</p><p>b</p> with no whitespace between) would join words
+// ("end.Next"). Insert real space text nodes at block boundaries and turn <br>
+// into a space. Because the separators are actual text nodes, plainText,
+// countText, renderNode and measurePages all count them identically, so
+// page/char offsets stay consistent everywhere (including narration).
+function separateBlocks(root) {
+  const endsWs = (n) => n && n.nodeType === Node.TEXT_NODE && /\s$/.test(n.textContent);
+  const startsWs = (n) => n && n.nodeType === Node.TEXT_NODE && /^\s/.test(n.textContent);
+  for (const el of Array.from(root.querySelectorAll('*'))) {
+    if (el.tagName === 'BR') {
+      el.replaceWith(document.createTextNode(' '));
+      continue;
+    }
+    if (INLINE_TAGS.has(el.tagName)) continue;
+    if (el.previousSibling && !endsWs(el.previousSibling)) el.before(document.createTextNode(' '));
+    if (el.nextSibling && !startsWs(el.nextSibling)) el.after(document.createTextNode(' '));
+  }
+}
+
 function parseHtml(html) {
   const host = document.createElement('div');
   host.innerHTML = html || '';
+  separateBlocks(host);
   return Array.from(host.childNodes);
 }
 
