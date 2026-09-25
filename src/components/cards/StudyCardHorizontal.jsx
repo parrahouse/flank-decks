@@ -25,6 +25,8 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/useSound';
 import { motion } from 'framer-motion';
+import { useNarration } from '@/hooks/useNarration';
+import NarrationButton from './NarrationButton';
 
 const COUNTDOWN_SECS = 6;
 
@@ -64,6 +66,7 @@ export default function StudyCardHorizontal({
   childVariant = null,
 }) {
   const { playCorrect, playWrong } = useSound(soundEnabled);
+  const { speak: speakNarration, getStatus: getNarrationStatus, clear: clearNarration } = useNarration();
   const [shuffledChoices, setShuffledChoices] = useState([]);
   const [firstWrong, setFirstWrong] = useState(null);
   const [finalAnswer, setFinalAnswer] = useState(null);
@@ -125,7 +128,8 @@ export default function StudyCardHorizontal({
     setHintVisible(false); setBookmarked(isBookmarked); setSelectAllPending(new Set());
     cancelCountdown(); clearTimeout(idleTimerRef.current);
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-  }, [card.id]);
+    clearNarration();
+  }, [card.id, clearNarration]);
 
   useEffect(() => () => { cancelCountdown(); clearTimeout(idleTimerRef.current); clearTimeout(shakeTimerRef.current); }, []);
 
@@ -310,6 +314,16 @@ export default function StudyCardHorizontal({
             {card.clue || ''}
           </p>
         </div>
+        {!hintVisible && (
+          <NarrationButton
+            text={card.clue || ''}
+            getStatus={getNarrationStatus}
+            onSpeak={speakNarration}
+            size={showImage ? 16 : 20}
+            color="hsl(var(--study-pane-text))"
+            style={{ position: 'absolute', top: 8, right: 12, opacity: 0.7, zIndex: 2 }}
+          />
+        )}
         {hintVisible && note && (
           <div style={{ position: 'absolute', inset: 0, padding: '16px 16px 36px 16px', display: 'flex', alignItems: 'flex-start' }}>
             <p style={{ color: 'hsl(var(--study-hint-text))', fontSize: 'clamp(13px, 1.6vw, 18px)', fontWeight: 500, lineHeight: 1.35, margin: 0 }}>{note}</p>
@@ -411,15 +425,24 @@ export default function StudyCardHorizontal({
                   {shuffledChoices.map((choice, idx) => {
                     const state = getChoiceState(choice);
                     return (
-                      <button key={choice} disabled={answered} onClick={() => handleSelect(choice)}
-                        className={cn('choice-btn', shakingChoice === choice && 'animate-shake')}
-                        style={{ flex: 1, height: GEO.tfMaxH, boxSizing: 'border-box', overflow: 'hidden', borderRadius: 10, border: `2px solid ${choiceBorderColor(state)}`, backgroundColor: choiceBgColor(state), display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', cursor: answered ? 'default' : 'pointer', fontSize: GEO.choiceFont, fontWeight: 500, textAlign: 'left', transition: state === 'correct' ? 'none' : 'border-color 0.4s ease 0.15s, background-color 0.4s ease 0.15s' }}
-                      >
-                        <span style={{ width: 26, height: 26, borderRadius: 5, flexShrink: 0, backgroundColor: state === 'correct' ? 'hsl(var(--study-correct))' : state === 'wrong-final' ? 'hsl(var(--study-wrong))' : 'hsl(var(--study-badge))', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>
-                          {state === 'correct' ? <Check style={{ width: 14, height: 14 }} /> : state === 'wrong-final' ? <X style={{ width: 13, height: 13 }} /> : LETTERS[idx]}
-                        </span>
-                        {choice}
-                      </button>
+                      <div key={choice} style={{ display: 'flex', gap: 6, alignItems: 'center', flex: 1, height: GEO.tfMaxH }}>
+                        <button disabled={answered} onClick={() => handleSelect(choice)}
+                          className={cn('choice-btn', shakingChoice === choice && 'animate-shake')}
+                          style={{ flex: 1, height: '100%', boxSizing: 'border-box', overflow: 'hidden', borderRadius: 10, border: `2px solid ${choiceBorderColor(state)}`, backgroundColor: choiceBgColor(state), display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', cursor: answered ? 'default' : 'pointer', fontSize: GEO.choiceFont, fontWeight: 500, textAlign: 'left', transition: state === 'correct' ? 'none' : 'border-color 0.4s ease 0.15s, background-color 0.4s ease 0.15s' }}
+                        >
+                          <span style={{ width: 26, height: 26, borderRadius: 5, flexShrink: 0, backgroundColor: state === 'correct' ? 'hsl(var(--study-correct))' : state === 'wrong-final' ? 'hsl(var(--study-wrong))' : 'hsl(var(--study-badge))', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>
+                            {state === 'correct' ? <Check style={{ width: 14, height: 14 }} /> : state === 'wrong-final' ? <X style={{ width: 13, height: 13 }} /> : LETTERS[idx]}
+                          </span>
+                          {choice}
+                        </button>
+                        <NarrationButton
+                          text={choice}
+                          getStatus={getNarrationStatus}
+                          onSpeak={speakNarration}
+                          size={15}
+                          color="hsl(var(--muted-foreground))"
+                        />
+                      </div>
                     );
                   })}
                 </div>
@@ -428,15 +451,24 @@ export default function StudyCardHorizontal({
                   {shuffledChoices.map((choice, idx) => {
                     const state = getChoiceState(choice);
                     return (
-                      <button key={choice} disabled={state === 'eliminated' || answered} onClick={() => handleSelect(choice)}
-                        className={cn('choice-btn', shakingChoice === choice && 'animate-shake')}
-                        style={{ width: '100%', flex: '1 1 0', minHeight: 0, maxHeight: GEO.choiceMaxH, boxSizing: 'border-box', overflow: 'hidden', borderRadius: 8, border: `2px solid ${choiceBorderColor(state)}`, backgroundColor: choiceBgColor(state), opacity: state === 'eliminated' || state === 'dim' ? 0.4 : 1, display: 'flex', alignItems: 'center', gap: 8, padding: GEO.choicePad, cursor: answered || state === 'eliminated' ? 'default' : 'pointer', fontSize: GEO.choiceFont, fontWeight: 500, textAlign: 'left', transition: state === 'correct' ? 'none' : 'border-color 0.4s ease 0.15s, background-color 0.4s ease 0.15s, opacity 0.4s ease 0.15s' }}
-                      >
-                        <span style={{ width: 26, height: 26, borderRadius: 5, flexShrink: 0, backgroundColor: state === 'correct' ? 'hsl(var(--study-correct))' : state === 'wrong-final' ? 'hsl(var(--study-wrong))' : state === 'missed-correct' ? 'hsl(var(--study-missed))' : state === 'selected-pending' ? 'hsl(var(--study-missed))' : 'hsl(var(--study-badge))', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>
-                          {state === 'correct' || state === 'missed-correct' ? <Check style={{ width: 13, height: 13 }} /> : state === 'wrong-final' ? <X style={{ width: 13, height: 13 }} /> : (isSelectAll && state === 'first-wrong') ? <X style={{ width: 13, height: 13 }} /> : LETTERS[idx]}
-                        </span>
-                        <span style={{ flex: 1, lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{choice}</span>
-                      </button>
+                      <div key={choice} style={{ display: 'flex', gap: 6, alignItems: 'center', width: '100%', flex: '1 1 0', minHeight: 0, maxHeight: GEO.choiceMaxH }}>
+                        <button disabled={state === 'eliminated' || answered} onClick={() => handleSelect(choice)}
+                          className={cn('choice-btn', shakingChoice === choice && 'animate-shake')}
+                          style={{ flex: 1, height: '100%', minHeight: 0, boxSizing: 'border-box', overflow: 'hidden', borderRadius: 8, border: `2px solid ${choiceBorderColor(state)}`, backgroundColor: choiceBgColor(state), opacity: state === 'eliminated' || state === 'dim' ? 0.4 : 1, display: 'flex', alignItems: 'center', gap: 8, padding: GEO.choicePad, cursor: answered || state === 'eliminated' ? 'default' : 'pointer', fontSize: GEO.choiceFont, fontWeight: 500, textAlign: 'left', transition: state === 'correct' ? 'none' : 'border-color 0.4s ease 0.15s, background-color 0.4s ease 0.15s, opacity 0.4s ease 0.15s' }}
+                        >
+                          <span style={{ width: 26, height: 26, borderRadius: 5, flexShrink: 0, backgroundColor: state === 'correct' ? 'hsl(var(--study-correct))' : state === 'wrong-final' ? 'hsl(var(--study-wrong))' : state === 'missed-correct' ? 'hsl(var(--study-missed))' : state === 'selected-pending' ? 'hsl(var(--study-missed))' : 'hsl(var(--study-badge))', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>
+                            {state === 'correct' || state === 'missed-correct' ? <Check style={{ width: 13, height: 13 }} /> : state === 'wrong-final' ? <X style={{ width: 13, height: 13 }} /> : (isSelectAll && state === 'first-wrong') ? <X style={{ width: 13, height: 13 }} /> : LETTERS[idx]}
+                          </span>
+                          <span style={{ flex: 1, lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{choice}</span>
+                        </button>
+                        <NarrationButton
+                          text={choice}
+                          getStatus={getNarrationStatus}
+                          onSpeak={speakNarration}
+                          size={15}
+                          color="hsl(var(--muted-foreground))"
+                        />
+                      </div>
                     );
                   })}
                   {/* Reserve the session's max slot count so bar height is identical on every card */}

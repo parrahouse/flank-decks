@@ -25,6 +25,8 @@ import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/useSound';
 import MathRenderer from '@/components/ui/MathRenderer';
 import { motion } from 'framer-motion';
+import { useNarration } from '@/hooks/useNarration';
+import NarrationButton from './NarrationButton';
 
 const COUNTDOWN_SECS = 6;
 
@@ -95,6 +97,7 @@ export default function StudyCard({
   childVariant = null,
 }) {
   const { playCorrect, playWrong } = useSound(soundEnabled);
+  const { speak: speakNarration, getStatus: getNarrationStatus, clear: clearNarration } = useNarration();
   const [shuffledChoices, setShuffledChoices] = useState([]);
   const [firstWrong, setFirstWrong] = useState(null);
   const [finalAnswer, setFinalAnswer] = useState(null);
@@ -166,7 +169,8 @@ export default function StudyCard({
     cancelCountdown();
     clearTimeout(idleTimerRef.current);
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-  }, [card.id]);
+    clearNarration();
+  }, [card.id, clearNarration]);
 
   useEffect(() => () => { cancelCountdown(); clearTimeout(idleTimerRef.current); clearTimeout(shakeTimerRef.current); }, []);
 
@@ -400,6 +404,16 @@ export default function StudyCard({
           {qBgImage && <div aria-hidden style={qBgImage} />}
           {qBgOverlay && <div aria-hidden style={qBgOverlay} />}
           <MathRenderer text={card.clue || ''} className="block" style={{ position: 'relative', color: 'hsl(var(--study-pane-text))', fontSize: showImage ? 'clamp(14px, 2.2vw, 22px)' : 'clamp(22px, 4.5vw, 44px)', fontWeight: 500, lineHeight: 1.3, visibility: hintVisible ? 'hidden' : 'visible' }} />
+          {!hintVisible && (
+            <NarrationButton
+              text={card.clue || ''}
+              getStatus={getNarrationStatus}
+              onSpeak={speakNarration}
+              size={showImage ? 18 : 22}
+              color="hsl(var(--study-pane-text))"
+              style={{ position: 'absolute', top: 10, right: 14, opacity: 0.7, zIndex: 2 }}
+            />
+          )}
 
           {/* Hint overlay — absolutely positioned so it doesn't affect pane height */}
           {hintVisible && note && (
@@ -509,35 +523,43 @@ export default function StudyCard({
                   {shuffledChoices.map((choice, idx) => {
                     const state = getChoiceState(choice);
                     return (
-                      <button
-                        key={choice}
-                        disabled={answered}
-                        onClick={() => handleSelect(choice)}
-                        className={cn('choice-btn', shakingChoice === choice && 'animate-shake')}
-                        style={{
-                          flex: 1, minHeight: 64,
-                          borderRadius: 12,
-                          border: `2px solid ${choiceBorderColor(state)}`,
-                          backgroundColor: choiceBgColor(state),
-                          display: 'flex', alignItems: 'center', gap: 10,
-                          padding: '10px 16px',
-                          cursor: answered ? 'default' : 'pointer',
-                          fontSize: 16, fontWeight: 500,
-                          textAlign: 'left',
-                          transition: state === 'correct' ? 'none' : 'border-color 0.4s ease 0.15s, background-color 0.4s ease 0.15s',
-                        }}
-                      >
-                        <span style={{
-                          width: 30, height: 30, borderRadius: 6, flexShrink: 0,
-                          backgroundColor: state === 'correct' ? 'hsl(var(--study-correct))' : state === 'wrong-final' ? 'hsl(var(--study-wrong))' : 'hsl(var(--study-badge))',
-                          color: '#fff',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 13, fontWeight: 700,
-                        }}>
-                          {state === 'correct' ? <Check style={{ width: 16, height: 16 }} /> : state === 'wrong-final' ? <X style={{ width: 16, height: 16 }} /> : LETTERS[idx]}
-                        </span>
-                        <MathRenderer text={choice} />
-                      </button>
+                      <div key={choice} style={{ display: 'flex', gap: 6, alignItems: 'center', flex: 1 }}>
+                        <button
+                          disabled={answered}
+                          onClick={() => handleSelect(choice)}
+                          className={cn('choice-btn', shakingChoice === choice && 'animate-shake')}
+                          style={{
+                            flex: 1, minHeight: 64,
+                            borderRadius: 12,
+                            border: `2px solid ${choiceBorderColor(state)}`,
+                            backgroundColor: choiceBgColor(state),
+                            display: 'flex', alignItems: 'center', gap: 10,
+                            padding: '10px 16px',
+                            cursor: answered ? 'default' : 'pointer',
+                            fontSize: 16, fontWeight: 500,
+                            textAlign: 'left',
+                            transition: state === 'correct' ? 'none' : 'border-color 0.4s ease 0.15s, background-color 0.4s ease 0.15s',
+                          }}
+                        >
+                          <span style={{
+                            width: 30, height: 30, borderRadius: 6, flexShrink: 0,
+                            backgroundColor: state === 'correct' ? 'hsl(var(--study-correct))' : state === 'wrong-final' ? 'hsl(var(--study-wrong))' : 'hsl(var(--study-badge))',
+                            color: '#fff',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 13, fontWeight: 700,
+                          }}>
+                            {state === 'correct' ? <Check style={{ width: 16, height: 16 }} /> : state === 'wrong-final' ? <X style={{ width: 16, height: 16 }} /> : LETTERS[idx]}
+                          </span>
+                          <MathRenderer text={choice} />
+                        </button>
+                        <NarrationButton
+                          text={choice}
+                          getStatus={getNarrationStatus}
+                          onSpeak={speakNarration}
+                          size={16}
+                          color="hsl(var(--muted-foreground))"
+                        />
+                      </div>
                     );
                   })}
                 </div>
@@ -546,48 +568,56 @@ export default function StudyCard({
                   {shuffledChoices.map((choice, idx) => {
                     const state = getChoiceState(choice);
                     return (
-                      <button
-                        key={choice}
-                        disabled={state === 'eliminated' || answered}
-                        onClick={() => handleSelect(choice)}
-                        className={cn('choice-btn', shakingChoice === choice && 'animate-shake')}
-                        style={{
-                          width: '100%',
-                          minHeight: choiceStyle.minHeight,
-                          borderRadius: 10,
-                          border: `2px solid ${choiceBorderColor(state)}`,
-                          backgroundColor: choiceBgColor(state),
-                          opacity: state === 'eliminated' || state === 'dim' ? 0.4 : 1,
-                          display: 'flex', alignItems: 'center', gap: 10,
-                          padding: choiceStyle.padding,
-                          cursor: answered || state === 'eliminated' ? 'default' : 'pointer',
-                          fontSize: choiceStyle.fontSize, fontWeight: 500,
-                          textAlign: 'left',
-                          transition: state === 'correct' ? 'transform 0.12s ease' : 'border-color 0.4s ease 0.15s, background-color 0.4s ease 0.15s, opacity 0.4s ease 0.15s, transform 0.12s ease',
-                        }}
-                      >
-                        <span style={{
-                          width: 28, height: 28, borderRadius: 5, flexShrink: 0,
-                          backgroundColor:
-                            state === 'correct' ? 'hsl(var(--study-correct))' :
-                            state === 'wrong-final' ? 'hsl(var(--study-wrong))' :
-                            state === 'missed-correct' ? 'hsl(var(--study-missed))' :
-                            state === 'selected-pending' ? 'hsl(var(--study-missed))' :
-                            'hsl(var(--study-badge))',
-                          color: '#fff',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 12, fontWeight: 700,
-                        }}>
-                          {state === 'correct' || state === 'missed-correct'
-                            ? <Check style={{ width: 14, height: 14 }} />
-                            : state === 'wrong-final'
-                              ? <X style={{ width: 14, height: 14 }} />
-                              : (isSelectAll && state === 'first-wrong')
+                      <div key={choice} style={{ display: 'flex', gap: 6, alignItems: 'center', width: '100%' }}>
+                        <button
+                          disabled={state === 'eliminated' || answered}
+                          onClick={() => handleSelect(choice)}
+                          className={cn('choice-btn', shakingChoice === choice && 'animate-shake')}
+                          style={{
+                            flex: 1,
+                            minHeight: choiceStyle.minHeight,
+                            borderRadius: 10,
+                            border: `2px solid ${choiceBorderColor(state)}`,
+                            backgroundColor: choiceBgColor(state),
+                            opacity: state === 'eliminated' || state === 'dim' ? 0.4 : 1,
+                            display: 'flex', alignItems: 'center', gap: 10,
+                            padding: choiceStyle.padding,
+                            cursor: answered || state === 'eliminated' ? 'default' : 'pointer',
+                            fontSize: choiceStyle.fontSize, fontWeight: 500,
+                            textAlign: 'left',
+                            transition: state === 'correct' ? 'transform 0.12s ease' : 'border-color 0.4s ease 0.15s, background-color 0.4s ease 0.15s, opacity 0.4s ease 0.15s, transform 0.12s ease',
+                          }}
+                        >
+                          <span style={{
+                            width: 28, height: 28, borderRadius: 5, flexShrink: 0,
+                            backgroundColor:
+                              state === 'correct' ? 'hsl(var(--study-correct))' :
+                              state === 'wrong-final' ? 'hsl(var(--study-wrong))' :
+                              state === 'missed-correct' ? 'hsl(var(--study-missed))' :
+                              state === 'selected-pending' ? 'hsl(var(--study-missed))' :
+                              'hsl(var(--study-badge))',
+                            color: '#fff',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 12, fontWeight: 700,
+                          }}>
+                            {state === 'correct' || state === 'missed-correct'
+                              ? <Check style={{ width: 14, height: 14 }} />
+                              : state === 'wrong-final'
                                 ? <X style={{ width: 14, height: 14 }} />
-                                : LETTERS[idx]}
-                        </span>
-                        <MathRenderer text={choice} className="flex-1" style={{ lineHeight: 1.3 }} />
-                      </button>
+                                : (isSelectAll && state === 'first-wrong')
+                                  ? <X style={{ width: 14, height: 14 }} />
+                                  : LETTERS[idx]}
+                          </span>
+                          <MathRenderer text={choice} className="flex-1" style={{ lineHeight: 1.3 }} />
+                        </button>
+                        <NarrationButton
+                          text={choice}
+                          getStatus={getNarrationStatus}
+                          onSpeak={speakNarration}
+                          size={16}
+                          color="hsl(var(--muted-foreground))"
+                        />
+                      </div>
                     );
                   })}
                 </div>
