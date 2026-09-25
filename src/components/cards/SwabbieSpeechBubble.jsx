@@ -282,7 +282,7 @@ export default function SwabbieSpeechBubble({ open, onClose, explanation, anchor
               style={{
                 backgroundColor: '#fff',
                 border: '2px solid #000',
-                padding: '10px 12px 6px',
+                padding: '6px 12px 4px',
                 display: 'flex',
                 flexDirection: 'column',
                 clipPath: PIXEL_CLIP,
