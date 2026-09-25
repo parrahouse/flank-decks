@@ -1,13 +1,11 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { getSharedAudio, unlockSharedAudio, claimAudio, isAudioOwner, releaseAudio } from '@/lib/narrationAudio';
 
 const CACHE_KEY = 'swabbie_tts_cache_v2';
 const LEGACY_CACHE_KEY = 'swabbie_tts_cache'; // v1: keyed by text only, all entries were VOICE 'honey'
 const CACHE_MAX = 200;
 const VOICE = 'honey';
-// 44-byte silent PCM WAV. Played on the shared element inside a click so iOS
-// Safari allows later programmatic play() calls after an async generation.
-const SILENT_SRC = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=';
 
 function normalize(text) {
   return text.trim().toLowerCase().replace(/\s+/g, ' ');
@@ -85,8 +83,10 @@ export function useNarration() {
   const cacheRef = useRef(loadCache());
   const queueRef = useRef([]);           // [{ text, norm }]
   const activeRef = useRef(new Set());   // norms currently queued/loading/playing
-  const audioRef = useRef(null);         // ONE shared element for the hook's lifetime
-  const unlockedRef = useRef(false);     // shared element has been played inside a gesture
+  // Identity on the shared audio element (src/lib/narrationAudio.js). When another
+  // narrator claims the element, release() resets this hook via clear().
+  const clearRef = useRef(() => {});
+  const ownerRef = useRef({ release: () => clearRef.current() });
   const currentRef = useRef(null);       // item being generated or played: { text, norm, key, cancelled, retried }
   const epochRef = useRef(0);            // bumped by clear()/unmount; invalidates all in-flight work
   const processingRef = useRef(false);
@@ -103,26 +103,6 @@ export function useNarration() {
       return next;
     });
   }, []);
-
-  const getAudio = useCallback(() => {
-    if (!audioRef.current) {
-      const audio = new Audio();
-      audio.preload = 'auto';
-      audioRef.current = audio;
-      unlockedRef.current = false;
-    }
-    return audioRef.current;
-  }, []);
-
-  // Must be called synchronously inside a user gesture. Skipped while real
-  // audio is playing (swapping src would cut it off).
-  const unlockAudio = useCallback(() => {
-    if (unlockedRef.current) return;
-    const audio = getAudio();
-    if (!audio.paused) return;
-    audio.src = SILENT_SRC;
-    audio.play().then(() => { unlockedRef.current = true; }).catch(() => {});
-  }, [getAudio]);
 
   const processNext = useCallback(() => {
     if (processingRef.current) return;
@@ -151,7 +131,7 @@ export function useNarration() {
     const play = (url, fromCache) => {
       if (!isLive()) return;
       setStatus(item.norm, 'playing');
-      const audio = getAudio();
+      const audio = claimAudio(ownerRef.current); // stops any other narrator first
       let settled = false;
       const detach = () => { audio.onended = null; audio.onerror = null; };
       const done = () => {
@@ -214,18 +194,18 @@ export function useNarration() {
     } else {
       generate();
     }
-  }, [deleteStatus, setStatus, getAudio]);
+  }, [deleteStatus, setStatus]);
 
   const speak = useCallback((text) => {
     const norm = normOf(text);
     if (!norm) return;
     if (activeRef.current.has(norm)) return;
-    unlockAudio();
+    unlockSharedAudio(); // synchronous, inside the click gesture
     activeRef.current.add(norm);
     queueRef.current.push({ text: stripForSpeech(text), norm });
     setStatus(norm, 'queued');
     processNext();
-  }, [unlockAudio, setStatus, processNext]);
+  }, [setStatus, processNext]);
 
   // Stops one item: playing -> stop and advance queue; loading -> cancel
   // (result still cached); queued -> remove from queue. Other items untouched.
@@ -236,12 +216,7 @@ export function useNarration() {
     const cur = currentRef.current;
     if (cur && cur.norm === norm) {
       cur.cancelled = true;
-      const audio = audioRef.current;
-      if (audio) {
-        audio.onended = null;
-        audio.onerror = null;
-        audio.pause();
-      }
+      releaseAudio(ownerRef.current); // no-op unless this hook owns the element
       currentRef.current = null;
       activeRef.current.delete(norm);
       deleteStatus(norm);
@@ -266,25 +241,22 @@ export function useNarration() {
   const clear = useCallback(() => {
     epochRef.current += 1; // invalidate all in-flight work
     queueRef.current = [];
-    const audio = audioRef.current;
-    if (audio) {
-      audio.onended = null;
-      audio.onerror = null;
-      audio.pause();
-      // keep the element for the hook's lifetime so the iOS unlock persists
-    }
+    // Only touches the element if this hook owns it — never pauses another
+    // narrator's audio (e.g. a card change while Learn More is reading).
+    releaseAudio(ownerRef.current);
     currentRef.current = null;
     activeRef.current = new Set();
     setStatuses({});
     processingRef.current = false;
   }, []);
+  clearRef.current = clear;
 
   // Playback clock for the word highlighter: { time, duration } only while
   // `text` is the item actually playing, else null. Read once per animation frame.
   const getClock = useCallback((text) => {
     const cur = currentRef.current;
-    const audio = audioRef.current;
-    if (!cur || !cur.playing || !audio) return null;
+    if (!cur || !cur.playing || !isAudioOwner(ownerRef.current)) return null;
+    const audio = getSharedAudio();
     if (cur.norm !== normOf(text)) return null;
     return { time: audio.currentTime, duration: audio.duration };
   }, []);
@@ -297,12 +269,7 @@ export function useNarration() {
 
   useEffect(() => () => {
     epochRef.current += 1;
-    const audio = audioRef.current;
-    if (audio) {
-      audio.onended = null;
-      audio.onerror = null;
-      audio.pause();
-    }
+    releaseAudio(ownerRef.current); // no-op unless this hook owns the element
   }, []);
 
   return { speak, toggle, stop, getStatus, getClock, clear };
