@@ -416,11 +416,12 @@ export default function SwabbieSpeechBubble({ open, onClose, explanation, anchor
               )}
             </div>
 
-            {/* Action buttons — below the bubble. Read-aloud on the left; Next>/Got it!
-                on the right, fading in after the page text finishes rendering
-                (Next> stays available while reading aloud, to skip ahead). */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 6, flexShrink: 0, minHeight: 28 }}>
-              {canNarrate ? (
+            {/* Action buttons — below the bubble, right-aligned so they don't
+                overlap the Swabbie character. Read-aloud sits next to Next>/Got it!,
+                fading in after the page text finishes rendering (Next> stays
+                available while reading aloud, to skip ahead). */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-start', gap: 6, marginTop: 6, flexShrink: 0, minHeight: 28 }}>
+              {canNarrate && (
                 <button
                   type="button"
                   onClick={handleSpeaker}
@@ -436,8 +437,7 @@ export default function SwabbieSpeechBubble({ open, onClose, explanation, anchor
                     <Volume2 style={{ width: 16, height: 16 }} />
                   )}
                 </button>
-              ) : <span />}
-              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              )}
               <AnimatePresence>
                 {!isLast ? (
                   (textDone || reading) && (
@@ -469,7 +469,6 @@ export default function SwabbieSpeechBubble({ open, onClose, explanation, anchor
                   )
                 )}
               </AnimatePresence>
-              </div>
             </div>
           </motion.div>
         )}
