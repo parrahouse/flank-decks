@@ -314,7 +314,7 @@ export default function StudyCardHorizontal({
             {card.clue || ''}
           </p>
         </div>
-        {!hintVisible && !isTrueFalse && (
+        {!hintVisible && (
           <NarrationButton
             text={card.clue || ''}
             getStatus={getNarrationStatus}
