@@ -404,7 +404,7 @@ export default function StudyCard({
           {qBgImage && <div aria-hidden style={qBgImage} />}
           {qBgOverlay && <div aria-hidden style={qBgOverlay} />}
           <MathRenderer text={card.clue || ''} className="block" style={{ position: 'relative', color: 'hsl(var(--study-pane-text))', fontSize: showImage ? 'clamp(14px, 2.2vw, 22px)' : 'clamp(22px, 4.5vw, 44px)', fontWeight: 500, lineHeight: 1.3, visibility: hintVisible ? 'hidden' : 'visible' }} />
-          {!hintVisible && (
+          {!hintVisible && !isTrueFalse && (
             <NarrationButton
               text={card.clue || ''}
               getStatus={getNarrationStatus}
@@ -552,13 +552,6 @@ export default function StudyCard({
                           </span>
                           <MathRenderer text={choice} />
                         </button>
-                        <NarrationButton
-                          text={choice}
-                          getStatus={getNarrationStatus}
-                          onSpeak={speakNarration}
-                          size={16}
-                          color="hsl(var(--muted-foreground))"
-                        />
                       </div>
                     );
                   })}

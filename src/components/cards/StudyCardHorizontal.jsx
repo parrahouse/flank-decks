@@ -314,7 +314,7 @@ export default function StudyCardHorizontal({
             {card.clue || ''}
           </p>
         </div>
-        {!hintVisible && (
+        {!hintVisible && !isTrueFalse && (
           <NarrationButton
             text={card.clue || ''}
             getStatus={getNarrationStatus}
@@ -435,13 +435,6 @@ export default function StudyCardHorizontal({
                           </span>
                           {choice}
                         </button>
-                        <NarrationButton
-                          text={choice}
-                          getStatus={getNarrationStatus}
-                          onSpeak={speakNarration}
-                          size={15}
-                          color="hsl(var(--muted-foreground))"
-                        />
                       </div>
                     );
                   })}
