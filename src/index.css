@@ -237,3 +237,32 @@
 .katex .mathtt {
   font-family: 'Fraunces', serif !important;
 }
+
+/* ── Narration word highlight ───────────────────────────────────────────────
+   Spans come from MathRenderer (wordSpans) and NarratedText; useWordHighlight
+   adds .nw-on to the active one. At rest spans are plain inline — layout,
+   wrapping and line-clamp ellipsis are untouched. Only the active word becomes
+   inline-block (required for transform); one word's width is identical either
+   way, so nothing reflows. */
+.nw {
+  border-radius: 0.2em;
+  transition: background-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+}
+.nw.nw-on {
+  display: inline-block;
+  background-color: rgba(127, 127, 127, 0.18);
+  background-color: color-mix(in srgb, currentColor 16%, transparent);
+  box-shadow: 0 0 0 0.12em rgba(127, 127, 127, 0.18);
+  box-shadow: 0 0 0 0.12em color-mix(in srgb, currentColor 16%, transparent);
+  transform: scale(1.06);
+  transform-origin: 50% 85%;
+}
+/* Display math stays a block: highlight only. */
+.nw-b.nw-on {
+  display: block;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nw { transition: none; }
+  .nw.nw-on { display: inline; transform: none; }
+}

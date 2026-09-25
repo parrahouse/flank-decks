@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
-import { splitWords, isWhitespace, wordWeight } from '@/lib/narrationWords';
+import { splitWords, isWhitespace, wordWeight, useWordHighlight } from '@/lib/narrationWords';
 
 const escapeText = (s) => s.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -13,7 +13,14 @@ const escapeText = (s) => s.replace(/</g, '&lt;').replace(/>/g, '&gt;');
  * wordSpans: wrap each word (and each math segment) in a narration span — see
  * the span contract in src/lib/narrationWords.js. Off by default.
  */
-export default function MathRenderer({ text = '', className = '', style, wordSpans = false }) {
+export default function MathRenderer({
+  text = '',
+  className = '',
+  style,
+  wordSpans = false,
+  narrationActive = false,
+  getNarrationClock,
+}) {
   const containerRef = useRef(null);
 
   useEffect(() => {
@@ -81,6 +88,9 @@ export default function MathRenderer({ text = '', className = '', style, wordSpa
 
     containerRef.current.innerHTML = html;
   }, [text, wordSpans]);
+
+  // Declared after the innerHTML effect so it queries the spans that effect wrote.
+  useWordHighlight(containerRef, wordSpans && narrationActive, getNarrationClock, text);
 
   return <span ref={containerRef} className={className} style={style} />;
 }

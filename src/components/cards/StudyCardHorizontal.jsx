@@ -67,7 +67,7 @@ export default function StudyCardHorizontal({
   childVariant = null,
 }) {
   const { playCorrect, playWrong } = useSound(soundEnabled);
-  const { toggle: toggleNarration, getStatus: getNarrationStatus, clear: clearNarration } = useNarration();
+  const { toggle: toggleNarration, getStatus: getNarrationStatus, getClock: getNarrationClock, clear: clearNarration } = useNarration();
   const [shuffledChoices, setShuffledChoices] = useState([]);
   const [firstWrong, setFirstWrong] = useState(null);
   const [finalAnswer, setFinalAnswer] = useState(null);
@@ -311,7 +311,7 @@ export default function StudyCardHorizontal({
           padding: showImage ? GEO.qPadImage : GEO.qPadNoImage,
           position: 'relative',
         }}>
-          <NarratedText as="p" text={card.clue || ''} style={{ color: 'hsl(var(--study-pane-text))', fontSize: showImage ? GEO.qFontImage : GEO.qFontNoImage, fontWeight: 500, lineHeight: 1.35, margin: 0, visibility: hintVisible ? 'hidden' : 'visible' }} />
+          <NarratedText as="p" narrationActive={getNarrationStatus(card.clue || '') === 'playing'} getNarrationClock={getNarrationClock} text={card.clue || ''} style={{ color: 'hsl(var(--study-pane-text))', fontSize: showImage ? GEO.qFontImage : GEO.qFontNoImage, fontWeight: 500, lineHeight: 1.35, margin: 0, visibility: hintVisible ? 'hidden' : 'visible' }} />
         </div>
         {!hintVisible && (
           <NarrationButton
@@ -451,7 +451,7 @@ export default function StudyCardHorizontal({
                           <span style={{ width: 26, height: 26, borderRadius: 5, flexShrink: 0, backgroundColor: state === 'correct' ? 'hsl(var(--study-correct))' : state === 'wrong-final' ? 'hsl(var(--study-wrong))' : state === 'missed-correct' ? 'hsl(var(--study-missed))' : state === 'selected-pending' ? 'hsl(var(--study-missed))' : 'hsl(var(--study-badge))', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>
                             {state === 'correct' || state === 'missed-correct' ? <Check style={{ width: 13, height: 13 }} /> : state === 'wrong-final' ? <X style={{ width: 13, height: 13 }} /> : (isSelectAll && state === 'first-wrong') ? <X style={{ width: 13, height: 13 }} /> : LETTERS[idx]}
                           </span>
-                          <NarratedText text={choice} style={{ flex: 1, lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }} />
+                          <NarratedText narrationActive={getNarrationStatus(choice) === 'playing'} getNarrationClock={getNarrationClock} text={choice} style={{ flex: 1, lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }} />
                         </button>
                         <NarrationButton
                           text={choice}

@@ -168,6 +168,7 @@ export function useNarration() {
           settled = true;
           detach();
           item.retried = true;
+          item.playing = false;
           cacheRef.current = evictCache(cacheRef.current, item.key);
           saveCache(cacheRef.current);
           generate();
@@ -176,6 +177,7 @@ export function useNarration() {
         done();
       };
       audio.src = url;
+      item.playing = true; // real audio (not the unlock clip) is on the element
       audio.play().catch((err) => {
         // NotAllowedError: autoplay refused — nothing will play, move on.
         // AbortError: src replaced by stop/clear/next item — already handled.
@@ -277,6 +279,16 @@ export function useNarration() {
     processingRef.current = false;
   }, []);
 
+  // Playback clock for the word highlighter: { time, duration } only while
+  // `text` is the item actually playing, else null. Read once per animation frame.
+  const getClock = useCallback((text) => {
+    const cur = currentRef.current;
+    const audio = audioRef.current;
+    if (!cur || !cur.playing || !audio) return null;
+    if (cur.norm !== normOf(text)) return null;
+    return { time: audio.currentTime, duration: audio.duration };
+  }, []);
+
   const getStatus = useCallback((text) => {
     const norm = normOf(text);
     if (!norm) return 'idle';
@@ -293,5 +305,5 @@ export function useNarration() {
     }
   }, []);
 
-  return { speak, toggle, stop, getStatus, clear };
+  return { speak, toggle, stop, getStatus, getClock, clear };
 }

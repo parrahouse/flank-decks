@@ -97,7 +97,7 @@ export default function StudyCard({
   childVariant = null,
 }) {
   const { playCorrect, playWrong } = useSound(soundEnabled);
-  const { toggle: toggleNarration, getStatus: getNarrationStatus, clear: clearNarration } = useNarration();
+  const { toggle: toggleNarration, getStatus: getNarrationStatus, getClock: getNarrationClock, clear: clearNarration } = useNarration();
   const [shuffledChoices, setShuffledChoices] = useState([]);
   const [firstWrong, setFirstWrong] = useState(null);
   const [finalAnswer, setFinalAnswer] = useState(null);
@@ -403,7 +403,7 @@ export default function StudyCard({
         >
           {qBgImage && <div aria-hidden style={qBgImage} />}
           {qBgOverlay && <div aria-hidden style={qBgOverlay} />}
-          <MathRenderer wordSpans text={card.clue || ''} className="block" style={{ position: 'relative', color: 'hsl(var(--study-pane-text))', fontSize: showImage ? 'clamp(14px, 2.2vw, 22px)' : 'clamp(22px, 4.5vw, 44px)', fontWeight: 500, lineHeight: 1.3, visibility: hintVisible ? 'hidden' : 'visible' }} />
+          <MathRenderer wordSpans narrationActive={getNarrationStatus(card.clue || '') === 'playing'} getNarrationClock={getNarrationClock} text={card.clue || ''} className="block" style={{ position: 'relative', color: 'hsl(var(--study-pane-text))', fontSize: showImage ? 'clamp(14px, 2.2vw, 22px)' : 'clamp(22px, 4.5vw, 44px)', fontWeight: 500, lineHeight: 1.3, visibility: hintVisible ? 'hidden' : 'visible' }} />
           {!hintVisible && (
             <NarrationButton
               text={card.clue || ''}
@@ -601,7 +601,7 @@ export default function StudyCard({
                                   ? <X style={{ width: 14, height: 14 }} />
                                   : LETTERS[idx]}
                           </span>
-                          <MathRenderer wordSpans text={choice} className="flex-1" style={{ lineHeight: 1.3 }} />
+                          <MathRenderer wordSpans narrationActive={getNarrationStatus(choice) === 'playing'} getNarrationClock={getNarrationClock} text={choice} className="flex-1" style={{ lineHeight: 1.3 }} />
                         </button>
                         <NarrationButton
                           text={choice}
