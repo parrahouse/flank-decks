@@ -2,16 +2,18 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
-import { User } from 'lucide-react';
+import { User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { useAuth } from '@/lib/AuthContext';
 
 export default function Profile() {
   const { data: currentUser, refetch } = useQuery({
     queryKey: ['me'],
     queryFn: () => base44.auth.me(),
   });
+  const { logout } = useAuth();
 
   const [layoutMode, setLayoutMode] = useState(() => currentUser?.default_layout_mode || 'auto');
   const [handedness, setHandedness] = useState(() => currentUser?.default_handedness || 'left');
@@ -136,6 +138,12 @@ export default function Profile() {
             {saving ? 'Saving…' : 'Save Defaults'}
           </Button>
         </div>
+      </div>
+
+      <div className="mt-6 flex justify-end">
+        <Button variant="outline" onClick={() => logout()} className="gap-2">
+          <LogOut className="w-4 h-4" /> Log out
+        </Button>
       </div>
     </>
   );
