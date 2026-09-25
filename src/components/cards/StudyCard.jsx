@@ -403,17 +403,19 @@ export default function StudyCard({
         >
           {qBgImage && <div aria-hidden style={qBgImage} />}
           {qBgOverlay && <div aria-hidden style={qBgOverlay} />}
-          <MathRenderer wordSpans narrationActive={getNarrationStatus(card.clue || '') === 'playing'} getNarrationClock={getNarrationClock} text={card.clue || ''} className="block" style={{ position: 'relative', color: 'hsl(var(--study-pane-text))', fontSize: showImage ? 'clamp(14px, 2.2vw, 22px)' : 'clamp(22px, 4.5vw, 44px)', fontWeight: 500, lineHeight: 1.3, visibility: hintVisible ? 'hidden' : 'visible' }} />
-          {!hintVisible && (
-            <NarrationButton
-              text={card.clue || ''}
-              getStatus={getNarrationStatus}
-              onSpeak={toggleNarration}
-              size={showImage ? 18 : 22}
-              color="hsl(var(--study-pane-text))"
-              style={{ position: 'absolute', top: 10, right: 14, opacity: 0.7, zIndex: 2 }}
-            />
-          )}
+          <span style={{ color: 'hsl(var(--study-pane-text))', fontSize: showImage ? 'clamp(14px, 2.2vw, 22px)' : 'clamp(22px, 4.5vw, 44px)', fontWeight: 500, lineHeight: 1.3, visibility: hintVisible ? 'hidden' : 'visible' }}>
+            <MathRenderer wordSpans narrationActive={getNarrationStatus(card.clue || '') === 'playing'} getNarrationClock={getNarrationClock} text={card.clue || ''} />
+            {!hintVisible && (
+              <NarrationButton
+                text={card.clue || ''}
+                getStatus={getNarrationStatus}
+                onSpeak={toggleNarration}
+                size={showImage ? 18 : 22}
+                color="hsl(var(--study-pane-text))"
+                style={{ marginLeft: 8, verticalAlign: 'middle', opacity: 0.7 }}
+              />
+            )}
+          </span>
 
           {/* Hint overlay — absolutely positioned so it doesn't affect pane height */}
           {hintVisible && note && (

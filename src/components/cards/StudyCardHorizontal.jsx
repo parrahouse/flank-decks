@@ -311,18 +311,14 @@ export default function StudyCardHorizontal({
           padding: showImage ? GEO.qPadImage : GEO.qPadNoImage,
           position: 'relative',
         }}>
-          <NarratedText as="p" narrationActive={getNarrationStatus(card.clue || '') === 'playing'} getNarrationClock={getNarrationClock} text={card.clue || ''} style={{ color: 'hsl(var(--study-pane-text))', fontSize: showImage ? GEO.qFontImage : GEO.qFontNoImage, fontWeight: 500, lineHeight: 1.35, margin: 0, visibility: hintVisible ? 'hidden' : 'visible' }} />
+          <p style={{ color: 'hsl(var(--study-pane-text))', fontSize: showImage ? GEO.qFontImage : GEO.qFontNoImage, fontWeight: 500, lineHeight: 1.35, margin: 0, visibility: hintVisible ? 'hidden' : 'visible' }}>
+            <NarratedText narrationActive={getNarrationStatus(card.clue || '') === 'playing'} getNarrationClock={getNarrationClock} text={card.clue || ''} />
+            {!hintVisible && (
+              <NarrationButton text={card.clue || ''} getStatus={getNarrationStatus} onSpeak={toggleNarration} size={showImage ? 16 : 20} color="hsl(var(--study-pane-text))" style={{ marginLeft: 6, verticalAlign: 'middle', opacity: 0.7 }} />
+            )}
+          </p>
         </div>
-        {!hintVisible && (
-          <NarrationButton
-            text={card.clue || ''}
-            getStatus={getNarrationStatus}
-            onSpeak={toggleNarration}
-            size={showImage ? 16 : 20}
-            color="hsl(var(--study-pane-text))"
-            style={{ position: 'absolute', top: 8, right: 12, opacity: 0.7, zIndex: 2 }}
-          />
-        )}
+
         {hintVisible && note && (
           <div style={{ position: 'absolute', inset: 0, padding: '16px 16px 36px 16px', display: 'flex', alignItems: 'flex-start' }}>
             <p style={{ color: 'hsl(var(--study-hint-text))', fontSize: 'clamp(13px, 1.6vw, 18px)', fontWeight: 500, lineHeight: 1.35, margin: 0 }}>{note}</p>
