@@ -30,7 +30,6 @@ import { useSavedSession } from '@/hooks/useSavedSession';
 import useDominantColor from '@/hooks/useDominantColor';
 import { resolveHero } from '@/lib/deckImages';
 import { useSound } from '@/hooks/useSound';
-import { useNarration } from '@/hooks/useNarration';
 
 const INTRO_REVEAL_MS = 700;
 const INTRO_STAGGER_MS = 0.18; // seconds, for framer-motion staggerChildren
@@ -375,7 +374,6 @@ export default function StudySession() {
   }, []);
   const pendingExitRef = useRef(null); // stores the path to navigate to after exit decision
   const { playLevelStart } = useSound(soundEnabled);
-  const narration = useNarration();
   const [questionReady, setQuestionReady] = useState(false);
   const levelStartTimerRef = useRef(null);
   // Timing capture — per-card answer time + session origin (preserved across resume)
@@ -1561,8 +1559,7 @@ export default function StudySession() {
           explanation={learnMore?.explanation}
           title={learnMore?.title}
           anchorX={characterAnchor.x}
-          anchorBottom={characterAnchor.bottom}
-          narration={narration} />
+          anchorBottom={characterAnchor.bottom} />
 
         }
 
@@ -1634,8 +1631,7 @@ export default function StudySession() {
               onShowLearnMore: handleShowLearnMore,
               introReady,
               maxChoices,
-              characterIdle,
-              narration,
+              characterIdle
             };
 
             const childVariant = {

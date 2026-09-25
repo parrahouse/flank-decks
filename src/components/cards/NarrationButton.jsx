@@ -9,9 +9,8 @@ export default function NarrationButton({
   color,
   style,
   className,
-  voice = 'honey',
 }) {
-  const status = getStatus(text, voice);
+  const status = getStatus(text);
   const Icon = status === 'loading' ? Loader2 : status === 'playing' ? Square : Volume2;
   const title =
     status === 'playing' ? 'Stop'
@@ -22,7 +21,7 @@ export default function NarrationButton({
   return (
     <button
       type="button"
-      onClick={(e) => { e.stopPropagation(); e.preventDefault(); onSpeak(text, voice); }}
+      onClick={(e) => { e.stopPropagation(); e.preventDefault(); onSpeak(text); }}
       title={title}
       aria-label={title}
       className={cn('inline-flex items-center justify-center rounded transition-opacity hover:opacity-80', className)}
