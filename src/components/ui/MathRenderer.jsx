@@ -1,13 +1,19 @@
 import { useEffect, useRef } from 'react';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
+import { splitWords, isWhitespace, wordWeight } from '@/lib/narrationWords';
+
+const escapeText = (s) => s.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 /**
  * Renders a string that may contain LaTeX math delimiters.
  * Inline math: $...$ — Block math: $$...$$
  * Plain text with no delimiters is rendered as-is.
+ *
+ * wordSpans: wrap each word (and each math segment) in a narration span — see
+ * the span contract in src/lib/narrationWords.js. Off by default.
  */
-export default function MathRenderer({ text = '', className = '', style }) {
+export default function MathRenderer({ text = '', className = '', style, wordSpans = false }) {
   const containerRef = useRef(null);
 
   useEffect(() => {
@@ -51,20 +57,30 @@ export default function MathRenderer({ text = '', className = '', style }) {
     // Build HTML
     const html = segments.map(seg => {
       if (seg.type === 'text') {
-        return `<span>${seg.value.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</span>`;
+        if (!wordSpans) return `<span>${escapeText(seg.value)}</span>`;
+        const inner = splitWords(seg.value)
+          .map((part) => (isWhitespace(part)
+            ? part
+            : `<span class="nw" data-w data-wt="${wordWeight(part)}">${escapeText(part)}</span>`))
+          .join('');
+        return `<span>${inner}</span>`;
       }
+      let rendered;
       try {
-        return katex.renderToString(seg.value, {
+        rendered = katex.renderToString(seg.value, {
           throwOnError: false,
           displayMode: seg.block,
         });
       } catch {
-        return `<span>${seg.value}</span>`;
+        rendered = `<span>${seg.value}</span>`;
       }
+      if (!wordSpans) return rendered;
+      // Each math segment is one narration token.
+      return `<span class="nw${seg.block ? ' nw-b' : ''}" data-w data-wt="${wordWeight(seg.value)}">${rendered}</span>`;
     }).join('');
 
     containerRef.current.innerHTML = html;
-  }, [text]);
+  }, [text, wordSpans]);
 
   return <span ref={containerRef} className={className} style={style} />;
 }

@@ -403,7 +403,7 @@ export default function StudyCard({
         >
           {qBgImage && <div aria-hidden style={qBgImage} />}
           {qBgOverlay && <div aria-hidden style={qBgOverlay} />}
-          <MathRenderer text={card.clue || ''} className="block" style={{ position: 'relative', color: 'hsl(var(--study-pane-text))', fontSize: showImage ? 'clamp(14px, 2.2vw, 22px)' : 'clamp(22px, 4.5vw, 44px)', fontWeight: 500, lineHeight: 1.3, visibility: hintVisible ? 'hidden' : 'visible' }} />
+          <MathRenderer wordSpans text={card.clue || ''} className="block" style={{ position: 'relative', color: 'hsl(var(--study-pane-text))', fontSize: showImage ? 'clamp(14px, 2.2vw, 22px)' : 'clamp(22px, 4.5vw, 44px)', fontWeight: 500, lineHeight: 1.3, visibility: hintVisible ? 'hidden' : 'visible' }} />
           {!hintVisible && (
             <NarrationButton
               text={card.clue || ''}
@@ -601,7 +601,7 @@ export default function StudyCard({
                                   ? <X style={{ width: 14, height: 14 }} />
                                   : LETTERS[idx]}
                           </span>
-                          <MathRenderer text={choice} className="flex-1" style={{ lineHeight: 1.3 }} />
+                          <MathRenderer wordSpans text={choice} className="flex-1" style={{ lineHeight: 1.3 }} />
                         </button>
                         <NarrationButton
                           text={choice}

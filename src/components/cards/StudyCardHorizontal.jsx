@@ -27,6 +27,7 @@ import { useSound } from '@/hooks/useSound';
 import { motion } from 'framer-motion';
 import { useNarration } from '@/hooks/useNarration';
 import NarrationButton from './NarrationButton';
+import NarratedText from './NarratedText';
 
 const COUNTDOWN_SECS = 6;
 
@@ -310,9 +311,7 @@ export default function StudyCardHorizontal({
           padding: showImage ? GEO.qPadImage : GEO.qPadNoImage,
           position: 'relative',
         }}>
-          <p style={{ color: 'hsl(var(--study-pane-text))', fontSize: showImage ? GEO.qFontImage : GEO.qFontNoImage, fontWeight: 500, lineHeight: 1.35, margin: 0, visibility: hintVisible ? 'hidden' : 'visible' }}>
-            {card.clue || ''}
-          </p>
+          <NarratedText as="p" text={card.clue || ''} style={{ color: 'hsl(var(--study-pane-text))', fontSize: showImage ? GEO.qFontImage : GEO.qFontNoImage, fontWeight: 500, lineHeight: 1.35, margin: 0, visibility: hintVisible ? 'hidden' : 'visible' }} />
         </div>
         {!hintVisible && (
           <NarrationButton
@@ -452,7 +451,7 @@ export default function StudyCardHorizontal({
                           <span style={{ width: 26, height: 26, borderRadius: 5, flexShrink: 0, backgroundColor: state === 'correct' ? 'hsl(var(--study-correct))' : state === 'wrong-final' ? 'hsl(var(--study-wrong))' : state === 'missed-correct' ? 'hsl(var(--study-missed))' : state === 'selected-pending' ? 'hsl(var(--study-missed))' : 'hsl(var(--study-badge))', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>
                             {state === 'correct' || state === 'missed-correct' ? <Check style={{ width: 13, height: 13 }} /> : state === 'wrong-final' ? <X style={{ width: 13, height: 13 }} /> : (isSelectAll && state === 'first-wrong') ? <X style={{ width: 13, height: 13 }} /> : LETTERS[idx]}
                           </span>
-                          <span style={{ flex: 1, lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{choice}</span>
+                          <NarratedText text={choice} style={{ flex: 1, lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }} />
                         </button>
                         <NarrationButton
                           text={choice}
