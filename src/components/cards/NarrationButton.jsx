@@ -1,4 +1,4 @@
-import { Volume2, Loader2 } from 'lucide-react';
+import { Volume2, Loader2, Square } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function NarrationButton({
@@ -11,9 +11,9 @@ export default function NarrationButton({
   className,
 }) {
   const status = getStatus(text);
-  const Icon = status === 'loading' ? Loader2 : Volume2;
+  const Icon = status === 'loading' ? Loader2 : status === 'playing' ? Square : Volume2;
   const title =
-    status === 'playing' ? 'Reading…'
+    status === 'playing' ? 'Stop'
     : status === 'loading' ? 'Loading…'
     : status === 'queued' ? 'Queued'
     : 'Read aloud';
@@ -37,7 +37,7 @@ export default function NarrationButton({
       }}
     >
       <Icon
-        className={cn(status === 'loading' && 'animate-spin', status === 'playing' && 'animate-pulse')}
+        className={cn(status === 'loading' && 'animate-spin')}
         style={{ width: size, height: size }}
       />
     </button>

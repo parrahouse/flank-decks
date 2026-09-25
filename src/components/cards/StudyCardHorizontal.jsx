@@ -66,7 +66,7 @@ export default function StudyCardHorizontal({
   childVariant = null,
 }) {
   const { playCorrect, playWrong } = useSound(soundEnabled);
-  const { speak: speakNarration, getStatus: getNarrationStatus, clear: clearNarration } = useNarration();
+  const { toggle: toggleNarration, getStatus: getNarrationStatus, clear: clearNarration } = useNarration();
   const [shuffledChoices, setShuffledChoices] = useState([]);
   const [firstWrong, setFirstWrong] = useState(null);
   const [finalAnswer, setFinalAnswer] = useState(null);
@@ -318,7 +318,7 @@ export default function StudyCardHorizontal({
           <NarrationButton
             text={card.clue || ''}
             getStatus={getNarrationStatus}
-            onSpeak={speakNarration}
+            onSpeak={toggleNarration}
             size={showImage ? 16 : 20}
             color="hsl(var(--study-pane-text))"
             style={{ position: 'absolute', top: 8, right: 12, opacity: 0.7, zIndex: 2 }}
@@ -457,7 +457,7 @@ export default function StudyCardHorizontal({
                         <NarrationButton
                           text={choice}
                           getStatus={getNarrationStatus}
-                          onSpeak={speakNarration}
+                          onSpeak={toggleNarration}
                           size={15}
                           color="hsl(var(--muted-foreground))"
                         />
