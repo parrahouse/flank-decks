@@ -25,7 +25,6 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/useSound';
 import { motion } from 'framer-motion';
-import { useNarration } from '@/hooks/useNarration';
 import NarrationButton from './NarrationButton';
 import NarratedText from './NarratedText';
 
@@ -65,9 +64,10 @@ export default function StudyCardHorizontal({
   introReady = true,
   characterIdle = true,
   childVariant = null,
+  narration,
 }) {
   const { playCorrect, playWrong } = useSound(soundEnabled);
-  const { toggle: toggleNarration, getStatus: getNarrationStatus, getClock: getNarrationClock, clear: clearNarration } = useNarration();
+  const { toggle: toggleNarration, getStatus: getNarrationStatus, getClock: getNarrationClock, clear: clearNarration } = narration;
   const [shuffledChoices, setShuffledChoices] = useState([]);
   const [firstWrong, setFirstWrong] = useState(null);
   const [finalAnswer, setFinalAnswer] = useState(null);

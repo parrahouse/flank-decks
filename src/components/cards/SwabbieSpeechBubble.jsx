@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import NarrationButton from './NarrationButton';
+
+const SPARK_VOICE = 'spark';
 
 const SHOW_DELAY_MS = 400;    // pause before the bubble appears — lets the wrong-answer flinch & sound play
 const TYPE_TICK_MS = 16;      // ms per revealed character (classic typewriter cadence)
@@ -150,7 +153,7 @@ function measurePages(nodes, containerWidth) {
  * rendered lines: each page fills 3 justified lines, then shows a Next> control;
  * the last page shows Got it!. Black & white, pixel corners, no drop shadow.
  */
-export default function SwabbieSpeechBubble({ open, onClose, explanation, anchorX, anchorBottom }) {
+export default function SwabbieSpeechBubble({ open, onClose, explanation, anchorX, anchorBottom, narration }) {
   const [visible, setVisible] = useState(false);
   const [displayExplanation, setDisplayExplanation] = useState('');
   const [pages, setPages] = useState([{ from: 0, to: 0 }]);
@@ -158,7 +161,10 @@ export default function SwabbieSpeechBubble({ open, onClose, explanation, anchor
   const [revealed, setRevealed] = useState(0);
   const [textDone, setTextDone] = useState(false);
   const [canDismiss, setCanDismiss] = useState(false);
+  const [readAloudOn, setReadAloudOn] = useState(false);
   const contentRef = useRef(null);
+  const pageTextRef = useRef('');
+  const prevStatusRef = useRef('idle');
 
   const parsed = useMemo(() => {
     const nodes = parseHtml(displayExplanation || '');
@@ -169,12 +175,26 @@ export default function SwabbieSpeechBubble({ open, onClose, explanation, anchor
   const page = pages[safeStep];
   const isLast = safeStep === pages.length - 1;
 
+  // Plain text of the current page — exactly what's rendered, so the spoken
+  // words match the page on screen.
+  const pageText = useMemo(() => {
+    if (!page) return '';
+    return plainText(parsed.nodes).slice(page.from, page.to);
+  }, [page, parsed]);
+  const pageStatus = narration ? narration.getStatus(pageText, SPARK_VOICE) : 'idle';
+
+  // Keep the latest page text in a ref so the close/reset effect can stop it.
+  useEffect(() => { pageTextRef.current = pageText; }, [pageText]);
+
   // Pre-show delay so the wrong-answer feedback can play first. On close, fade
   // the bubble up and out (visible=false drives the AnimatePresence exit) while
   // holding its content; only reset state after the exit animation finishes.
   useEffect(() => {
     if (!open) {
       setVisible(false);
+      setReadAloudOn(false);
+      prevStatusRef.current = 'idle';
+      if (narration) narration.stop(pageTextRef.current, SPARK_VOICE);
       const t = setTimeout(() => {
         setStep(0); setRevealed(0); setTextDone(false); setCanDismiss(false);
         setPages([{ from: 0, to: 0 }]);
@@ -183,9 +203,11 @@ export default function SwabbieSpeechBubble({ open, onClose, explanation, anchor
       return () => clearTimeout(t);
     }
     setDisplayExplanation(explanation || '');
+    setReadAloudOn(false);
+    prevStatusRef.current = 'idle';
     const t = setTimeout(() => setVisible(true), SHOW_DELAY_MS);
     return () => clearTimeout(t);
-  }, [open, explanation]);
+  }, [open, explanation, narration]);
 
   // Measure page breaks from the real rendered font once the bubble is visible.
   useEffect(() => {
@@ -231,6 +253,31 @@ export default function SwabbieSpeechBubble({ open, onClose, explanation, anchor
     const t = setTimeout(() => setCanDismiss(true), BUTTON_SETTLE_MS);
     return () => clearTimeout(t);
   }, [textDone, isLast, step]);
+
+  // Read-aloud: once a page finishes typing (and read-aloud is on), speak it.
+  // Gated on the typewriter's actual position (revealed >= page.to) rather than
+  // just textDone, because textDone is stale-true for one render after a page
+  // change (the reset effect clears it async) — without this guard the new page
+  // would be spoken before it's typed. Fires on page/typewriter changes only,
+  // NOT on narration status changes, so a page isn't re-spoken when its own
+  // audio ends (the auto-advance effect owns that transition).
+  useEffect(() => {
+    if (!readAloudOn || !visible || !narration || !pageText) return;
+    if (!textDone || revealed < (page?.to ?? 0)) return;
+    narration.speak(pageText, SPARK_VOICE);
+  }, [readAloudOn, textDone, revealed, pageText, page, visible, narration]);
+
+  // Auto-advance: when the current page's audio ends (playing → idle), advance
+  // to the next page (which types out and is spoken by the effect above), or
+  // turn read-aloud off on the last page so the Got it! button takes over.
+  useEffect(() => {
+    if (!readAloudOn || !visible) { prevStatusRef.current = pageStatus; return; }
+    if (prevStatusRef.current === 'playing' && pageStatus === 'idle') {
+      if (isLast) setReadAloudOn(false);
+      else setStep((s) => Math.min(pages.length - 1, s + 1));
+    }
+    prevStatusRef.current = pageStatus;
+  }, [pageStatus, readAloudOn, visible, isLast, pages.length]);
 
   const state = { pos: 0, from: page ? page.from : 0, to: Math.min(revealed, page ? page.to : 0), keyCounter: 0 };
   const { out: rendered } = page ? renderNodes(parsed.nodes, state) : { out: [] };
@@ -321,8 +368,40 @@ export default function SwabbieSpeechBubble({ open, onClose, explanation, anchor
             </div>
 
             {/* Action buttons — below the bubble, aligned to its bottom-right corner.
-                Fade in + slide up after the page text finishes rendering. */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6, flexShrink: 0, minHeight: 28 }}>
+                Fade in + slide up after the page text finishes rendering. The
+                read-aloud speaker sits to the left of Next>/Got it!. */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, marginTop: 6, flexShrink: 0, minHeight: 28 }}>
+              {textDone && narration && (
+                <motion.div
+                  key="narrate"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 8 }}
+                  transition={{ duration: 0.3, ease: 'easeOut' }}
+                >
+                  <NarrationButton
+                    text={pageText}
+                    voice={SPARK_VOICE}
+                    getStatus={(t, v) => narration.getStatus(t, v)}
+                    onSpeak={(t, v) => {
+                      const status = narration.getStatus(t, v);
+                      if (status === 'idle') {
+                        // Starting Learn More read-aloud takes over the shared
+                        // audio element: stop any card narration in flight first.
+                        narration.clear();
+                        setReadAloudOn(true);
+                      } else {
+                        setReadAloudOn(false);
+                        prevStatusRef.current = 'idle';
+                        narration.stop(t, v);
+                      }
+                    }}
+                    size={16}
+                    color="#fff"
+                    style={{ background: '#000', border: '2px solid #000', padding: '4px 8px', borderRadius: 0 }}
+                  />
+                </motion.div>
+              )}
               <AnimatePresence>
                 {!isLast ? (
                   textDone && (
@@ -332,7 +411,13 @@ export default function SwabbieSpeechBubble({ open, onClose, explanation, anchor
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 8 }}
                       transition={{ duration: 0.3, ease: 'easeOut' }}
-                      onClick={() => setStep((s) => Math.min(pages.length - 1, s + 1))}
+                      onClick={() => {
+                        if (readAloudOn && narration) {
+                          narration.stop(pageText, SPARK_VOICE);
+                          prevStatusRef.current = 'idle';
+                        }
+                        setStep((s) => Math.min(pages.length - 1, s + 1));
+                      }}
                       style={buttonStyle}
                     >
                       Next&gt;
@@ -346,7 +431,13 @@ export default function SwabbieSpeechBubble({ open, onClose, explanation, anchor
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 8 }}
                       transition={{ duration: 0.3, ease: 'easeOut' }}
-                      onClick={onClose}
+                      onClick={() => {
+                        if (readAloudOn && narration) {
+                          narration.stop(pageText, SPARK_VOICE);
+                        }
+                        setReadAloudOn(false);
+                        onClose();
+                      }}
                       style={buttonStyle}
                     >
                       Got it!

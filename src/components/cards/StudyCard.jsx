@@ -25,7 +25,6 @@ import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/useSound';
 import MathRenderer from '@/components/ui/MathRenderer';
 import { motion } from 'framer-motion';
-import { useNarration } from '@/hooks/useNarration';
 import NarrationButton from './NarrationButton';
 
 const COUNTDOWN_SECS = 6;
@@ -95,9 +94,10 @@ export default function StudyCard({
   introReady = true,
   characterIdle = true,
   childVariant = null,
+  narration,
 }) {
   const { playCorrect, playWrong } = useSound(soundEnabled);
-  const { toggle: toggleNarration, getStatus: getNarrationStatus, getClock: getNarrationClock, clear: clearNarration } = useNarration();
+  const { toggle: toggleNarration, getStatus: getNarrationStatus, getClock: getNarrationClock, clear: clearNarration } = narration;
   const [shuffledChoices, setShuffledChoices] = useState([]);
   const [firstWrong, setFirstWrong] = useState(null);
   const [finalAnswer, setFinalAnswer] = useState(null);

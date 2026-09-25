@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 const CACHE_KEY = 'swabbie_tts_cache_v2';
 const LEGACY_CACHE_KEY = 'swabbie_tts_cache'; // v1: keyed by text only, all entries were VOICE 'honey'
 const CACHE_MAX = 200;
-const VOICE = 'honey';
+const DEFAULT_VOICE = 'honey';
 // 44-byte silent PCM WAV. Played on the shared element inside a click so iOS
 // Safari allows later programmatic play() calls after an async generation.
 const SILENT_SRC = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=';
@@ -31,9 +31,10 @@ function normOf(text) {
   return stripped ? normalize(stripped) : null;
 }
 
-// Cache identity: voice-scoped so a VOICE change can never serve stale audio.
-function cacheKeyOf(norm) {
-  return `${VOICE}:${norm}`;
+// Voice-scoped key for both the audio cache and the in-memory status/active set,
+// so a voice change can never serve stale audio or collide status for the same text.
+function keyOf(voice, norm) {
+  return `${voice}:${norm}`;
 }
 
 function loadCache() {
@@ -81,25 +82,25 @@ function evictCache(cache, key) {
 }
 
 export function useNarration() {
-  const [statuses, setStatuses] = useState({}); // norm -> 'queued' | 'loading' | 'playing'
+  const [statuses, setStatuses] = useState({}); // key (voice:norm) -> 'queued' | 'loading' | 'playing'
   const cacheRef = useRef(loadCache());
-  const queueRef = useRef([]);           // [{ text, norm }]
-  const activeRef = useRef(new Set());   // norms currently queued/loading/playing
+  const queueRef = useRef([]);           // [{ text, norm, voice, key }]
+  const activeRef = useRef(new Set());   // keys currently queued/loading/playing
   const audioRef = useRef(null);         // ONE shared element for the hook's lifetime
   const unlockedRef = useRef(false);     // shared element has been played inside a gesture
-  const currentRef = useRef(null);       // item being generated or played: { text, norm, key, cancelled, retried }
+  const currentRef = useRef(null);       // item being generated or played: { text, norm, voice, key, cancelled, retried, playing }
   const epochRef = useRef(0);            // bumped by clear()/unmount; invalidates all in-flight work
   const processingRef = useRef(false);
 
-  const setStatus = useCallback((norm, status) => {
-    setStatuses((prev) => (prev[norm] === status ? prev : { ...prev, [norm]: status }));
+  const setStatus = useCallback((key, status) => {
+    setStatuses((prev) => (prev[key] === status ? prev : { ...prev, [key]: status }));
   }, []);
 
-  const deleteStatus = useCallback((norm) => {
+  const deleteStatus = useCallback((key) => {
     setStatuses((prev) => {
-      if (!prev[norm]) return prev;
+      if (!prev[key]) return prev;
       const next = { ...prev };
-      delete next[norm];
+      delete next[key];
       return next;
     });
   }, []);
@@ -131,7 +132,7 @@ export function useNarration() {
     processingRef.current = true;
 
     const epoch = epochRef.current;
-    const item = { ...next, key: cacheKeyOf(next.norm), cancelled: false, retried: false };
+    const item = { ...next, cancelled: false, retried: false };
     currentRef.current = item;
     // False once clear()/unmount ran or stop() cancelled this item. Every async
     // continuation checks this before touching audio, status, or the queue.
@@ -140,8 +141,8 @@ export function useNarration() {
     // Normal completion or failure: free this item and advance the queue.
     const release = () => {
       if (currentRef.current === item) currentRef.current = null;
-      activeRef.current.delete(item.norm);
-      deleteStatus(item.norm);
+      activeRef.current.delete(item.key);
+      deleteStatus(item.key);
       processingRef.current = false;
       processNext();
     };
@@ -150,7 +151,7 @@ export function useNarration() {
 
     const play = (url, fromCache) => {
       if (!isLive()) return;
-      setStatus(item.norm, 'playing');
+      setStatus(item.key, 'playing');
       const audio = getAudio();
       let settled = false;
       const detach = () => { audio.onended = null; audio.onerror = null; };
@@ -188,10 +189,10 @@ export function useNarration() {
 
     generate = async () => {
       if (!isLive()) return;
-      setStatus(item.norm, 'loading');
+      setStatus(item.key, 'loading');
       let url = null;
       try {
-        const res = await base44.integrations.Core.GenerateSpeech({ text: item.text, voice: VOICE });
+        const res = await base44.integrations.Core.GenerateSpeech({ text: item.text, voice: item.voice });
         url = res?.url || null;
       } catch {
         url = null;
@@ -216,25 +217,28 @@ export function useNarration() {
     }
   }, [deleteStatus, setStatus, getAudio]);
 
-  const speak = useCallback((text) => {
+  const speak = useCallback((text, voice = DEFAULT_VOICE) => {
     const norm = normOf(text);
     if (!norm) return;
-    if (activeRef.current.has(norm)) return;
+    const key = keyOf(voice, norm);
+    if (activeRef.current.has(key)) return;
     unlockAudio();
-    activeRef.current.add(norm);
-    queueRef.current.push({ text: stripForSpeech(text), norm });
-    setStatus(norm, 'queued');
+    activeRef.current.add(key);
+    queueRef.current.push({ text: stripForSpeech(text), norm, voice, key });
+    setStatus(key, 'queued');
     processNext();
   }, [unlockAudio, setStatus, processNext]);
 
   // Stops one item: playing -> stop and advance queue; loading -> cancel
   // (result still cached); queued -> remove from queue. Other items untouched.
-  const stop = useCallback((text) => {
+  const stop = useCallback((text, voice = DEFAULT_VOICE) => {
     const norm = normOf(text);
-    if (!norm || !activeRef.current.has(norm)) return;
+    if (!norm) return;
+    const key = keyOf(voice, norm);
+    if (!activeRef.current.has(key)) return;
 
     const cur = currentRef.current;
-    if (cur && cur.norm === norm) {
+    if (cur && cur.key === key) {
       cur.cancelled = true;
       const audio = audioRef.current;
       if (audio) {
@@ -243,24 +247,25 @@ export function useNarration() {
         audio.pause();
       }
       currentRef.current = null;
-      activeRef.current.delete(norm);
-      deleteStatus(norm);
+      activeRef.current.delete(key);
+      deleteStatus(key);
       processingRef.current = false;
       processNext();
       return;
     }
 
-    queueRef.current = queueRef.current.filter((item) => item.norm !== norm);
-    activeRef.current.delete(norm);
-    deleteStatus(norm);
+    queueRef.current = queueRef.current.filter((item) => item.key !== key);
+    activeRef.current.delete(key);
+    deleteStatus(key);
   }, [deleteStatus, processNext]);
 
   // Idle -> speak. Active (playing/loading/queued) -> stop.
-  const toggle = useCallback((text) => {
+  const toggle = useCallback((text, voice = DEFAULT_VOICE) => {
     const norm = normOf(text);
     if (!norm) return;
-    if (activeRef.current.has(norm)) stop(text);
-    else speak(text);
+    const key = keyOf(voice, norm);
+    if (activeRef.current.has(key)) stop(text, voice);
+    else speak(text, voice);
   }, [speak, stop]);
 
   const clear = useCallback(() => {
@@ -281,18 +286,18 @@ export function useNarration() {
 
   // Playback clock for the word highlighter: { time, duration } only while
   // `text` is the item actually playing, else null. Read once per animation frame.
-  const getClock = useCallback((text) => {
+  const getClock = useCallback((text, voice = DEFAULT_VOICE) => {
     const cur = currentRef.current;
     const audio = audioRef.current;
     if (!cur || !cur.playing || !audio) return null;
-    if (cur.norm !== normOf(text)) return null;
+    if (cur.voice !== voice || cur.norm !== normOf(text)) return null;
     return { time: audio.currentTime, duration: audio.duration };
   }, []);
 
-  const getStatus = useCallback((text) => {
+  const getStatus = useCallback((text, voice = DEFAULT_VOICE) => {
     const norm = normOf(text);
     if (!norm) return 'idle';
-    return statuses[norm] || 'idle';
+    return statuses[keyOf(voice, norm)] || 'idle';
   }, [statuses]);
 
   useEffect(() => () => {
