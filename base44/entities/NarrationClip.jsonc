@@ -1,0 +1,96 @@
+{
+  "name": "NarrationClip",
+  "type": "object",
+  "properties": {
+    "cache_key": {
+      "type": "string",
+      "description": "Lookup key: SHA-256 hex of `${voice_id}|${model_id}|${text}`. Written only by the narrateText function (service-role). Base44 has no unique constraint, so two first-plays racing can both insert; readers take the oldest row for a key and ignore the rest."
+    },
+    "text": {
+      "type": "string",
+      "description": "Exact text sent to ElevenLabs, verbatim (not stripped or re-spaced). For Learn More this is SwabbieSpeechBubble's plainText(nodes). Alignment is per character of this string, so word from/to offsets map 1:1 onto the bubble's page {from, to} offsets."
+    },
+    "voice_id": {
+      "type": "string",
+      "description": "ElevenLabs voice ID used for this clip."
+    },
+    "model_id": {
+      "type": "string",
+      "description": "ElevenLabs model ID used for this clip (e.g. eleven_turbo_v2_5)."
+    },
+    "audio_url": {
+      "type": "string",
+      "description": "Base44-hosted URL of the generated audio (mp3)."
+    },
+    "words": {
+      "type": "array",
+      "description": "Word timings collapsed server-side from ElevenLabs character alignment: [{text, from, to, start, end}] in spoken order. from/to are [from, to) char offsets into `text`; start/end are seconds from audio start. Whitespace between words belongs to no word.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "from": {
+            "type": "number",
+            "description": "Char offset of the word's first character in `text` (inclusive)."
+          },
+          "to": {
+            "type": "number",
+            "description": "Char offset just past the word's last character in `text` (exclusive)."
+          },
+          "start": {
+            "type": "number",
+            "description": "Seconds: start time of the word's first character."
+          },
+          "end": {
+            "type": "number",
+            "description": "Seconds: end time of the word's last character."
+          }
+        }
+      },
+      "default": []
+    },
+    "duration_s": {
+      "type": "number",
+      "description": "End time of the last aligned character, in seconds."
+    },
+    "char_count": {
+      "type": "number",
+      "description": "Characters billed for this generation (length of `text`). For usage accounting."
+    },
+    "requested_by": {
+      "type": "string",
+      "description": "Email of the user whose request generated this clip. Stamped explicitly because service-role writes attribute created_by to the service role, not the caller."
+    }
+  },
+  "required": [
+    "cache_key",
+    "text",
+    "voice_id",
+    "model_id",
+    "audio_url"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
