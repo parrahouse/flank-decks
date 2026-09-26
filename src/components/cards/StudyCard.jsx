@@ -10,7 +10,6 @@ import {
   Pencil,
   SkipForward,
   GraduationCap,
-  MessageCircleQuestion,
   Check,
   X,
 } from 'lucide-react';
@@ -113,7 +112,6 @@ export default function StudyCard({
   const [eliminateShake, setEliminateShake] = useState(false);
   const [eliminateUsed, setEliminateUsed] = useState(false);
   const [noteRevealed, setNoteRevealed] = useState(false);
-  const [hintVisible, setHintVisible] = useState(false);
   const [bookmarked, setBookmarked] = useState(isBookmarked);
   const [selectAllPending, setSelectAllPending] = useState(new Set()); // choices toggled but not yet graded
   const countdownRef = useRef(null);
@@ -128,7 +126,7 @@ export default function StudyCard({
   const useImageAsBg = !!deck?.question_bg_image && hasImage;
   const showImage = hasImage && !useImageAsBg;
   const cardPoints = card.point_value ?? 20;
-  const { paneBg: questionPaneBg, imageLayer: qBgImage, overlayLayer: qBgOverlay } = getQuestionBgLayers({ deck, card, hintVisible });
+  const { paneBg: questionPaneBg, imageLayer: qBgImage, overlayLayer: qBgOverlay } = getQuestionBgLayers({ deck, card });
 
   const cancelCountdown = () => {
     clearInterval(countdownRef.current);
@@ -163,7 +161,6 @@ export default function StudyCard({
     setEliminateShake(false);
     setEliminateUsed(false);
     setNoteRevealed(false);
-    setHintVisible(false);
     setBookmarked(isBookmarked);
     setSelectAllPending(new Set());
     cancelCountdown();
@@ -268,14 +265,6 @@ export default function StudyCard({
     setEliminateUsed(true);
     clearTimeout(idleTimerRef.current);
   };
-
-  // Auto-hide hint after answer
-  useEffect(() => {
-    if (answered && hintVisible) {
-      const t = setTimeout(() => setHintVisible(false), 1200);
-      return () => clearTimeout(t);
-    }
-  }, [answered, hintVisible]);
 
   // 30-second idle shake for eliminate button, then repeat every 5 seconds
   useEffect(() => {
@@ -403,55 +392,37 @@ export default function StudyCard({
         >
           {qBgImage && <div aria-hidden style={qBgImage} />}
           {qBgOverlay && <div aria-hidden style={qBgOverlay} />}
-          <span style={{ color: 'hsl(var(--study-pane-text))', fontSize: showImage ? 'clamp(14px, 2.2vw, 22px)' : 'clamp(22px, 4.5vw, 44px)', fontWeight: 500, lineHeight: 1.3, visibility: hintVisible ? 'hidden' : 'visible' }}>
+          <span style={{ color: 'hsl(var(--study-pane-text))', fontSize: showImage ? 'clamp(14px, 2.2vw, 22px)' : 'clamp(22px, 4.5vw, 44px)', fontWeight: 500, lineHeight: 1.3 }}>
             <MathRenderer wordSpans narrationActive={getNarrationStatus(card.clue || '') === 'playing'} getNarrationClock={getNarrationClock} text={card.clue || ''} />
-            {!hintVisible && (
+            {!showImage && (
               <NarrationButton
                 text={card.clue || ''}
                 getStatus={getNarrationStatus}
                 onSpeak={toggleNarration}
-                size={showImage ? 18 : 22}
+                size={22}
                 color="hsl(var(--study-pane-text))"
                 style={{ marginLeft: 8, verticalAlign: 'middle', opacity: 0.7 }}
               />
             )}
           </span>
 
-          {/* Hint overlay — absolutely positioned so it doesn't affect pane height */}
-          {hintVisible && note && (
-            <div style={{ position: 'absolute', inset: 0, padding: '20px 20px 40px 20px', display: 'flex', alignItems: 'flex-start' }}>
-              <p style={{ color: 'hsl(var(--study-hint-text))', fontSize: 'clamp(14px, 2vw, 20px)', fontWeight: 500, lineHeight: 1.3, margin: 0 }}>
-                {note}
-              </p>
-            </div>
-          )}
-
-          {/* Bottom left: card counter or "Hint" label */}
-          <span style={{ position: 'absolute', bottom: 10, left: 20, color: hintVisible ? 'hsl(var(--study-hint-text))' : 'hsl(var(--study-pane-text))', fontSize: 14, fontWeight: hintVisible ? 400 : 700, opacity: hintVisible ? 0.7 : 1 }}>
-            {hintVisible ? 'Hint' : `${cardIndex + 1}/${total}`}
+          {/* Bottom left: card counter */}
+          <span style={{ position: 'absolute', bottom: 10, left: 20, color: 'hsl(var(--study-pane-text))', fontSize: 14, fontWeight: 700 }}>
+            {cardIndex + 1}/{total}
           </span>
 
-          {/* Bottom right: hint icon or back arrow */}
-          {note && (
-            hintVisible ? (
-              <button
-                onClick={() => setHintVisible(false)}
-                style={{ position: 'absolute', bottom: 8, right: 14, background: 'none', border: 'none', cursor: 'pointer', color: 'hsl(var(--study-hint-text))', padding: 0, lineHeight: 0 }}
-              >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 14L4 9l5-5"/>
-                  <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>
-                </svg>
-              </button>
-            ) : (
-              <button
-                onClick={() => setHintVisible(true)}
-                title="View your hint"
-                style={{ position: 'absolute', bottom: 8, right: 14, background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'hsl(var(--study-pane-text))', opacity: 0.6, lineHeight: 0 }}
-              >
-                <MessageCircleQuestion style={{ width: 20, height: 20 }} />
-              </button>
-            )
+          {/* Read-aloud — bottom right of question pane (image cards only) */}
+          {showImage && (
+            <div style={{ position: 'absolute', bottom: 8, right: 14, lineHeight: 0 }}>
+              <NarrationButton
+                text={card.clue || ''}
+                getStatus={getNarrationStatus}
+                onSpeak={toggleNarration}
+                size={20}
+                color="hsl(var(--study-pane-text))"
+                style={{ opacity: 0.7 }}
+              />
+            </div>
           )}
         </Pane>
       </div>
@@ -621,7 +592,13 @@ export default function StudyCard({
 
             {/* Bottom row */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, height: 40, flexShrink: 0 }}>
-              <span />
+              <button
+                onClick={() => setNoteEditing(true)}
+                style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: note ? 'hsl(var(--study-partial))' : 'hsl(var(--muted-foreground))' }}
+              >
+                <Pencil style={{ width: 14, height: 14, flexShrink: 0 }} />
+                <span style={{ borderBottom: '1.5px dotted hsl(var(--muted-foreground))', paddingBottom: 2 }}>Notes</span>
+              </button>
               {!answered ? (
                 isSelectAll ? (
                   selectAllPending.size >= 2 && (
@@ -731,13 +708,7 @@ export default function StudyCard({
               : <Bookmark style={{ width: 20, height: 20, flexShrink: 0 }} />
             }
           </button>
-          <button
-            onClick={() => setNoteEditing(v => !v)}
-            style={{ fontSize: 16, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}
-          >
-            <Pencil style={{ width: 16, height: 16, flexShrink: 0 }} />
-            <span style={{ borderBottom: '1.5px dotted hsl(var(--muted-foreground))', paddingBottom: 2 }}>Add/Edit Hint</span>
-          </button>
+
           <button
             onClick={() => { if (!finalAnswer) onSkip && onSkip(); }}
             disabled={!!finalAnswer || !canSkip}
@@ -755,14 +726,14 @@ export default function StudyCard({
       <Dialog open={noteEditing} onOpenChange={setNoteEditing}>
         <DialogContent className="max-w-md">
           <h3 className="font-semibold text-base flex items-center gap-2 mb-3">
-            <Pencil className="w-4 h-4 text-amber-600" /> Add / Edit Hint
+            <Pencil className="w-4 h-4 text-amber-600" /> Notes
           </h3>
           {/* Card reference */}
           <div className="rounded-lg bg-muted/50 border border-border px-3 py-2.5 mb-4 space-y-1">
             {card.clue && <p className="text-sm font-semibold">{card.clue}</p>}
             <p className="text-sm text-muted-foreground">Answer: <span className="font-semibold text-foreground">{correctAnswers.join(', ')}</span></p>
           </div>
-          <CardNoteEditor cardId={card.id} />
+          <CardNoteEditor cardId={card.id} onSaved={() => setNoteEditing(false)} />
         </DialogContent>
       </Dialog>
 

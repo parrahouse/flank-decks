@@ -13,7 +13,7 @@ import { useState, useEffect, useRef } from 'react';
 import {
   SquareCheck, ToggleLeft, CopyCheck, Sparkles, Glasses,
   Bookmark, Pencil, SkipForward, GraduationCap,
-  X, MessageCircleQuestion, Check, PlusCircle,
+  X, Check,
 } from 'lucide-react';
 import CardNoteEditor from './CardNoteEditor';
 import { STUDY_CARD_BOX_H, CARD_GEO as GEO } from '@/lib/studyLayout';
@@ -80,7 +80,6 @@ export default function StudyCardHorizontal({
   const [noteEditing, setNoteEditing] = useState(false);
   const [eliminateShake, setEliminateShake] = useState(false);
   const [eliminateUsed, setEliminateUsed] = useState(false);
-  const [hintVisible, setHintVisible] = useState(false);
   const [bookmarked, setBookmarked] = useState(isBookmarked);
   const [selectAllPending, setSelectAllPending] = useState(new Set());
   const countdownRef = useRef(null);
@@ -95,7 +94,7 @@ export default function StudyCardHorizontal({
   const useImageAsBg = !!deck?.question_bg_image && hasImage;
   const showImage = hasImage && !useImageAsBg;
   const cardPoints = card.point_value ?? 20;
-  const { paneBg: questionPaneBg, imageLayer: qBgImage, overlayLayer: qBgOverlay } = getQuestionBgLayers({ deck, card, hintVisible });
+  const { paneBg: questionPaneBg, imageLayer: qBgImage, overlayLayer: qBgOverlay } = getQuestionBgLayers({ deck, card });
 
   const correctAnswers = (card.correct_answers || card.correct_answer || '')
     .split('|').map(s => s.trim()).filter(Boolean);
@@ -126,7 +125,7 @@ export default function StudyCardHorizontal({
     setFirstWrong(null); setFinalAnswer(null); setEliminated([]);
     setClueManuallyRevealed(false); setShakingChoice(null); clearTimeout(shakeTimerRef.current);
     setNoteEditing(false); setEliminateShake(false); setEliminateUsed(false);
-    setHintVisible(false); setBookmarked(isBookmarked); setSelectAllPending(new Set());
+    setBookmarked(isBookmarked); setSelectAllPending(new Set());
     cancelCountdown(); clearTimeout(idleTimerRef.current);
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     clearNarration();
@@ -199,13 +198,6 @@ export default function StudyCardHorizontal({
     setEliminateUsed(true);
     clearTimeout(idleTimerRef.current);
   };
-
-  useEffect(() => {
-    if (answered && hintVisible) {
-      const t = setTimeout(() => setHintVisible(false), 1200);
-      return () => clearTimeout(t);
-    }
-  }, [answered, hintVisible]);
 
   useEffect(() => {
     if (answered || firstWrong || !canEliminate) return;
@@ -311,43 +303,22 @@ export default function StudyCardHorizontal({
           padding: showImage ? GEO.qPadImage : GEO.qPadNoImage,
           position: 'relative',
         }}>
-          <p style={{ color: 'hsl(var(--study-pane-text))', fontSize: showImage ? GEO.qFontImage : GEO.qFontNoImage, fontWeight: 500, lineHeight: 1.35, margin: 0, visibility: hintVisible ? 'hidden' : 'visible' }}>
+          <p style={{ color: 'hsl(var(--study-pane-text))', fontSize: showImage ? GEO.qFontImage : GEO.qFontNoImage, fontWeight: 500, lineHeight: 1.35, margin: 0 }}>
             <NarratedText narrationActive={getNarrationStatus(card.clue || '') === 'playing'} getNarrationClock={getNarrationClock} text={card.clue || ''} />
-            {!hintVisible && (
-              <NarrationButton text={card.clue || ''} getStatus={getNarrationStatus} onSpeak={toggleNarration} size={showImage ? 16 : 20} color="hsl(var(--study-pane-text))" style={{ marginLeft: 6, verticalAlign: 'middle', opacity: 0.7 }} />
+            {!showImage && (
+              <NarrationButton text={card.clue || ''} getStatus={getNarrationStatus} onSpeak={toggleNarration} size={20} color="hsl(var(--study-pane-text))" style={{ marginLeft: 6, verticalAlign: 'middle', opacity: 0.7 }} />
             )}
           </p>
         </div>
 
-        {hintVisible && note && (
-          <div style={{ position: 'absolute', inset: 0, padding: '16px 16px 36px 16px', display: 'flex', alignItems: 'flex-start' }}>
-            <p style={{ color: 'hsl(var(--study-hint-text))', fontSize: 'clamp(13px, 1.6vw, 18px)', fontWeight: 500, lineHeight: 1.35, margin: 0 }}>{note}</p>
-          </div>
-        )}
-        <span style={{ position: 'absolute', bottom: 8, left: 16, color: hintVisible ? 'hsl(var(--study-hint-text))' : 'hsl(var(--study-pane-text))', fontSize: 13, fontWeight: hintVisible ? 400 : 700, opacity: hintVisible ? 0.7 : 1 }}>
-          {hintVisible ? 'Hint' : `${cardIndex + 1}/${total}`}
+        <span style={{ position: 'absolute', bottom: 8, left: 16, color: 'hsl(var(--study-pane-text))', fontSize: 13, fontWeight: 700 }}>
+          {cardIndex + 1}/{total}
         </span>
-        {/* Hint button — bottom right of question pane */}
-        {hintVisible && note ? (
-          // Hint is open + exists: show close and edit buttons
-          <div style={{ position: 'absolute', bottom: 6, right: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <button onClick={() => setNoteEditing(true)} title="Edit hint" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'hsl(var(--study-hint-text))', padding: 0, lineHeight: 0 }}>
-              <Pencil style={{ width: 15, height: 15 }} />
-            </button>
-            <button onClick={() => setHintVisible(false)} title="Close hint" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'hsl(var(--study-hint-text))', padding: 0, lineHeight: 0 }}>
-              <X style={{ width: 16, height: 16 }} />
-            </button>
+        {/* Read-aloud — bottom right of question pane (image cards only) */}
+        {showImage && (
+          <div style={{ position: 'absolute', bottom: 6, right: 12, lineHeight: 0 }}>
+            <NarrationButton text={card.clue || ''} getStatus={getNarrationStatus} onSpeak={toggleNarration} size={18} color="hsl(var(--study-pane-text))" style={{ opacity: 0.7 }} />
           </div>
-        ) : note ? (
-          // Hint exists but not visible: show message icon to open it
-          <button onClick={() => setHintVisible(true)} title="View your hint" style={{ position: 'absolute', bottom: 6, right: 12, background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'hsl(var(--study-pane-text))', opacity: 0.6, lineHeight: 0 }}>
-              <MessageCircleQuestion style={{ width: 18, height: 18 }} />
-          </button>
-        ) : (
-          // No hint: show + icon to add one
-          <button onClick={() => setNoteEditing(true)} title="Add a hint" style={{ position: 'absolute', bottom: 6, right: 12, background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'hsl(var(--study-pane-text))', opacity: 0.45, lineHeight: 0 }}>
-              <PlusCircle style={{ width: 18, height: 18 }} />
-          </button>
         )}
       </div>
     </Pane>
@@ -495,6 +466,13 @@ export default function StudyCardHorizontal({
                 <span>Studied: <strong>{timesStudied !== null ? timesStudied : '--'}</strong></span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
+                <button
+                  onClick={() => setNoteEditing(true)}
+                  style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: note ? 'hsl(var(--study-partial))' : 'hsl(var(--muted-foreground))' }}
+                >
+                  <Pencil style={{ width: 14, height: 14, flexShrink: 0 }} />
+                  <span style={{ borderBottom: '1.5px dotted hsl(var(--muted-foreground))', paddingBottom: 2 }}>Notes</span>
+                </button>
                 {hasExplanation && (
                   <div style={{ visibility: answered ? 'visible' : 'hidden', display: 'flex', alignItems: 'center' }}>
                     <button onClick={() => { if (!characterIdle) return; onShowLearnMore && onShowLearnMore(card.explanation, correctAnswers.join(', ')); cancelCountdown(); }} disabled={!characterIdle} style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: characterIdle ? 'pointer' : 'not-allowed', opacity: characterIdle ? 1 : 0.4, transition: 'opacity 0.3s' }}>
@@ -541,7 +519,7 @@ export default function StudyCardHorizontal({
       <Dialog open={noteEditing} onOpenChange={setNoteEditing}>
         <DialogContent className="max-w-md">
           <h3 className="font-semibold text-base flex items-center gap-2 mb-3">
-            <Pencil className="w-4 h-4 text-amber-600" /> Add / Edit Hint
+            <Pencil className="w-4 h-4 text-amber-600" /> Notes
           </h3>
           <div className="rounded-lg bg-muted/50 border border-border px-3 py-2.5 mb-4 space-y-1">
             {card.clue && <p className="text-sm font-semibold">{card.clue}</p>}
