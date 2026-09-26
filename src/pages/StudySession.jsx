@@ -30,6 +30,7 @@ import { useSavedSession } from '@/hooks/useSavedSession';
 import useDominantColor from '@/hooks/useDominantColor';
 import { resolveHero } from '@/lib/deckImages';
 import { useSound } from '@/hooks/useSound';
+import { CORRECT_KEYS } from '@/lib/statsUtils';
 
 const INTRO_REVEAL_MS = 700;
 const INTRO_STAGGER_MS = 0.18; // seconds, for framer-motion staggerChildren
@@ -52,8 +53,6 @@ const SCORE_LABELS = {
   partial: { label: 'Partial', color: 'text-amber-500' },
   wrong: { label: 'Incorrect', color: 'text-destructive' }
 };
-
-const CORRECT_KEYS = new Set(['correct', 'second_guess', 'correct_after_clue', 'second_guess_after_clue', 'partial']);
 
 // Tuned to the 384px settings column — roughly three lines of pills at typical tag lengths.
 const MAX_VISIBLE_TAGS = 12;

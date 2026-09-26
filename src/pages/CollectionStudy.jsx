@@ -16,8 +16,8 @@ import { cardLabel } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSound } from '@/hooks/useSound';
+import { CORRECT_KEYS } from '@/lib/statsUtils';
 
-const CORRECT_KEYS = new Set(['correct', 'second_guess', 'correct_after_clue', 'second_guess_after_clue', 'partial']);
 const SCENE_FLOOR_H = 165;
 const INTRO_STAGGER_MS = 0.18;
 const GAME_MODE_MIN_CARDS = 20;

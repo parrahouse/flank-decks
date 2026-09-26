@@ -2,8 +2,8 @@ import { Link } from 'react-router-dom';
 import { BarChart2, RotateCcw, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { STUDY_CARD_H, STUDY_CARD_BOX_H } from '@/lib/studyLayout';
+import { CORRECT_KEYS } from '@/lib/statsUtils';
 
-const CORRECT_KEYS = new Set(['correct', 'second_guess', 'correct_after_clue', 'second_guess_after_clue', 'partial']);
 const SECOND_GUESS_KEYS = new Set(['second_guess', 'second_guess_after_clue']);
 const CLUE_KEYS = new Set(['correct_after_clue', 'second_guess_after_clue']);
 
