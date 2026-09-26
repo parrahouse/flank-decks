@@ -92,6 +92,22 @@
           "max_points": {
             "type": "number",
             "description": "Card's point_value at time of study (point values can change later)"
+          },
+          "mastery_level_before": {
+            "type": "string",
+            "description": "Card's mastery_level before this session was scored. Absent on review-missed runs and legacy sessions."
+          },
+          "mastery_level_after": {
+            "type": "string",
+            "description": "Card's mastery_level after this session was scored. Absent on review-missed runs and legacy sessions."
+          },
+          "mastery_score_before": {
+            "type": "number",
+            "description": "Card's mastery_score before this session (null if no scored sessions yet)."
+          },
+          "mastery_score_after": {
+            "type": "number",
+            "description": "Card's mastery_score after this session (null if still unscored, e.g. skipped)."
           }
         }
       }

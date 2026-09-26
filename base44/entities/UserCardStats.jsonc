@@ -69,6 +69,41 @@
     "study_time_to_master_ms": {
       "type": "number",
       "description": "total_time_ms at the moment mastery first flipped true"
+    },
+    "mastery_score": {
+      "type": "number",
+      "description": "Current mastery score 0\u2013100 (rounded) from statsUtils.masteryScore(). Null/absent = no scored sessions yet."
+    },
+    "mastery_level": {
+      "type": "string",
+      "enum": [
+        "new",
+        "learning",
+        "familiar",
+        "proficient",
+        "mastered"
+      ],
+      "default": "new",
+      "description": "Current mastery level from statsUtils.masteryLevel()."
+    },
+    "mastery_weighted_sum": {
+      "type": "number",
+      "default": 0,
+      "description": "Mastery running state: decayed sum of per-session credit (newest weight 1). See statsUtils.stepMasteryState()."
+    },
+    "mastery_weight_total": {
+      "type": "number",
+      "default": 0,
+      "description": "Mastery running state: decayed sum of weights. mastery_score = round(100 * weighted_sum / weight_total)."
+    },
+    "mastery_scored_sessions": {
+      "type": "number",
+      "default": 0,
+      "description": "Mastery running state: number of scored sessions (review-missed runs and skipped cards excluded). Distinct from sessions_completed."
+    },
+    "mastery_last_key": {
+      "type": "string",
+      "description": "Mastery running state: result key from the most recent scored session. Mastered requires 'correct'."
     }
   },
   "required": [
