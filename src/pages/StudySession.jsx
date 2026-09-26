@@ -30,7 +30,7 @@ import { useSavedSession } from '@/hooks/useSavedSession';
 import useDominantColor from '@/hooks/useDominantColor';
 import { resolveHero } from '@/lib/deckImages';
 import { useSound } from '@/hooks/useSound';
-import { CORRECT_KEYS } from '@/lib/statsUtils';
+import { CORRECT_KEYS, scoreSessionMastery, masteryLevel, masteryStatsFields } from '@/lib/statsUtils';
 
 const INTRO_REVEAL_MS = 700;
 const INTRO_STAGGER_MS = 0.18; // seconds, for framer-motion staggerChildren
@@ -636,9 +636,6 @@ export default function StudySession() {
     if (!done || sessionSaved.current || !shuffledCards.length || !currentUser?.id) return;
     sessionSaved.current = true;
 
-    const minSessions = deck?.mastery_min_sessions ?? 3;
-    const masteryPct = deck?.mastery_pct ?? 90;
-
     const saveStats = async () => {
       const cardResults = shuffledCards.map((card, i) => ({
         card_id: card.id,
@@ -651,6 +648,17 @@ export default function StudySession() {
         question_type: card.question_type || 'multiple_choice',
         max_points: card.point_value ?? 20
       }));
+
+      // Mastery (new model). Must run before StudySession.create so before/after land on card_results.
+      // Review-missed runs are not scored.
+      const masteryAfter = filterMode === 'missed'
+        ? {}
+        : scoreSessionMastery(
+            cardResults,
+            cardStats,
+            pastSessions.filter((s) => s.created_by === currentUser.email),
+            deck
+          );
 
       const total = cardResults.reduce((s, r) => s + r.points, 0);
       const max = shuffledCards.reduce((s, c) => s + (c.point_value ?? 20), 0);
@@ -739,8 +747,10 @@ export default function StudySession() {
         const newTotal = (existing?.total_attempts ?? 0) + 1;
         const newSessions = (existing?.sessions_completed ?? 0) + 1;
 
-        // Mastery only evaluated once min sessions reached; requires >= masteryPct% correct
-        const nowMastered = newSessions >= minSessions && newCorrect / newSessions * 100 >= masteryPct;
+        // Mastery (new model). No entry = review-missed run: leave mastery untouched.
+        const afterState = masteryAfter[result.card_id];
+        const nowMastered = afterState ? masteryLevel(afterState, deck) === 'mastered' : !!existing?.mastered;
+        const masteryWrite = afterState ? { mastered: nowMastered, ...masteryStatsFields(afterState, deck) } : {};
 
         const answerMs = result.time_to_answer_ms;
         const newTotalTime = (existing?.total_time_ms ?? 0) + (answerMs ?? 0);
@@ -750,7 +760,7 @@ export default function StudySession() {
         const nowIso = new Date().toISOString();
 
         // Mastery-moment snapshot: only on the FIRST flip to true, never overwritten.
-        const firstMastery = nowMastered && !existing?.mastered_at && !existing?.mastered;
+        const firstMastery = !!afterState && nowMastered && !existing?.mastered_at && !existing?.mastered;
         const masteryFields = firstMastery ? {
           mastered_at: nowIso,
           attempts_to_master: newTotal,
@@ -763,7 +773,7 @@ export default function StudySession() {
             correct_attempts: newCorrect,
             total_attempts: newTotal,
             sessions_completed: newSessions,
-            mastered: nowMastered,
+            ...masteryWrite,
             last_studied_date: nowIso,
             total_time_ms: newTotalTime,
             ...(newFastest != null && { fastest_answer_ms: newFastest }),
@@ -777,7 +787,7 @@ export default function StudySession() {
             correct_attempts: newCorrect,
             total_attempts: newTotal,
             sessions_completed: newSessions,
-            mastered: nowMastered,
+            ...masteryWrite,
             last_studied_date: nowIso,
             first_studied_date: nowIso,
             total_time_ms: newTotalTime,

@@ -16,7 +16,7 @@ import { cardLabel } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSound } from '@/hooks/useSound';
-import { CORRECT_KEYS } from '@/lib/statsUtils';
+import { CORRECT_KEYS, scoreSessionMastery, masteryLevel, masteryStatsFields } from '@/lib/statsUtils';
 
 const SCENE_FLOOR_H = 165;
 const INTRO_STAGGER_MS = 0.18;
@@ -180,7 +180,19 @@ export default function CollectionStudy() {
       const endedAt = new Date();
       const durationMs = sessionStartTime ? endedAt.getTime() - sessionStartTime.getTime() : null;
 
+      // Mastery (new model): per-deck thresholds + this user's prior sessions (for records without stored state).
+      // Fetched before any StudySession.create below so history excludes this session.
+      const deckInfo = {};
+      await Promise.all(Object.keys(byDeck).map(async (id) => {
+        const [decks, sessions] = await Promise.all([
+          base44.entities.Deck.filter({ id }),
+          base44.entities.StudySession.filter({ deck_id: id, created_by: currentUser.email }),
+        ]);
+        deckInfo[id] = { deck: decks[0] ?? null, sessions };
+      }));
+
       for (const [deckId, items] of Object.entries(byDeck)) {
+        const deckForMastery = deckInfo[deckId]?.deck ?? null;
         const cardResults = items.map(({ card, i }) => ({
           card_id: card.id,
           correct_answer: cardLabel(card),
@@ -192,6 +204,8 @@ export default function CollectionStudy() {
           question_type: card.question_type || 'multiple_choice',
           max_points: card.point_value ?? 20,
         }));
+
+        const masteryAfter = scoreSessionMastery(cardResults, cardStats, deckInfo[deckId]?.sessions ?? [], deckForMastery);
 
         const total = cardResults.reduce((s, r) => s + r.points, 0);
         const max = items.reduce((s, { card }) => s + (card.point_value ?? 20), 0);
@@ -224,6 +238,20 @@ export default function CollectionStudy() {
           const newFastest = answerMs != null ? Math.min(existing?.fastest_answer_ms ?? Infinity, answerMs) : (existing?.fastest_answer_ms ?? null);
           const nowIso = new Date().toISOString();
 
+          const afterState = masteryAfter[card.id];
+          const nowMastered = masteryLevel(afterState, deckForMastery) === 'mastered';
+          const firstMastery = nowMastered && !existing?.mastered_at && !existing?.mastered;
+          const masteryWrite = {
+            mastered: nowMastered,
+            ...masteryStatsFields(afterState, deckForMastery),
+            ...(firstMastery ? {
+              mastered_at: nowIso,
+              attempts_to_master: newTotal,
+              sessions_to_master: newSessions,
+              study_time_to_master_ms: newTotalTime,
+            } : {}),
+          };
+
           if (existing) {
             await base44.entities.UserCardStats.update(existing.id, {
               correct_attempts: newCorrect,
@@ -232,6 +260,7 @@ export default function CollectionStudy() {
               last_studied_date: nowIso,
               total_time_ms: newTotalTime,
               ...(newFastest != null && { fastest_answer_ms: newFastest }),
+              ...masteryWrite,
             });
           } else {
             await base44.entities.UserCardStats.create({
@@ -245,6 +274,7 @@ export default function CollectionStudy() {
               first_studied_date: nowIso,
               total_time_ms: newTotalTime,
               ...(newFastest != null && { fastest_answer_ms: newFastest }),
+              ...masteryWrite,
             });
           }
         }

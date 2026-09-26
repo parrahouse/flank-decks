@@ -180,3 +180,58 @@ export function computeDeckScore(activeCardIds, scoreByCardId) {
   const sum = activeCardIds.reduce((a, id) => a + (scoreByCardId?.[id] ?? 0), 0);
   return Math.round(sum / activeCardIds.length);
 }
+
+// ─── Mastery persistence helpers ────────────────────────────────────────────
+
+// Stored running state on a UserCardStats record, or null if absent/unset (legacy record).
+export function masteryStateFromStats(stats) {
+  if (!stats || !(stats.mastery_weight_total > 0)) return null;
+  return {
+    weightedSum: stats.mastery_weighted_sum ?? 0,
+    weightTotal: stats.mastery_weight_total,
+    scoredSessions: stats.mastery_scored_sessions ?? 0,
+    lastKey: stats.mastery_last_key ?? null,
+  };
+}
+
+// State before scoring a new session: stored state if present; otherwise, for an existing
+// record, replay this user's prior sessions; otherwise empty. userSessions must be the
+// current user's sessions only and must NOT include the session being saved.
+export function priorMasteryState(stats, userSessions, cardId, deck) {
+  const stored = masteryStateFromStats(stats);
+  if (stored) return stored;
+  if (stats) return computeCardMastery(userSessions, cardId, deck).state;
+  return EMPTY_MASTERY_STATE;
+}
+
+// UserCardStats fields for a state. Null values are omitted.
+export function masteryStatsFields(state, deck) {
+  const fields = {
+    mastery_score: masteryScore(state),
+    mastery_level: masteryLevel(state, deck),
+    mastery_weighted_sum: state.weightedSum,
+    mastery_weight_total: state.weightTotal,
+    mastery_scored_sessions: state.scoredSessions,
+    mastery_last_key: state.lastKey,
+  };
+  return Object.fromEntries(Object.entries(fields).filter(([, v]) => v != null));
+}
+
+// Score one session's card results. Mutates each result to add before/after fields,
+// and returns { [cardId]: afterState }.
+export function scoreSessionMastery(cardResults, statsList, userSessions, deck) {
+  const afterByCard = {};
+  for (const r of cardResults) {
+    const existing = statsList.find((s) => s.card_id === r.card_id);
+    const before = priorMasteryState(existing, userSessions, r.card_id, deck);
+    const after = stepMasteryState(before, r.key);
+    afterByCard[r.card_id] = after;
+    r.mastery_level_before = masteryLevel(before, deck);
+    r.mastery_level_after = masteryLevel(after, deck);
+    const sb = masteryScore(before);
+    const sa = masteryScore(after);
+    if (sb != null) r.mastery_score_before = sb;
+    if (sa != null) r.mastery_score_after = sa;
+  }
+  return afterByCard;
+}
