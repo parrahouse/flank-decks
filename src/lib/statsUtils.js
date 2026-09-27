@@ -235,3 +235,11 @@ export function scoreSessionMastery(cardResults, statsList, userSessions, deck) 
   }
   return afterByCard;
 }
+
+// Footer text for a card's mastery, e.g. "Learning · 64". stats = UserCardStats record or null.
+// Score is shown once the card has at least 2 scored sessions.
+export function masteryDisplayText(stats) {
+  const label = masteryLevelLabel(stats?.mastery_level ?? 'new');
+  const showScore = (stats?.mastery_scored_sessions ?? 0) >= 2 && stats?.mastery_score != null;
+  return showScore ? `${label} · ${stats.mastery_score}` : label;
+}

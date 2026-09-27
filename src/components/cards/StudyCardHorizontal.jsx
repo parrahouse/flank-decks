@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import CardNoteEditor from './CardNoteEditor';
 import { STUDY_CARD_BOX_H, CARD_GEO as GEO } from '@/lib/studyLayout';
+import { masteryDisplayText } from '@/lib/statsUtils';
 import { getQuestionBgLayers } from '@/lib/questionPaneBg';
 import ShortAnswerInput from './ShortAnswerInput';
 import { Button } from '@/components/ui/button';
@@ -244,9 +245,7 @@ export default function StudyCardHorizontal({
   };
 
   const timesStudied = cardStats?.sessions_completed ?? null;
-  const minSessions = deck?.mastery_min_sessions ?? 3;
-  const masteryPct = cardStats && cardStats.sessions_completed >= minSessions
-    ? Math.round((cardStats.correct_attempts / cardStats.total_attempts) * 100) : null;
+  const masteryText = masteryDisplayText(cardStats);
 
   const qtLabel = isTrueFalse ? 'True or False?' : isSelectAll ? 'Multi-Select' : isShortAnswer ? 'Short Answer' : 'Single Select';
 
@@ -462,7 +461,7 @@ export default function StudyCardHorizontal({
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: GEO.ansRowGap, paddingTop: GEO.ansRowGap, borderTop: '1px solid hsl(var(--border))', height: GEO.ansActionH, flexShrink: 0, boxSizing: 'border-box', overflow: 'hidden' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, backgroundColor: 'hsl(var(--study-mastery-bg))', borderRadius: 18, padding: '5px 12px', fontSize: 12, flexShrink: 0 }}>
                 <Glasses style={{ width: 17, height: 17, flexShrink: 0 }} />
-                <span>Mastery: <strong>{masteryPct !== null ? `${masteryPct}%` : '--'}</strong></span>
+                <span style={{ whiteSpace: 'nowrap' }}><strong>{masteryText}</strong></span>
                 <span>Studied: <strong>{timesStudied !== null ? timesStudied : '--'}</strong></span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import CardNoteEditor from './CardNoteEditor';
 import { STUDY_CARD_H } from '@/lib/studyLayout';
+import { masteryDisplayText } from '@/lib/statsUtils';
 import { getQuestionBgLayers } from '@/lib/questionPaneBg';
 import ShortAnswerInput from './ShortAnswerInput';
 import { Button } from '@/components/ui/button';
@@ -324,10 +325,7 @@ export default function StudyCard({
   };
 
   const timesStudied = cardStats?.sessions_completed ?? null;
-  const minSessions = deck?.mastery_min_sessions ?? 3;
-  const masteryPct = cardStats && cardStats.sessions_completed >= minSessions
-    ? Math.round((cardStats.correct_attempts / cardStats.total_attempts) * 100)
-    : null;
+  const masteryText = masteryDisplayText(cardStats);
 
   const qtLabel = isTrueFalse ? 'True or False?' : isSelectAll ? 'Multi-Select' : isShortAnswer ? 'Short Answer' : 'Single Select';
 
@@ -689,7 +687,7 @@ export default function StudyCard({
           padding: '6px 16px', fontSize: 13, flexShrink: 0,
         }}>
           <Glasses style={{ width: 20, height: 20, flexShrink: 0 }} />
-          <span style={{ fontSize: 15 }}>Mastery: <strong>{masteryPct !== null ? `${masteryPct}%` : '--'}</strong></span>
+          <span style={{ fontSize: 15 }}><strong>{masteryText}</strong></span>
           <span style={{ fontSize: 15 }}>Times Studied: <strong>{timesStudied !== null ? timesStudied : '--'}</strong></span>
         </div>
 
