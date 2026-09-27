@@ -54,7 +54,7 @@ function articleFor(num) {
  * and a light-gray scrolling bar cycles through session stats.
  * Appears automatically when the celebration loop starts (characterIdle).
  */
-export default function SessionSummaryBubble({ open, anchorX, anchorBottom, anchorWidth, stats, onGetNerdy, onReviewMissed, hasMissed }) {
+export default function SessionSummaryBubble({ open, anchorX, anchorBottom, anchorWidth, stats }) {
   const [visible, setVisible] = useState(false);
   const [statIndex, setStatIndex] = useState(0);
   const [quipSeed, setQuipSeed] = useState(0);
@@ -87,18 +87,6 @@ export default function SessionSummaryBubble({ open, anchorX, anchorBottom, anch
 
   // Pin to the character: 64px between the character's right edge and the bubble's left edge.
   const leftPx = (anchorX || 0) + (anchorWidth || 0) + 32;
-
-  const buttonStyle = {
-    fontFamily: "'VT323', monospace",
-    fontSize: STAT_FONT,
-    lineHeight: '21px',
-    backgroundColor: '#000',
-    color: '#fff',
-    border: 'none',
-    padding: '4px 6px',
-    cursor: 'pointer',
-    letterSpacing: '0.02em',
-  };
 
   return (
     <AnimatePresence>
@@ -189,17 +177,6 @@ export default function SessionSummaryBubble({ open, anchorX, anchorBottom, anch
             </div>
           </div>
 
-          {/* Action buttons — horizontally aligned, centered */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 5, marginTop: 6, minHeight: 28 }}>
-            {hasMissed && (
-              <button onClick={onReviewMissed} style={buttonStyle}>
-                Review Mistakes
-              </button>
-            )}
-            <button onClick={onGetNerdy} style={buttonStyle}>
-              Get Nerdy
-            </button>
-          </div>
         </motion.div>
       )}
     </AnimatePresence>

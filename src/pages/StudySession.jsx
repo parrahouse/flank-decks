@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BarChart2, Volume2, VolumeX, Info, Trophy, PlayCircle, RefreshCw, Clock, AlertTriangle, Settings, SlidersVertical, LogOut, Search, Check } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Volume2, VolumeX, Info, Trophy, PlayCircle, RefreshCw, Clock, AlertTriangle, Settings, SlidersVertical, LogOut, Search, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -30,7 +30,8 @@ import { useSavedSession } from '@/hooks/useSavedSession';
 import useDominantColor from '@/hooks/useDominantColor';
 import { resolveHero } from '@/lib/deckImages';
 import { useSound } from '@/hooks/useSound';
-import { CORRECT_KEYS, scoreSessionMastery, masteryLevel, masteryStatsFields } from '@/lib/statsUtils';
+import { CORRECT_KEYS, scoreSessionMastery, masteryLevel, masteryStatsFields, computeDeckScore } from '@/lib/statsUtils';
+import DeckSessionPanel from '@/components/cards/DeckSessionPanel';
 
 const INTRO_REVEAL_MS = 700;
 const INTRO_STAGGER_MS = 0.18; // seconds, for framer-motion staggerChildren
@@ -317,6 +318,7 @@ export default function StudySession() {
   const [scores, setScores] = useState([]);
   const [firstWrongChoices, setFirstWrongChoices] = useState([]);
   const [answerTimes, setAnswerTimes] = useState([]); // ms per card, parallel to scores
+  const [sessionSummary, setSessionSummary] = useState(null); // end panel data, set when the session is saved
   const [correctStreak, setCorrectStreak] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
   const [sessionStartTime, setSessionStartTime] = useState(null);
@@ -400,7 +402,7 @@ export default function StudySession() {
   useEffect(() => {setLearnMore(null);}, [cardIndex, done]);
 
   // Re-arm the summary bubble for the next session whenever a new one starts.
-  useEffect(() => {if (!done) setSummaryDismissed(false);}, [done]);
+  useEffect(() => {if (!done) {setSummaryDismissed(false);setSessionSummary(null);}}, [done]);
 
   // Timing origin: the moment the current question becomes answerable.
   // shuffledCards is a dep because a DEFER swaps the card at the same index.
@@ -659,6 +661,30 @@ export default function StudySession() {
             pastSessions.filter((s) => s.created_by === currentUser.email),
             deck
           );
+
+      // Session end panel data. Built from the same mastery scoring that is saved below.
+      const scoredRun = filterMode !== 'missed';
+      const lastPrior = pastSessions
+        .filter((s) => s.created_by === currentUser.email && s.filter_mode !== 'missed' && s.score_pct != null)
+        .sort((a, b) => new Date(b.started_at || b.created_date) - new Date(a.started_at || a.created_date))[0] ?? null;
+      let deckProgress = null;
+      if (scoredRun) {
+        const activeIds = activeCards.map((c) => c.id);
+        const beforeById = Object.fromEntries(cardStats.map((s) => [s.card_id, s]));
+        const afterById = { ...beforeById };
+        for (const [cardId, st] of Object.entries(masteryAfter)) {
+          afterById[cardId] = { ...(beforeById[cardId] || {}), ...masteryStatsFields(st, deck) };
+        }
+        const levelCounts = { new: 0, learning: 0, familiar: 0, proficient: 0, mastered: 0 };
+        activeIds.forEach((id) => { levelCounts[afterById[id]?.mastery_level ?? 'new'] += 1; });
+        deckProgress = {
+          before: computeDeckScore(activeIds, beforeById, deck),
+          after: computeDeckScore(activeIds, afterById, deck),
+          levelCounts,
+          total: activeIds.length,
+        };
+      }
+      setSessionSummary({ cardResults, scored: scoredRun, lastScorePct: lastPrior?.score_pct ?? null, deckProgress });
 
       const total = cardResults.reduce((s, r) => s + r.points, 0);
       const max = shuffledCards.reduce((s, c) => s + (c.point_value ?? 20), 0);
@@ -1579,10 +1605,7 @@ export default function StudySession() {
           anchorX={characterAnchor.x}
           anchorBottom={characterAnchor.bottom}
           anchorWidth={characterAnchor.width}
-          stats={{ pct, correctCount, totalCards: shuffledCards.length, bestStreak, longestWrongStreak, durationMs: completionDurationMs, avgAnswerMs }}
-          onGetNerdy={() => navigate(`/stats/${deckId}`)}
-          onReviewMissed={reviewMissed}
-          hasMissed={missedCount > 0} />
+          stats={{ pct, correctCount, totalCards: shuffledCards.length, bestStreak, longestWrongStreak, durationMs: completionDurationMs, avgAnswerMs }} />
 
         }
       </motion.div>
@@ -1596,16 +1619,20 @@ export default function StudySession() {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.45, ease: 'easeOut' }}
           className="relative bg-card border border-border rounded-lg p-4 mt-4">
-            <div className="flex items-center justify-center gap-3 py-8">
-              <Button onClick={restart} variant="outline" size="lg" className="gap-2">
-                <RotateCcw className="w-5 h-5" /> Study again
-              </Button>
-              <Link to={`/stats/${deckId}`}>
-                <Button variant="outline" size="lg" className="gap-2">
-                  <BarChart2 className="w-5 h-5" /> Full stats
-                </Button>
-              </Link>
-            </div>
+            {sessionSummary ?
+            <DeckSessionPanel
+              summary={sessionSummary}
+              pct={pct}
+              deckId={deckId}
+              missedCount={missedCount}
+              onReviewMissed={reviewMissed}
+              onStudyAgain={restart}
+              onStudyUnmastered={() => startSession('unmastered')} /> :
+
+            <div className="flex items-center justify-center py-12">
+                <div className="w-6 h-6 border-4 border-muted border-t-primary rounded-full animate-spin" />
+              </div>
+            }
           </motion.div> :
 
         <motion.div key="study-area" initial={false} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
