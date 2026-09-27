@@ -13,6 +13,7 @@ import ShareModal from '@/components/deck/ShareModal';
 import ShareCollectionModal from '@/components/collections/ShareCollectionModal';
 import CoverImagePicker from '@/components/deck/CoverImagePicker';
 import DeckCollectionsDialog from '@/components/collections/DeckCollectionsDialog';
+import { computeDeckScore } from '@/lib/statsUtils';
 
 function makeToken() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -78,11 +79,13 @@ export default function CollectionDetail() {
     enabled: !!currentUser?.id,
   });
 
+  // Deck score for the water line: mean card mastery score over active cards (unstudied = 0)
   const deckMasteryPct = (deckId) => {
-    const total = cards.filter((c) => c.deck_id === deckId && !c.deleted).length;
-    if (!total) return 0;
-    const mastered = cardStats.filter((s) => s.deck_id === deckId && s.mastered).length;
-    return Math.round((mastered / total) * 100);
+    const activeIds = cards.filter((c) => c.deck_id === deckId && !c.deleted).map((c) => c.id);
+    const scoreByCardId = Object.fromEntries(
+      cardStats.filter((s) => s.deck_id === deckId).map((s) => [s.card_id, s.mastery_score])
+    );
+    return computeDeckScore(activeIds, scoreByCardId);
   };
 
   const savedHoursLeft = (deckId) => {

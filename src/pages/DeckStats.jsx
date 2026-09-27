@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { ArrowLeft, BarChart2, BookOpen, CircleDashed, PieChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { CORRECT_KEYS, capped, mean, median } from '@/lib/statsUtils';
+import { CORRECT_KEYS, capped, mean, median, computeDeckScore } from '@/lib/statsUtils';
 import OverviewTiles from '@/components/stats/OverviewTiles';
 import TrendCharts from '@/components/stats/TrendCharts';
 import MasteryTimelineSection from '@/components/stats/MasteryTimelineSection';
@@ -33,7 +33,7 @@ function ReadinessBar({ pct }) {
           style={{ width: `${pct}%` }} />
         
       </div>
-      <p className="text-xs text-muted-foreground text-right">{Math.round(pct)}% average score</p>
+      <p className="text-xs text-muted-foreground text-right">Deck mastery score: {Math.round(pct)}</p>
     </div>);
 
 }
@@ -151,6 +151,10 @@ export default function DeckStats() {
     const avgTimePerCard = allTimes.length ? mean(allTimes) : null;
 
     const activeIds = new Set(cards.map((c) => c.id));
+    const deckScore = computeDeckScore(
+      cards.map((c) => c.id),
+      Object.fromEntries(cardStats.map((s) => [s.card_id, s.mastery_score]))
+    );
     const masteredActive = cardStats.filter((s) => s.mastered && activeIds.has(s.card_id));
     const ttm = masteredActive.
     map((s) => s.mastered_at && s.first_studied_date ? new Date(s.mastered_at) - new Date(s.first_studied_date) : null).
@@ -172,7 +176,7 @@ export default function DeckStats() {
 
     return {
       count, totalStudy, avgSession, durationsCount: durations.length,
-      avgScore, best, worst,
+      avgScore, best, worst, deckScore,
       avgTimePerCard, timeBasisCount: allTimes.length,
       masteredCount: masteredActive.length, totalCards: cards.length,
       medianTtm, ttmCount: ttm.length,
@@ -216,7 +220,7 @@ export default function DeckStats() {
       <div className="space-y-8">
           {/* Readiness */}
           <div className="bg-card border border-border rounded-xl p-5">
-            <ReadinessBar pct={overview.avgScore ?? 0} />
+            <ReadinessBar pct={overview.deckScore ?? 0} />
           </div>
 
           {/* 1. Overview tiles */}
