@@ -153,7 +153,8 @@ export default function DeckStats() {
     const activeIds = new Set(cards.map((c) => c.id));
     const deckScore = computeDeckScore(
       cards.map((c) => c.id),
-      Object.fromEntries(cardStats.map((s) => [s.card_id, s.mastery_score]))
+      Object.fromEntries(cardStats.map((s) => [s.card_id, s])),
+      deck
     );
     const masteredActive = cardStats.filter((s) => s.mastered && activeIds.has(s.card_id));
     const ttm = masteredActive.
@@ -184,7 +185,7 @@ export default function DeckStats() {
       longestStreak,
       firstTryAcc, ftTotal
     };
-  }, [sessions, cardStats, cards]);
+  }, [sessions, cardStats, cards, deck]);
 
   if (isLoading) {
     return (

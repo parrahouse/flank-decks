@@ -126,9 +126,7 @@ function WaterFill({ pct }) {
 export default function DeckCard({ deck, cardCount, coverUrl, stats, masteryPct = 0, savedHoursLeft, onEdit, onDelete, onDuplicate, onShare, onSetCover, isShared = false, onLeave, onRemoveFromCollection, onCollections }) {
   const fp = deck.cover_focal_point;
   const objectPosition = fp ? `${fp.x}% ${fp.y}%` : '50% 50%';
-  const avgScore = stats && stats.highScore !== null && stats.lowScore !== null
-    ? Math.round((stats.highScore + stats.lowScore) / 2)
-    : null;
+  const avgScore = stats?.avgScore ?? null;
 
   const waterPct = masteryPct;
   const navigate = useNavigate();

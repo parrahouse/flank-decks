@@ -63,8 +63,9 @@ export default function CollectionDetail() {
   });
 
   const { data: sessions = [] } = useQuery({
-    queryKey: ['study-sessions-home'],
-    queryFn: () => base44.entities.StudySession.list('-created_date', 500),
+    queryKey: ['study-sessions-home', currentUser?.email],
+    queryFn: () => base44.entities.StudySession.filter({ created_by: currentUser.email }, '-created_date', 500),
+    enabled: !!currentUser?.email,
   });
 
   const { data: savedSessions = [] } = useQuery({
@@ -79,13 +80,13 @@ export default function CollectionDetail() {
     enabled: !!currentUser?.id,
   });
 
-  // Deck score for the water line: mean card mastery score over active cards (unstudied = 0)
-  const deckMasteryPct = (deckId) => {
-    const activeIds = cards.filter((c) => c.deck_id === deckId && !c.deleted).map((c) => c.id);
-    const scoreByCardId = Object.fromEntries(
-      cardStats.filter((s) => s.deck_id === deckId).map((s) => [s.card_id, s.mastery_score])
+  // Deck score for the water line: evidence-weighted mean card mastery over active cards (unstudied = 0)
+  const deckMasteryPct = (deck) => {
+    const activeIds = cards.filter((c) => c.deck_id === deck.id && !c.deleted).map((c) => c.id);
+    const statsByCardId = Object.fromEntries(
+      cardStats.filter((s) => s.deck_id === deck.id).map((s) => [s.card_id, s])
     );
-    return computeDeckScore(activeIds, scoreByCardId);
+    return computeDeckScore(activeIds, statsByCardId, deck);
   };
 
   const savedHoursLeft = (deckId) => {
@@ -105,6 +106,7 @@ export default function CollectionDetail() {
       timesFinished: finished.length,
       highScore: scores.length ? Math.round(Math.max(...scores)) : null,
       lowScore: scores.length ? Math.round(Math.min(...scores)) : null,
+      avgScore: scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null,
       lastStudied: last?.created_date || null,
     };
   };
@@ -266,7 +268,7 @@ export default function CollectionDetail() {
                 cardCount={cards.filter((c) => c.deck_id === deck.id && !c.deleted).length}
                 coverUrl={getCoverUrl(deck)}
                 stats={deckStats(deck.id)}
-                masteryPct={deckMasteryPct(deck.id)}
+                masteryPct={deckMasteryPct(deck)}
                 savedHoursLeft={savedHoursLeft(deck.id)}
                 onEdit={openEdit}
                 onDelete={(d) => deleteDeckMutation.mutate(d)}

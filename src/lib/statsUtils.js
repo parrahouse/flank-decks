@@ -173,11 +173,19 @@ export function computeCardMastery(sessions, cardId, deck) {
   return { state, score: masteryScore(state), level: masteryLevel(state, deck) };
 }
 
-// Deck score = mean card score over active (non-deleted) cards; unstudied cards count 0.
-// activeCardIds: array of ids; scoreByCardId: { [cardId]: 0–100 | null }
-export function computeDeckScore(activeCardIds, scoreByCardId) {
+// Deck score = mean over active (non-deleted) cards of each card's evidence-weighted score:
+//   mastery_score × min(1, mastery_scored_sessions / mastery_min_sessions)
+// Unstudied cards count 0. A card reaches full weight when it becomes eligible for Mastered.
+// activeCardIds: array of ids; statsByCardId: { [cardId]: UserCardStats record }; deck: for mastery_min_sessions.
+export function computeDeckScore(activeCardIds, statsByCardId, deck) {
   if (!activeCardIds?.length) return 0;
-  const sum = activeCardIds.reduce((a, id) => a + (scoreByCardId?.[id] ?? 0), 0);
+  const minSessions = deck?.mastery_min_sessions ?? 3;
+  const sum = activeCardIds.reduce((a, id) => {
+    const s = statsByCardId?.[id];
+    if (!s || s.mastery_score == null) return a;
+    const weight = Math.min(1, (s.mastery_scored_sessions ?? 0) / minSessions);
+    return a + s.mastery_score * weight;
+  }, 0);
   return Math.round(sum / activeCardIds.length);
 }
 
