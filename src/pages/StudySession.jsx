@@ -653,20 +653,20 @@ export default function StudySession() {
 
       // Mastery (new model). Must run before StudySession.create so before/after land on card_results.
       // Review-missed runs are not scored.
-      const masteryAfter = filterMode === 'missed'
-        ? {}
-        : scoreSessionMastery(
-            cardResults,
-            cardStats,
-            pastSessions.filter((s) => s.created_by === currentUser.email),
-            deck
-          );
+      const masteryAfter = filterMode === 'missed' ?
+      {} :
+      scoreSessionMastery(
+        cardResults,
+        cardStats,
+        pastSessions.filter((s) => s.created_by === currentUser.email),
+        deck
+      );
 
       // Session end panel data. Built from the same mastery scoring that is saved below.
       const scoredRun = filterMode !== 'missed';
-      const lastPrior = pastSessions
-        .filter((s) => s.created_by === currentUser.email && s.filter_mode !== 'missed' && s.score_pct != null)
-        .sort((a, b) => new Date(b.started_at || b.created_date) - new Date(a.started_at || a.created_date))[0] ?? null;
+      const lastPrior = pastSessions.
+      filter((s) => s.created_by === currentUser.email && s.filter_mode !== 'missed' && s.score_pct != null).
+      sort((a, b) => new Date(b.started_at || b.created_date) - new Date(a.started_at || a.created_date))[0] ?? null;
       let deckProgress = null;
       if (scoredRun) {
         const activeIds = activeCards.map((c) => c.id);
@@ -676,12 +676,12 @@ export default function StudySession() {
           afterById[cardId] = { ...(beforeById[cardId] || {}), ...masteryStatsFields(st, deck) };
         }
         const levelCounts = { new: 0, learning: 0, familiar: 0, proficient: 0, mastered: 0 };
-        activeIds.forEach((id) => { levelCounts[afterById[id]?.mastery_level ?? 'new'] += 1; });
+        activeIds.forEach((id) => {levelCounts[afterById[id]?.mastery_level ?? 'new'] += 1;});
         deckProgress = {
           before: computeDeckScore(activeIds, beforeById, deck),
           after: computeDeckScore(activeIds, afterById, deck),
           levelCounts,
-          total: activeIds.length,
+          total: activeIds.length
         };
       }
       setSessionSummary({ cardResults, scored: scoredRun, lastScorePct: lastPrior?.score_pct ?? null, deckProgress });
@@ -758,10 +758,10 @@ export default function StudySession() {
 
 
 
+
           // already studied today, no change
         } else if (last === yesterday) {newStreak = streak.current_streak + 1;} else {newStreak = 1;}const newLongest = Math.max(streak.longest_streak || 0, newStreak);const newMilestone = [3, 7, 14, 30, 60, 100].filter((m) => newStreak >= m).pop() || 0;await base44.entities.Streak.update(streak.id, { current_streak: newStreak, longest_streak: newLongest, last_study_date: today, milestone_reached: Math.max(streak.milestone_reached || 0, newMilestone) });} else if (currentUser?.id) {await base44.entities.Streak.create({ user_id: currentUser.id, current_streak: 1, longest_streak: 1, last_study_date: today, milestone_reached: 0 });}refetchStreak(); // Milestone toast
-      const newMilestoneVal = [3, 7, 14, 30, 60, 100].filter((m) => newStreak >= m).pop() || 0;const prevMilestone = streak?.milestone_reached || 0;if (newMilestoneVal > prevMilestone) {const { toast: sonnerToast } = await import('sonner');sonnerToast(`🏆 ${newMilestoneVal}-day milestone reached!`, { description: `You've studied ${newMilestoneVal} days in a row. Keep it up!`, duration: 5000
-          });
+      const newMilestoneVal = [3, 7, 14, 30, 60, 100].filter((m) => newStreak >= m).pop() || 0;const prevMilestone = streak?.milestone_reached || 0;if (newMilestoneVal > prevMilestone) {const { toast: sonnerToast } = await import('sonner');sonnerToast(`🏆 ${newMilestoneVal}-day milestone reached!`, { description: `You've studied ${newMilestoneVal} days in a row. Keep it up!`, duration: 5000 });
       }
 
       // Update UserCardStats for every card in this session
@@ -1175,7 +1175,7 @@ export default function StudySession() {
               opacity: 0.55,
               mixBlendMode: 'soft-light',
               maskImage: 'linear-gradient(90deg, black 0%, black 55%, transparent 90%)',
-              WebkitMaskImage: 'linear-gradient(90deg, black 0%, black 55%, transparent 90%)',
+              WebkitMaskImage: 'linear-gradient(90deg, black 0%, black 55%, transparent 90%)'
             }} />
 
           }
@@ -1204,7 +1204,7 @@ export default function StudySession() {
             onClick={handleStartSession}
             disabled={!canStart || launching}
             size="sm"
-            className="gap-1.5 shrink-0 rounded-full h-9">
+            className="gap-1.5 shrink-0 h-9 rounded-lg text-base">
             Start Session
             <ArrowRight className="w-4 h-4" />
           </Button>
@@ -1617,19 +1617,19 @@ export default function StudySession() {
           transition={{ duration: 0.45, ease: 'easeOut' }}
           className="relative bg-card border border-border rounded-lg p-4 mt-4">
             {sessionSummary ?
-            <DeckSessionPanel
-              summary={sessionSummary}
-              pct={pct}
-              deckId={deckId}
-              missedCount={missedCount}
-              onReviewMissed={reviewMissed}
-              onStudyAgain={restart}
-              onStudyUnmastered={() => startSession('unmastered')} /> :
+          <DeckSessionPanel
+            summary={sessionSummary}
+            pct={pct}
+            deckId={deckId}
+            missedCount={missedCount}
+            onReviewMissed={reviewMissed}
+            onStudyAgain={restart}
+            onStudyUnmastered={() => startSession('unmastered')} /> :
 
-            <div className="flex items-center justify-center py-12">
+          <div className="flex items-center justify-center py-12">
                 <div className="w-6 h-6 border-4 border-muted border-t-primary rounded-full animate-spin" />
               </div>
-            }
+          }
           </motion.div> :
 
         <motion.div key="study-area" initial={false} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
