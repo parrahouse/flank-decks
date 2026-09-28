@@ -1168,11 +1168,9 @@ export default function StudySession() {
           <img
             src={hero.url}
             alt=""
-            className="absolute top-1/2 left-0 w-auto"
+            className="absolute inset-0 w-full h-full object-cover"
             style={{
-              height: '118%',
-              maxWidth: 'none',
-              transform: 'translate(-14%, -50%)',
+              objectPosition: hero.objectPosition,
               filter: 'grayscale(100%)',
               opacity: 0.55,
               mixBlendMode: 'soft-light',
