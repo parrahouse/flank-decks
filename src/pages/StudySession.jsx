@@ -1175,7 +1175,9 @@ export default function StudySession() {
               transform: 'translate(-14%, -50%)',
               filter: 'grayscale(100%)',
               opacity: 0.55,
-              mixBlendMode: 'soft-light'
+              mixBlendMode: 'soft-light',
+              maskImage: 'linear-gradient(90deg, black 0%, black 55%, transparent 90%)',
+              WebkitMaskImage: 'linear-gradient(90deg, black 0%, black 55%, transparent 90%)',
             }} />
 
           }
