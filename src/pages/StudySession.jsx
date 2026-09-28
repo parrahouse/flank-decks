@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, ChevronLeft, ChevronRight, Volume2, VolumeX, Info, Trophy, PlayCircle, RefreshCw, Clock, AlertTriangle, Settings, SlidersVertical, LogOut, Search, Check } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Volume2, VolumeX, Info, Trophy, PlayCircle, RefreshCw, Clock, AlertTriangle, Settings, SlidersVertical, LogOut, Search, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -56,7 +56,7 @@ const SCORE_LABELS = {
 };
 
 // Tuned to the 384px settings column — roughly three lines of pills at typical tag lengths.
-const MAX_VISIBLE_TAGS = 12;
+const MAX_VISIBLE_TAGS = 9;
 
 // ── Cover wash ───────────────────────────────────────────────────────────────
 // Hue and saturation come from the cover; lightness is pinned at --wash-l, then raised
@@ -1200,6 +1200,14 @@ export default function StudySession() {
               Study Settings
             </p>
           </div>
+          <Button
+            onClick={handleStartSession}
+            disabled={!canStart || launching}
+            size="sm"
+            className="gap-1.5 shrink-0 rounded-full h-9">
+            Start Session
+            <ArrowRight className="w-4 h-4" />
+          </Button>
         </div>
 
         {/* Resume banner */}
@@ -1431,17 +1439,6 @@ export default function StudySession() {
               </div>
             </div>
 
-            <button
-              onClick={handleStartSession}
-              disabled={!canStart || launching}
-              className={cn(
-                'mt-auto w-full rounded-[4px] border-2 p-3 text-center text-lg font-semibold transition-all',
-                canStart ?
-                'border-primary bg-primary text-primary-foreground hover:opacity-90' :
-                'border-border text-muted-foreground opacity-50 cursor-not-allowed'
-              )}>
-              Start Session
-            </button>
           </div>
         </div>
       </div>);
