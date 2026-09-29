@@ -1,5 +1,5 @@
 import {
-  Upload, Search, Sparkles, Loader2, Pencil, X, Image as ImageIcon,
+  Upload, Search, Sparkles, Loader2, Pencil, X, Image as ImageIcon, Wand2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -161,12 +161,64 @@ export default function ImageTabContent({ state, previewLayout, setPreviewLayout
         {/* AI image generation panel */}
         {s.showAiImageGen && (
           <div className="border border-border rounded-lg p-3 space-y-3 bg-accent/20">
-            <p className="text-xs font-medium text-foreground">Generate an image with AI</p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-medium text-foreground">Generate an image with AI</p>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={s.handleDraftImagePrompts}
+                disabled={s.draftingImagePrompts || !s.clue.trim()}
+                title={!s.clue.trim() ? 'Write the question first' : 'Draft 3 image ideas from this card'}
+                className="h-7 gap-1.5 text-xs"
+              >
+                {s.draftingImagePrompts
+                  ? <><Loader2 className="w-3 h-3 animate-spin" /> Drafting…</>
+                  : <><Wand2 className="w-3 h-3" /> {s.imagePromptDrafts.length ? 'Redraft' : 'Draft from card'}</>}
+              </Button>
+            </div>
+
+            {!s.isTrueFalse && (
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <div
+                  onClick={() => { s.setAiImageAllowAnswer(v => !v); s.setImagePromptDrafts([]); }}
+                  className={cn(
+                    'relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer',
+                    s.aiImageAllowAnswer ? 'bg-primary' : 'bg-muted'
+                  )}
+                >
+                  <span className={cn('pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform', s.aiImageAllowAnswer ? 'translate-x-4' : 'translate-x-0')} />
+                </div>
+                <span className="text-xs text-muted-foreground">🎯 Drafts may show the answer (image as a visual clue)</span>
+              </label>
+            )}
+
+            {s.imagePromptDrafts.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {s.imagePromptDrafts.map((d, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => s.setAiImagePrompt(d.prompt)}
+                    title={d.prompt}
+                    className={cn(
+                      'px-2.5 py-1 rounded-full border text-xs transition-colors',
+                      s.aiImagePrompt === d.prompt
+                        ? 'border-primary bg-primary/10 text-primary font-medium'
+                        : 'border-border hover:border-primary/50 text-muted-foreground'
+                    )}
+                  >
+                    {d.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
             <Textarea
               value={s.aiImagePrompt}
               onChange={e => s.setAiImagePrompt(e.target.value)}
-              placeholder="Describe what the image should show…"
-              rows={2}
+              placeholder="Describe what the image should show, or draft ideas from the card…"
+              rows={3}
               className="resize-none text-sm"
             />
             <div className="space-y-1.5">

@@ -3,7 +3,12 @@ import { useQueryClient } from '@tanstack/react-query';
 import { computeCardDifficulty } from '@/lib/computeCardDifficulty';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { STYLE_PRESETS, buildAiPrompt } from '@/lib/aiImagePresets';
+import {
+  STYLE_PRESETS,
+  buildAiPrompt,
+  buildImagePromptDraftRequest,
+  normalizeImagePromptDrafts,
+} from '@/lib/aiImagePresets';
 
 const parseTags = (str) => str.split(',').map((t) => t.trim()).filter(Boolean);
 
@@ -66,6 +71,9 @@ export function useCardFormState({ mode, card, deck, activeCards }) {
   const [aiImageStyle, setAiImageStyle] = useState('pixel_art');
   const [aiImageHumor, setAiImageHumor] = useState(false);
   const [generatingImage, setGeneratingImage] = useState(false);
+  const [aiImageAllowAnswer, setAiImageAllowAnswer] = useState(false);
+  const [imagePromptDrafts, setImagePromptDrafts] = useState([]);
+  const [draftingImagePrompts, setDraftingImagePrompts] = useState(false);
 
   // Image sub-panels
   const [showImageSearch, setShowImageSearch] = useState(false);
@@ -301,15 +309,31 @@ export function useCardFormState({ mode, card, deck, activeCards }) {
     setGeneratingImage(false);
   };
 
-  const buildAiPromptPrefill = () => {
-    const correct = Array.from(correctSet)[0] || canonicalAnswer || '';
-    const plainExplanation = explanation ? explanation.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120) : '';
-    const parts = [clue, correct, plainExplanation].filter(Boolean);
-    return parts.length ? parts.join(' — ') : '';
+  const handleDraftImagePrompts = async () => {
+    if (!clue.trim()) { toast.error('Write the question first'); return; }
+    setDraftingImagePrompts(true);
+    try {
+      const request = buildImagePromptDraftRequest({
+        qType,
+        clue,
+        correctAnswers: isShortAnswer ? [canonicalAnswer, ...acceptedVariants] : correctFilled,
+        otherChoices: isShortAnswer ? [] : filledChoices.filter(c => !correctSet.has(c)),
+        explanation,
+        deckTitle: deck?.title,
+        deckDescription: deck?.description,
+        allowAnswer: aiImageAllowAnswer,
+      });
+      const result = await base44.integrations.Core.InvokeLLM(request);
+      const drafts = normalizeImagePromptDrafts(result);
+      if (drafts.length) {
+        setImagePromptDrafts(drafts);
+        if (!aiImagePrompt.trim()) setAiImagePrompt(drafts[0].prompt);
+      } else toast.error('Could not draft image prompts');
+    } catch { toast.error('Could not draft image prompts'); }
+    setDraftingImagePrompts(false);
   };
 
   const openAiImageGen = () => {
-    if (!aiImagePrompt) setAiImagePrompt(buildAiPromptPrefill());
     setShowAiImageGen(v => !v);
     setShowImageSearch(false);
     setShowImagePicker(false);
@@ -513,6 +537,8 @@ Return:
     handleImageUpload, uploading,
     aiImagePrompt, setAiImagePrompt, aiImageStyle, setAiImageStyle, aiImageHumor, setAiImageHumor,
     generatingImage, handleGenerateAiImage, openAiImageGen,
+    aiImageAllowAnswer, setAiImageAllowAnswer,
+    imagePromptDrafts, setImagePromptDrafts, draftingImagePrompts, handleDraftImagePrompts,
     showImageSearch, setShowImageSearch, showImagePicker, setShowImagePicker,
     showAiImageGen, setShowAiImageGen, showImageEditor, setShowImageEditor,
     poolPromptUrl, poolTags, setPoolTags, addingToPool, addToPool, dismissPoolPrompt,
