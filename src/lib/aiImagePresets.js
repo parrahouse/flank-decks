@@ -1,6 +1,5 @@
 // Single source of truth for AI image generation style presets and prompt assembly.
-// Consumed by CardEditor.jsx and QuickAddCardModal.jsx so both panels produce
-// visually consistent images from one definition.
+// Consumed by useCardFormState.js (CardEditorModal), the only card-editing surface.
 
 export const STYLE_PRESETS = {
   pixel_art: {
