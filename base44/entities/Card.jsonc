@@ -39,6 +39,15 @@
       "default": "cover",
       "description": "How the image fills its frame"
     },
+    "image_display": {
+      "type": "string",
+      "enum": [
+        "always",
+        "after_answer"
+      ],
+      "default": "always",
+      "description": "When the card image is shown during study. 'after_answer' hides it until the card has been answered. Absent means 'always'."
+    },
     "question_type": {
       "type": "string",
       "enum": [

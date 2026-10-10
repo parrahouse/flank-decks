@@ -59,6 +59,7 @@ Deno.serve(async (req) => {
       image_original_url: c.image_original_url,
       image_focal_point: c.image_focal_point,
       image_fit: c.image_fit,
+      image_display: c.image_display,
       question_type: c.question_type,
       correct_answers: c.correct_answers,
       choices: c.choices,
