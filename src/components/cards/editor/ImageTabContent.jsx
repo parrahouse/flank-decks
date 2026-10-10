@@ -3,6 +3,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import InfoTooltip from '../InfoTooltip';
 import ImageEditor from '../ImageEditor';
 import ImageSearchPanel from '../ImageSearchPanel';
@@ -125,6 +126,23 @@ export default function ImageTabContent({ state, previewLayout, setPreviewLayout
                 </button>
               ))}
             </div>
+          )}
+
+          {/* Display timing — per card */}
+          {s.imageUrl && (
+            <label className="flex items-start gap-3 rounded-lg border border-border px-3 py-2.5 cursor-pointer select-none">
+              <Switch
+                checked={s.imageDisplay === 'after_answer'}
+                onCheckedChange={(v) => s.setImageDisplay(v ? 'after_answer' : 'always')}
+                className="mt-0.5"
+              />
+              <span className="min-w-0">
+                <span className="block text-sm font-medium">Show only after answering</span>
+                <span className="block text-xs text-muted-foreground mt-0.5">
+                  The image stays hidden while the card is being answered, then appears. Use it when the image would give the answer away.
+                </span>
+              </span>
+            </label>
           )}
 
           {/* Revert to original */}

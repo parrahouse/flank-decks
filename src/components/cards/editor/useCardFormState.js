@@ -55,6 +55,7 @@ export function useCardFormState({ mode, card, deck, activeCards }) {
   const [originalImageUrl, setOriginalImageUrl] = useState(card?.image_original_url || null);
   const [focalPoint, setFocalPoint] = useState(card?.image_focal_point || (card?.image_url ? { x: 50, y: 50 } : null));
   const [imageFit, setImageFit] = useState(card?.image_fit || 'cover');
+  const [imageDisplay, setImageDisplay] = useState(card?.image_display === 'after_answer' ? 'after_answer' : 'always');
 
   // Tags
   const [tags, setTags] = useState(card?.tags || []);
@@ -125,6 +126,7 @@ export function useCardFormState({ mode, card, deck, activeCards }) {
     if (imageUrl !== (card?.image_url || '')) return true;
     if (JSON.stringify(focalPoint) !== JSON.stringify(card?.image_focal_point || (card?.image_url ? { x: 50, y: 50 } : null))) return true;
     if (imageFit !== (card?.image_fit || 'cover')) return true;
+    if (imageDisplay !== (card?.image_display === 'after_answer' ? 'after_answer' : 'always')) return true;
     if (qType !== initQType) return true;
     if (clue !== (card?.clue || '')) return true;
     if (explanation !== (card?.explanation || '')) return true;
@@ -493,6 +495,7 @@ Return:
       image_url: imageUrl,
       image_focal_point: focalPoint,
       image_fit: imageFit,
+      image_display: imageDisplay,
       image_original_url: originalImageUrl || null,
       correct_answers,
       correct_answer: correctList[0] || canonicalAnswer.trim(),
@@ -532,7 +535,7 @@ Return:
     explanation, setExplanation, quillRef, handleGenerateExplanation, generatingExplanation,
     // image
     imageUrl, setImageUrl, originalImageUrl, setOriginalImageUrl, focalPoint, setFocalPoint,
-    imageFit, setImageFit,
+    imageFit, setImageFit, imageDisplay, setImageDisplay,
     fileRef, previewImgRef, draggingPreview, beginFocalDrag, moveFocalDrag, endFocalDrag,
     handleImageUpload, uploading,
     aiImagePrompt, setAiImagePrompt, aiImageStyle, setAiImageStyle, aiImageHumor, setAiImageHumor,

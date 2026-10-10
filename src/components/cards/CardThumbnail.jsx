@@ -1,4 +1,4 @@
-import { Check, SquareCheck, ToggleLeft, PencilLine } from 'lucide-react';
+import { Check, SquareCheck, ToggleLeft, PencilLine, EyeOff } from 'lucide-react';
 import MathRenderer from '@/components/ui/MathRenderer';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getQuestionBgLayers } from '@/lib/questionPaneBg';
@@ -29,6 +29,14 @@ export default function CardThumbnail({ card, deck, imageEmpty = null, imageOver
   const hasImage = !!card.image_url;
   const useImageAsBg = !!deck?.question_bg_image && hasImage;
   const showImage = hasImage && !useImageAsBg;
+
+  // Author-facing marker: this card's image is hidden in study until answered.
+  const revealBadge = card.image_display === 'after_answer' ? (
+    <div className="absolute bottom-2 left-2 z-10 flex items-center gap-1 bg-black/60 text-white text-[10px] font-medium px-2 py-0.5 rounded-full pointer-events-none">
+      <EyeOff style={{ width: 11, height: 11 }} />
+      Shown after answer
+    </div>
+  ) : null;
 
   const { paneBg: questionBg, imageLayer: qBgImageLayer, overlayLayer: qBgOverlayLayer } = getQuestionBgLayers({ deck, card, hintVisible: false, fallback: '#DFEDF5' });
   const renderBgLayers = () => (
@@ -146,6 +154,7 @@ export default function CardThumbnail({ card, deck, imageEmpty = null, imageOver
               <div className="relative overflow-hidden rounded min-h-0" style={{ flex: '0 0 75%' }}>
                 <img src={card.image_url} alt="card" className="w-full h-full" style={imgStyle} draggable={false} />
                 {imageOverlay}
+                {revealBadge}
               </div>
               <div className="rounded px-3 py-2 flex items-center min-h-0 relative overflow-hidden" style={{ flex: '1 1 0', backgroundColor: questionBg }}>
                 {renderBgLayers()}
@@ -179,6 +188,7 @@ export default function CardThumbnail({ card, deck, imageEmpty = null, imageOver
           <div className="relative w-full overflow-hidden rounded" style={{ height: 'min(360px, 40vh)' }}>
             <img src={card.image_url} alt="card" className="w-full h-full" style={imgStyle} draggable={false} />
             {imageOverlay}
+            {revealBadge}
           </div>
           {questionPane}
         </>

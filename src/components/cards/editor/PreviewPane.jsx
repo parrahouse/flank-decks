@@ -22,6 +22,7 @@ export default function PreviewPane({
   const card = {
     image_url: state.imageUrl,
     image_fit: state.imageFit,
+    image_display: state.imageDisplay,
     image_focal_point: state.focalPoint,
     clue: state.clue,
     question_type: state.qType,
