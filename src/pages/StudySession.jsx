@@ -1664,7 +1664,8 @@ export default function StudySession() {
               onShowLearnMore: handleShowLearnMore,
               introReady,
               maxChoices,
-              characterIdle
+              characterIdle,
+              alreadyAnswered: scores[cardIndex] != null
             };
 
             const childVariant = {

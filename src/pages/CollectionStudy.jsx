@@ -429,6 +429,7 @@ export default function CollectionStudy() {
     onFirstWrong: handleFirstWrong,
     introReady: questionReady,
     maxChoices,
+    alreadyAnswered: scores[cardIndex] != null,
   };
 
   return (

@@ -14,7 +14,7 @@
  * divs (absolute, zIndex 0) as the first children of the pane and keeps the
  * pane content positioned (relative) so it stacks above them.
  */
-export function getQuestionBgLayers({ deck, card, hintVisible, fallback }) {
+export function getQuestionBgLayers({ deck, card, hintVisible, fallback, imageHidden }) {
   const customColor = deck?.question_bg_color;
   const useImageBg = !!deck?.question_bg_image && !!card?.image_url;
 
@@ -31,6 +31,12 @@ export function getQuestionBgLayers({ deck, card, hintVisible, fallback }) {
     ? `${card.image_focal_point.x}% ${card.image_focal_point.y}%`
     : 'center';
 
+  // imageHidden is passed only for cards whose image is revealed after answering.
+  // Left undefined, both layers are exactly as before.
+  const fade = imageHidden === undefined
+    ? {}
+    : { opacity: imageHidden ? 0 : 1, transition: 'opacity 0.35s ease' };
+
   const imageLayer = {
     position: 'absolute',
     inset: 0,
@@ -40,6 +46,7 @@ export function getQuestionBgLayers({ deck, card, hintVisible, fallback }) {
     backgroundPosition: focal,
     backgroundRepeat: 'no-repeat',
     pointerEvents: 'none',
+    ...fade,
   };
 
   const overlayLayer = {
@@ -49,6 +56,7 @@ export function getQuestionBgLayers({ deck, card, hintVisible, fallback }) {
     backgroundColor: blockColor,
     mixBlendMode: 'screen',
     pointerEvents: 'none',
+    ...fade,
   };
 
   return { paneBg: blockColor, imageLayer, overlayLayer };

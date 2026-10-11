@@ -19,6 +19,7 @@ import CardNoteEditor from './CardNoteEditor';
 import { STUDY_CARD_BOX_H, CARD_GEO as GEO } from '@/lib/studyLayout';
 import { masteryDisplayText } from '@/lib/statsUtils';
 import { getQuestionBgLayers } from '@/lib/questionPaneBg';
+import StudyCardImage from './StudyCardImage';
 import ShortAnswerInput from './ShortAnswerInput';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -66,6 +67,7 @@ export default function StudyCardHorizontal({
   introReady = true,
   characterIdle = true,
   childVariant = null,
+  alreadyAnswered = false,
 }) {
   const { playCorrect, playWrong } = useSound(soundEnabled);
   const { toggle: toggleNarration, getStatus: getNarrationStatus, getClock: getNarrationClock, clear: clearNarration } = useNarration();
@@ -83,6 +85,7 @@ export default function StudyCardHorizontal({
   const [eliminateUsed, setEliminateUsed] = useState(false);
   const [bookmarked, setBookmarked] = useState(isBookmarked);
   const [selectAllPending, setSelectAllPending] = useState(new Set());
+  const [shortAnswerCommitted, setShortAnswerCommitted] = useState(false); // short-answer commit, reported via onScore
   const countdownRef = useRef(null);
   const idleTimerRef = useRef(null);
 
@@ -95,7 +98,11 @@ export default function StudyCardHorizontal({
   const useImageAsBg = !!deck?.question_bg_image && hasImage;
   const showImage = hasImage && !useImageAsBg;
   const cardPoints = card.point_value ?? 20;
-  const { paneBg: questionPaneBg, imageLayer: qBgImage, overlayLayer: qBgOverlay } = getQuestionBgLayers({ deck, card });
+  // image_display === 'after_answer': the image stays hidden until this card is
+  // answered. `alreadyAnswered` covers a revisit, where local answer state has reset.
+  const imageDeferred = card.image_display === 'after_answer';
+  const imageRevealed = !imageDeferred || !!finalAnswer || shortAnswerCommitted || alreadyAnswered;
+  const { paneBg: questionPaneBg, imageLayer: qBgImage, overlayLayer: qBgOverlay } = getQuestionBgLayers({ deck, card, imageHidden: imageDeferred ? !imageRevealed : undefined });
 
   const correctAnswers = (card.correct_answers || card.correct_answer || '')
     .split('|').map(s => s.trim()).filter(Boolean);
@@ -126,7 +133,7 @@ export default function StudyCardHorizontal({
     setFirstWrong(null); setFinalAnswer(null); setEliminated([]);
     setClueManuallyRevealed(false); setShakingChoice(null); clearTimeout(shakeTimerRef.current);
     setNoteEditing(false); setEliminateShake(false); setEliminateUsed(false);
-    setBookmarked(isBookmarked); setSelectAllPending(new Set());
+    setBookmarked(isBookmarked); setSelectAllPending(new Set()); setShortAnswerCommitted(false);
     cancelCountdown(); clearTimeout(idleTimerRef.current);
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     clearNarration();
@@ -278,7 +285,7 @@ export default function StudyCardHorizontal({
           which give the whole column to the question. */}
       {showImage && (
         <div style={{ width: '100%', flex: '0 0 75%', minHeight: 0, overflow: 'hidden',         backgroundColor: 'hsl(var(--study-image-bg))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <img src={card.image_url} alt="card" style={{ width: '100%', height: '100%', objectFit: card.image_fit || 'cover', objectPosition: (card.image_fit !== 'contain' && card.image_focal_point) ? `${card.image_focal_point.x}% ${card.image_focal_point.y}%` : 'center' }} />
+          <StudyCardImage card={card} revealed={imageRevealed} />
         </div>
       )}
 
@@ -364,7 +371,7 @@ export default function StudyCardHorizontal({
             <ShortAnswerInput
               card={card}
               deck={deck}
-              onScore={onScore}
+              onScore={(points, key) => { setShortAnswerCommitted(true); onScore && onScore(points, key); }}
               onNext={() => { cancelCountdown(); onNext(); }}
               onFirstWrong={onFirstWrong}
               isLast={isLast}

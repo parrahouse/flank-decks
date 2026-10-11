@@ -25,7 +25,7 @@ export default function ContactSheet({ cards, scores, cardIndex, onJump }) {
                 !isCurrent && !isAnswered && 'border-border'
               )}
             >
-              {card.image_url ? (
+              {card.image_url && (card.image_display !== 'after_answer' || isAnswered) ? (
                 <img src={card.image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
               ) : (
                 <div className="absolute inset-0 bg-muted flex items-center justify-center text-muted-foreground text-xs font-medium">
