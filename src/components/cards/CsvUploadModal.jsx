@@ -100,7 +100,7 @@ True,true_false,False,,,,,,,Does the Earth orbit the Sun?,,science
 Mitosis|Meiosis,select_all,Photosynthesis,Osmosis,Respiration,Fermentation,,,Which of the following are types of cell division?,Mitosis produces two identical daughter cells; meiosis produces four genetically unique cells.,,vocabulary
 Photosynthesis,short_answer,,,,,,Photosynthesis,What process do plants use to convert sunlight into food?,Plants use chlorophyll to absorb sunlight and convert CO2 and water into glucose and oxygen.,,science`;
 
-export default function CsvUploadModal({ open, onClose, deckId, existingCount, onImported }) {
+export default function CsvUploadModal({ open, onClose, deckId, existingCount, onImported, isPublic = false }) {
   const fileRef = useRef();
   const [dragging, setDragging] = useState(false);
   const [preview, setPreview] = useState(null); // { cards, errors, isBackfill }
@@ -158,7 +158,7 @@ export default function CsvUploadModal({ open, onClose, deckId, existingCount, o
       onClose();
       toast.success(`${preview.cards.length} cards updated with new point values!`);
     } else {
-      await base44.entities.Card.bulkCreate(preview.cards);
+      await base44.entities.Card.bulkCreate(preview.cards.map((c) => ({ ...c, is_public: isPublic })));
       setImporting(false);
       onImported();
       onClose();

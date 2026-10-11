@@ -26,7 +26,7 @@ const TABS = [
  * CardEditorModal — unified full-screen modal for creating and editing cards.
  * mode: 'create' | 'edit'. In create mode, a done step follows save.
  */
-export default function CardEditorModal({ open, onClose, mode = 'edit', card, deckId, deck, activeCards, allTags = [], onSaved, onEditDetails, onAddAnother, onSaveAndNext, hasNextCard = false }) {
+export default function CardEditorModal({ open, onClose, mode = 'edit', card, deckId, deck, activeCards, allTags = [], onSaved, onEditDetails, onAddAnother, onSaveAndNext, hasNextCard = false, isDuplicate = false, createOrder = null }) {
   const isCreate = mode === 'create';
   const [activeTab, setActiveTab] = useState('edit');
   const [step, setStep] = useState('input'); // 'input' | 'saving' | 'done' (create only)
@@ -87,8 +87,9 @@ export default function CardEditorModal({ open, onClose, mode = 'edit', card, de
     }
 
     if (isCreate) {
-      // Compute difficulty at creation unless overridden
-      if (!data.difficulty_overridden) {
+      // Compute difficulty at creation unless overridden. A duplicate keeps its
+      // source's point value and tier, so it skips the computation.
+      if (!data.difficulty_overridden && !isDuplicate) {
         try {
           const diff = await computeCardDifficulty({
             question_type: data.question_type,
@@ -109,7 +110,10 @@ export default function CardEditorModal({ open, onClose, mode = 'edit', card, de
       data.difficulty_tier = Math.max(1, Math.min(5, data.difficulty_tier || 2));
       data.point_value = Math.max(10, Math.round(data.point_value / 10) * 10);
       data.deck_id = deckId;
-      data.order = activeCards.length;
+      data.order = createOrder ?? activeCards.length;
+      // Mirror the deck's visibility, so a card added after the deck was shared
+      // is readable by subscribers (Card RLS reads data.is_public).
+      data.is_public = !!deck?.is_public;
       try {
         const created = await base44.entities.Card.create(data);
         setSavedCard(created);
@@ -184,7 +188,7 @@ export default function CardEditorModal({ open, onClose, mode = 'edit', card, de
             
               {/* Header — title + top-level tabs */}
               <div className="flex items-center justify-between px-6 pt-4 pb-0 border-b border-border shrink-0">
-                <h2 className="font-semibold text-base pr-4">{isCreate ? 'Create a Card' : 'Edit Card'}</h2>
+                <h2 className="font-semibold text-base pr-4">{isDuplicate ? 'Duplicate Card' : isCreate ? 'Create a Card' : 'Edit Card'}</h2>
                 <div className="flex items-center pr-10">
                   {TABS.map((tab) =>
                 <button

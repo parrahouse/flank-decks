@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useLayoutEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, ArrowLeft, Pencil, Trash2, Image as ImageIcon, X, Upload, RotateCcw, Archive, CircleDot, CheckSquare, ToggleRight, Play, Sparkles, Check, ChevronDown, Loader2, PencilLine } from 'lucide-react';
+import { Plus, ArrowLeft, Pencil, Trash2, Image as ImageIcon, X, Upload, RotateCcw, Archive, CircleDot, CheckSquare, ToggleRight, Play, Sparkles, Check, ChevronDown, Loader2, PencilLine, Copy } from 'lucide-react';
 import AiCardSuggestionsModal from '@/components/cards/AiCardSuggestionsModal';
 import CardEditorModal from '@/components/cards/CardEditorModal';
 import { Button } from '@/components/ui/button';
@@ -67,6 +67,7 @@ export default function DeckBuilder() {
   const [editorMode, setEditorMode] = useState('create');
   const [editingCard, setEditingCard] = useState(null);
   const [editorKey, setEditorKey] = useState(0); // bump to remount the modal fresh (add-another)
+  const [duplicateOrder, setDuplicateOrder] = useState(null); // non-null while the editor holds a duplicate draft
   const [showCsvUpload, setShowCsvUpload] = useState(false);
   const [showBin, setShowBin] = useState(false);
   const [showAiSuggest, setShowAiSuggest] = useState(false);
@@ -203,14 +204,34 @@ export default function DeckBuilder() {
   };
 
   const openAdd = () => {
+    setDuplicateOrder(null);
     setEditingCard(null);
     setEditorMode('create');
     setEditorKey((k) => k + 1);
     setEditorOpen(true);
   };
   const openEdit = (card) => {
+    setDuplicateOrder(null);
     setEditingCard(card);
     setEditorMode('edit');
+    setEditorKey((k) => k + 1);
+    setEditorOpen(true);
+  };
+  // Duplicate = a pre-filled draft in the create flow; nothing is written until
+  // Save. The copy is ordered directly after its source: midway to the next
+  // card, or at the end when there is no usable gap between the two.
+  const openDuplicate = (card) => {
+    const idx = activeCards.findIndex((c) => c.id === card.id);
+    const next = idx >= 0 ? activeCards[idx + 1] : null;
+    const maxOrder = activeCards.reduce((m, c) => (typeof c.order === 'number' && c.order > m ? c.order : m), -1);
+    let order = maxOrder + 1;
+    if (typeof card.order === 'number' && next && typeof next.order === 'number' && next.order > card.order) {
+      order = (card.order + next.order) / 2;
+    }
+    setDuplicateOrder(order);
+    // id is stripped so the Notes and Concepts tabs cannot touch the source card.
+    setEditingCard({ ...card, id: undefined });
+    setEditorMode('create');
     setEditorKey((k) => k + 1);
     setEditorOpen(true);
   };
@@ -608,6 +629,9 @@ export default function DeckBuilder() {
               <span className="absolute top-2 right-2 text-xs bg-success/15 text-success px-1.5 py-0.5 rounded font-medium opacity-100 group-hover:opacity-0 transition-opacity">Mastered</span>
               }
               <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={(e) => {e.stopPropagation();openDuplicate(card);}} title="Duplicate card" aria-label="Duplicate card" className="bg-white/90 hover:bg-white rounded-lg p-1.5 shadow-sm">
+                  <Copy className="w-3.5 h-3.5 text-foreground" />
+                </button>
                 <button onClick={(e) => {e.stopPropagation();deleteMutation.mutate(card);}} className="bg-white/90 hover:bg-white rounded-lg p-1.5 shadow-sm">
                   <Trash2 className="w-3.5 h-3.5 text-destructive" />
                 </button>
@@ -648,6 +672,7 @@ export default function DeckBuilder() {
         onClose={() => setShowCsvUpload(false)}
         deckId={deckId}
         existingCount={activeCards.length}
+        isPublic={!!deck?.is_public}
         onImported={() => {qc.invalidateQueries(['cards', deckId]);qc.invalidateQueries(['cards-all']);}} />
       
 
@@ -663,20 +688,12 @@ export default function DeckBuilder() {
         allTags={allTags}
         onSaved={() => {
           invalidateCards();
-          toast.success(editorMode === 'edit' ? 'Card updated' : 'Card added');
+          toast.success(editorMode === 'edit' ? 'Card updated' : duplicateOrder !== null ? 'Card duplicated' : 'Card added');
         }}
-        onEditDetails={(card) => {
-          setEditingCard(card);
-          setEditorMode('edit');
-          setEditorKey((k) => k + 1);
-          setEditorOpen(true);
-        }}
-        onAddAnother={() => {
-          setEditingCard(null);
-          setEditorMode('create');
-          setEditorKey((k) => k + 1);
-          setEditorOpen(true);
-        }}
+        onEditDetails={openEdit}
+        onAddAnother={openAdd}
+        isDuplicate={duplicateOrder !== null}
+        createOrder={duplicateOrder}
         hasNextCard={hasNextCard}
         onSaveAndNext={() => {
           const next = hasNextCard ? activeCards[editingCardIndex + 1] : null;
@@ -728,7 +745,7 @@ export default function DeckBuilder() {
         activeCards={activeCards}
         onAddCards={async (cards) => {
           await base44.entities.Card.bulkCreate(
-            cards.map((c, i) => ({ ...c, deck_id: deckId, order: activeCards.length + i }))
+            cards.map((c, i) => ({ ...c, deck_id: deckId, order: activeCards.length + i, is_public: !!deck?.is_public }))
           );
           qc.invalidateQueries(['cards', deckId]);
           qc.invalidateQueries(['cards-all']);
